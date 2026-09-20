@@ -1,0 +1,1822 @@
+{
+  "schema": "pr2974-partition-349-validation.v1",
+  "source_sha": "a028fcf73db849962aa1211200bfb1cb6eea39da",
+  "source_tree": "bc77cdcae635270e48ce9176d0bdd4434cfc58ef",
+  "source_parent": "ed7313dff240292a482c53410a2492f80ba8a220",
+  "tracked_files": 4736,
+  "branch": "codex/pr2974-partition-349-validation-20260920",
+  "workflow_name": "PR2974 partition 349 validation",
+  "harness_directory": "ci/pr2974_partition_349_validation",
+  "harness_paths": [
+    "ci/pr2974_partition_349_validation/common.py",
+    "ci/pr2974_partition_349_validation/environment_setup.py",
+    "ci/pr2974_partition_349_validation/environment.py",
+    "ci/pr2974_partition_349_validation/source_entry.py",
+    "ci/pr2974_partition_349_validation/collect_controls.py",
+    "ci/pr2974_partition_349_validation/report_projection.py",
+    "ci/pr2974_partition_349_validation/full_collection.py",
+    "ci/pr2974_partition_349_validation/finite_controls.py",
+    "ci/pr2974_partition_349_validation/formatter_outputs.py",
+    "ci/pr2974_partition_349_validation/preparation_contract.py",
+    "ci/pr2974_partition_349_validation/source_gates.py",
+    "ci/pr2974_partition_349_validation/validate.py",
+    "ci/pr2974_partition_349_validation/component-source.json",
+    "ci/pr2974_partition_349_validation/manifest.json",
+    "ci/pr2974_partition_349_validation/retained-0509.json",
+    "ci/pr2974_partition_349_validation/full_collection_evidence.py",
+    "ci/pr2974_partition_349_validation/control_source_aliases.py",
+    "ci/pr2974_partition_349_validation/control_capture_evidence.py",
+    "ci/pr2974_partition_349_validation/control_capture_retention_control.py",
+    "ci/pr2974_partition_349_validation/ordinary_child_reap_control.py",
+    "ci/pr2974_partition_349_validation/retained-93a.json",
+    "ci/pr2974_partition_349_validation/control_pi_aliases.py",
+    "ci/pr2974_partition_349_validation/control_partition_admission.py",
+    "ci/pr2974_partition_349_validation/control_parameter_values.py",
+    ".github/workflows/pr2974-partition-349-validation.yml"
+  ],
+  "observer_payloads": {
+    "common.py": "2dbebd2c420e862f3a98d0e1fb1226c49769e7c65964c927debaa1410e02a87b",
+    "environment_setup.py": "404d966945ed3023c95154696a363666245fba23f0fca5ec971fe84a6bd41dbe",
+    "environment.py": "8943a501d021a5401592f184546225055d8de36a1481200c50349f7e5dc77185",
+    "source_entry.py": "f8e3719d2db2a32bf959f735b34dfa36b2079a9347762a2dea850b7e8b42593d",
+    "collect_controls.py": "d80f6ea92758e60c8fc6a9d9fba0bfdbe82f99eb62ec79abb5ef91c1c1621de3",
+    "report_projection.py": "f1ddd43ecc4d118fef91042d7d1c9c4849ba7415aa0784b055f13e2845c4b10a",
+    "full_collection.py": "9a1f98094b063aa3b5edcae8961ac7eec9c930fd64651e3d89d5f3863480126b",
+    "finite_controls.py": "1de055b6246fd1adc0df4441e6b0202a092f207b2f4e7b49d5c764eaba93bc00",
+    "formatter_outputs.py": "396026aac757291e799841e6c4adc1aeda98fa71d07c88fcf79638a561313360",
+    "preparation_contract.py": "4bacee26e6c72d9513390b8bcf27e2abbc383e8e47ccdfd6d3da9911b0950574",
+    "source_gates.py": "1ea8b2669d6d35268417e0d35168c926b908ef9ed1f111eb9c128baa43f8ddc0",
+    "validate.py": "f63e829fd2477a6ac68fe0dad5484b835570721e03f424d4c73290a6545a1285",
+    "component-source.json": "1dc1e0b7d7244a3cc5918eb9feff38044b3c3e69048f274b21cf00f6c2054134",
+    "retained-0509.json": "c4a1dd1d23a53dfb73f5c389ef2bced63d13c4d9c2a0ee3ddb5f20236751442d",
+    "full_collection_evidence.py": "f1bf74a50612bdcd281ae573190cbbecaed500ebeded4d1d595115f40fd1309e",
+    "control_source_aliases.py": "36bfadf4a7710ba7e1bc695753e969f38c38358f27834dd87c725390308a6199",
+    "control_capture_evidence.py": "b97a6554c2d66dff4b94f6f0bcf3ad34ec9637f7da7152ec28ebf2b514fc1356",
+    "control_capture_retention_control.py": "c3b9930aef5a73805aea4dce9c6933f5d89a6a04cf878a6931db0e137d065f9c",
+    "ordinary_child_reap_control.py": "a4e4f3d912b3cb947a77ac261fc5a36c29395318de39ff2891678f19fda5f3c9",
+    "retained-93a.json": "8aff5b434a6b509faa8466203a53e85f6583ca735906028ad650abc82c9068f2",
+    "control_pi_aliases.py": "7109c0ae824718496d77ee82e7a597426c6e8b36e302c1642d2adb95b06994a8",
+    "control_partition_admission.py": "5e46fed31d787e303dbd5843af6871ad01609923c2b90920f854c0c8126c57a3",
+    "control_parameter_values.py": "fe56b821e9ae62cd8bdb8de47c8c56860dd1224e273d20d09d78bb91faa82ac4"
+  },
+  "source_inputs": {
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "ci/__init__.py": "77052478f94d8c1a24c6d25137758bc8e9bacf2372ebd32359f9182df0a2bf83",
+    "ci/native_runtime/native_phase_lifecycle_support.py": "66d6d296ca7ac9117b113b8b2128815e1c297b4d6f3516ac04665bae2d2e5700",
+    "ci/native_runtime/test_native_phase_lifecycle.py": "9202adbc03494f206557b730c53ee0464ec495fe5edb05df99df211f52d80e3e",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c",
+    "docs/guard/contracts/hook-data-plane-ownership.v2.json": "7f85bd23b36b8639868e1deaea9d80f1c17f9e7f44c6044e925b66c781a42bc3",
+    "docs/guard/contracts/python-capability-ownership.v1.json": "69dee970a5d3b6db2789966539f603a97f0d0ca4aa87dc857e818161d0861267",
+    "docs/guard/rust-performance/mcp-streaming-preparation-plan.json": "7084268f5fb7066cd99dc1759d6e49d406a6fdf728d9c8ca99489308f5e7646c",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/crates/guard-command/Cargo.toml": "a620802b3b88a77613489a527df370a5bc5f84f6892fe8410ceafe0a4c16c01c",
+    "rust/crates/guard-command/src/command_option_unicode.rs": "de3e717b24abcfc95368890756f4ff196700689660584c7fb1c3ccb42d443f1d",
+    "rust/crates/guard-command/src/command_option_unicode/ranges_high.rs": "90e12eae9ba57d82006de98eea5a6a2f667e7a1ccb5abd2ad552c702feae6645",
+    "rust/crates/guard-command/src/command_option_unicode/ranges_low.rs": "f0d59a0341e8c2ec3da0e1a13586d58549930a067f0a10ebb28ca8c0cab75867",
+    "rust/crates/guard-command/src/command_specialized_unicode_tests.rs": "b4a85f185631e267b3def2ab5a87df093d7683473a647b472a3e1b2cf27f3d32",
+    "rust/crates/guard-command/src/lib.rs": "3bff209ae529dcc5c0637b3a086826878e8eb565f39b4b79c70efbc730a7dac6",
+    "rust/crates/guard-runtime/Cargo.toml": "7fde37d8b47a3d259f96880db19c39676da6a6af46f67c0718840df8a87eea7e",
+    "rust/crates/guard-runtime/src/main.rs": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8",
+    "rust/crates/guard-runtime/src/native_phase_endpoint.rs": "a209b2048b513e7207682b28afe5eaef5829a060376f33f518e9b00f225269ca",
+    "rust/crates/guard-runtime/src/native_phase_endpoint_tests.rs": "7edc2c685f33bead4f8d7ffa976df24eb413c3298558b93ac9c1a4be02a713eb",
+    "rust/crates/guard-runtime/src/native_phase_macro_tests.rs": "e7d85fcc686b319475e920719cf1aef983e2b11339dcc2194edb7a622a7dee90",
+    "rust/crates/guard-runtime/src/native_phase_observation.rs": "cb023fe9aa8e8250653d0065cf065932d99b23fde3b3c918bae73403ab4844d5",
+    "rust/crates/guard-runtime/src/native_phase_observation_tests.rs": "0d43527eeb534538c2f586f9f9b82eca81fab0eb9e539171c6a75eb93ad39d0d",
+    "rust/crates/guard-runtime/src/native_phase_sink.rs": "009a81ba6ecf42f707f48518fcd3ce2592145b884927221ef895a7d77706c94f",
+    "rust/crates/guard-runtime/src/native_phase_sink_tests.rs": "52d016f1fcafce9f4d6c0f5f54b65e569061e2046bddb44f7672ab71d9527c0b",
+    "rust/crates/guard-runtime/src/resident_client.rs": "8c973912b4c7b5be58d129f90b50c7242a2ab9709a013f7c1a22bf81588fb19b",
+    "rust/crates/guard-runtime/src/resident_transport.rs": "4424adc17785ffebd0423d008a3ad25c7a26452265e3075f63ed374a425df5be",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d",
+    "scripts/ci/native_receipt_persistence_gate.py": "6c113e3ece2352a655324d29dae3da249a3e32e2b3d72ce832332bd9527576d2",
+    "scripts/ci/python_capability_cleanup_gate.py": "0cb4a8184f21f7b330b6c1a7ec7b06c6a99b4c7215afeeab226b2a6591aa1687",
+    "scripts/ci/rsp129_workspace_lifecycle/README.md": "f58f6f9ec0d36f22ceaff3e46d2c367f96a9af6059e8601ea1262d4fb075ec7f",
+    "scripts/ci/rsp129_workspace_poststart/README.md": "dfc775feb7464677303b79874d64ca3e032ddc879a90c8dcee829f6987b783bc",
+    "scripts/ci/rsp131_sqlite_vfs/README.md": "c7036463461cb2106529cb291cdd6a3fb150c552970956c1c80106727f0bbf2b",
+    "scripts/ci/rsp131_sqlite_vfs/control.c": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb",
+    "scripts/ci/rsp131_sqlite_vfs/forward_fixture.c": "0abbdd32afa377ff3d097a72be2b8eee49198fce74676786a98998dbc7d5ede2",
+    "scripts/ci/rsp131_sqlite_vfs/guard_vfs.h": "866d7fa20466afdbe9932121b08d971d41f13c2e09b4aedf7065488290c8b9af",
+    "scripts/ci/rsp131_sqlite_vfs/io.c": "0b70933f6e6200c129ac482c775fd41b8f41d3e29d06fc3af58cbad22acd985d",
+    "scripts/ci/rsp131_sqlite_vfs/vfs.c": "d11e596bb86fb6e47e0f637d31af20ce03197dd46e50446f7762a141a7d3f0c7",
+    "scripts/ci/rust_authority_ownership_gate.py": "93767a35eb2431d096a5db4187d9600f550e9cd71499d59d1ab5dee7aa0209b4",
+    "scripts/ci/rust_io_ownership_gate.py": "2dd76b76064a2d1d08e5cbef9feff5b719ef0c7f6c54d79af348c75eae3be545",
+    "scripts/ci/rust_io_ownership_scopes.py": "bb8a7ceb63021160bd5527f90642eca271575931a593504f1025af46434f6274",
+    "scripts/ci/test_inventory.py": "fa610ce8fc26f5a9283f5d82e98b457f2f481e9c8047bdde40754f45d660287c",
+    "scripts/compare_guard_mcp_native_text.py": "8251a4519c4dc3db419f0f3bf4d875aa21437a2a93aeb712f7d20b5bfe6911b5",
+    "scripts/compare_guard_mcp_owned_preparation.py": "b2740fab984733a0fa2a567629d5b3a9f819036843e31787f167479e5eba8dcb",
+    "scripts/compare_guard_mcp_risk.py": "7de4df7178e5d34fe521fd70833fe8cc5df06be7c64f88c3431a583bbf770309",
+    "scripts/compare_guard_mcp_streaming_preparation.py": "260879e34ca94a611e5b23a6151f73306b13f480c527f703919eb7342bd93485",
+    "scripts/guard_mcp_streaming_preparation_pilot.py": "9157ad89003501b5feae4b3b5024db07d271a83315ecc805ca30c4d4edf744a2",
+    "scripts/native_slo_daemon_fixture.py": "c1d055190f0c139d6d455db91e1c7edd44e66ac68b6f0f3fdfa2005f5479f26c",
+    "scripts/native_slo_faults.py": "1cfeb0830cdfb077e43b84832ded3d857a5e355d1d00bae29b365035ba180f3b",
+    "scripts/native_slo_launcher_approval.py": "8058319d2eeb3b50378b2f694a20495a73a4c53bacd2d0cd8b9fff7224e6f304",
+    "scripts/native_slo_launcher_review.py": "e848697a93dd697b14993bcb48ea590903300a107ebc23980152914fca778c46",
+    "scripts/native_slo_mixed_server.py": "e28278beffb85da35883fd88fd4c46636860dc756b3b87cb5e147cf7b4da6449",
+    "scripts/native_slo_mixed_witness.py": "0f36dc41b1c9a9a9cd8bd349d025c6d7f298b5c341caba411555d6b492e8ea08",
+    "scripts/native_slo_rust_phase_process.py": "e08d2bea4f4fe1bf1f0a39a86ed1bb16380f03e7f7aa38b84cab96523e465682",
+    "scripts/native_slo_rust_phase_receiver.py": "6792e5bca67bc411e2937d3ac186f6d6c9577e43d47adf2f5dd9090d2f4b2685",
+    "scripts/native_slo_rust_phase_run.py": "902fb3c4a4f9b4908dce420d70f382cfb63db30d71e0c7e6329b17c4f1921a75",
+    "scripts/native_slo_rust_phase_schema.py": "9f07461f7fbc743fdb0462d4f4f5dd135aaf21ec8fa4d6534d866ba8a4f8f84b",
+    "scripts/native_slo_sqlite_vfs.py": "71da1e4f10963bf5cd580ff2e4679db4f630a3671be98c8869e1fea1644fdcd9",
+    "scripts/native_slo_sqlite_vfs_identity.py": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+    "scripts/native_slo_workspace_decision.py": "972f0c351316764ce9b1e4e67d00b5fd28a4be0cecb88db97363d276f7bf730b",
+    "scripts/native_slo_workspace_lifecycle.py": "1bca39227af2af07157450f92e28b123f60623804770b52a441ae7ebb499ecdc",
+    "scripts/native_slo_workspace_lifecycle_evidence.py": "e3028d2bc423f2d04b4140b26f853c12e049e782302a7cc949ecf2067610cd71",
+    "scripts/native_slo_workspace_poststart.py": "5479e0306e11bdfba415b9725b532fd56ce0e4f33d124a662616de5cc4f669a7",
+    "scripts/native_slo_workspace_poststart_evidence.py": "96b1bd460e1f7f05a3112861687ad97553f2573b06e68e3a74c9644087b58bab",
+    "scripts/native_slo_workspace_poststart_observation.py": "b1af548233bfa84cdc2e3bb68f2490dfd25000a9a5e5a124dfea68067f08d390",
+    "scripts/native_slo_workspace_poststart_session.py": "a09ae52d31acd62af9d6d258c46bec6502d9a3a656ceb761de8c8dbf0a618837",
+    "scripts/native_slo_workspace_request_observer.py": "c7dca27b52d990e6f65e8e35dd328cd07b2f843469087edf23d2f33d66187a7f",
+    "scripts/profile_guard_mcp_case.py": "69852fad31a9a00502125471005775277feb74d5173b9c4f3dc14c4ca12042f2",
+    "scripts/profile_guard_mcp_fixture.py": "7abb47207e15a17fe2985d6750234274cf68321828ba4d3bb22b4526e9125ac4",
+    "scripts/profile_guard_mcp_matrix.py": "cf4466575d37394482201bde0dd3aed41717faf32cd12c700f98cd70604c425e",
+    "scripts/profile_guard_mcp_session.py": "892bd20d91a931337f98c2f09619d143ac0225efa9625c650d5aa4c0c7785665",
+    "scripts/profile_guard_mcp_streaming_session.py": "edfd27c5dde28c227810bde2fd9db3f8da89101fa6907d9e13ed5bf70c09fefe",
+    "scripts/profile_guard_mcp_worker.py": "1973e68ab029628d8d8d8c959cfd96ab11d2fc7f744a6516bf06b9b0785c742f",
+    "src/codex_plugin_scanner/guard/adapters/pi.py": "b99a6784f1b03d7f3edeeddcabf29b0da2f7565937f6db6334993c2337dd75b5",
+    "src/codex_plugin_scanner/guard/adapters/pi_settings_discovery.py": "a1dab87820d8ed9a1e9c9abdcb006158063732e7a5f20aff9a3280fd7c24252f",
+    "src/codex_plugin_scanner/guard/cli/__init__.py": "22bb4b1499e0399b824723c9d7ccf54c1ad4971633282535e03d90f539d21f2a",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py": "1d56be77d1b6e30242665b69b00cb3e01544b90af355db6dfd12298959e96fc9",
+    "src/codex_plugin_scanner/guard/cli/update_driver.py": "8a1d9039ab9d4263d19ba20a946db3f3ac52537c11a84d719c6d58fc7eafd880",
+    "src/codex_plugin_scanner/guard/cli/update_execution.py": "310e5b7deeefacee2d75a9373b28e49c49a8d59224c246ccc44e566edbe94cd1",
+    "src/codex_plugin_scanner/guard/cli/update_harness_repair.py": "3c731f13a3fa022dd6e1f97bfdbbeb9a80135d7599dc177e62917e110fe7afda",
+    "src/codex_plugin_scanner/guard/cli/update_install_sources.py": "e447d26e724a9e1ea6ff7209704af17d0ef2a1545c75d0a18b0f6b329c6b9b07",
+    "src/codex_plugin_scanner/guard/cli/update_installer_commands.py": "355440d40759c26c8834b89c8acea9fe29d25a93d14319e091dd2e44c5b65467",
+    "src/codex_plugin_scanner/guard/cli/update_output.py": "fdd68294e62c8f048dd6ea098a02acc2d8838c708c7d8b4f8360dbe485dec798",
+    "src/codex_plugin_scanner/guard/cli/update_receipt_results.py": "515435b3846d4ece61591d3440718a1fd78cf86cc75ef7b650ef7e4bddd0fc19",
+    "src/codex_plugin_scanner/guard/cli/update_runtime_refresh.py": "fca1278d9737e87a884e8afc1058dd3cb8458e7f7cb6e209a61fd92dcdedf0b9",
+    "src/codex_plugin_scanner/guard/cli/update_status.py": "2a96251c383f24269470149c9242db805ca509efe332cb6d46f3f4035e7b8a36",
+    "src/codex_plugin_scanner/guard/cli/update_version_selection.py": "da3627baf1669fe54395dc78a607e5f724b6c72d5da8c89f002e77d2565a519e",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py": "9c37da166e40868c3a4f7e4bcd4db53021aa18b173a861736cfee72cd804cc2e",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py": "4a43c9d61820f02f96c485a3df2d6b3629f7dce78e71282101f674ff60c01a66",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_retry.py": "495e8d776b7d69830ea6fc4f18f5b23a905290352359f3664fac06c610f20b65",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py": "76328d2c2bde87ce341d0a4d7462fdd1e246202a6fd041bda3a8f47fb6c2122e",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py": "83e49d02059b387d5e0b366d7a9939e209f8da0f50427fd4d713285f152585dc",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py": "3d60fe7c6df6722da46f4d366a8bb35c701acca632f2e083da2d461cdce8db7a",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py": "2d4f0d8d0d135c8a761322ec5d505a688087a58ca9000f8ba5ba7ed636624761",
+    "src/codex_plugin_scanner/guard/native_command_observations.py": "841935c41667cee4fa91aa1634151d684046be8240da42e005c389e95d274a8f",
+    "src/codex_plugin_scanner/guard/native_decision_receipt.py": "75bcb1799c205d15f85092480f562af997d7451d368df77ca030ea3a15b61a48",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_acked.py": "7df24e80631db37ef7d151bab897a5ee32e554c182e91b8afd401cab05883915",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py": "9213fb01a14bed034ca26efc5c5f5d6237a46b0e27292de5079c31ed7b13398e",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py": "de7d044d9d830a4995c71599d650e06229454fe808aeb82a86e1e06e8485f020",
+    "src/codex_plugin_scanner/guard/runtime/extension_control_authority.py": "19bb41f320ab6bacca840fc8bc96c4052b0fc298129b290a494467568e5ef820",
+    "src/codex_plugin_scanner/guard/sqlite_profile.py": "3620dbe76a0504b75a837e63ccdacb8c039cba3527a3672dfd75d569a5445054",
+    "src/codex_plugin_scanner/guard/store.py": "1fe49b82841db80046092badcb72c7422c1d14d883b5d5b9f2b02584e1c09d4b",
+    "src/codex_plugin_scanner/guard/store_base.py": "7d8c849b5106032f6d050dabbd199db9a898a3d5a93d6c576ead68eca527e988",
+    "src/codex_plugin_scanner/guard/store_base_values.py": "b3a3f18c1e1165136c7f5b76fbd7552ed52f946b432d83b38e64f68a92ef6dbf",
+    "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/bundle_first_cloud.py": "613a183964249a0cde8585369ee1decfba845fb8f4102459ee519abc7ebb0f49",
+    "tests/conftest.py": "f6f3e91743daf83780dfd7d8ffb04c89d252e918e38053923ad4960a62abf8a9",
+    "tests/guard_cli_fixture_support.py": "3e3b7f675f4a5246dbf1ff464e5cdac9632de25ec9e30a921ba28370b44a5c53",
+    "tests/guard_cli_test_fixtures.py": "4643ed524c3d776ccb2a95ecd7067477f445405f2558795e369e2869998e9218",
+    "tests/guard_test_invariants.py": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608",
+    "tests/native_policy_snapshot_test_fixtures.py": "667e07f4cb1c26c147f0c6c10a664ed08793af5244422270429eae8527fad0fe",
+    "tests/native_policy_snapshot_windows_handles.py": "08a10f3afd149433374182b612110e536c3f3e26c93b2d0193e154bcdcd9b8fa",
+    "tests/native_policy_snapshot_windows_storage.py": "461bd10351d3ce01d564bcefe1912cd1a446ccaef1beb44e65daf4c130d030eb",
+    "tests/native_pretool_support.py": "70863a8a1f220b59bc041189e9ca5a66fa0efb50d4fce2188d468ac65357596e",
+    "tests/native_review_approval_support.py": "8d4259dd04f49d8270a4a7a1f41f17029dac07abd6b0863ebe5d194d43d99edf",
+    "tests/native_slo_approval_support.py": "85b706e336724b01eb20bee1640d2bb5b31cf3ef9a0c0c22e421ebe26885b012",
+    "tests/native_slo_rust_phase_test_support.py": "da1ba39737eb08a87568ff97c1864a1db2c410b4716d243064d4df8bf379b108",
+    "tests/native_workspace_request_fixtures.py": "31f8bfaeb05cfea79f4b607ab8fd57b8c9625b459ecbd43164eef6483dfc8174",
+    "tests/pi_adapter_identity_cases.py": "ee6c17003f5430c332d127b156183e5db59b87be358bc28682e3324fd7682d37",
+    "tests/pi_adapter_install_cases.py": "48ae7a215dc14a128e8d4889594e24d1a47d40ca008fc42514a6c701acbeac8e",
+    "tests/pi_adapter_runtime_cases.py": "9e23571f39361d57cb603a653a2f8ac0d917fbea0d1d40572757d51d609b18b4",
+    "tests/test_dashboard_update.py": "9be7af946479e135b185e8e76c91cfbd6df59d8f547d4897405b9478ed60de23",
+    "tests/test_guard_cli_17_update_driver.py": "03c728213c49d8f99b8c481ca3dcdd3cd145a1bcff5dd73e0ef6e949d70beb5e",
+    "tests/test_guard_cli_18_update_codex_integrity.py": "db58ddf839f1662e88c79b9a66710cf3c1497f6ca39c5a56f6d14ffe5570a760",
+    "tests/test_guard_cli_19_update_codex_config.py": "0d138f8f6f6d6fba80dc0b42241308972be8aa62f588e4a33f16f27ab1fd3a90",
+    "tests/test_guard_cli_20_update_codex_workspace.py": "93391688ba5877f4c2800656685d4e98a4ccbebc4e477215341c7ad4b5e513aa",
+    "tests/test_guard_cli_28_update_output.py": "c526cdceb11b2f7545e3f1ed7d2f736f60b6fa99bde6ee8ddce4b89327a70844",
+    "tests/test_guard_command_executors_update.py": "82fadd688ccab80902e02ba042f4c053b65dc053de665e98b5796958de88e368",
+    "tests/test_guard_evidence_failure_diagnostics.py": "992a739608e6ce36cabc26c1d3fec642d8e6a131853cc13f75c86716527ea8c3",
+    "tests/test_guard_install_workspace.py": "332e8836d4e69ca7bd1f1b2604a95e5534ff764e850107561d5b5dbe5c999312",
+    "tests/test_guard_phase03_local_install.py": "2f9f4e4bc542647e7c61771774beef2eb3aac2f29d688a24df7653e2f1f07261",
+    "tests/test_guard_phase03_remainder.py": "d51c1278aec9e5d220a7407c1cf309f73ffbf56cbdee99f41c2c29f013c8f480",
+    "tests/test_guard_runtime_hook_evidence_operations.py": "72da754f8bb98c0bdcdf0b68e2e526b8fc8383ba4a5d5e06bdd33e4bbc9f255e",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py": "1722450f6b48dc7802bed84a5c6c7d30a5be415d772db49ac55e81442596ccff",
+    "tests/test_guard_store_base_partition.py": "6fb0fdca99cba2053cf1f326b5bb882bdf00edc95db05f4d24c882c6b0dc45cc",
+    "tests/test_guard_update_daemon_external_owner.py": "b3ab58797d4599eeedfd72405652b095c19b275f0a5cfb65a53cdb1d3314e084",
+    "tests/test_guard_update_daemon_handoff.py": "2ade124ad6947a0e4bb8b94c776acc3bd2749865e668236fb9a9e827253ee51d",
+    "tests/test_guard_update_install_verify.py": "8714a0bd3fef26214062289ef5baff7eb63b18de650ae51191a58a87b6abe1fa",
+    "tests/test_guard_update_isolation.py": "06b7f10be8acb60294044c6b99a52e02ecefd42207d582543f9d39315a1f5400",
+    "tests/test_guard_update_partition.py": "146001bf583dd8b22e9d532fce4e0fa9011e74eea0a57e8706542c4a9dca67df",
+    "tests/test_mcp_native_text_comparison.py": "259e03fa51880e2a73d5881799deec303dab946ca09b5064cb347ed01bf3f1f3",
+    "tests/test_mcp_profile_fixture_dispatch.py": "3a3d9288b466eae9665949ef5c39b59fc8f88ee4df529f717257088e8acbbea3",
+    "tests/test_mcp_streaming_preparation_collector.py": "58510e93c35f010506dfa43d0c6888ace0d1475e7fade31db36bad49b12f6c59",
+    "tests/test_native_command_observations.py": "0b0bd244a4d15f497d116b969487bbd1c5f4bc6b8041400c57de646787bc19ba",
+    "tests/test_native_decision_receipt.py": "36cffa5ccff1f7c6ff42c0e2b91f439a2a038e3010655b6f97f24d15cad3f6af",
+    "tests/test_native_policy_publisher_input_capture.py": "ab2ee991ad07f5b7ac33906a86f710fc67ef03ed673dd6ec3e88ad62fed2475f",
+    "tests/test_native_policy_snapshot_contract.py": "079aae6b8a861323febdcab1398f471bc0e1d295c9c48e38afb6b3e39fd69039",
+    "tests/test_native_policy_snapshot_persistence.py": "8a5b015ca251eaae173fef16fd627295536bea0ffc0a9d735d662f2f2d85fd27",
+    "tests/test_native_policy_snapshot_publisher.py": "05113c48b8eca3540425dfee10c4e31767bc9e86f2c19ff956ad21fe73efaf5b",
+    "tests/test_native_policy_snapshot_v3_publisher.py": "7b0cca1c64bedaf9b4050edf957491ab648d34d469c6432f9ba980ac748d0a80",
+    "tests/test_native_policy_snapshot_windows.py": "2496efc1ee8b8f89ffbd607d8a1d034cb56d9b865bd0aabf925e7e04904c61a0",
+    "tests/test_native_pretool_generic.py": "7d87814d60599ee209b0cfb7e9b8caff62db8a6b1dc44d77886b46784d9b3269",
+    "tests/test_native_receipt_submission_delegate_gate.py": "8f1c9d9116567c38bb2ef5dfa302add0953b4001983c13ff633fb4f3c67370b5",
+    "tests/test_native_review_approval_atomic_consumption.py": "6c04c26259bf68e083ca979e38ab9c0f9fe5e6a7bf3c87f9655f1bad0976ced1",
+    "tests/test_native_review_approval_coordination.py": "b1682495442c1fce13ceb3af08eb7125f1f9fbede85d663d16f3edea28daaf9b",
+    "tests/test_native_review_policy_binding.py": "49300eec2cf2edca427b7dece619ed273c3bbf83c58ed4803bc06fa460c1829f",
+    "tests/test_native_slo_approval_fault_fixture.py": "42537571dd0b160198a2bca7873fb1564e1f499d21bf4964b35b375b11e24985",
+    "tests/test_native_slo_daemon_mixed_dispatch.py": "0cb14c8cdc6d2718253b9146d25a8f72319048d892688aecb90ea81d638581a5",
+    "tests/test_native_slo_faults.py": "6d90aa1665793cab6149017a8154943cf9cb7c2313f7d085f51e134cc8da8327",
+    "tests/test_native_slo_launcher_approval.py": "59c49efe169a858b284a748e3ef06099a9c61eb57d6be9e72145bfdebb62f7d4",
+    "tests/test_native_slo_launcher_empty_approval.py": "e959b8576efa5b555d7f21e533dbf2ffffa53503500db363385bddf78003d068",
+    "tests/test_native_slo_mixed_controls.py": "cac09f39aeea07ce388749a28aa1a864f421ec75262db8b71d980e072d917f91",
+    "tests/test_native_slo_mixed_witness.py": "e1ded511f1ee9a65411c8db48834a55f37041a44c1a9ef6a94a9089149355c43",
+    "tests/test_native_slo_rust_phase_receiver.py": "38d91dc364e33d4eadaa64529b4f4350c721c842ce1e5857a86f069434ca66e1",
+    "tests/test_native_slo_rust_phase_run.py": "cf9de5bfa3a72c505e0a1608caa9935a4436dfbc4e940f314af211f46b1f6d3b",
+    "tests/test_native_slo_rust_phase_schema.py": "9022b3f56da60e5099e74c88ef657ebde0ef662c30091c19f3a1bab88e420597",
+    "tests/test_native_slo_rust_phase_sender.py": "aad5d9ffabf1cc7b3fe0faed5df850b11fd336c1bf0fd368135021e593476469",
+    "tests/test_native_slo_sqlite_vfs.py": "6a0dbf0e6bdbd90662ba8f9698c91348d042ef5d87159f4ed2450ad31fb87714",
+    "tests/test_native_slo_workspace_decision.py": "b26bc5e58093f4b4fa6d366eab30ff7350485a485b013af6a5b0d83783aed919",
+    "tests/test_native_slo_workspace_poststart_evidence.py": "03c374870f9faebc1ba9b4ead45e57d3bab445673f8159bc563e3b10033c5bca",
+    "tests/test_native_slo_workspace_poststart_session.py": "ff70ec790b7aab55963224e403c08bbb6312dd366b5219709ca6042061ed6505",
+    "tests/test_native_slo_workspace_request_lifecycle.py": "ae92d00bbf5afe31227ea939be0ef622a2faa0d31893bb027b458d09a55e678a",
+    "tests/test_native_slo_workspace_request_observer.py": "d92017d513f5bce918ab879a92ff737bbce601623c859fae3f7f63c1c26292f2",
+    "tests/test_pi_adapter.py": "dacef53dbeb23331ce70ed67c552496883974561e516145b5666cf978e6b93b0",
+    "tests/test_pi_adapter_partition.py": "5596416662ee5c3af579fc780950bf43ee533195747f07e48da4e1088c6cab0b",
+    "tests/test_pi_omp_extension_ownership.py": "b8f4fc6e19fd859ba90659d7f0960747b57035c0256588327fb566ef729ccb19",
+    "tests/test_python_capability_cleanup_gate.py": "0e9008c4f699476b49b3a245be0e64fd883b8f2573fa675396f9b2f4a3e98c24",
+    "tests/test_rust_io_ownership_gate.py": "0a6ae9d823ee5df73249817eb25f7836832c46e524a69259b031a40e8a10ea80",
+    "tests/test_rust_pretool_authority_worker.py": "79af9a8b70d1d4723b3fc7b8b81121dbd78a556edf01118996e2c09cd81ac499",
+    "tests/test_store_native_review_approvals_security.py": "521b1855ec0d1bc74c297f2d306710511504164e109e2ff2a9edd8540f30d058",
+    "tests/test_update_grok_repair.py": "feb4c816abdc6bda698ebb88f6f46d0e2714acdc8ccd676290f1fa5ec3f0c28e",
+    "tests/test_update_installer_kind_security.py": "c570a1a3313455c08cee1da230f0540206a98e8924d33c2ab0fd5cbe8e2f5775",
+    "tests/test_update_pi_family_repair.py": "5d62055c1ed41162734d9e696f0cc51c92b2930c1c664a1ae03f6e938a7154df",
+    "tests/test_update_release_channels.py": "630671428f1307fb41032cc50500c6f4f4d4fe631c7483150713d6064227db61",
+    "tests/update_context_test_support.py": "c414b589df9731e3c21d7cfb95fe4180b06b69d88e6d3217c96748f9b13232b2",
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "fixed_files": {
+    "uv.lock": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78",
+    "pyproject.toml": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    ".gitleaksignore": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+    "conftest.py": "3ac8ab46db9c4a9b7d448c0bd4574685c0189624e72a5d1a87346e7c751fba6c",
+    "tests/conftest.py": "f6f3e91743daf83780dfd7d8ffb04c89d252e918e38053923ad4960a62abf8a9",
+    "tests/guard_test_invariants.py": "c19a162c894620e3a460d7744abdcc7cc3d1ed3b736b0ae1f18e6be240a10608",
+    "rust/Cargo.lock": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust/rust-toolchain.toml": "980c9752cb40dca3265ce4e3e31de1c369b469c9837be059b806ea93fe76799d"
+  },
+  "python_version": "3.12.13",
+  "uv_version": "0.9.26",
+  "installed_versions": {
+    "annotated-types": "0.7.0",
+    "anyio": "4.14.2",
+    "attrs": "26.1.0",
+    "basedpyright": "1.39.8",
+    "build": "1.5.0",
+    "certifi": "2026.2.25",
+    "cffi": "2.0.0",
+    "charset-normalizer": "3.4.7",
+    "click": "8.4.1",
+    "coverage": "7.13.5",
+    "cryptography": "50.0.0",
+    "h11": "0.16.0",
+    "hol-guard": "3.0.1",
+    "httpcore": "1.0.9",
+    "httpx": "0.28.1",
+    "httpx-sse": "0.4.3",
+    "idna": "3.15",
+    "importlib-metadata": "8.9.0",
+    "iniconfig": "2.3.0",
+    "jaraco-classes": "3.4.0",
+    "jaraco-context": "6.1.2",
+    "jaraco-functools": "4.4.0",
+    "jeepney": "0.9.0",
+    "jsonschema": "4.26.0",
+    "jsonschema-specifications": "2025.9.1",
+    "keyring": "25.7.0",
+    "libcst": "1.9.0",
+    "linkify-it-py": "2.1.0",
+    "markdown-it-py": "4.0.0",
+    "mcp": "1.28.1",
+    "mdit-py-plugins": "0.5.0",
+    "mdurl": "0.1.2",
+    "more-itertools": "11.0.1",
+    "mutmut": "3.7.0",
+    "nodejs-wheel-binaries": "24.16.0",
+    "packaging": "26.0",
+    "platformdirs": "4.9.4",
+    "pluggy": "1.6.0",
+    "psutil": "7.2.2",
+    "publicsuffixlist": "1.0.2.20260726",
+    "pycparser": "3.0",
+    "pydantic": "2.12.5",
+    "pydantic-core": "2.41.5",
+    "pydantic-settings": "2.14.1",
+    "pygments": "2.20.0",
+    "pyjwt": "2.13.0",
+    "pyproject-hooks": "1.2.0",
+    "pytest": "9.0.3",
+    "pytest-cov": "7.1.0",
+    "python-dotenv": "1.2.2",
+    "python-multipart": "0.0.32",
+    "pyyaml": "6.0.3",
+    "referencing": "0.37.0",
+    "regex": "2026.4.4",
+    "requests": "2.33.1",
+    "rich": "14.2.0",
+    "rpds-py": "0.30.0",
+    "ruff": "0.15.17",
+    "secretstorage": "3.5.0",
+    "setproctitle": "1.3.7",
+    "sse-starlette": "3.4.4",
+    "starlette": "1.3.1",
+    "textual": "7.5.0",
+    "typing-extensions": "4.15.0",
+    "typing-inspection": "0.4.2",
+    "uc-micro-py": "2.0.0",
+    "urllib3": "2.7.0",
+    "uvicorn": "0.40.0",
+    "zipp": "3.23.0"
+  },
+  "rust_toolchain": "1.88.0",
+  "rust_host": "x86_64-unknown-linux-gnu",
+  "project_version": "3.0.1",
+  "gitleaks_ignore_sha256": "df1a4658a41de5c4081b2e2fd7037e7accb4dfa0275a7617b3918fadc36510a0",
+  "gitleaks_ignore_entries": 152,
+  "python_source_paths": [
+    "scripts/profile_guard_mcp_streaming_session.py",
+    "tests/test_guard_store_base_partition.py",
+    "tests/test_pi_omp_extension_ownership.py",
+    "tests/test_mcp_streaming_preparation_collector.py",
+    "scripts/profile_guard_mcp_case.py",
+    "scripts/profile_guard_mcp_session.py",
+    "scripts/compare_guard_mcp_native_text.py",
+    "scripts/ci/rust_io_ownership_gate.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+    "tests/test_native_review_approval_atomic_consumption.py",
+    "tests/test_store_native_review_approvals_security.py",
+    "tests/test_mcp_profile_fixture_dispatch.py",
+    "tests/test_native_policy_publisher_input_capture.py",
+    "tests/test_mcp_native_text_comparison.py",
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "tests/test_guard_runtime_hook_evidence_operations.py",
+    "tests/test_guard_runtime_hook_evidence_queue_observation.py",
+    "tests/test_native_receipt_submission_delegate_gate.py",
+    "tests/test_native_slo_sqlite_vfs.py",
+    "tests/test_python_capability_cleanup_gate.py",
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py",
+    "tests/native_slo_rust_phase_test_support.py",
+    "tests/test_native_slo_rust_phase_schema.py",
+    "tests/test_native_slo_rust_phase_receiver.py",
+    "tests/test_native_slo_rust_phase_run.py",
+    "ci/native_runtime/native_phase_lifecycle_support.py",
+    "ci/native_runtime/test_native_phase_lifecycle.py",
+    "tests/test_native_slo_rust_phase_sender.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+    "tests/test_native_slo_daemon_mixed_dispatch.py",
+    "scripts/native_slo_workspace_decision.py",
+    "scripts/native_slo_workspace_request_observer.py",
+    "tests/native_workspace_request_fixtures.py",
+    "tests/test_native_slo_workspace_decision.py",
+    "tests/test_native_slo_workspace_request_lifecycle.py",
+    "tests/test_native_slo_workspace_request_observer.py",
+    "src/codex_plugin_scanner/guard/adapters/pi.py",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "src/codex_plugin_scanner/guard/store_base.py",
+    "src/codex_plugin_scanner/guard/store_base_values.py",
+    "tests/native_review_approval_support.py",
+    "tests/test_guard_install_workspace.py",
+    "tests/test_native_review_policy_binding.py",
+    "tests/test_pi_adapter.py",
+    "tests/test_rust_pretool_authority_worker.py",
+    "scripts/compare_guard_mcp_owned_preparation.py",
+    "scripts/compare_guard_mcp_streaming_preparation.py",
+    "scripts/profile_guard_mcp_fixture.py",
+    "scripts/profile_guard_mcp_matrix.py",
+    "scripts/profile_guard_mcp_worker.py",
+    "scripts/ci/test_inventory.py",
+    "tests/conftest.py",
+    "ci/__init__.py",
+    "scripts/ci/rust_io_ownership_scopes.py",
+    "tests/test_rust_io_ownership_gate.py",
+    "tests/test_native_pretool_generic.py",
+    "tests/native_pretool_support.py",
+    "tests/test_native_slo_launcher_approval.py",
+    "tests/test_native_slo_launcher_empty_approval.py",
+    "tests/test_native_slo_faults.py",
+    "tests/native_slo_approval_support.py",
+    "scripts/native_slo_workspace_poststart_evidence.py",
+    "scripts/native_slo_workspace_poststart_observation.py",
+    "scripts/native_slo_workspace_poststart_session.py",
+    "scripts/native_slo_workspace_poststart.py",
+    "src/codex_plugin_scanner/guard/adapters/pi_settings_discovery.py",
+    "src/codex_plugin_scanner/guard/cli/update_driver.py",
+    "src/codex_plugin_scanner/guard/cli/update_execution.py",
+    "src/codex_plugin_scanner/guard/cli/update_harness_repair.py",
+    "src/codex_plugin_scanner/guard/cli/update_install_sources.py",
+    "src/codex_plugin_scanner/guard/cli/update_installer_commands.py",
+    "src/codex_plugin_scanner/guard/cli/update_output.py",
+    "src/codex_plugin_scanner/guard/cli/update_receipt_results.py",
+    "src/codex_plugin_scanner/guard/cli/update_runtime_refresh.py",
+    "src/codex_plugin_scanner/guard/cli/update_status.py",
+    "src/codex_plugin_scanner/guard/cli/update_version_selection.py",
+    "tests/pi_adapter_identity_cases.py",
+    "tests/pi_adapter_install_cases.py",
+    "tests/pi_adapter_runtime_cases.py",
+    "tests/test_guard_update_partition.py",
+    "tests/test_native_slo_workspace_poststart_evidence.py",
+    "tests/test_native_slo_workspace_poststart_session.py",
+    "tests/test_pi_adapter_partition.py"
+  ],
+  "python_production_paths": [
+    "scripts/profile_guard_mcp_streaming_session.py",
+    "scripts/profile_guard_mcp_case.py",
+    "scripts/profile_guard_mcp_session.py",
+    "scripts/compare_guard_mcp_native_text.py",
+    "scripts/ci/rust_io_ownership_gate.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+    "scripts/ci/native_receipt_persistence_gate.py",
+    "scripts/native_slo_mixed_server.py",
+    "scripts/native_slo_mixed_witness.py",
+    "scripts/native_slo_sqlite_vfs_identity.py",
+    "scripts/native_slo_sqlite_vfs.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_queue_observation.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+    "scripts/native_slo_daemon_fixture.py",
+    "scripts/native_slo_rust_phase_schema.py",
+    "scripts/native_slo_rust_phase_process.py",
+    "scripts/native_slo_rust_phase_receiver.py",
+    "scripts/native_slo_rust_phase_run.py",
+    "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+    "scripts/native_slo_workspace_decision.py",
+    "scripts/native_slo_workspace_request_observer.py",
+    "src/codex_plugin_scanner/guard/adapters/pi.py",
+    "src/codex_plugin_scanner/guard/cli/update_commands.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_binding.py",
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "src/codex_plugin_scanner/guard/store_base.py",
+    "src/codex_plugin_scanner/guard/store_base_values.py",
+    "scripts/compare_guard_mcp_owned_preparation.py",
+    "scripts/compare_guard_mcp_streaming_preparation.py",
+    "scripts/profile_guard_mcp_fixture.py",
+    "scripts/profile_guard_mcp_matrix.py",
+    "scripts/profile_guard_mcp_worker.py",
+    "scripts/ci/test_inventory.py",
+    "scripts/ci/rust_io_ownership_scopes.py",
+    "scripts/native_slo_workspace_poststart_evidence.py",
+    "scripts/native_slo_workspace_poststart_observation.py",
+    "scripts/native_slo_workspace_poststart_session.py",
+    "scripts/native_slo_workspace_poststart.py",
+    "src/codex_plugin_scanner/guard/adapters/pi_settings_discovery.py",
+    "src/codex_plugin_scanner/guard/cli/update_driver.py",
+    "src/codex_plugin_scanner/guard/cli/update_execution.py",
+    "src/codex_plugin_scanner/guard/cli/update_harness_repair.py",
+    "src/codex_plugin_scanner/guard/cli/update_install_sources.py",
+    "src/codex_plugin_scanner/guard/cli/update_installer_commands.py",
+    "src/codex_plugin_scanner/guard/cli/update_output.py",
+    "src/codex_plugin_scanner/guard/cli/update_receipt_results.py",
+    "src/codex_plugin_scanner/guard/cli/update_runtime_refresh.py",
+    "src/codex_plugin_scanner/guard/cli/update_status.py",
+    "src/codex_plugin_scanner/guard/cli/update_version_selection.py"
+  ],
+  "python_cohorts": [
+    {
+      "name": "python",
+      "selectors": [
+        "tests/test_dashboard_update.py",
+        "tests/test_guard_cli_17_update_driver.py",
+        "tests/test_guard_cli_18_update_codex_integrity.py",
+        "tests/test_guard_cli_19_update_codex_config.py",
+        "tests/test_guard_cli_20_update_codex_workspace.py",
+        "tests/test_guard_cli_28_update_output.py",
+        "tests/test_guard_command_executors_update.py",
+        "tests/test_guard_phase03_local_install.py",
+        "tests/test_guard_phase03_remainder.py",
+        "tests/test_guard_update_daemon_external_owner.py",
+        "tests/test_guard_update_daemon_handoff.py",
+        "tests/test_guard_update_install_verify.py",
+        "tests/test_guard_update_isolation.py",
+        "tests/test_update_grok_repair.py",
+        "tests/test_update_installer_kind_security.py",
+        "tests/test_update_pi_family_repair.py",
+        "tests/test_update_release_channels.py",
+        "tests/test_guard_update_partition.py",
+        "tests/test_pi_adapter.py",
+        "tests/test_pi_adapter_partition.py",
+        "tests/test_pi_omp_extension_ownership.py"
+      ],
+      "selection_counts": [
+        {
+          "selector": "tests/test_dashboard_update.py::test_build_guard_update_status_payload_shape",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_installer_kind_uses_authenticated_runtime_path_when_prefix_isolated",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_installer_kind_rejects_unmarked_runtime_path",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_update_status_recovers_pipx_authority_from_isolated_daemon_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_update_status_uses_persisted_alpha_channel",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_status_route",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_schedule_route",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_alpha_update_channel_persists_and_schedules_alpha",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_alpha_update_channel_requires_and_accepts_approval_proof",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_schedule_rejects_non_updatable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_schedule_guard_dashboard_update_spawns_runner",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_schedule_guard_dashboard_update_allows_only_one_concurrent_installer",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_schedule_guard_dashboard_update_does_not_recreate_lock_after_fast_child",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_lock_can_only_be_claimed_and_cleared_by_its_token",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_schedule_guard_dashboard_update_clears_reservation_when_spawn_fails",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_stale_window_exceeds_two_ten_minute_attempts",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_reclaims_lock_for_dead_runner",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_windows_pid_probe_never_uses_os_kill",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_runner_command_avoids_module_shadowing_from_cwd",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_runner_env_ignores_inherited_pythonpath",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_runner_log_is_private_and_truncated_for_each_attempt",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_runner_bootstrap_ignores_project_import_hooks_and_uses_guard_owned_cwd",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_real_runner_imports_with_no_site_and_explicit_trusted_paths",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_merge_dashboard_update_progress_includes_lock_metadata",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_merge_dashboard_update_progress_fail_closes_for_fresh_partial_lock",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_preserves_state_for_trusted_successful_restart",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_accepts_verified_retained_newer_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_blocks_install_when_daemon_retirement_is_unproven",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_exit_zero_requires_embedded_daemon_restart",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_missing_embedded_restart_uses_legacy_only_after_isolated_failure",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_failure_stderr_never_renders_payload_details",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_dashboard_update_runner_failure_uses_availability_fallback_only_after_isolated_failure",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_status_payload_exposes_recovery_for_local_folder_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_status_payload_blocks_python_incompatible_latest_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_status_payload_hides_recovery_for_editable_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_status_payload_hides_auto_update_for_local_wheel_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_status_payload_hides_auto_update_for_missing_local_wheel_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_schedules_recovery_reinstall_for_local_folder",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_recovery_reinstall_rejected_for_editable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_daemon_update_recovery_reinstall_rejected_when_python_incompatible",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_runner_command_appends_force_pypi_reinstall_flag",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_merge_dashboard_update_outcome_suppresses_repeat_update_button",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_dashboard_update.py::test_merge_dashboard_update_outcome_clears_when_install_is_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_runs_pip_upgrade_in_current_environment",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_uses_pipx_when_running_from_pipx",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_pins_detected_stable_release_from_uv_canary",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_marks_already_current_pipx_runs_as_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_treats_first_install_as_updated_when_only_dependencies_are_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_dry_run_emits_planned_command",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_dry_run_skips_guard_store_init",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_skips_editable_installs",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_ignores_malformed_guard_config",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_ignores_guard_store_failures",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_17_update_driver.py::TestGuardCli::test_guard_update_forwards_requested_wheel",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_18_update_codex_integrity.py::TestGuardCli::test_guard_update_repairs_stale_codex_native_hooks",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_18_update_codex_integrity.py::TestGuardCli::test_guard_update_repairs_authenticated_codex_hook_tampering_despite_shape_match",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_18_update_codex_integrity.py::TestGuardCli::test_guard_update_refuses_to_replace_altered_codex_identity_record",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_18_update_codex_integrity.py::TestGuardCli::test_guard_update_does_not_reauthenticate_same_version_tampered_packaged_hook",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_repairs_missing_codex_config_for_managed_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_repairs_workspace_codex_install_in_recorded_workspace",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_fails_closed_on_malformed_codex_config",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_does_not_adopt_unmanaged_codex_config",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_reports_malformed_codex_hooks_without_crashing",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_19_update_codex_config.py::TestGuardCli::test_guard_update_reports_codex_repair_write_failures",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_20_update_codex_workspace.py::TestGuardCli::test_guard_update_repairs_codex_when_managed_install_lookup_fails",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_20_update_codex_workspace.py::TestGuardCli::test_guard_update_does_not_infer_codex_repair_workspace_from_caller_cwd",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_20_update_codex_workspace.py::TestGuardCli::test_guard_update_does_not_adopt_empty_caller_workspace_during_backup_repair",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_28_update_output.py::TestGuardCli::test_guard_update_human_output_uses_notes_instead_of_stderr_for_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_28_update_output.py::TestGuardCli::test_guard_update_failed_output_keeps_stdout_details",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_cli_28_update_output.py::TestGuardCli::test_guard_update_deferred_output_keeps_propagation_detail_calm",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAppUpdateOperations::test_update_operations_in_app_operations",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAppUpdateOperations::test_update_check_returns_status_payload",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAppUpdateOperations::test_update_calls_run_guard_update",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAppUpdateOperations::test_update_handles_failure_exit_code",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAppUpdateOperations::test_unsupported_app_operation_returns_failure",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::test_cloud_audit_rejects_workspace_override_outside_active_context",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::test_cloud_audit_accepts_relative_active_workspace_without_approval",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::test_cloud_audit_executes_relative_dot_in_active_workspace",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAutoUpdateThrottle::test_auto_update_skipped_within_throttle_window",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAutoUpdateThrottle::test_auto_update_runs_after_throttle_window",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAutoUpdateThrottle::test_auto_update_skipped_when_not_auto_updatable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAutoUpdateThrottle::test_auto_update_skipped_when_no_update_available",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_command_executors_update.py::TestAutoUpdateThrottle::test_auto_update_handles_malformed_state",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_extension_control_authority_blocks_only_downgrades_after_enrollment",
+          "expected_cases": 6
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_blocks_protected_authority_downgrade_before_installer_execution",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_after_update_uses_fresh_interpreter",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_bootstrap_loads_script_from_installed_module",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_after_update_skips_when_daemon_is_not_running",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_retains_verified_newer_desktop_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_restarts_runtime_older_than_installed_target",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_does_not_trust_newer_state_when_live_identity_differs",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_falls_back_when_authenticated_host_is_malformed",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_falls_back_for_incomplete_or_incompatible_identity",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_authorizes_breakaway_only_for_restart_child",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_rejects_unverified_runtime_handoff",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_script_retries_a_retirement_timeout",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_daemon_refresh_failure_runs_contained_cleanup_without_breakaway",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_failure_redacts_output_and_returns_retry_command",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_defers_when_latest_release_is_still_propagating",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_retries_release_that_appears_during_index_propagation",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_recovers_from_broken_pipx_launcher_with_trusted_python",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_preserves_requested_wheel_during_broken_pipx_recovery",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_does_not_defer_local_wheel_failure_as_registry_propagation",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_does_not_hide_registry_auth_failure_as_propagation",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_binary_diagnostics_accepts_same_environment_script",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_binary_diagnostics_keeps_venv_script_dir_without_resolving_python",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_binary_diagnostics_uses_python_scripts_dir",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_binary_diagnostics_treats_pipx_shim_as_healthy",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_uses_real_pipx_binary_when_guard_package_shims_are_installed",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_build_guard_install_surface_payload_stays_local",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_version_check_reports_python_incompatible_latest_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_latest_version_python_requirements_uses_all_non_yanked_files",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_version_check_targets_newer_compatible_release_when_pypi_latest_is_incompatible",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_blocks_python_incompatible_latest_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_requested_local_wheel_bypasses_python_incompatible_latest_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_skips_existing_local_source_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_repairs_missing_pipx_local_source_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_nonzero_pipx_result_even_when_version_changed",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_repairs_missing_pip_local_source_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_skips_pypi_recovery_when_missing_local_source_is_newer_than_pypi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_skips_existing_local_wheel_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_installs_requested_local_wheel_with_pipx",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_requested_local_wheel_does_not_report_stale_against_pypi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_requested_same_version_local_wheel_reports_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_installs_requested_local_wheel_from_editable_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_resolves_requested_wheel_from_directory",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_resolves_requested_wheel_from_directory_by_version_first",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_missing_wheel_directory",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_unresolvable_requested_wheel_path",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_unreadable_wheel_directory",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_non_hol_guard_wheel",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_rejects_non_regular_hol_guard_wheel_path",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_accepts_uppercase_hol_guard_wheel",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_resolves_uppercase_hol_guard_wheel_from_directory",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_does_not_skip_existing_local_non_wheel_archive",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_skips_missing_local_wheel_until_new_wheel_is_supplied",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_local_wheel_receipt_restores_original_source_after_private_staging_cleanup",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_local_wheel_staging_cleanup_requires_exact_installed_pep610_binding",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_local_wheel_staging_is_retained_when_installed_pep610_binding_mismatches",
+          "expected_cases": 3
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_status_handles_unresolvable_local_wheel_path",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_local_archive_install_payload_preserves_file_url_authority",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_public_direct_url_strips_credentials_query_and_fragment",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_relative_direct_url_metadata_never_adopts_caller_cwd",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_marks_partial_pypi_repair_as_stale",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_does_not_sync_dashboard_assets_from_caller_checkout",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_refresh_package_shims_after_update_uses_fresh_python_process",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_records_package_shim_refresh_after_successful_update",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_keeps_success_when_package_shim_refresh_warns",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_fails_closed_when_required_same_context_daemon_refresh_fails",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_succeeds_when_verified_newer_desktop_runtime_is_retained",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_does_not_replace_artifacts_owned_by_newer_desktop_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_current_update_does_not_repair_artifacts_owned_by_newer_desktop_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_repairs_stable_artifacts_from_final_daemon_ownership_decision",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_repairs_stable_artifacts_before_reporting_daemon_refresh_failure",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_required_daemon_refresh_failure_never_deletes_unreceipted_local_wheel_staging",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_skips_package_shim_refresh_for_stale_no_change",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_marks_pinned_pipx_install_as_stale_when_version_does_not_change",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_reports_blocked_when_force_install_hits_dependency_conflict",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_installs_detected_pipx_release_directly",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_switches_git_install_to_pypi_when_release_is_newer",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_marks_git_install_stale_when_pypi_upgrade_leaves_old_version",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_update_reports_current_after_successful_pypi_repair_when_post_check_fails",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_install_aliases_resolve_to_native_contracts",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_managed_install_is_idempotent_and_uninstall_tracks_guard_owned_state",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_approval_open_repairs_stale_local_url",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_approval_open_repairs_ipv6_local_url",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_local_install.py::test_approval_open_preserves_malformed_url",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_is_skipped_when_managed_policy_owns_updates",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_is_skipped_when_managed_policy_is_invalid",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_detects_uv_tool_install_and_pins_latest_version",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_alpha_pins_latest_alpha_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_command_allows_prerelease_for_alpha_pins",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_latest_alpha_version_selects_newest_alpha_across_majors_and_skips_yanked",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_alpha_python_fallback_stays_on_alpha_channel",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_version_check_marks_stale_local_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_version_check_treats_stable_release_newer_than_prerelease",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_version_check_handles_latest_lookup_failure",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_update_version_check_reports_invalid_current_version_as_unavailable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_latest_version_lookup_uses_practical_timeout",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_latest_version_lookup_rejects_oversized_response",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_version_lookup_uses_captured_update_network_policy",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_bounded_version_read_enforces_total_deadline",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_latest_version_lookup_handles_truncated_response",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_install_setup_listing_detects_safe_config_without_mutating_it",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_reports_partial_setup_for_found_unprotected_harness",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_does_not_mark_harness_command_presence_as_guard_active",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_codex_doctor_marks_partial_native_hook_install_as_broken",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_treats_guard_launcher_shim_as_active_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_marks_guard_launcher_shim_without_harness_command_broken",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_ignores_non_utf8_guard_launcher_shim",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_recognizes_legacy_guard_launcher_shim",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_treats_guard_command_artifact_as_managed",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_doctor_keeps_active_setup_status_for_runtime_probe_timeout",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_install_native_contract_output_prefers_native_hooks_for_supported_harnesses",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_success_status_treats_uv_pin_noop_as_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_phase03_remainder.py::test_success_status_marks_equal_versions_current_without_installer_hints",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_retained_newer_runtime_payload_keeps_only_newer_verified_daemon",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_retained_desktop_owner_payload_gates_on_minimum_version",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_daemon_refresh_outcome_succeeded_classifies_every_status",
+          "expected_cases": 10
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_refresh_script_keeps_desktop_daemon_when_retirement_never_completes",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_refresh_script_falls_back_to_desktop_daemon_mid_fight",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_refresh_prefers_live_desktop_daemon_without_running_the_refresh_script",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_daemon_source_is_desktop_core_recognizes_every_desktop_shape",
+          "expected_cases": 20
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_external_owner.py::test_bundled_linux_core_source_is_available_when_executable_exists",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_handoff.py::test_refresh_script_adapts_to_new_manager_signature",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_handoff.py::test_refresh_script_keeps_verified_daemon_when_locator_publish_fails",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_handoff.py::test_refresh_script_converges_when_supervisor_respawns_daemon",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_handoff.py::test_refresh_script_preserves_legacy_manager_signature",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_daemon_handoff.py::test_refresh_script_retries_when_runtime_changes_during_stability_window",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_distribution_query_parses_code_version_from_version_source",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_distribution_query_reports_missing_version_source_as_empty",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_distribution_query_rejects_invalid_code_source",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_verify_accepts_consistent_or_legacy_probe",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_verify_rejects_missing_or_mismatched_code_version",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_verify_skips_probe_without_code_version_field",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_install_verify.py::test_update_fails_when_installed_code_disagrees_with_version_metadata",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_isolation.py::test_run_guard_update_isolates_hostile_workspaces_and_redacts_managed_source",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_isolation.py::test_disallowed_public_registry_without_managed_source_blocks_before_subprocess",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_isolation.py::test_status_uses_trusted_distribution_record_not_parent_metadata",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_isolation.py::test_status_keeps_running_version_when_trusted_environment_is_unavailable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_skips_when_hooks_already_current",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_rewrites_stale_pretool_timeout",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_skips_inactive_install",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_update_repair_rewrites_stale_grok_hooks",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_rewrites_missing_hook_executable",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_rewrites_hooks_without_json_flag",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_hook_config_from_desktop_proxy_command_ignores_script_braces",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_hook_config_from_windows_shell_escaped_json",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_grok_repair.py::test_grok_repair_rewrites_versioned_desktop_core_when_shim_exists",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_installer_kind_security.py::test_runtime_installer_kind_uses_path_protocol_without_as_posix",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_pi_family_repair.py::test_pi_family_repair_skips_when_extension_already_current",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_update_pi_family_repair.py::test_pi_family_repair_rewrites_stale_extension",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_update_release_channels.py::test_alpha_channel_selects_newer_stable_release",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_update_release_channels.py::test_stable_python_fallback_excludes_prereleases",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_partition.py::test_fresh_update_import_orders_preserve_facade_bindings",
+          "expected_cases": 11
+        },
+        {
+          "selector": "tests/test_guard_update_partition.py::test_update_helpers_resolve_rebound_facade_provider",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_guard_update_partition.py::test_update_version_policy_restores_same_context_variable",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_harness_identifier_is_pi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_pi_aliases_resolve_to_pi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_omp_aliases_resolve_to_omp",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_pi_is_registered",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_contract_exists",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_omp_contract_exists",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_managed_approval_flow_auto_opens_approval_center_once_as_fallback",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_unmanaged_approval_flow_keeps_browser_fallback_visible",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiAdapterIdentity::test_unmanaged_omp_approval_flow_names_oh_my_pi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detect_marks_omp_cli_as_available",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detect_finds_omp_in_user_local_bin_when_gui_path_omits_it",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detect_omp_warning_mentions_omp",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detects_settings_extensions_skills_prompts_themes_and_packages",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detect_keeps_empty_settings_file",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detects_omp_settings_and_extensions",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_pi_and_omp_managed_extensions_have_separate_harnesses",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_pi_and_omp_shared_configured_extension_keeps_separate_harness_ids",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_detect_expands_configured_extension_glob",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiDetect::test_root_skill_uses_stable_identity",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_install_writes_managed_extension",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_install_writes_managed_extension_that_denies_on_hook_errors",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_managed_extension_fails_safe_on_ambiguous_success_payloads",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_install_writes_managed_extension_that_truncates_post_tool_payloads",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_omp_install_writes_only_omp_extension",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_omp_display_name_does_not_rewrite_paths_containing_pi",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiInstall::test_uninstall_removes_managed_extension",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_payload_normalizes_like_other_harnesses",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_omp_payload_keeps_omp_identity",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_post_tool_payload_normalizes_like_other_harnesses",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_post_tool_output_creates_runtime_artifact",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_stdout_only_post_tool_output_creates_runtime_artifact",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_grep_post_tool_output_records_rendered_command",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_post_tool_use_allows_medium_matches_from_external_source_search",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_post_tool_use_rejects_external_source_search_outside_home",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_external_source_search_still_blocks_dangerous_variants",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_external_source_search_still_blocks_real_credentials",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_source_file_read_with_credential_like_code_does_not_block",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_focused_pytest_messages_label_pi_runtime",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_repeated_blocked_tool_output_reuses_pending_approval",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter.py::TestPiRuntime::test_pi_block_emits_native_json_and_stderr",
+          "expected_cases": 1
+        },
+        {
+          "selector": "tests/test_pi_adapter_partition.py::test_pi_partition_cold_import_keeps_real_class_bindings",
+          "expected_cases": 6
+        },
+        {
+          "selector": "tests/test_pi_adapter_partition.py::test_pi_settings_discovery_uses_current_facade_bindings",
+          "expected_cases": 2
+        },
+        {
+          "selector": "tests/test_pi_omp_extension_ownership.py::test_pi_uninstall_preserves_separate_omp_extension_and_user_resources",
+          "expected_cases": 4
+        },
+        {
+          "selector": "tests/test_pi_omp_extension_ownership.py::test_update_does_not_migrate_untracked_omp_extension_from_pi_record",
+          "expected_cases": 4
+        }
+      ],
+      "expected_cases": 349,
+      "timeout": 600
+    }
+  ],
+  "rust_variants": {
+    "default": {
+      "features": []
+    },
+    "diagnostic": {
+      "features": [
+        "diagnostic-phases"
+      ]
+    }
+  },
+  "original_source_sha": "7045fb862de4245cf7740fa16f36d4d511e78fc1",
+  "component_manifest_sha256": "1dc1e0b7d7244a3cc5918eb9feff38044b3c3e69048f274b21cf00f6c2054134",
+  "ownership_gates": {
+    "rust-io-ownership": "scripts/ci/rust_io_ownership_gate.py",
+    "rust-authority-ownership": "scripts/ci/rust_authority_ownership_gate.py",
+    "native-receipt-persistence": "scripts/ci/native_receipt_persistence_gate.py",
+    "python-capability-cleanup": "scripts/ci/python_capability_cleanup_gate.py"
+  },
+  "unicode_required_name_suffixes": [
+    "unicode_reference_categories_are_disjoint_sorted_and_python_compatible",
+    "unicode_operands_keep_python_and_php_launcher_classification_exact",
+    "unicode_configurations_cannot_enter_the_ascii_comparison_contract",
+    "ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings"
+  ],
+  "scope": "Fresh fixed349 update and Pi partition cases (1047 phases), with independent full current invariant collection,97 scoped Ruff/format paths,51 production type paths and four ownership gates. All current source/fixture/provider and exact40 Pi/37 ordinary class/15 extra fixture/six AuthorityHealth admissions precede body execution. The original600-second body,10-second cleanup,11 storage controls and one real child-reap control remain. No276 body cohort, native/Rust/Unicode/workspace campaign, installed measurement or performance replay is offered. Historical0509 and93a remain at their original sources.",
+  "qualification_complete": false,
+  "retention_bounds": {
+    "files": 256,
+    "per_file_bytes": 33554432,
+    "projection_raw_bytes": 100663296,
+    "projection_gzip_bytes": 16777216,
+    "formatter_report_bytes": 33554432,
+    "cohort_capture_bytes": 16777216,
+    "reason": "Original16MiB aggregate per control capture now covers compact status plus immutable contract plus append-only phase journal. Full current collection retains its complete chunked census. Original32MiB member,96MiB raw projection,16MiB gzip,256-file and600-second body limits are unchanged."
+  },
+  "component_file_count": 112,
+  "python_source_file_count": 97,
+  "prerequisites": {
+    "source_quality": true,
+    "full_current_invariant_collection": true,
+    "storage_control_checks": 11,
+    "ordinary_child_reap_control": 1,
+    "control_outer_seconds": 30,
+    "original_python_body_seconds": 600,
+    "results_reused_from_other_runs": false,
+    "independent_current_prerequisites_required": true,
+    "scope": "The separate276 workflow is not a supplied prerequisite result; no completed current276 quality/collection pass was available at this freeze."
+  },
+  "partition_admission": {
+    "original_cases": 349,
+    "original_phases": 1047,
+    "original_body_seconds": 600,
+    "selected_modules": [
+      {
+        "selector": "tests/test_dashboard_update.py",
+        "expected_cases": 45,
+        "definitions": 43
+      },
+      {
+        "selector": "tests/test_guard_cli_17_update_driver.py",
+        "expected_cases": 11,
+        "definitions": 11
+      },
+      {
+        "selector": "tests/test_guard_cli_18_update_codex_integrity.py",
+        "expected_cases": 4,
+        "definitions": 4
+      },
+      {
+        "selector": "tests/test_guard_cli_19_update_codex_config.py",
+        "expected_cases": 6,
+        "definitions": 6
+      },
+      {
+        "selector": "tests/test_guard_cli_20_update_codex_workspace.py",
+        "expected_cases": 3,
+        "definitions": 3
+      },
+      {
+        "selector": "tests/test_guard_cli_28_update_output.py",
+        "expected_cases": 3,
+        "definitions": 3
+      },
+      {
+        "selector": "tests/test_guard_command_executors_update.py",
+        "expected_cases": 13,
+        "definitions": 13
+      },
+      {
+        "selector": "tests/test_guard_phase03_local_install.py",
+        "expected_cases": 94,
+        "definitions": 84
+      },
+      {
+        "selector": "tests/test_guard_phase03_remainder.py",
+        "expected_cases": 29,
+        "definitions": 29
+      },
+      {
+        "selector": "tests/test_guard_update_daemon_external_owner.py",
+        "expected_cases": 36,
+        "definitions": 8
+      },
+      {
+        "selector": "tests/test_guard_update_daemon_handoff.py",
+        "expected_cases": 5,
+        "definitions": 5
+      },
+      {
+        "selector": "tests/test_guard_update_install_verify.py",
+        "expected_cases": 10,
+        "definitions": 7
+      },
+      {
+        "selector": "tests/test_guard_update_isolation.py",
+        "expected_cases": 4,
+        "definitions": 4
+      },
+      {
+        "selector": "tests/test_update_grok_repair.py",
+        "expected_cases": 9,
+        "definitions": 9
+      },
+      {
+        "selector": "tests/test_update_installer_kind_security.py",
+        "expected_cases": 1,
+        "definitions": 1
+      },
+      {
+        "selector": "tests/test_update_pi_family_repair.py",
+        "expected_cases": 4,
+        "definitions": 2
+      },
+      {
+        "selector": "tests/test_update_release_channels.py",
+        "expected_cases": 2,
+        "definitions": 2
+      },
+      {
+        "selector": "tests/test_guard_update_partition.py",
+        "expected_cases": 14,
+        "definitions": 3
+      },
+      {
+        "selector": "tests/test_pi_adapter.py",
+        "expected_cases": 40,
+        "definitions": 40
+      },
+      {
+        "selector": "tests/test_pi_adapter_partition.py",
+        "expected_cases": 8,
+        "definitions": 2
+      },
+      {
+        "selector": "tests/test_pi_omp_extension_ownership.py",
+        "expected_cases": 8,
+        "definitions": 2
+      }
+    ],
+    "per_definition_rows": 281,
+    "exact_pi_facade_methods": 40,
+    "exact_ordinary_class_methods": 37,
+    "extra_fixture_bindings": 15,
+    "extra_fixture_selected_modules": 10,
+    "exact_authority_health_rows": 6,
+    "original_349_case_schedule_unchanged": true,
+    "source_owner": {
+      "git_blob": "ebbceedb7c131d3897109cca2e2305eb7d99afbd",
+      "bytes": 1063318,
+      "sha256": "adb760e29dcf51deaff2bc36c8b45e32443ea4a8aec5de980597aafc9c816330"
+    },
+    "independent_source_peer": "c769ce2b0c0e09b5179491f2683c52d79c19ba6b",
+    "qualification_complete": false
+  }
+}

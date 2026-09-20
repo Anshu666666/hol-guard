@@ -1,5 +1,5 @@
 ---
-name: hol-guard
+name: hol-guard-protection
 description: Use HOL Guard to preview and protect AI-agent package installs, Cursor surfaces, CI, and automation workflows.
 ---
 

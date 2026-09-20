@@ -1,0 +1,42 @@
+{
+  "schema": "hol-guard.pr2974.native-framed-report-decode-plan.v1",
+  "prepared_at": "2026-09-20 07:08:29 UTC",
+  "source_commit": "aba7420f54eaa658d0422f09b08767a030317de8",
+  "source_path": "review-evidence/2026-09-19/pr2974-completion/addenda/20260920T065000Z-surviving-records/evidence/qualification/native-corrective-4d/original-job-106032601355.log",
+  "run_id": 35493601886,
+  "job_id": 106032601355,
+  "execution_environment": "New explicit asnf-owned decoder directory, session wife; verify sandbox identity before use.",
+  "limits": {
+    "decoder_rlimit_as_bytes": 100663296,
+    "io_chunk_bytes": 65536,
+    "stdout_max_bytes": 8192,
+    "cpu_seconds": 45,
+    "network_timeout_seconds": 30,
+    "expected_log_bytes": 13281325,
+    "expected_gzip_bytes": 9497492,
+    "expected_raw_bytes": 55913684,
+    "maximum_single_selected_record_bytes": 8388608
+  },
+  "identities": {
+    "log_sha256": "933b9dcaec995c208acf9c8a6b5704cac7e7fbca5d5648b34f248923d6815fd0",
+    "gzip_sha256": "8e883c4bb40e11f70222c985d6d24bc28571976a982ff2e61170a1cdc8e7ea84",
+    "raw_sha256": "32f15e3d0473e8e3fcd3d305832e56c30c55a94cd442eafbecd47230b051641f",
+    "frame_parts": 2111,
+    "raw_report_files": 114
+  },
+  "steps": [
+    "Stream the exact published original log into a fresh owned file, enforce byte limit and SHA256 before admitting it.",
+    "Read bounded lines; verify BEGIN/END equality, all exact2111 ordinals and base64 counts. Decode chunks to a fixed owned gzip file while hashing; no raw payload retained in memory.",
+    "Stream gzip output in64KiB chunks to a fixed raw JSON file, enforce55,913,684-byte maximum and exact SHA256. Never read the55MiB body or an original ZIP member wholesale.",
+    "Inspect at most a small schema prefix. Prepare a separate bounded incremental member parser against the actual envelope shape, with8MiB per selected record maximum and explicit skipped-large/unsupported records.",
+    "Select original summary, command outcome, finite/native counters, install inputs/inventories and workspace results. Verify their source4d/driver0bfd bindings and source/receipt boundaries before reporting phase outcomes."
+  ],
+  "forbidden": [
+    "No Rust/Cargo/build/test/launcher/native invocation.",
+    "No original ZIP inflation or artifact re-download in this stage.",
+    "No original-workload replay, retry, timeout/gate/input change, or qualification promotion.",
+    "No whole-body json.load/readall, unbounded decompression, or unbounded stdout."
+  ],
+  "on_failure": "Stop and retain exact admitted inputs and bounded failure metadata. Do not rerun the underlying job or manufacture missing members.",
+  "executed": false
+}

@@ -33,6 +33,7 @@ from .native_policy_snapshot_policy import _merge_effective_native_policies, eff
 from .native_policy_snapshot_resident_inputs import NativePolicySnapshotResidentInputsMixin
 
 if TYPE_CHECKING:
+    from .native_policy_snapshot_publisher import NativePolicySnapshotPublisher
     from .runtime.extension_control_runtime import ExtensionControlRuntime
     from .store import GuardStore
 
@@ -146,6 +147,7 @@ class NativePolicySnapshotPublisherInputs(NativePolicySnapshotResidentInputsMixi
             )
         home_path = self.guard_home / "config.toml"
         home_input = self._capture_config_policy_input(home_path)
+        captured_inputs = {home_path: home_input.identity}
         common = (
             home_input.identity,
             managed.status,
@@ -163,6 +165,7 @@ class NativePolicySnapshotPublisherInputs(NativePolicySnapshotResidentInputsMixi
                     (workspace / name, self._capture_config_policy_input(workspace / name))
                     for name in (".ai-plugin-scanner-guard.toml", ".hol-guard.toml")
                 )
+            captured_inputs.update((path, value.identity) for path, value in captured.items())
             identity = (common, tuple((path, value.identity) for path, value in captured.items()))
             cacheable = all(value.content is not None for value in captured.values())
             cached = cache.get(workspace)
@@ -196,7 +199,27 @@ class NativePolicySnapshotPublisherInputs(NativePolicySnapshotResidentInputsMixi
         # it next pass. Registered active overlays are never evicted.
         while len(cache) > 1_025:
             cache.popitem(last=False)
-        return _merge_effective_native_policies(tuple(policies))
+        effective = _merge_effective_native_policies(tuple(policies))
+        cast("NativePolicySnapshotPublisher", self)._compiled_config_inputs = captured_inputs
+        return effective
+
+    def _configuration_input_changed(self) -> bool:
+        """Check bounded config captures without rebuilding policy or controls."""
+        previous = cast("NativePolicySnapshotPublisher", self)._compiled_config_inputs
+        if not previous:
+            return False
+        paths = (self.guard_home / "config.toml", *self._workspace_policy_paths())
+        try:
+            # A capture includes admitted source identity and a hash of the
+            # exact bytes. Metadata equality cannot hide a changed overlay.
+            return set(paths) != set(previous) or any(
+                self._capture_config_policy_input(path).identity != previous[path] for path in paths
+            )
+        except (OSError, NativePolicySnapshotError, TypeError, ValueError, RuntimeError):
+            with self._condition:
+                self._acked = False
+                self._condition.notify_all()
+            return True
 
     def _capture_config_policy_input(self, path: Path) -> _CapturedPolicyInput:
         try:

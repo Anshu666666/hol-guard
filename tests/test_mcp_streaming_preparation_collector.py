@@ -27,7 +27,21 @@ def test_plan_is_the_entire_prior_e_schedule_with_only_the_arm_replaced(collecto
     assert len(expected) == 64
     assert sum(bool(cell.get("profile")) for cell in expected) == 14
     assert all(sum(cell["samples"] + 1 for cell in expected if cell["arm"] == arm) == 554 for arm in ("B", "F"))
-    assert fixed["plan"]["harness_sources_sha256"] == collector.harness_identity()
+    frozen = fixed["plan"]["harness_sources_sha256"]
+    current = collector.harness_identity()
+    # These source repairs invalidate the stopped campaign's existing plan.
+    # Its frozen bytes cannot authorize measurement of the repaired harness.
+    repaired_sources = {
+        "profile_guard_mcp_case.py": "d004a3fafcd159d11216a1458b1eb65ac684615b7fbd401f1cf63270580f7431",
+        "profile_guard_mcp_streaming_session.py": "b04a41fe6c37667709f639cf0a582ab04eb76b64418dad55bdfdb91ef58fa096",
+    }
+    assert frozen.keys() == current.keys()
+    for name, digest in frozen.items():
+        if name in repaired_sources:
+            assert digest == repaired_sources[name]
+            assert current[name] != digest
+        else:
+            assert current[name] == digest
     assert fixed["plan"]["prior_e_comparison_sha256"]
     assert fixed["plan"]["public_oracle_reference_sources_sha256"]
 
@@ -257,3 +271,74 @@ def test_sample_count_cannot_silently_change_the_fixed_plan(collector, accountin
     with pytest.raises(ValueError, match="requires_30_samples"):
         collector.run_comparison(args)
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("module_name", "pilot_flag", "variant"),
+    [
+        ("profile_guard_mcp_session", "owned_preparation_pilot", "owned"),
+        ("profile_guard_mcp_streaming_session", "streaming_preparation_pilot", "streaming"),
+    ],
+)
+@pytest.mark.parametrize("enabled", [False, True])
+def test_wrapper_selects_its_own_variant_without_running_a_worker(
+    monkeypatch, module_name, pilot_flag, variant, enabled
+):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+    worker = importlib.import_module(module_name)
+    observed = []
+    marker = object()
+
+    def capture(**kwargs):
+        observed.append(kwargs)
+        return marker
+
+    monkeypatch.setattr(worker, "run_case_common", capture)
+    options = {
+        "catalog_size": 7,
+        "payload_bytes": 997,
+        "samples": 3,
+        "profile": True,
+        "uncached": True,
+        "child_delay_ms": 5,
+        "approval": "accept",
+        "approval_delay_ms": 9,
+        "refresh_every": 2,
+        "compact_result": True,
+        "payload_kind": "unicode",
+        "native_text_helper": Path("/inert-fixture/native-helper"),
+        "native_minimum_characters": 4096,
+    }
+
+    result = worker.run_case(**options, **{pilot_flag: enabled})
+
+    assert result is marker
+    assert len(observed) == 1
+    provider = observed[0].pop("fixture_arguments_provider")
+    assert provider() is worker.fixture_arguments
+    assert observed == [{**options, "preparation_variant": variant, "preparation_pilot": enabled}]
+
+
+def test_frozen_plan_rejects_repaired_helpers_before_oracle_or_measurement(collector, monkeypatch, tmp_path):
+    fixed = collector.plan_identity()
+    reference = fixed["plan"]["public_oracle_reference_sources_sha256"]
+    args = Namespace(
+        json=tmp_path / "attempt.json",
+        runtime_src=tmp_path / "runtime",
+        oracle_src=tmp_path / "oracle",
+        lock_file=tmp_path / "lock",
+        samples=30,
+    )
+    monkeypatch.setattr(
+        collector, "source_identity", lambda path: reference if path == args.oracle_src else {"runtime": "candidate"}
+    )
+    monkeypatch.setattr(collector, "performance_lock", lambda _path: nullcontext())
+    monkeypatch.setattr(collector, "verify_facts", lambda _path: pytest.fail("unreviewed harness must not run oracle"))
+    monkeypatch.setattr(collector, "run_case", lambda **_kwargs: pytest.fail("unreviewed harness must not run cells"))
+    with pytest.raises(ValueError, match="streaming_mcp_unreviewed_harness_identity"):
+        collector.run_comparison(args)
+    report = json.loads(args.json.read_text())
+    assert report["fixed_plan_sha256"] == fixed["sha256"]
+    assert report["cases"] == []
+    assert "public_api_facts_parity" not in report
+    assert report["failed_parity_gate"]["failure_code"] == "streaming_mcp_unreviewed_harness_identity"

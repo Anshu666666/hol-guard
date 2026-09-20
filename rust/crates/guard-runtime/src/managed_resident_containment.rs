@@ -26,10 +26,9 @@ pub(super) fn try_live_or_restart(
     deadline: Instant,
     preferred_digest: &str,
 ) -> Result<Option<Vec<u8>>, String> {
-    match super::try_home_states(state_base, payload, deadline, preferred_digest) {
-        Err(error) if error == "native_resident_live_request_failed" => Ok(None),
-        other => other,
-    }
+    // Only an unavailable resident permits startup or retry. Authentication
+    // and ambiguous response failures must remain fatal at every caller stage.
+    super::try_home_states(state_base, payload, deadline, preferred_digest)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -417,28 +416,4 @@ pub(super) fn is_retryable_live_request_error(
         || error.code == "native_client_auth_timeout_failed"
         || is_stale_process_identity_error(&error.code)
         || (error.code == "native_client_auth_nonce_failed" && error.retryable_teardown)
-}
-
-pub(super) fn state_owner_is_live(state: &ResidentState) -> bool {
-    process_start_marker(state.owner_process_id)
-        .is_ok_and(|actual| actual == state.owner_process_start_marker)
-}
-
-pub(super) fn skip_failed_home_state_request(
-    error: &crate::resident_client::ResidentClientError,
-    same_runtime: bool,
-    state: &ResidentState,
-) -> bool {
-    is_retryable_live_request_error(error)
-        || !state_owner_is_live(state)
-        || (same_runtime
-            && validate_package_process_identity(state.process_id, &state.process_start_marker)
-                .is_err())
-        || (!same_runtime
-            && validate_runtime_process_identity(
-                state.process_id,
-                &state.process_start_marker,
-                &state.runtime_sha256,
-            )
-            .is_err())
 }

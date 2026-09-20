@@ -11,12 +11,14 @@ import sys
 import tempfile
 import time
 from collections import Counter
+from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
-from profile_guard_mcp_fixture import BenchmarkCaseError, fixture_arguments, summarize
+from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
 from profile_guard_mcp_worker import tree_sample
+
 
 def run_case_common(
     *,
@@ -34,6 +36,7 @@ def run_case_common(
     native_text_helper: Path | None = None,
     native_minimum_characters: int = 256 * 1024,
     preparation_variant: str,
+    fixture_arguments_provider: Callable[[], Callable[[int, str, int], dict[str, Any]]],
     preparation_pilot: bool = False,
 ) -> dict[str, Any]:
     """Complete ordinary local proxy path; abort on a mismatched result or ID."""
@@ -64,7 +67,14 @@ def run_case_common(
         config_path.write_text(json.dumps(spec))
         started = time.perf_counter_ns()
         process = subprocess.Popen(
-            [sys.executable, str(Path(__file__).with_name("profile_guard_mcp_worker.py")), "--variant", preparation_variant, "--config", str(config_path)],
+            [
+                sys.executable,
+                str(Path(__file__).with_name("profile_guard_mcp_worker.py")),
+                "--variant",
+                preparation_variant,
+                "--config",
+                str(config_path),
+            ],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
@@ -170,7 +180,7 @@ def run_case_common(
                     send({"jsonrpc": "2.0", "id": "catalog", "method": "tools/list", "params": {}})
                     response_for("catalog")
                 request_id: str | int = f"call-{index}" if index % 2 else index
-                arguments = fixture_arguments(payload_bytes, payload_kind, index)
+                arguments = fixture_arguments_provider()(payload_bytes, payload_kind, index)
                 payload = arguments["text"]
                 params = {"name": "echo_0", "arguments": arguments}
                 # The declared review policy exercises real elicitation for an ordinary tool.
@@ -249,7 +259,11 @@ def run_case_common(
                 "loaded_runtime_sha256": worker["loaded_runtime_sha256"],
                 "native_text_pilot": worker["native_text_pilot"],
                 f"{preparation_variant}_preparation_pilot": worker[f"{preparation_variant}_preparation_pilot"],
-                **({"loaded_adapter_sha256": worker["loaded_adapter_sha256"]} if preparation_variant == "streaming" else {}),
+                **(
+                    {"loaded_adapter_sha256": worker["loaded_adapter_sha256"]}
+                    if preparation_variant == "streaming"
+                    else {}
+                ),
                 "startup": {**startup, "guard_imports_ms": worker["imports_ms"]},
                 "cold_first_tool_ms": timings[0],
                 "client_roundtrip_ms": summarize(timings[1:]),
@@ -326,8 +340,14 @@ def run_case_common(
                     "notifications": dict(notifications),
                     "errors": 1,
                     "native_text_pilot": failed_worker.get("native_text_pilot"),
-                    f"{preparation_variant}_preparation_pilot": failed_worker.get(f"{preparation_variant}_preparation_pilot"),
-                    **({"loaded_adapter_sha256": failed_worker.get("loaded_adapter_sha256")} if preparation_variant == "streaming" else {}),
+                    f"{preparation_variant}_preparation_pilot": failed_worker.get(
+                        f"{preparation_variant}_preparation_pilot"
+                    ),
+                    **(
+                        {"loaded_adapter_sha256": failed_worker.get("loaded_adapter_sha256")}
+                        if preparation_variant == "streaming"
+                        else {}
+                    ),
                     "worker_failure": failed_worker.get("worker_failure"),
                     "worker_exit_code": process.poll(),
                     "observed_child_forwarded_count": len(child_forwarded),
@@ -342,5 +362,3 @@ def run_case_common(
                 process.wait(timeout=10)
             retire_reader(process.stdout)
             process.stdout.close()
-
-

@@ -16,10 +16,12 @@ pages contain at most 128 rows. The existing fixture applies its 30-second
 control timeout; native readiness retains the existing 400 ms target.
 
 ``passed`` applies only to the named observed-scenario checks. It does not
-close the full persistence measurement requirement: SQLite VFS bytes/fsync
-remain null with ``full_persistence_metric_coverage=False``. Queue peaks are
-sampled, and commit age includes polling delay. Resident recovery leaves the
-Python fixture running. Local inventory upserts do not represent cloud scans.
+close the full persistence measurement requirement: kernel fsync counts and
+physical SQLite write volume remain null with ``full_persistence_metric_coverage=False``.
+An explicit observation request adds separate logical VFS callbacks and actual
+queue residence. Queue peaks are sampled, and commit age includes polling delay.
+Resident recovery leaves the Python fixture running. Local inventory upserts do
+not represent cloud scans.
 """
 
 from __future__ import annotations
@@ -28,12 +30,15 @@ import time
 from collections import Counter
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scripts.native_slo_contract import MAX_INSTALLED_ADAPTER_P95_MS, MAX_INSTALLED_ADAPTER_P99_MS, MAX_RSS_GROWTH
 from scripts.native_slo_mixed_load import MixedLoad, MixedPlan, PrivateLedger
 from scripts.native_slo_mixed_witness import writer_drained
 from scripts.native_slo_resources import ResourceSampler
+
+if TYPE_CHECKING:
+    from scripts.native_slo_persistence_observation import PersistenceObservationSpec
 
 
 def _schedule(plan: MixedPlan) -> list[tuple[float, str, dict[str, object]]]:
@@ -197,6 +202,7 @@ def run_mixed_scenario(
     restarts: int = 1,
     inventory_batches: int = 3,
     receipt_profile: str = "candidate",
+    receipt_observation: PersistenceObservationSpec | None = None,
 ) -> dict[str, object]:
     """Run bounded actual HTTP contention; return failures without dropping work.
 
@@ -205,10 +211,14 @@ def run_mixed_scenario(
     This function creates no production fixtures or native-runtime overrides.
     Only the qualification driver for the pinned baseline artifact may select
     ``receipt_profile="baseline_2e672d2"``; candidate is the strict default.
+    Optional persistence observation is an explicit private control request,
+    separate from the runtime environment and headline timing measurements.
     """
     plan = MixedPlan(duration_seconds, rate, concurrency, mutations, restarts, inventory_batches)
     if receipt_profile not in {"candidate", "baseline_2e672d2"}:
         raise ValueError("mixed receipt profile unsupported")
+    if receipt_observation is not None and receipt_profile != "candidate":
+        raise ValueError("persistence observation requires the current candidate receipt contract")
     ledger = PrivateLedger(raw_file)
     actions: list[dict[str, Any]] = []
     load = MixedLoad(plan, session.request, ledger)
@@ -225,6 +235,7 @@ def run_mixed_scenario(
             "mixed_start",
             maximum=plan.attempts + mutations + restarts,
             receipt_profile=receipt_profile,
+            **({"receipt_observation": receipt_observation.to_request()} if receipt_observation is not None else {}),
         )
         if started.get("status") != "completed":
             failures["setup_failed"] += 1
@@ -293,6 +304,8 @@ def run_mixed_scenario(
             "recovery": "contained_resident_restart_python_fixture_stays_running",
             "inventory": "real_local_inventory_upserts_no_remote_scanner",
             "phase_timing": "mutation_ack_first_decision_inclusive_no_separate_compile_push",
-            "fsync": "journal_calls_only_sqlite_vfs_unavailable",
+            "fsync": "journal_calls_and_logical_sqlite_vfs_syncs_not_kernel_syscalls"
+            if receipt_observation is not None
+            else "journal_calls_only_sqlite_vfs_unavailable",
         },
     }

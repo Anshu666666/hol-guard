@@ -93,7 +93,15 @@ class WorkspaceScenarioFixture:
 
     def dispatch(self, operation: str, request: Mapping[str, Any]) -> dict[str, object]:
         try:
-            if operation == "workspace_start" and self.witness is None:
+            if operation == "workspace_lifecycle" and self.witness is None and not self.finished:
+                from scripts.native_slo_workspace_lifecycle import run_lifecycle_cell
+
+                if request.get("receipt_profile") != "candidate":
+                    raise ValueError("workspace lifecycle requires candidate receipt profile")
+                self.finished = True
+                self.observer.close()
+                return run_lifecycle_cell(self.session, self.workspaces, str(request["scenario"]))
+            if operation == "workspace_start" and self.witness is None and not self.finished:
                 from scripts.native_slo_qualification_scenarios import validate_receipt_profile
 
                 validate_receipt_profile(str(request["receipt_profile"]), {"build_sha": self.runtime_build_sha})

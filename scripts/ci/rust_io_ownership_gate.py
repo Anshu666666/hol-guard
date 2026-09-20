@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Prove that decision-critical hook I/O is owned by the native runtime.
+"""Prove native ownership of decision-critical hook I/O.
 
-The hook transport is Python, but source bytes, path classification, file
-identity, and content equivalence are Rust responsibilities.  This gate keeps
-the boundary executable: it inventories synchronous Python I/O and hashes,
-walks the supported hook call graph, and rejects a new Python operation on a
-native decision branch.  The compatibility oracle remains observable in the
-inventory, but is explicitly limited to ``off``/``shadow`` and differential
-tests.
+Python transports hooks; Rust owns source bytes, path classification, file identity and content equivalence.
+This gate inventories Python I/O and hashes, follows hook calls, and rejects new native-branch operations.
+Off/shadow compatibility and differential work remain visible.
 """
 
 from __future__ import annotations
@@ -96,6 +92,7 @@ _ASYNC_POLICY_PATHS: Final = frozenset(
         "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_context.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+        "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
         "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
         "src/codex_plugin_scanner/guard/config.py",
         "src/codex_plugin_scanner/guard/runtime/command_activity_correlation.py",

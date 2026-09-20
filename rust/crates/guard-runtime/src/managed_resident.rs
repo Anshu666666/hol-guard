@@ -159,8 +159,10 @@ fn try_home_states(
             &identity,
         ) {
             Ok(response) => return Ok(Some(response)),
-            Err(error)
-                if containment::skip_failed_home_state_request(&error, same_runtime, &state) => {}
+            // The exchange phase determines replay safety. A later owner or
+            // serving-process exit cannot make authentication or response
+            // failures safe to send to another resident.
+            Err(error) if containment::is_retryable_live_request_error(&error) => {}
             Err(_) => return Err("native_resident_live_request_failed".to_owned()),
         }
     }
@@ -490,6 +492,9 @@ pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
 use client_stream::{
     read_frame as read_client_stream_frame, write_frame as write_client_stream_frame,
 };
+#[cfg(test)]
+#[path = "managed_resident_retry_tests.rs"]
+mod retry_tests;
 #[cfg(test)]
 #[path = "managed_resident_tests.rs"]
 mod tests;

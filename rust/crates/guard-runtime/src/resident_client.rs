@@ -5,11 +5,15 @@ use std::io;
 use std::net::{Ipv4Addr, SocketAddr, TcpStream};
 #[cfg(unix)]
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+#[path = "resident_client_deadline.rs"]
+mod deadline;
+use deadline::DeadlineStream;
 
 use crate::{
-    constant_time_eq, hmac_sha256, BoxedResidentStream, AUTH_NONCE_BYTES, AUTH_PROOF_BYTES,
-    AUTH_TIMEOUT, CLIENT_PROOF_LABEL, FRAME_DIGEST_BYTES, FRAME_HEADER_BYTES,
+    constant_time_eq, hmac_sha256, BoxedResidentStream, ResidentStream, AUTH_NONCE_BYTES,
+    AUTH_PROOF_BYTES, AUTH_TIMEOUT, CLIENT_PROOF_LABEL, FRAME_DIGEST_BYTES, FRAME_HEADER_BYTES,
     FRAME_REQUEST_ID_BYTES, MAX_NATIVE_RESPONSE_BYTES, REQUEST_MAGIC, RESPONSE_MAGIC,
     SERVER_PROOF_LABEL,
 };
@@ -107,9 +111,17 @@ fn validate_runtime_owner(identity: &ExpectedProcessIdentity<'_>) -> Result<(), 
     }
 }
 
+fn connect_remaining(deadline: Instant) -> Result<Duration, String> {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    if remaining.is_zero() {
+        return Err("native_client_deadline_exceeded".to_owned());
+    }
+    Ok(remaining)
+}
+
 fn connect_loopback_with_digest(
     endpoint: &str,
-    timeout: Duration,
+    deadline: Instant,
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<BoxedResidentStream, String> {
     let address: SocketAddr = endpoint
@@ -119,16 +131,21 @@ fn connect_loopback_with_digest(
         return Err("native_client_endpoint_invalid".to_owned());
     }
     validate_runtime_owner(identity)?;
-    let stream = TcpStream::connect_timeout(&address, timeout.min(AUTH_TIMEOUT))
-        .map_err(|_| "native_client_connect_failed".to_owned())?;
+    let connect_timeout = connect_remaining(deadline)?.min(AUTH_TIMEOUT);
+    let stream = crate::observe_native_phase!(
+        LoopbackConnectHandle,
+        TcpStream::connect_timeout(&address, connect_timeout)
+    )
+    .map_err(|_| "native_client_connect_failed".to_owned())?;
     validate_runtime_owner(identity)?;
+    let _ = connect_remaining(deadline)?;
     Ok(Box::new(stream))
 }
 
 #[cfg(unix)]
 fn connect_unix_with_digest(
     endpoint: &str,
-    timeout: Duration,
+    deadline: Instant,
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<BoxedResidentStream, String> {
     use nix::errno::Errno;
@@ -139,13 +156,17 @@ fn connect_unix_with_digest(
     };
     use std::os::fd::{AsFd, AsRawFd};
     use std::os::unix::net::UnixStream;
+    let _ = connect_remaining(deadline)?;
     let address = UnixAddr::new(Path::new(endpoint))
         .map_err(|_| "native_client_endpoint_invalid".to_owned())?;
-    let descriptor = socket(
-        AddressFamily::Unix,
-        SockType::Stream,
-        SockFlag::empty(),
-        None,
+    let descriptor = crate::observe_native_phase!(
+        UnixSocketCreation,
+        socket(
+            AddressFamily::Unix,
+            SockType::Stream,
+            SockFlag::empty(),
+            None,
+        )
     )
     .map_err(|_| "native_client_connect_failed".to_owned())?;
     fcntl(&descriptor, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
@@ -155,7 +176,7 @@ fn connect_unix_with_digest(
     match connect(descriptor.as_raw_fd(), &address) {
         Ok(()) | Err(Errno::EISCONN) => {}
         Err(Errno::EINPROGRESS) => {
-            let poll_timeout = PollTimeout::try_from(timeout)
+            let poll_timeout = PollTimeout::try_from(connect_remaining(deadline)?)
                 .map_err(|_| "native_client_deadline_invalid".to_owned())?;
             let mut descriptors = [PollFd::new(descriptor.as_fd(), PollFlags::POLLOUT)];
             if poll(&mut descriptors, poll_timeout)
@@ -197,10 +218,10 @@ fn connect_unix_with_digest(
     }
     validate_runtime_owner(identity)?;
     stream
-        .set_read_timeout(Some(timeout))
+        .set_read_timeout(Some(connect_remaining(deadline)?))
         .map_err(|_| "native_client_timeout_failed".to_owned())?;
     stream
-        .set_write_timeout(Some(timeout))
+        .set_write_timeout(Some(connect_remaining(deadline)?))
         .map_err(|_| "native_client_timeout_failed".to_owned())?;
     Ok(Box::new(stream))
 }
@@ -208,22 +229,22 @@ fn connect_unix_with_digest(
 #[cfg(not(unix))]
 fn connect_unix_with_digest(
     endpoint: &str,
-    timeout: Duration,
+    deadline: Instant,
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<BoxedResidentStream, String> {
-    let _ = (endpoint, timeout, identity);
+    let _ = (endpoint, deadline, identity);
     Err("native_client_unix_unavailable".to_owned())
 }
 
 fn connect(
     transport: &str,
     endpoint: &str,
-    timeout: Duration,
+    deadline: Instant,
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<BoxedResidentStream, String> {
     match transport {
-        "unix" => connect_unix_with_digest(endpoint, timeout, identity),
-        "loopback" => connect_loopback_with_digest(endpoint, timeout, identity),
+        "unix" => connect_unix_with_digest(endpoint, deadline, identity),
+        "loopback" => connect_loopback_with_digest(endpoint, deadline, identity),
         _ => Err("native_client_transport_invalid".to_owned()),
     }
 }
@@ -303,29 +324,63 @@ pub(crate) fn send_request_for_digest_detailed(
     timeout: Duration,
     identity: &ExpectedProcessIdentity<'_>,
 ) -> Result<Vec<u8>, ResidentClientError> {
-    let started = std::time::Instant::now();
-    let mut stream =
-        connect(transport, endpoint, timeout, identity).map_err(ResidentClientError::fatal)?;
-    let remaining = timeout.saturating_sub(started.elapsed());
-    if remaining.is_zero() {
+    let deadline = Instant::now()
+        .checked_add(timeout)
+        .ok_or_else(|| ResidentClientError::fatal("native_client_deadline_invalid".to_owned()))?;
+    if timeout.is_zero() {
         return Err("native_client_deadline_exceeded".to_owned().into());
     }
-    let nonce = authenticate(&mut *stream, token, remaining)?;
-    let remaining = timeout.saturating_sub(started.elapsed());
-    if remaining.is_zero() {
+    let mut stream = crate::observe_native_phase!(
+        ClientConnect,
+        connect(transport, endpoint, deadline, identity)
+    )
+    .map_err(ResidentClientError::fatal)?;
+    exchange_request(&mut *stream, token, payload, deadline)
+}
+
+fn exchange_request(
+    stream: &mut dyn crate::ResidentStream,
+    token: &[u8],
+    payload: &[u8],
+    deadline: Instant,
+) -> Result<Vec<u8>, ResidentClientError> {
+    let result = (|| {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err("native_client_deadline_exceeded".to_owned().into());
+        }
+        // read_exact/write_all perform multiple syscalls. Their per-socket
+        // timeout alone is an inactivity timeout, not an overall deadline.
+        let mut stream = DeadlineStream::new(stream, deadline);
+        let nonce = crate::observe_native_phase!(
+            ClientAuthenticate,
+            authenticate(&mut stream, token, remaining)
+        )?;
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err("native_client_deadline_exceeded".to_owned().into());
+        }
+        stream
+            .set_resident_read_timeout(Some(remaining))
+            .map_err(|_| "native_client_timeout_failed".to_owned())?;
+        stream
+            .set_resident_write_timeout(Some(remaining))
+            .map_err(|_| "native_client_timeout_failed".to_owned())?;
+        let request_id = crate::observe_native_phase!(
+            ClientRequestWriteFlush,
+            write_request(&mut stream, token, &nonce, payload)
+        )?;
+        crate::observe_native_phase!(
+            ClientCommittedResponseRead,
+            read_committed_response(&mut stream, &request_id)
+        )
+    })();
+    if Instant::now() >= deadline {
+        // A timed-out write or response can follow a committed request.
+        // Never reclassify it as replay-safe transport teardown.
         return Err("native_client_deadline_exceeded".to_owned().into());
     }
-    stream
-        .set_resident_read_timeout(Some(remaining))
-        .map_err(|_| "native_client_timeout_failed".to_owned())?;
-    stream
-        .set_resident_write_timeout(Some(remaining))
-        .map_err(|_| "native_client_timeout_failed".to_owned())?;
-    let request_id = write_request(&mut *stream, token, &nonce, payload)?;
-    if started.elapsed() >= timeout {
-        return Err("native_client_deadline_exceeded".to_owned().into());
-    }
-    read_committed_response(&mut *stream, &request_id)
+    result
 }
 
 pub(crate) fn send_request_for_digest(
@@ -343,3 +398,7 @@ pub(crate) fn send_request_for_digest(
 #[cfg(test)]
 #[path = "resident_client_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "resident_client_deadline_tests.rs"]
+mod deadline_tests;

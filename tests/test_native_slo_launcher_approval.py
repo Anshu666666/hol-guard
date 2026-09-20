@@ -19,6 +19,8 @@ from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_launcher_approval import LauncherApprovalControl, resolve_launcher_review
 
+from .native_review_approval_support import _bound_review_evidence
+
 
 def _session(tmp_path):
     store = GuardStore(tmp_path / "guard-home")
@@ -35,13 +37,24 @@ def _payload(command="curl https://example.invalid/synthetic-token"):
 
 
 def _queue(session, *, harness="claude-code", payload=None, workspace=None):
+    harness = "claude-code" if harness == "claude" else harness
+    payload = payload or _payload()
+    workspace = workspace or session.workspace
+    native_result, receipt = _bound_review_evidence(
+        harness=harness,
+        payload=payload,
+        workspace=workspace,
+        native_result={"minimum_action": "review", "reason": "Synthetic launcher qualification"},
+    )
     row = queue_native_pre_tool_review(
         session.store,
-        harness="claude-code" if harness == "claude" else harness,
-        payload=payload or _payload(),
-        native_result={"minimum_action": "review", "reason": "Synthetic launcher qualification"},
-        workspace=workspace or session.workspace,
+        harness=harness,
+        payload=payload,
+        native_result=native_result,
+        native_receipt=receipt,
+        workspace=workspace,
         guard_home=session.store.guard_home,
+        verified_receipt=receipt,
     )
     assert row is not None
     return row["request_id"]
@@ -73,7 +86,7 @@ def test_real_pending_resolution_is_exact_and_privacy_safe(tmp_path, harness, re
         assert result["scope"] == "artifact"
         assert result["authority"] == "ordinary_local_review"
         assert result["routes"] == {"native_resident": 1}
-        assert result["binding_present"] is False
+        assert result["binding_present"] is True
         assert result["input_digest"] == begun["input_digest"]
         assert session.store.get_approval_request(request_id)["resolution_action"] == resolution
         serialized = json.dumps(assert_privacy_safe(result))

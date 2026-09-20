@@ -11,6 +11,8 @@ import pytest
 from codex_plugin_scanner.guard.daemon.runtime_hook_scheduler import RuntimeHookScheduler
 from scripts.native_slo_faults import FaultFixture
 
+from .native_review_approval_support import _bound_review_evidence
+
 
 def _session(tmp_path: Path) -> SimpleNamespace:
     home, workspace = tmp_path / "guard", tmp_path / "workspace"
@@ -119,16 +121,24 @@ def test_approval_persistence_fault_is_witnessed_through_real_positional_caller(
     session = _session(tmp_path)
     session.store = GuardStore(session.guard_home)
     original = session.store.add_approval_request
+    payload = {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "git diff"}}
+    native_result, receipt = _bound_review_evidence(
+        harness="claude-code",
+        payload=payload,
+        workspace=session.workspace,
+        native_result={"decision": "deny", "minimum_action": "review", "policy_action": "review"},
+    )
     with FaultFixture(session, "review_queue_failed") as fault:
         assert "approval_persistence_failed" not in fault.result()["setup"]
         response = pause_native_pre_tool_for_approval(
             session.store,
             harness="claude-code",
-            payload={"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "git diff"}},
-            native_result={"decision": "deny", "minimum_action": "review", "policy_action": "review"},
+            payload=payload,
+            native_result=native_result,
             native_receipt=None,
             workspace=session.workspace,
             guard_home=session.guard_home,
+            verified_receipt=receipt,
         )
         assert fault.result()["setup"]["approval_persistence_failed"] is True
         assert response["reason_code"] == "native_review_queue_failed"

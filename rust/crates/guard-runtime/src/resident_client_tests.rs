@@ -95,7 +95,7 @@ impl crate::ResidentStream for TestStream {
 fn rejects_non_loopback_tcp_endpoint() {
     let error = match connect_loopback_with_digest(
         "192.0.2.1:80",
-        Duration::from_millis(1),
+        Instant::now() + Duration::from_millis(1),
         &ExpectedProcessIdentity {
             process_id: 1,
             start_marker: "",

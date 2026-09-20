@@ -2,34 +2,43 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
+import contextlib
+import hashlib as hashlib
+import json as json
 import threading
 import time
 from collections import OrderedDict, deque
 from collections.abc import Mapping, Sequence
-from dataclasses import replace
-from datetime import datetime, timezone
+from dataclasses import replace as replace
+from datetime import datetime as datetime
+from datetime import timezone as timezone
 from pathlib import Path
-from typing import cast, final
-from uuid import uuid4
+from typing import cast as cast
+from typing import final
+from uuid import uuid4 as uuid4
 
-from ..action_lattice import is_guard_action
+from ..action_lattice import is_guard_action as is_guard_action
 from ..cli.commands_support_command_activity import (
-    persist_deferred_post_hook_command_activity,
+    persist_deferred_post_hook_command_activity as persist_deferred_post_hook_command_activity,
 )
-from ..models import GuardAction
-from ..native_decision_receipt import validate_native_decision_receipt
+from ..models import GuardAction as GuardAction
+from ..native_decision_receipt import validate_native_decision_receipt as validate_native_decision_receipt
 from ..runtime.command_activity_contract import (
-    ActivityApprovalReuseStatus,
+    ActivityApprovalReuseStatus as ActivityApprovalReuseStatus,
+)
+from ..runtime.command_activity_contract import (
     CorrelationHandle,
 )
 from ..runtime.command_activity_correlation import (
-    derive_proven_request_correlation,
+    derive_proven_request_correlation as derive_proven_request_correlation,
+)
+from ..runtime.command_activity_correlation import (
     load_or_create_installation_correlation_key,
 )
-from ..runtime.command_activity_display import build_invocation_preview_from_payload
-from ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence
+from ..runtime.command_activity_display import (
+    build_invocation_preview_from_payload as build_invocation_preview_from_payload,
+)
+from ..runtime.command_activity_lifecycle import build_native_pre_hook_evidence as build_native_pre_hook_evidence
 from ..runtime.command_activity_privacy import InstallationCorrelationKey
 from ..sqlite_tuning import sqlite_connect_timeout_override
 from ..store import GuardStore
@@ -41,9 +50,20 @@ from .runtime_hook_evidence_journal import (
     _CommandActivityRecord,
     _EvidenceRecord,
     _NativeDecisionReceiptRecord,
-    _payload_has_command,
     append_journal_batch,
     checkpoint_journal,
+)
+from .runtime_hook_evidence_journal import (
+    _payload_has_command as _payload_has_command,
+)
+from .runtime_hook_evidence_journal import (
+    append_journal as append_journal,
+)
+from .runtime_hook_evidence_journal import (
+    recover_journal_records as recover_journal_records,
+)
+from .runtime_hook_evidence_journal import (
+    rewrite_journal as rewrite_journal,
 )
 from .runtime_hook_evidence_writer_journal import (
     RuntimeHookEvidenceWriterJournalMixin,
@@ -65,6 +85,7 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         max_batch: int = 50,
         batch_wait_seconds: float = 0.025,
         journal_path: Path | None = None,
+        queue_observation: EvidenceQueueObservation | None = None,
     ) -> None:
         if min(max_records, max_bytes, max_batch) < 1 or batch_wait_seconds < 0:
             raise ValueError("runtime hook evidence writer limits are invalid")
@@ -76,6 +97,7 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         self._batch_wait_seconds = batch_wait_seconds
         self._condition = threading.Condition()
         self._records: deque[_EvidenceRecord] = deque()
+        self._queue_observation: EvidenceQueueObservation | None = None
         self._durable: OrderedDict[str, _EvidenceRecord] = OrderedDict()
         self._receipt_seen: OrderedDict[str, None] = OrderedDict()
         self._retry_attempts: dict[str, int] = {}
@@ -108,13 +130,26 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
             )
         except (OSError, ValueError):
             self._correlation_key = None
-        self._recover_journal()
-        self._thread = threading.Thread(
-            target=self._run,
-            name="hol-guard-hook-evidence",
-            daemon=True,
-        )
-        self._thread.start()
+        if queue_observation is not None:
+            try:
+                queue_observation.attach(self)
+            except BaseException:
+                with contextlib.suppress(BaseException):
+                    queue_observation._hook_failed(self)
+        try:
+            self._recover_journal()
+            self._thread = threading.Thread(
+                target=self._run,
+                name="hol-guard-hook-evidence",
+                daemon=True,
+            )
+            self._thread.start()
+        except BaseException:
+            observation = self._queue_observation
+            if observation is not None:
+                with contextlib.suppress(BaseException):
+                    observation.detach(self)
+            raise
 
     def submit_command_activity(
         self,
@@ -128,98 +163,36 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         prompted: bool = False,
         approval_reuse_status: str = "not-applicable",
     ) -> bool:
-        if event == "PreToolUse" and not is_guard_action(policy_action):
-            return False
-        # Reject saturated work before touching the caller's payload. Only
-        # compact immutable facts survive this call; output/metadata trees are
-        # neither copied nor serialized on the response path.
-        with self._condition:
-            if self._stopping or len(self._records) >= self._max_records or self._queued_bytes >= self._max_bytes:
-                self._dropped += 1
-                self._degraded = True
-                return False
-        try:
-            correlation = self._derive_correlation(harness=harness, event=event, payload=payload)
-            invocation_preview = build_invocation_preview_from_payload(payload)
-            has_command = _payload_has_command(payload)
-        except Exception:
-            with self._condition:
-                self._dropped += 1
-            return False
-        record = _CommandActivityRecord(
-            record_id=uuid4().hex,
+        return _evidence_operations.submit_command_activity(
+            self,
             harness=harness,
             event=event,
-            correlation=correlation,
-            has_command=has_command,
+            payload=payload,
             succeeded=succeeded,
-            payload_bytes=0,
             policy_action=policy_action,
-            occurred_at=datetime.now(timezone.utc).isoformat(),
             receipt_id=receipt_id,
             prompted=prompted,
             approval_reuse_status=approval_reuse_status,
-            invocation_preview=invocation_preview,
         )
-        serialized = record.serialized()
-        if _CommandActivityRecord.from_json(json.loads(serialized)) is None:
-            return False
-        # Account for the retained preview as well as the aggregate journal
-        # record, including multibyte Unicode. The original payload is absent.
-        record = replace(
-            record,
-            payload_bytes=len(serialized) + len((invocation_preview or "").encode("utf-8")),
-        )
-        with self._condition:
-            if (
-                self._stopping
-                or len(self._records) >= self._max_records
-                or self._queued_bytes + record.payload_bytes > self._max_bytes
-            ):
-                self._dropped += 1
-                self._degraded = True
-                return False
-            self._records.append(record)
-            self._queued_bytes += record.payload_bytes
-            self._accepted += 1
-            self._condition.notify()
-        return True
 
     def submit_native_decision_receipt(self, receipt: Mapping[str, object]) -> bool:
         """Queue one Rust receipt without touching SQLite or waiting on I/O."""
 
-        validated = validate_native_decision_receipt(receipt)
-        if validated is None:
-            with self._condition:
-                self._receipt_dropped += 1
-                self._dropped += 1
-                self._degraded = True
-            return False
-        record = _NativeDecisionReceiptRecord(receipt=validated, payload_bytes=0)
-        record = _NativeDecisionReceiptRecord(receipt=validated, payload_bytes=len(record.serialized()))
-        receipt_id = record.record_id
-        with self._condition:
-            if receipt_id in self._receipt_seen:
-                self._receipt_deduped += 1
-                return True
-            if (
-                self._stopping
-                or len(self._records) >= self._max_records
-                or self._queued_bytes + record.payload_bytes > self._max_bytes
-            ):
-                self._receipt_dropped += 1
-                self._dropped += 1
-                self._degraded = True
-                return False
-            self._records.append(record)
-            self._queued_bytes += record.payload_bytes
-            self._receipt_seen[receipt_id] = None
-            while len(self._receipt_seen) > self._max_records * 4:
-                self._receipt_seen.popitem(last=False)
-            self._accepted += 1
-            self._receipt_accepted += 1
-            self._condition.notify()
-        return True
+        return _evidence_operations.submit_native_decision_receipt(self, receipt)
+
+    def _observe_queue(self, record: _EvidenceRecord, origin: str | None = None) -> None:
+        observation = self._queue_observation
+        if observation is None:
+            return
+        try:
+            if origin is None:
+                observation._dequeued(self, record)
+            else:
+                observation._enqueued(self, record, origin)
+        except BaseException:
+            # Diagnostic faults never change queue admission or persistence.
+            with contextlib.suppress(BaseException):
+                observation._hook_failed(self)
 
     def _derive_correlation(
         self,
@@ -228,16 +201,7 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         event: str,
         payload: Mapping[str, object],
     ) -> CorrelationHandle | None:
-        key = self._correlation_key
-        if key is None:
-            key = load_or_create_installation_correlation_key(self._guard_home)
-            self._correlation_key = key
-        try:
-            return derive_proven_request_correlation(harness=harness, event=event, payload=payload, key=key)
-        except (OSError, ValueError):
-            key = load_or_create_installation_correlation_key(self._guard_home)
-            self._correlation_key = key
-            return derive_proven_request_correlation(harness=harness, event=event, payload=payload, key=key)
+        return _evidence_operations._derive_correlation(self, harness=harness, event=event, payload=payload)
 
     def stats(self) -> RuntimeHookEvidenceWriterStats:
         with self._condition:
@@ -409,6 +373,8 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                     # Retries have already passed admission and remain durable.
                     # Do not convert a SQLite outage into silent evidence loss.
                     self._records.append(record)
+                    if self._queue_observation is not None:
+                        self._observe_queue(record, "retry")
                     self._queued_bytes += record.payload_bytes
                     retry_delay = max(retry_delay, min(1.0, 0.05 * (2 ** min(attempt - 1, 5))))
         return retry_delay
@@ -449,49 +415,7 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                     self._durable.pop(record_id, None)
 
     def _persist_command_activity(self, record: _CommandActivityRecord) -> None:
-        if record.event != "PreToolUse":
-            persist_deferred_post_hook_command_activity(
-                store=self._store,
-                harness=record.harness,
-                correlation=record.correlation,
-                has_command=record.has_command,
-                succeeded=record.succeeded,
-                invocation_preview=record.invocation_preview,
-                activity_id=record.record_id if record.occurred_at is not None else None,
-                occurred_at=datetime.fromisoformat(record.occurred_at) if record.occurred_at is not None else None,
-            )
-            return
-        if not record.has_command or record.policy_action is None or record.occurred_at is None:
-            return
-        correlation = record.correlation
-        # A prevented attempt cannot produce a post event. Keep its evidence
-        # separate from a later approved retry of the same call.
-        if correlation is not None and record.policy_action not in ("allow", "warn"):
-            digest = hashlib.sha256(
-                json.dumps(
-                    [
-                        "native-prevented-attempt-v1",
-                        correlation.digest,
-                        record.policy_action,
-                        record.receipt_id,
-                        record.prompted,
-                        record.approval_reuse_status,
-                    ]
-                ).encode("utf-8")
-            ).hexdigest()
-            correlation = replace(correlation, digest=digest)
-        evidence = build_native_pre_hook_evidence(
-            activity_id=record.record_id,
-            occurred_at=datetime.fromisoformat(record.occurred_at),
-            harness=record.harness,
-            policy_action=cast(GuardAction, record.policy_action),
-            request_correlation=correlation,
-            receipt_id=record.receipt_id,
-            prompted=record.prompted,
-            approval_reuse_status=ActivityApprovalReuseStatus(record.approval_reuse_status),
-        )
-        if not self._store.is_exact_command_activity_pre_replay(evidence):
-            self._store.record_command_activity(evidence, invocation_preview=record.invocation_preview)
+        _evidence_operations._persist_command_activity(self, record)
 
 
 __all__ = [
@@ -499,3 +423,8 @@ __all__ = [
     "RuntimeHookEvidenceWriterStats",
     "persist_native_decision_receipt",
 ]
+
+
+# Operations bind this facade only after declaring their deferred functions.
+from . import runtime_hook_evidence_operations as _evidence_operations  # noqa: E402
+from .runtime_hook_evidence_queue_observation import EvidenceQueueObservation  # noqa: E402

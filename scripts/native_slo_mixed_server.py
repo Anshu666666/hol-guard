@@ -11,17 +11,29 @@ import hashlib
 import time
 from collections.abc import Mapping
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scripts.native_slo_adapter import payload
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_mixed_witness import MAX_CONTROL_ACTIONS, ReceiptWitness, writer_drained
 
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_queue_observation import EvidenceQueueObservation
+    from scripts.native_slo_sqlite_vfs import SQLiteVFSObservation
+
 
 class MixedScenarioFixture:
-    def __init__(self, session: Any) -> None:
+    def __init__(
+        self,
+        session: Any,
+        *,
+        queue_observation: EvidenceQueueObservation | None = None,
+        sqlite_observer: SQLiteVFSObservation | None = None,
+    ) -> None:
         self.session = session
+        self.queue_observation = queue_observation
+        self.sqlite_observer = sqlite_observer
         self.witness: ReceiptWitness | None = None
         self.samples = 0
         self.peaks: dict[str, int | float] = {}
@@ -34,8 +46,12 @@ class MixedScenarioFixture:
         self.progress: dict[str, object] = {}
 
     def close(self) -> None:
-        if self.witness is not None:
-            self.witness.close()
+        try:
+            if self.witness is not None:
+                self.witness.close()
+        finally:
+            if self.sqlite_observer is not None:
+                self.sqlite_observer.close()
 
     def dispatch(self, operation: str, request: Mapping[str, Any]) -> dict[str, object]:
         # Failure remains an explicit control outcome, so later work and receipt
@@ -52,11 +68,32 @@ class MixedScenarioFixture:
             if worker.test_oracle is not None:
                 raise RuntimeError("mixed requires installed native authority")
             self._ack("allow", previous_generation=0)
-            self.witness = ReceiptWitness(
-                self.session,
-                maximum=int(request["maximum"]),
-                receipt_profile=str(request.get("receipt_profile", "candidate")),
-            ).__enter__()
+            queue_observation, sqlite_observer = self.queue_observation, self.sqlite_observer
+            if "receipt_observation" in request:
+                from scripts.native_slo_persistence_observation import PersistenceObservationSpec
+
+                if self.queue_observation is not None or self.sqlite_observer is not None:
+                    raise RuntimeError("mixed persistence observation already supplied")
+                if request.get("receipt_profile", "candidate") != "candidate":
+                    raise ValueError("persistence observation requires the candidate receipt contract")
+                spec = PersistenceObservationSpec.from_request(request["receipt_observation"])
+                queue_observation, sqlite_observer = spec.create(self.session)
+            try:
+                witness = ReceiptWitness(
+                    self.session,
+                    maximum=int(request["maximum"]),
+                    receipt_profile=str(request.get("receipt_profile", "candidate")),
+                    queue_observation=queue_observation,
+                    sqlite_observer=sqlite_observer,
+                ).__enter__()
+            except BaseException:
+                if sqlite_observer is not None:
+                    try:
+                        sqlite_observer.close()
+                    except BaseException:
+                        self.progress["observation_cleanup_failed"] = True
+                raise
+            self.queue_observation, self.sqlite_observer, self.witness = queue_observation, sqlite_observer, witness
             self.started = self.last_sample = time.monotonic()
             self.initial = self._stats()
             return self.sample()
@@ -82,9 +119,9 @@ class MixedScenarioFixture:
                     break
                 time.sleep(0.025)
             self.witness.reconcile(verify_all=True)
-            result["receipts"] = self.witness.report()
             self.finished = True
             self.close()
+            result["receipts"] = self.witness.report()
             return result
         self.actions += 1
         if self.actions > MAX_CONTROL_ACTIONS:

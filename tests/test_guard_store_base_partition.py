@@ -277,8 +277,6 @@ _OWNER_EXPORTS = {
         "_oauth_sync_url_from_issuer",
         "_allowed_origin_from_sync_url",
         "_secret_fingerprint",
-        "_legacy_secret_fingerprint",
-        "_legacy_secret_sha256",
         "_secret_matches_hash",
         "_should_warn_on_slow_store_transactions",
         "receipt_index_statements",

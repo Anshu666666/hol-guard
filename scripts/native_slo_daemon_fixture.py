@@ -8,7 +8,6 @@ still cross the production authenticated HTTP adapter, never that control pipe.
 from __future__ import annotations
 
 import json
-import os
 import queue
 import subprocess
 import sys
@@ -19,17 +18,16 @@ from contextlib import suppress
 from http.client import HTTPConnection
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
-
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import _kill_hook_process, _spawn_hook_process  # noqa: E402
 from codex_plugin_scanner.guard.codex_hook_windows_job import close_windows_hook_job  # noqa: E402
 from scripts.native_probe_receipts import wait_for_route_corpus  # noqa: E402
 from scripts.native_slo_adapter import Observation, is_allowed, payload, route_counts  # noqa: E402
-from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environment  # noqa: E402
+from scripts.native_slo_contract import assert_privacy_safe  # noqa: E402
 from scripts.native_slo_failure import FixtureFailureError, failure_evidence  # noqa: E402
 from scripts.native_slo_observation_failure import retain_failed_recovery_observation  # noqa: E402
 from scripts.native_slo_session import _is_explicit_capacity_response, _request  # noqa: E402
@@ -69,6 +67,7 @@ class DaemonFixture:
         setup: str | None = None,
         policy: str | None = None,
         workspace_count: int | None = None,
+        _native_phase_environment: Mapping[str, str] | None = None,
     ) -> None:
         if workspace_count is not None and (type(workspace_count) is not int or workspace_count not in {1, 10, 100}):
             raise ValueError("workspace count outside declared matrix")
@@ -76,11 +75,16 @@ class DaemonFixture:
         self.setup = setup
         self.policy = policy
         self.workspace_count = workspace_count
+        self._native_phase_environment = _native_phase_environment
         self.process: subprocess.Popen[bytes] | None = None
         self._job: Any = None
         self._lock = threading.Lock()
         self._responses: queue.Queue[bytes | None] = queue.Queue(maxsize=1)
         self._readers: list[threading.Thread] = []
+        self.root: Path
+        self.workspace: Path
+        self.guard_home: Path
+        self.daemon: Any
         self._connection: HTTPConnection | None = None
         self._owner_thread_id = 0
         self._closed = False
@@ -171,8 +175,9 @@ class DaemonFixture:
             return self._receive(30.0)
 
     def __enter__(self) -> DaemonFixture:
-        environment = dict(os.environ)
-        clear_proof_environment(environment)
+        from scripts.native_slo_rust_phase_environment import fixture_environment
+
+        environment = fixture_environment(self._native_phase_environment)
         started = time.perf_counter()
         self.process, self._job, _ = _spawn_hook_process(
             (
@@ -184,6 +189,7 @@ class DaemonFixture:
                 self.setup or "none",
                 self.policy or "none",
                 *((str(self.workspace_count),) if self.workspace_count is not None else ()),
+                *(("--native-phases",) if self._native_phase_environment is not None else ()),
             ),
             cwd=_ROOT,
             environment=environment,
@@ -202,9 +208,9 @@ class DaemonFixture:
             self.root = Path(str(ready["root"]))
             self.workspace = Path(str(ready["workspace"]))
             self.guard_home = Path(str(ready["guard_home"]))
-            self.readiness_ms = float(ready["readiness_ms"])
+            self.readiness_ms = float(cast(float, ready["readiness_ms"]))
             self.daemon = SimpleNamespace(
-                port=int(ready["port"]),
+                port=int(cast(int, ready["port"])),
                 _server=SimpleNamespace(
                     auth_token=str(ready["auth_token"]),
                     hook_worker=SimpleNamespace(metrics=_RemoteMetrics(self)),
@@ -267,7 +273,7 @@ class DaemonFixture:
         return self.control("stop_resident").get("contained") is True
 
     def native_overload_count(self) -> int:
-        return int(self.control("native_overloads")["count"])
+        return int(cast(int, self.control("native_overloads")["count"]))
 
     def close(self) -> None:
         if self._closed:
@@ -352,10 +358,18 @@ def _native_samples(session: Any, count: int) -> dict[str, object]:
     return {"values": values, "benign_and_block_validated": True}
 
 
-def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_count: int | None = None) -> int:
+def _serve(
+    runtime: Path,
+    setup: str = "none",
+    policy: str = "none",
+    workspace_count: int | None = None,
+    *,
+    native_phases: bool = False,
+) -> int:
     from contextlib import ExitStack, nullcontext
 
     from scripts.native_slo_faults import FaultFixture
+    from scripts.native_slo_rust_phase_environment import native_phase_fixture
     from scripts.native_slo_session import AdapterSession
 
     configuration = None
@@ -364,6 +378,7 @@ def _serve(runtime: Path, setup: str = "none", policy: str = "none", workspace_c
 
         configuration = configuration_text(setup if setup != "none" else policy)
     with ExitStack() as lifetime:
+        lifetime.enter_context(native_phase_fixture(runtime, enabled=native_phases))
         workspace_fixture = None
         with StartupDiagnostic(_emit) as diagnostic:
             diagnostic.progress("construct")
@@ -425,8 +440,7 @@ def _serve_session(session: Any, fault: Any, workspace_fixture: Any = None) -> N
                 break
             request = json.loads(raw)
             operation = request.get("op")
-            if operation == "snapshot":
-                # Only the bounded route counters are required by this fixture.
+            if operation == "snapshot":  # Only the bounded route counters are required by this fixture.
                 _emit({"routes": dict(route_counts(session.daemon._server.hook_worker.metrics.snapshot()))})
             elif operation == "case_before" and fault is not None:
                 fault.before_case()
@@ -478,17 +492,6 @@ def _serve_session(session: Any, fault: Any, workspace_fixture: Any = None) -> N
 
 
 if __name__ == "__main__":
-    try:
-        if len(sys.argv) not in {5, 6} or sys.argv[1] != "--serve":
-            raise ValueError("private daemon fixture invocation required")
-        raise SystemExit(
-            _serve(
-                Path(sys.argv[2]).resolve(strict=True),
-                sys.argv[3],
-                sys.argv[4],
-                int(sys.argv[5]) if len(sys.argv) == 6 else None,
-            )
-        )
-    except Exception as error:
-        _emit({"error": "fixture_failed", "detail": failure_evidence(error)})
-        raise SystemExit(1) from None
+    from scripts.native_slo_daemon_entrypoint import main
+
+    raise SystemExit(main(_serve, _emit))

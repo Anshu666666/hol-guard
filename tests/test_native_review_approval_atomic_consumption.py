@@ -7,7 +7,10 @@ from pathlib import Path
 
 import pytest
 
+from codex_plugin_scanner.guard.daemon.hook_native_review_binding import native_review_policy_binding
 from tests.test_native_review_approval_coordination import _edge, _worker
+
+from .native_review_approval_support import _bound_review_evidence
 
 
 def test_native_review_retry_is_atomic_between_two_consumers(
@@ -18,10 +21,20 @@ def test_native_review_retry_is_atomic_between_two_consumers(
     from threading import Barrier
 
     edge = _edge("cursor")
-    worker, store = _worker(tmp_path, monkeypatch, edge)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     payload = {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "cat .env"}}
+    result = edge["result"]
+    assert isinstance(result, dict)
+    bound_result, receipt = _bound_review_evidence(
+        harness="cursor", payload=payload, workspace=workspace, native_result=result
+    )
+    edge["result"] = bound_result
+    edge["receipt"] = receipt
+    current_binding = native_review_policy_binding(
+        harness="cursor", native_result=bound_result, verified_receipt=receipt
+    )
+    worker, store = _worker(tmp_path, monkeypatch, edge)
     response = worker.review_http_payload(
         payload=payload,
         params={},
@@ -53,6 +66,7 @@ def test_native_review_retry_is_atomic_between_two_consumers(
             launch_target=request["launch_target"],
             workspace=str(workspace),
             now=now,
+            policy_binding=current_binding,
         )
 
     with ThreadPoolExecutor(max_workers=2) as executor:

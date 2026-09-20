@@ -83,6 +83,7 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
         self._max_workspaces = max_workspaces
         self._workspace_capacity_exceeded = False
         self._database_policy_fingerprint: str | None = None
+        self._compiled_config_inputs: dict[Path, object] = {}
         self._command_control_runtime = None
         self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
         self._input_fingerprint: (
@@ -317,6 +318,10 @@ class NativePolicySnapshotPublisher(NativePolicySnapshotPublisherInputs):
                 self._reconcile_due_monotonic = self._monotonic_clock() + 1.0
                 if self._policy_input_changed():
                     self.request_publish()
+            elif self._acked and self._configuration_input_changed():
+                # Content freshness is independent of lossy metadata hints.
+                # Keep full control reconciliation on its existing cadence.
+                self.request_publish()
             with self._condition:
                 if self._closed:
                     return

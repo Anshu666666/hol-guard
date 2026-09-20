@@ -1,0 +1,1018 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="21" skipped="0" tests="29" time="3.142" timestamp="2026-09-20T19:34:57.817112-03:00" hostname="localhost"><testcase classname="tests.test_cline_method_observation" name="test_original_instances_args_and_result_forward_once_without_profile" time="0.005"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_instances_args_a0')
+
+    def test_original_instances_args_and_result_forward_once_without_profile(tmp_path: Path) -&gt; None:
+        calls = []
+        result = {"result": {"minimum_action": "allow"}}
+        payload = {"private": PRIVATE, "snapshot": {"nested": [1]}}
+    
+        def original(first: Any, second: Any) -&gt; Any:
+            calls.append((first, second))
+            return result
+    
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99dbe0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_instances_args_a0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[False-error0]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbda81bb0&gt;
+error = RuntimeError('private-marker-not-for-export'), capture_failure = False
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99d880&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[False-error1]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbd99ef00&gt;
+error = KeyboardInterrupt('private-marker-not-for-export')
+capture_failure = False
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99fa40&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi1/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[False-error2]" time="0.003"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdb90e90&gt;
+error = BaseExceptionGroup('private-marker-not-for-export', [KeyboardInterrupt('private-marker-not-for-export')])
+capture_failure = False
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdb907d0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi2/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[True-error0]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbe4f6000&gt;
+error = RuntimeError('private-marker-not-for-export'), capture_failure = True
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99ee10&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi3/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[True-error1]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbd99e7b0&gt;
+error = KeyboardInterrupt('private-marker-not-for-export')
+capture_failure = True
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99d820&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi4/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_exception_identity_survives_observer_failure[True-error2]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_exception_identi5')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdb91730&gt;
+error = BaseExceptionGroup('private-marker-not-for-export', [KeyboardInterrupt('private-marker-not-for-export')])
+capture_failure = True
+
+    @pytest.mark.parametrize("error", [RuntimeError(PRIVATE), KeyboardInterrupt(PRIVATE), BaseExceptionGroup(PRIVATE, [KeyboardInterrupt(PRIVATE)])])
+    @pytest.mark.parametrize("capture_failure", [False, True])
+    def test_original_exception_identity_survives_observer_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException, capture_failure: bool) -&gt; None:
+        calls = []
+        def original(*args: Any) -&gt; Any:
+            calls.append(args)
+            raise error
+&gt;       module, capture, observer = model(tmp_path, original)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdb915e0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_exception_identi5/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_return_identity_survives_capture_failure[before]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_return_identity_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdd14a10&gt;
+stage = 'before'
+
+    @pytest.mark.parametrize("stage", ["before", "after"])
+    def test_original_return_identity_survives_capture_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage: str) -&gt; None:
+        result = {"private": PRIVATE}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: result)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd16c60&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_return_identity_0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_original_return_identity_survives_capture_failure[after]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_original_return_identity_1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdd16540&gt;
+stage = 'after'
+
+    @pytest.mark.parametrize("stage", ["before", "after"])
+    def test_original_return_identity_survives_capture_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage: str) -&gt; None:
+        result = {"private": PRIVATE}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: result)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd15130&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_original_return_identity_1/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_duplicate_and_nested_mutation_never_gain_complete_gate[second_call]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta0')
+change = 'second_call'
+
+    @pytest.mark.parametrize("change", ["second_call", "second_worker", "entry_mutation", "edge_mutation", "worker_mutation"])
+    def test_duplicate_and_nested_mutation_never_gain_complete_gate(tmp_path: Path, change: str) -&gt; None:
+        edge = {"nested": [1]}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: edge)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdcb88c0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_duplicate_and_nested_mutation_never_gain_complete_gate[second_worker]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta1')
+change = 'second_worker'
+
+    @pytest.mark.parametrize("change", ["second_call", "second_worker", "entry_mutation", "edge_mutation", "worker_mutation"])
+    def test_duplicate_and_nested_mutation_never_gain_complete_gate(tmp_path: Path, change: str) -&gt; None:
+        edge = {"nested": [1]}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: edge)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd146b0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta1/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_duplicate_and_nested_mutation_never_gain_complete_gate[entry_mutation]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta2')
+change = 'entry_mutation'
+
+    @pytest.mark.parametrize("change", ["second_call", "second_worker", "entry_mutation", "edge_mutation", "worker_mutation"])
+    def test_duplicate_and_nested_mutation_never_gain_complete_gate(tmp_path: Path, change: str) -&gt; None:
+        edge = {"nested": [1]}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: edge)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdb90260&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta2/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_duplicate_and_nested_mutation_never_gain_complete_gate[edge_mutation]" time="0.001"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta3')
+change = 'edge_mutation'
+
+    @pytest.mark.parametrize("change", ["second_call", "second_worker", "entry_mutation", "edge_mutation", "worker_mutation"])
+    def test_duplicate_and_nested_mutation_never_gain_complete_gate(tmp_path: Path, change: str) -&gt; None:
+        edge = {"nested": [1]}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: edge)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99f0e0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta3/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_duplicate_and_nested_mutation_never_gain_complete_gate[worker_mutation]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta4')
+change = 'worker_mutation'
+
+    @pytest.mark.parametrize("change", ["second_call", "second_worker", "entry_mutation", "edge_mutation", "worker_mutation"])
+    def test_duplicate_and_nested_mutation_never_gain_complete_gate(tmp_path: Path, change: str) -&gt; None:
+        edge = {"nested": [1]}
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: edge)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdcbb5f0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_duplicate_and_nested_muta4/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_same_named_runtime_rebinding_is_not_admitted[code_constant]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind0')
+mutation = 'code_constant'
+
+    @pytest.mark.parametrize("mutation", ["code_constant", "source", "defaults", "module_owner"])
+    def test_same_named_runtime_rebinding_is_not_admitted(tmp_path: Path, mutation: str) -&gt; None:
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: {})
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdcb91c0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_same_named_runtime_rebinding_is_not_admitted[source]" time="0.001"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind1')
+mutation = 'source'
+
+    @pytest.mark.parametrize("mutation", ["code_constant", "source", "defaults", "module_owner"])
+    def test_same_named_runtime_rebinding_is_not_admitted(tmp_path: Path, mutation: str) -&gt; None:
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: {})
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdcbb830&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind1/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_same_named_runtime_rebinding_is_not_admitted[defaults]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind2')
+mutation = 'defaults'
+
+    @pytest.mark.parametrize("mutation", ["code_constant", "source", "defaults", "module_owner"])
+    def test_same_named_runtime_rebinding_is_not_admitted(tmp_path: Path, mutation: str) -&gt; None:
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: {})
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdcbae70&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind2/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_same_named_runtime_rebinding_is_not_admitted[module_owner]" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind3')
+mutation = 'module_owner'
+
+    @pytest.mark.parametrize("mutation", ["code_constant", "source", "defaults", "module_owner"])
+    def test_same_named_runtime_rebinding_is_not_admitted(tmp_path: Path, mutation: str) -&gt; None:
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: {})
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbd99f080&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_same_named_runtime_rebind3/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_unknown_code_constant_never_dispatches_hash_or_equality" time="0.002" /><testcase classname="tests.test_cline_method_observation" name="test_lost_method_owner_is_not_overwritten_and_cannot_clear_on_second_restore" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_lost_method_owner_is_not_0')
+
+    def test_lost_method_owner_is_not_overwritten_and_cannot_clear_on_second_restore(tmp_path: Path) -&gt; None:
+&gt;       module, _, observer = model(tmp_path, lambda *_args: {})
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd170b0&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_lost_method_owner_is_not_0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_partial_method_install_restores_only_assigned_original" time="0.002"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_partial_method_install_re0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdd84dd0&gt;
+
+    def test_partial_method_install_restores_only_assigned_original(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+&gt;       module, capture, observer = model(tmp_path, lambda *_args: {})
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:189: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd85e20&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_partial_method_install_re0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_loader_exec_exception_is_same_object_and_finder_restores" time="0.001" /><testcase classname="tests.test_cline_method_observation" name="test_nonselected_imports_are_inert_and_finder_loss_is_sticky" time="0.001"><failure message="ValueError: cline_method_code">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-817/test_nonselected_imports_are_i0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6cbdd85310&gt;
+
+    def test_nonselected_imports_are_inert_and_finder_loss_is_sticky(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+&gt;       _, capture, observer = model(tmp_path, lambda *_args: {})
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_method_observation.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_cline_method_observation.py:40: in model
+    observer.bind(module)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;scripts.ci.cline_witness.method_observation.MethodObservation object at 0x7f6cbdd86c60&gt;
+module = &lt;module 'codex_plugin_scanner.guard.daemon.hook_worker' from '/tmp/pytest-of-root/pytest-817/test_nonselected_imports_are_i0/hook_worker.py'&gt;
+
+    def bind(self, module: ModuleType) -&gt; None:
+        path = Path(self.config["method_source"])
+        body = path.read_bytes()
+        if len(body) &gt; 1_048_576 or hashlib.sha256(body).hexdigest() != self.config["sources"][str(path)]:
+            raise ValueError("cline_method_source")
+        if type(module) is not ModuleType or module.__name__ != MODULE or module.__file__ != str(path):
+            raise ValueError("cline_method_module")
+        owner = module.__dict__.get("HookWorker")
+        if type(owner) is not type or owner.__module__ != MODULE:
+            raise ValueError("cline_method_owner")
+        expected = selected_codes(body, str(path))
+        originals = {name: owner.__dict__.get(name) for name in METHODS}
+        for name, original in originals.items():
+            if (
+                type(original) is not FunctionType
+                or original.__module__ != MODULE
+                or original.__globals__ is not module.__dict__
+                or code_image(original.__code__) != code_image(expected[name])
+                or original.__code__.co_argcount != 1
+                or original.__code__.co_posonlyargcount != 0
+                or original.__code__.co_flags &amp; 12
+                or original.__defaults__ is not None
+                or type(original.__kwdefaults__) is not dict
+                or set(original.__kwdefaults__) != {DEFAULTS[name]}
+                or original.__kwdefaults__[DEFAULTS[name]] is not None
+            ):
+&gt;               raise ValueError("cline_method_code")
+E               ValueError: cline_method_code
+
+scripts/ci/cline_witness/method_observation.py:212: ValueError</failure></testcase><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[normal]" time="0.247" /><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[system_exit]" time="0.249" /><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[exception]" time="0.260" /><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[duplicate]" time="0.267" /><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[source_tamper]" time="0.981" /><testcase classname="tests.test_cline_method_observation" name="test_actual_isolated_startup_uses_selected_methods_and_forwards_exit[helper_tamper]" time="0.292" /></testsuite></testsuites>

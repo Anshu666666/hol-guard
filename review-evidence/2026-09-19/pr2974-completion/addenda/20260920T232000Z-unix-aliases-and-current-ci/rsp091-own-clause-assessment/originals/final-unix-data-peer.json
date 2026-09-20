@@ -1,0 +1,71 @@
+{
+  "schema": "pr2974.rsp091-independent-terminal-data-peer.v1",
+  "verdict": "clear_with_explicit_scope",
+  "source_packet": "34b0e1a845b9bf200fd37e0b38cacd72a58f3bfe",
+  "result_blob": "c701176526dfe14a68c07d8f85f21271b10e491f",
+  "reader_blob": "9f74d890752cd7818659ac9b5392ff36825443a8",
+  "run_id": 35540033572,
+  "source": {
+    "sha": "a63cfdf9c5f49d7bd3199e65ae48f393297a391b",
+    "tree": "9c472594937f085864e2cb0ff60227c6a9e0f713"
+  },
+  "driver": {
+    "sha": "178109c220a4f39744ef2b37abc177c32aa87918",
+    "tree": "70a713c8f1b0e1fa4f373abd98c41e1368fc7adb"
+  },
+  "method": [
+    "Read complete stdlib-only verify_result.py before calling only verify(cell); never invoked a main writer or application code.",
+    "Recomputed original three ZIP byte sizes/SHA256 against artifact metadata, all 96 member bytes against retained extraction, and all three retained test-binary hashes.",
+    "Reproduced the exact cells array in original VERIFIED-RESULT.json; all 106 original local files retained identical SHA256 before and after.",
+    "Independently fetched all 105 remote text blobs, recomputed their Git blob IDs/byte sizes, and matched all 101 corresponding local bodies.",
+    "Read complete retained real-peer test producer and transport source. The negative parent requires exact native_client_peer_identity_mismatch and retryable_teardown=false; the real child observes one accept and zero received bytes. The positive authenticates using the original stream protocol, validates payload/header digest and returns exact response.",
+    "Read compiler artifact and original build/collection/case commands on all three lanes: Cargo --locked under Rust 1.88.0, compiler executable equals collection argv[0] and all four case argv[0]; original exact single-case selectors and 45-second driver limits remain.",
+    "Joined original stdout/stderr summary rows and JSON observations/cleanup to result objects. The deadline controls retain real expired/in-budget results and owned cleanup."
+  ],
+  "observations": {
+    "unchanged_files": 106,
+    "reproduced": true,
+    "cells": [
+      {
+        "lane": "linux-x64",
+        "members": 32,
+        "binary_sha256": "a9b1a2117830f32e199baff1adeae5fa2921c7c916361c24d32c7f01b4e27035"
+      },
+      {
+        "lane": "macos-arm64",
+        "members": 32,
+        "binary_sha256": "96772e2bda61da6f4ff8fe817dba3aba8ebd40aace62e799304077462d68a4dc"
+      },
+      {
+        "lane": "macos-x64",
+        "members": 32,
+        "binary_sha256": "83258d4cf93bfaf6130b1b744ca37903e6582f2194946b4ad49a1dacd11b91e0"
+      }
+    ]
+  },
+  "per_lane": {
+    "parent_controls_passed": 4,
+    "owned_child_fixture_passes": 2,
+    "driver_controls_passed": 11,
+    "positive": {
+      "accepted": 1,
+      "payload_bytes": 32,
+      "authenticated": true,
+      "request_digest_valid": true,
+      "response_written": true
+    },
+    "negative": {
+      "accepted": 1,
+      "received_bytes": 0,
+      "authenticated": false
+    },
+    "cleanup": "Both peer children explicitly reaped and private directories removed; deadline observations record owned cleanup."
+  },
+  "scope": "Actual isolated Rust source controls on Linux x64, macOS ARM64 and macOS Intel; source/driver/binary before-after bindings agree.",
+  "limits": [
+    "No product workload, benchmark, installation, artifact download, source mutation or status promotion by this peer.",
+    "The child is deliberately invoked with --ignored by its owning parent; these are two actual successful child executions, not an ignored test counted as pass.",
+    "Earlier zero-job, Mac authentication and Mac timeout-setter failures remain unchanged separate results; this packet does not infer their raw cause.",
+    "No full RSP091, RSP089/RSP090, installed runtime qualification, Windows, performance, or task dependency closure is inferred."
+  ]
+}

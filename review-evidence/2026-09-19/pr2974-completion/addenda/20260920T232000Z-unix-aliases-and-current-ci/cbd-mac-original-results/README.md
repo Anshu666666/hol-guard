@@ -1,0 +1,7 @@
+# Current cbd normal Mac originals
+
+Both original Mac jobs in run35541550524 succeeded. These are authentic cbd9399/source tree3c59 artifacts, built at ef40a583 with the same complete tree. All4802source leaves were independently recomputed into that Merkle root. Both original ZIPs were downloaded once with expected bytes/SHA256, all member bodies hashed/extracted, all four native/pure wheels checked against every RECORD row and all1433packaged Python Git blobs plus the exact configured legacy exclusion. Both runtime bytes match the embedded actual build manifests. The pure-wheel copies are byte-identical.
+
+Original archive/wheel bytes remain at the local paths in SUMMARY.json and original GitHub artifacts; this text packet retains exact member/wheel identities, full compressed member/source inventories, original reports and metadata. It does not assert that the binary ZIPs or wheels are encoded into this Git tree. No installation, source imports, controls or original workload were repeated.
+
+Current Windows failed and produced no native wheel; strict collector was skipped. These two Mac passes plus separate Linux admission do not create a current four-platform set. Completed RSP078 run35543060961 used the distinct earlier a1/build9f authentic artifacts; none of these current bytes are substituted into that result. Ordinary report timing remains its own selected scope, separate from original full performance targets and stopped campaigns.

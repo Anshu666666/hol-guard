@@ -1,0 +1,152 @@
+{
+  "schema": "pr2974.a1d-windows-normal-data-peer.v1",
+  "verdict": "CLEAR within the retained scoped result; command-activity persistence observation remains open",
+  "date_utc": "2026-09-20T22:02:23.586285+00:00",
+  "owner_packet": "8484ab3f5516dcc2fe7e5e87dd00eecc8febcfa0",
+  "owner_result_blob": "4836b8b83a4561607fdfb3fb1a3718af0f650069",
+  "source": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+  "tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+  "actual_normal_build": "9f511875b236c12e5f23c783e958a536ac0360ba",
+  "method": [
+    "Read the entire owner verifier before execution. In memory only, replaced its one final result-file write with exact expected-bytes equality; all preceding assertions and 128 MiB address-space limit were unchanged. The verifier file and derived result were not edited.",
+    "Independently rehashed both original ZIPs against actual retained GitHub artifact size/digest/head metadata and compared all five ZIP members to the existing originals. Recomputed all 19 local packet text Git blobs and byte sizes against the full remote tree, including the three raw CRLF JSON bodies.",
+    "Independently compared each of the seven selected packaged provider files to its admitted Git source body; every member is the exact full LF-to-CRLF transformation. This checks beyond merely removing CRLF.",
+    "Reproduced the complete frozen result byte-for-byte and verified all 23 local files remained unchanged. No download, test, build, installed/native invocation or workload repeated."
+  ],
+  "data_check": {
+    "same_result_bytes": true,
+    "unchanged_existing_files": 23,
+    "archives": [
+      {
+        "artifact": 10614277518,
+        "bytes": 8256941,
+        "sha256": "ac6096766a737a28b40d501880b3e66824076d0a2d8f655b1dc59f42f063a631",
+        "members": [
+          {
+            "path": "native-dist/hol_guard-3.0.1-py3-none-win_amd64.whl",
+            "bytes": 8458641,
+            "sha256": "fd15fd772632689c358d6a376cd8c9f632ab02826e70724f418bba606922bd9e"
+          },
+          {
+            "path": "native-default-auto.json",
+            "bytes": 2634,
+            "sha256": "9417f42e017e9834858a47fa8d5adace5008ef003c8d12cabcf4dbe02df69207"
+          },
+          {
+            "path": "native-installed-identity.json",
+            "bytes": 3153,
+            "sha256": "96d7f61fce009acc2ea65b08f4f263cbfb08637de75aa8f67d1d1ab6287fe619"
+          },
+          {
+            "path": "native-installed-control-lock.json",
+            "bytes": 562,
+            "sha256": "1ae57f60e5e9ee0f380ac83036c5ec6fdce1ba85e7d2fd4bd1d461aee7ff36c7"
+          }
+        ]
+      },
+      {
+        "artifact": 10614327419,
+        "bytes": 13236,
+        "sha256": "fedd6bb05b6e0fa69d8d0cdce137a43882ff5c9752c0801b90c30a34fb8cdcf1",
+        "members": [
+          {
+            "path": "windows-private-authority-controls.xml",
+            "bytes": 263228,
+            "sha256": "7fa066c847b0aac5a199b00ae71bb9601cf52f6c06a61cb206bd173c33baeeae"
+          }
+        ]
+      }
+    ],
+    "verifier_sha256": "8e2b38b01e6d8a4db7586ed588c90f38a5350bc524118ebdcb51a3fb5d81ebfc"
+  },
+  "source_byte_check": {
+    "matched_local_git": 19,
+    "missing_local": [
+      "MANIFEST.json"
+    ],
+    "providers": [
+      {
+        "member": "codex_plugin_scanner/guard/private_file_io.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/windows_replaceable_file.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/windows_atomic_replace.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/daemon/manager_pending_launch.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/native_runtime.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      },
+      {
+        "member": "codex_plugin_scanner/guard/native_runtime_identity.py",
+        "exact_source": false,
+        "exact_full_lf_to_crlf": true
+      }
+    ]
+  },
+  "counts": {
+    "total": 152,
+    "passed": 149,
+    "skipped": 3,
+    "failed": 0,
+    "errors": 0,
+    "mandatory_windows": 53,
+    "child_frames": 90,
+    "wtext_pairs": 18
+  },
+  "native_receipts": {
+    "accepted": 21,
+    "deduped": 0,
+    "dropped": 0,
+    "durable_pending": 0,
+    "failures": 0,
+    "processed": 21
+  },
+  "evidence_failure_diagnostics": {
+    "all_evidence": {
+      "command_activity_persistence/sqlite_busy": 1
+    },
+    "native_receipts": {}
+  },
+  "resident_scope": {
+    "job_id": 106155073456,
+    "status": "success",
+    "tests_passed": 5,
+    "duration_seconds": 7.06,
+    "runtime_rust_tests_passed": 201,
+    "runtime_rust_tests_ignored": 2,
+    "artifacts_retained": 0,
+    "binary_hash_retained": false
+  },
+  "scope_findings": [
+    "The source cohort is 152 unique nodes:149 passed and3 expected POSIX skips, no failed/error nodes. All53 mandatory Windows cases,90 raw child frames and18 WTEXT original/candidate pairs satisfy their retained byte, result and cleanup joins. Existing atomic manager selector passes.",
+    "Installed identity/control-lock/default-auto evidence is separate from the source cohort. Default-auto has21 native_resident routes and21 accepted/processed receipts with0 failures/pending/drops; native_receipts diagnostic map is empty.",
+    "The all_evidence map retains command_activity_persistence/sqlite_busy:1. Passing native receipt ingestion does not clear this event, identify its SQLite operation, explain earlier journal/receipt failures or establish universal persistence.",
+    "The exact native API contract retains original MoveFileExW WinError5 versus candidate FileRenameInfoEx WinError32; PermissionError/errno13 and other observed result fields agree. No raw-code parity is asserted.",
+    "Separate resident job log records5 Python passes in7.06s and201 Rust passes/2ignored, but no separate executable bytes or binary hash was retained. Do not bind that separate binary to the packaged runtime by inference."
+  ],
+  "limits": [
+    "Seven selected provider checks are not an all-package source census or signing/freeze proof.",
+    "Current source a1d/build9f511 stays distinct from b222/build6aa63 and earlier failed normal400/diagnostic nonreproductions.",
+    "No cross-release update/rollback, signing, performance/resource, historical cause or complete RSP136 qualification claim."
+  ],
+  "blocking_packet_mismatches": []
+}

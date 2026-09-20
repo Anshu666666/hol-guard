@@ -1,0 +1,7 @@
+# RSP078 first installed validation: driver setup failure
+
+Run 35541914157 used exact driver 94d35ef56f6c76e5c8fd75de68ec79dbf5d6f179 above source 3d99b884a73568c2278e829fe53a103880fa69da. All three cells actually collected 288 controls, passed 256 and failed the same 32 modeled driver controls. Both Macs report errno 30; Linux reports errno 13. The modeled report factory writes under an invalid absolute root. Source inspection also found the analogous latent absolute workspace in driver.population.
+
+The native wheel installation, owned-interpreter provisioning and original 14 registered calls were skipped in every cell. Product and installed semantics are unassessed by this run; no failed result is reclassified. All source/artifact before and after bindings are equal. The earlier local privileged 288-pass control result did not establish portable path ownership.
+
+The exact three downloaded ZIP byte images are persisted as base64 text; each contains all six original members including full JUnit, stdout and source bindings. Decode without transformation to recover original archive bytes, verify against metadata, then extract bounded members for verify.py. The verifier is data-only and emits its result to stdout; it does not execute any application or rerun controls. The separate proposed correction preserves product/four fixture leaves and changes only owned catalog construction, control workspace and unique successor workflow.

@@ -1,0 +1,383 @@
+{
+  "concurrency": {
+    "sixteen": {
+      "deadline_ms": 1000.0,
+      "errors": 0,
+      "latency": {
+        "count": 16,
+        "max_ms": 364.345,
+        "p50_ms": 254.927,
+        "p95_ms": 364.345,
+        "p99_ms": 364.345
+      },
+      "native_overloads": 0,
+      "overloaded": 0,
+      "route_attribution": "isolated_batch_counter_conservation",
+      "routes": {
+        "native_resident": 16
+      }
+    },
+    "sixty_four": {
+      "bounded": true,
+      "errors": 0,
+      "fail_safe": 0,
+      "latency": {
+        "count": 64,
+        "max_ms": 426.236,
+        "p50_ms": 241.754,
+        "p95_ms": 417.832,
+        "p99_ms": 426.236
+      },
+      "latency_ceiling_ms": null,
+      "native_overloads": 0,
+      "overloaded": 29,
+      "route_attribution": "isolated_batch_counter_conservation",
+      "routes": {
+        "engine_bypassed": 29,
+        "native_resident": 35
+      }
+    }
+  },
+  "corpus": {
+    "corpus_origin": "installed_wheel_ownership_contract",
+    "fail_safe_decisions": 0,
+    "fail_safe_rate": 0.0,
+    "harnesses": 13,
+    "installed": {
+      "fail_safe": 0,
+      "oneshot": 0,
+      "python_semantic": 0,
+      "python_semantic_decisions": 0,
+      "resident": 21,
+      "routes": 21
+    },
+    "observations": 146,
+    "oneshot_decisions": 0,
+    "python_fallback_decisions": 0,
+    "python_semantic_decisions": 0,
+    "resident_share": 1.0,
+    "route_corpus": "installed_routes",
+    "routes": 21,
+    "rss_baseline_bytes": 664846336,
+    "rss_growth": 0.011287,
+    "rss_peak_bytes": 672350208,
+    "safe_failure_rate": 0.0,
+    "safe_failures": 0,
+    "safe_failures_by_size": {},
+    "security_denials": 29,
+    "security_denials_by_size": {
+      "1k": 29
+    },
+    "warm_failures": 0
+  },
+  "errors_16": 0,
+  "errors_64": 0,
+  "evidence_class": "smoke",
+  "gates": {
+    "1m_latency": true,
+    "250k_latency": true,
+    "5m_latency": true,
+    "cold_latency": true,
+    "concurrency": true,
+    "concurrency_64_bounded": true,
+    "installed_corpus": true,
+    "python_fallback": true,
+    "readiness": true,
+    "recovery_latency": true,
+    "resident_share": true,
+    "rss": true,
+    "safe_corpus": true,
+    "warm_latency": true
+  },
+  "installed_launcher": {
+    "boundary": "INSTALLED_LAUNCHER",
+    "cases_validated": [
+      "benign",
+      "redacted"
+    ],
+    "configuration": "registered_argv",
+    "event": "PostToolUse",
+    "evidence_class": "smoke",
+    "harness": "claude-code",
+    "latency": {
+      "count": 2,
+      "max_ms": 245.964,
+      "p50_ms": 241.833,
+      "p95_ms": 245.964,
+      "p99_ms": 245.964
+    },
+    "process_startup_included": true,
+    "qualification_complete": false,
+    "remaining_routes": "not_measured",
+    "stdout_and_exit_checked": true
+  },
+  "latency": {
+    "boundary": "DAEMON_INGRESS",
+    "cold_native_oneshot": {
+      "count": 2,
+      "max_ms": 11.24,
+      "p50_ms": 10.778,
+      "p95_ms": 11.24,
+      "p99_ms": 11.24
+    },
+    "readiness": {
+      "count": 2,
+      "max_ms": 0.096,
+      "p50_ms": 0.069,
+      "p95_ms": 0.096,
+      "p99_ms": 0.096
+    },
+    "resident_recovery": {
+      "count": 2,
+      "max_ms": 265.143,
+      "p50_ms": 255.046,
+      "p95_ms": 265.143,
+      "p99_ms": 265.143
+    },
+    "size_classes": {
+      "1k": {
+        "count": 122,
+        "max_ms": 426.236,
+        "p50_ms": 178.828,
+        "p95_ms": 408.668,
+        "p99_ms": 424.564
+      },
+      "1m": {
+        "count": 8,
+        "max_ms": 82.105,
+        "p50_ms": 53.506,
+        "p95_ms": 82.105,
+        "p99_ms": 82.105
+      },
+      "250k": {
+        "count": 8,
+        "max_ms": 73.468,
+        "p50_ms": 38.069,
+        "p95_ms": 73.468,
+        "p99_ms": 73.468
+      },
+      "5m": {
+        "count": 8,
+        "max_ms": 183.306,
+        "p50_ms": 153.239,
+        "p95_ms": 183.306,
+        "p99_ms": 183.306
+      }
+    },
+    "warm_all_harnesses": {
+      "count": 42,
+      "max_ms": 89.742,
+      "p50_ms": 48.988,
+      "p95_ms": 82.306,
+      "p99_ms": 89.742
+    },
+    "warm_by_event": {
+      "PostToolUse": {
+        "count": 16,
+        "max_ms": 71.863,
+        "p50_ms": 45.428,
+        "p95_ms": 71.863,
+        "p99_ms": 71.863
+      },
+      "PreToolUse": {
+        "count": 26,
+        "max_ms": 89.742,
+        "p50_ms": 48.988,
+        "p95_ms": 83.468,
+        "p99_ms": 89.742
+      }
+    },
+    "warm_by_route": {
+      "claude-code.PostToolUse": {
+        "count": 2,
+        "max_ms": 57.517,
+        "p50_ms": 55.864,
+        "p95_ms": 57.517,
+        "p99_ms": 57.517
+      },
+      "claude-code.PreToolUse": {
+        "count": 2,
+        "max_ms": 50.969,
+        "p50_ms": 44.377,
+        "p95_ms": 50.969,
+        "p99_ms": 50.969
+      },
+      "cline.PostToolUse": {
+        "count": 2,
+        "max_ms": 35.571,
+        "p50_ms": 29.21,
+        "p95_ms": 35.571,
+        "p99_ms": 35.571
+      },
+      "cline.PreToolUse": {
+        "count": 2,
+        "max_ms": 33.732,
+        "p50_ms": 33.354,
+        "p95_ms": 33.732,
+        "p99_ms": 33.732
+      },
+      "codex.PostToolUse": {
+        "count": 2,
+        "max_ms": 64.414,
+        "p50_ms": 56.934,
+        "p95_ms": 64.414,
+        "p99_ms": 64.414
+      },
+      "codex.PreToolUse": {
+        "count": 2,
+        "max_ms": 54.798,
+        "p50_ms": 48.852,
+        "p95_ms": 54.798,
+        "p99_ms": 54.798
+      },
+      "copilot.PostToolUse": {
+        "count": 2,
+        "max_ms": 37.29,
+        "p50_ms": 26.678,
+        "p95_ms": 37.29,
+        "p99_ms": 37.29
+      },
+      "copilot.PreToolUse": {
+        "count": 2,
+        "max_ms": 53.233,
+        "p50_ms": 51.118,
+        "p95_ms": 53.233,
+        "p99_ms": 53.233
+      },
+      "cursor.PostToolUse": {
+        "count": 2,
+        "max_ms": 62.969,
+        "p50_ms": 47.139,
+        "p95_ms": 62.969,
+        "p99_ms": 62.969
+      },
+      "cursor.PreToolUse": {
+        "count": 2,
+        "max_ms": 58.657,
+        "p50_ms": 40.263,
+        "p95_ms": 58.657,
+        "p99_ms": 58.657
+      },
+      "grok.PreToolUse": {
+        "count": 2,
+        "max_ms": 67.933,
+        "p50_ms": 47.69,
+        "p95_ms": 67.933,
+        "p99_ms": 67.933
+      },
+      "hermes.PreToolUse": {
+        "count": 2,
+        "max_ms": 83.468,
+        "p50_ms": 64.482,
+        "p95_ms": 83.468,
+        "p99_ms": 83.468
+      },
+      "kimi.PostToolUse": {
+        "count": 2,
+        "max_ms": 49.474,
+        "p50_ms": 40.012,
+        "p95_ms": 49.474,
+        "p99_ms": 49.474
+      },
+      "kimi.PreToolUse": {
+        "count": 2,
+        "max_ms": 89.742,
+        "p50_ms": 63.832,
+        "p95_ms": 89.742,
+        "p99_ms": 89.742
+      },
+      "omp.PostToolUse": {
+        "count": 2,
+        "max_ms": 71.863,
+        "p50_ms": 46.954,
+        "p95_ms": 71.863,
+        "p99_ms": 71.863
+      },
+      "omp.PreToolUse": {
+        "count": 2,
+        "max_ms": 36.017,
+        "p50_ms": 29.471,
+        "p95_ms": 36.017,
+        "p99_ms": 36.017
+      },
+      "openclaw.PreToolUse": {
+        "count": 2,
+        "max_ms": 50.853,
+        "p50_ms": 40.588,
+        "p95_ms": 50.853,
+        "p99_ms": 50.853
+      },
+      "opencode.PreToolUse": {
+        "count": 2,
+        "max_ms": 61.222,
+        "p50_ms": 61.047,
+        "p95_ms": 61.222,
+        "p99_ms": 61.222
+      },
+      "pi.PostToolUse": {
+        "count": 2,
+        "max_ms": 55.826,
+        "p50_ms": 48.614,
+        "p95_ms": 55.826,
+        "p99_ms": 55.826
+      },
+      "pi.PreToolUse": {
+        "count": 2,
+        "max_ms": 82.306,
+        "p50_ms": 61.146,
+        "p95_ms": 82.306,
+        "p99_ms": 82.306
+      },
+      "zcode.PreToolUse": {
+        "count": 2,
+        "max_ms": 53.27,
+        "p50_ms": 51.121,
+        "p95_ms": 53.27,
+        "p99_ms": 53.27
+      }
+    }
+  },
+  "passed": true,
+  "python_semantic_decisions": 0,
+  "qualification_complete": false,
+  "reference_review": {
+    "full_review_qualified": true,
+    "missing_scopes": [],
+    "platform_denial_cases": [],
+    "platform_denial_timing_eligible": false
+  },
+  "routes": {
+    "engine_bypassed": 29,
+    "native_resident": 117
+  },
+  "runtime": {
+    "architecture": "arm64",
+    "build_sha": "ef40a5833b75109593755ca3a4e74f9b2a193caa",
+    "installed_package_sha256": "b5d64c0eb50952377429bc0ec4aff06266aa852344f0001251ecc5459272b493",
+    "mode": "auto",
+    "package_origin": "installed",
+    "package_record_sha256": "1d1d746a7252fea52486cd167f9bf6416e81d94e67daad7e2e0b43003fb4aeba",
+    "package_version": "3.0.1",
+    "protocol_version": 1,
+    "python_version": "3.12.10",
+    "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
+    "runtime_sha256": "d12767c18160ebc7f36d0afbaf5107c72f4edc335c6be02dc7ee183f59954dea",
+    "runtime_version": "3.0.1",
+    "system": "Darwin",
+    "target": "aarch64-macos"
+  },
+  "schema": "hol-guard.native-installed-slo.v1",
+  "scope": "daemon_ingress_and_registered_launcher",
+  "thresholds": {
+    "direct_cold_p95_ms": 150.0,
+    "installed_adapter_concurrent_p99_ms": 1000.0,
+    "installed_adapter_p95_ms": 1000.0,
+    "readiness_p95_ms": 400.0
+  },
+  "timing_boundaries": {
+    "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+    "INSTALLED_LAUNCHER": "registered_argv",
+    "KERNEL": "not_measured",
+    "NATIVE_CLIENT": "cold_native_process"
+  }
+}

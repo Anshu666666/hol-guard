@@ -1,0 +1,12 @@
+--- before/tests/test_cline_process_observation.py
++++ after/tests/test_cline_process_observation.py
+@@ -322,7 +322,8 @@
+     # explicitly support both observers and do not claim full-class equality.
+     actual = {
+         node.name: hashlib.sha256(ast.dump(node).encode()).hexdigest()
+-        for node in owner.body if isinstance(node, ast.FunctionDef) and node.name in expected
++        for node in owner.body
++        if isinstance(node, ast.FunctionDef) and node.name in expected
+     }
+     assert actual == expected
+ 

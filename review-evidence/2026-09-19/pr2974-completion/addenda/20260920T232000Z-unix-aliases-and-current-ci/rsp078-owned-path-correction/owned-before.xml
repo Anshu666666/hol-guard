@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.579" timestamp="2026-09-20T19:43:27.272897-03:00" hostname="localhost"><testcase classname="tests.test_managed_aliases_installed_driver" name="test_population_owns_private_catalog_and_cleans_after_result[accepted]" time="0.259"><failure message="AssertionError: assert False&#10; +  where False = is_relative_to(PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c0'))&#10; +    where is_relative_to = PosixPath('/rsp078-result-oracle').is_relative_to">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9c82263530&gt;
+fault = False
+
+    @pytest.mark.parametrize("fault", [False, True], ids=["accepted", "refused"])
+    def test_population_owns_private_catalog_and_cleans_after_result(tmp_path, monkeypatch, fault):
+        from scripts import native_slo_managed_aliases as aliases
+    
+        value = report(tmp_path / "modeled")
+        before = copy.deepcopy(value)
+        if fault:
+            value["rows"][0]["returncode"] = 0
+            before = copy.deepcopy(value)
+        original = aliases.daemon_cases
+        observed = []
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    
+        def owned_cases(workspace):
+            # Refuse an unowned path before the original factory can write, even as root.
+            assert workspace.is_relative_to(tmp_path)
+            assert workspace.is_dir() and workspace.stat().st_mode &amp; 0o777 == 0o700
+            observed.append(workspace)
+            return original(workspace)
+    
+        monkeypatch.setattr(aliases, "daemon_cases", owned_cases)
+        if fault:
+            with pytest.raises(AssertionError, match="managed_alias_delivery_projection"):
+                driver.population("managed-aliases", value)
+        else:
+&gt;           result = driver.population("managed-aliases", value)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_managed_aliases_installed_driver.py:435: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/ci/managed_aliases_installed/driver.py:293: in population
+    daemon_cases(Path("/rsp078-result-oracle"))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workspace = PosixPath('/rsp078-result-oracle')
+
+    def owned_cases(workspace):
+        # Refuse an unowned path before the original factory can write, even as root.
+&gt;       assert workspace.is_relative_to(tmp_path)
+E       AssertionError: assert False
+E        +  where False = is_relative_to(PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c0'))
+E        +    where is_relative_to = PosixPath('/rsp078-result-oracle').is_relative_to
+
+tests/test_managed_aliases_installed_driver.py:425: AssertionError</failure></testcase><testcase classname="tests.test_managed_aliases_installed_driver" name="test_population_owns_private_catalog_and_cleans_after_result[refused]" time="0.074"><failure message="AssertionError: Regex pattern did not match.&#10;  Expected regex: 'managed_alias_delivery_projection'&#10;  Actual message: &quot;assert False\n +  where False = is_relative_to(PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c1'))\n +    where is_relative_to = PosixPath('/rsp078-result-oracle').is_relative_to&quot;">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9c82a94cb0&gt;
+fault = True
+
+    @pytest.mark.parametrize("fault", [False, True], ids=["accepted", "refused"])
+    def test_population_owns_private_catalog_and_cleans_after_result(tmp_path, monkeypatch, fault):
+        from scripts import native_slo_managed_aliases as aliases
+    
+        value = report(tmp_path / "modeled")
+        before = copy.deepcopy(value)
+        if fault:
+            value["rows"][0]["returncode"] = 0
+            before = copy.deepcopy(value)
+        original = aliases.daemon_cases
+        observed = []
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    
+        def owned_cases(workspace):
+            # Refuse an unowned path before the original factory can write, even as root.
+            assert workspace.is_relative_to(tmp_path)
+            assert workspace.is_dir() and workspace.stat().st_mode &amp; 0o777 == 0o700
+            observed.append(workspace)
+            return original(workspace)
+    
+        monkeypatch.setattr(aliases, "daemon_cases", owned_cases)
+        if fault:
+            with pytest.raises(AssertionError, match="managed_alias_delivery_projection"):
+&gt;               driver.population("managed-aliases", value)
+
+tests/test_managed_aliases_installed_driver.py:433: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/ci/managed_aliases_installed/driver.py:293: in population
+    daemon_cases(Path("/rsp078-result-oracle"))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workspace = PosixPath('/rsp078-result-oracle')
+
+    def owned_cases(workspace):
+        # Refuse an unowned path before the original factory can write, even as root.
+&gt;       assert workspace.is_relative_to(tmp_path)
+E       AssertionError: assert False
+E        +  where False = is_relative_to(PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c1'))
+E        +    where is_relative_to = PosixPath('/rsp078-result-oracle').is_relative_to
+
+tests/test_managed_aliases_installed_driver.py:425: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9c82a94cb0&gt;
+fault = True
+
+    @pytest.mark.parametrize("fault", [False, True], ids=["accepted", "refused"])
+    def test_population_owns_private_catalog_and_cleans_after_result(tmp_path, monkeypatch, fault):
+        from scripts import native_slo_managed_aliases as aliases
+    
+        value = report(tmp_path / "modeled")
+        before = copy.deepcopy(value)
+        if fault:
+            value["rows"][0]["returncode"] = 0
+            before = copy.deepcopy(value)
+        original = aliases.daemon_cases
+        observed = []
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    
+        def owned_cases(workspace):
+            # Refuse an unowned path before the original factory can write, even as root.
+            assert workspace.is_relative_to(tmp_path)
+            assert workspace.is_dir() and workspace.stat().st_mode &amp; 0o777 == 0o700
+            observed.append(workspace)
+            return original(workspace)
+    
+        monkeypatch.setattr(aliases, "daemon_cases", owned_cases)
+        if fault:
+&gt;           with pytest.raises(AssertionError, match="managed_alias_delivery_projection"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'managed_alias_delivery_projection'
+E             Actual message: "assert False\n +  where False = is_relative_to(PosixPath('/tmp/pytest-of-root/pytest-826/test_population_owns_private_c1'))\n +    where is_relative_to = PosixPath('/rsp078-result-oracle').is_relative_to"
+
+tests/test_managed_aliases_installed_driver.py:432: AssertionError</failure></testcase></testsuite></testsuites>

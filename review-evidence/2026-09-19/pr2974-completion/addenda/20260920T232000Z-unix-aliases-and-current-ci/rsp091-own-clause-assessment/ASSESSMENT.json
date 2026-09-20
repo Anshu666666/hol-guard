@@ -1,0 +1,105 @@
+{
+  "schema": "pr2974.rsp091-own-clause-current-source-acceptance-assessment.v1",
+  "reviewer": "partition_regression",
+  "verdict": "Own preservation/test acceptance clause substantiated at current integrated source; original conditional dependencies and selection gate remain explicit and unclosed by this assessment.",
+  "status_recommendation": "Root may record the RSP091 own functional clause as met. This receipt does not modify the task overlay or decide dependency/task scheduling status.",
+  "source": {
+    "sha": "cbd9399e39adc4fe338bff468807656ebab3af13",
+    "tree": "3c59e6f81f531e7b4496ae49a278c9ddf3961380",
+    "sole_parent": "a1d509404b0803a91031cb51f4b0c919408bfeba"
+  },
+  "original_requirement": {
+    "task": "RSP-091",
+    "title": "Preserve Windows and Unix transport guarantees",
+    "acceptance": "Test DACL/owner/SYSTEM rules, loopback authentication, exact package process, Unix private paths, permissions and peer identity.",
+    "dependencies": [
+      "RSP-089",
+      "RSP-090"
+    ],
+    "original_status": "OPEN",
+    "section": "H. Native transport and narrower ingress",
+    "priority": "P2 conditional",
+    "gate": "Begin only if post-optimization profiles justify added protocol complexity.",
+    "todo_blob": "6f464adb27477ebaaceaf7ecb25083d6cfe37d06",
+    "prd_blob": "39d27bfa693117f8df3816d44b106921ca8efc94"
+  },
+  "source_join": {
+    "mapped_leaves": 38,
+    "mapped_leaves_byte_equal_current": 37,
+    "only_changed_mapped_leaf": "resident_transport.rs adds the exact cfg(all(test, Linux/macOS)) peer-test module declaration; removing only that declaration restores the retained product body byte-for-byte.",
+    "additional_test_and_provider_joins": 5,
+    "total_prior_provider_joins": 43,
+    "new_peer_test_blob": "ee5fa8562fb0ef97e76db7bfab16320182e6b0e6",
+    "current_transport_blob": "0121df862f8999338ced7224bb7eba262757990c",
+    "historical_9b_and_current_full_Merkle_recomputed": true
+  },
+  "clauses": [
+    {
+      "clause": "Windows DACL and owner rules",
+      "finding": "substantiated",
+      "actual_evidence": "Original current400 Windows job106131977141 log has all12 config-directory controls passing, including the real shared/exclusive lease and ACL-repair cells. Exact source adds an Everyone read ACE, proves private-DACL refusal, then verifies the production owner-first repair and retained lease. Named Rust windows_owner_allowlist_rejects_unrelated_principals and windows_state_scope_and_token_state_are_owner_private rows pass. All relevant mapped providers and tests equal current.",
+      "evidence_packet": "85f4a71d995fbe7a22c3ffbeea3470e50b222c6b",
+      "limit": "Python and Rust predicates are deliberately distinguished: Python exact mask/flags and duplicate-SID rejection; Rust contains-full-access/noninherited/trustee-set rules. This is no claim of parser equivalence or an unrelated-user access campaign."
+    },
+    {
+      "clause": "SYSTEM rules",
+      "finding": "substantiated by actual executed rule control",
+      "actual_evidence": "The unskipped tests.test_native_policy_snapshot_v3_publisher::test_windows_private_descriptor_deduplicates_system_owner_ace node passed in original combined-final-preflight XML at source tree55ae133c. Parsed real facade assignment points to native_policy_snapshot_windows_handles; its mocked Win32 boundary executes the actual production SDDL builder with SYSTEM owner and requires exactly one SYSTEM full-access ACE. Facade, test helper, production support, constants and snapshot facade all equal current.",
+      "evidence_packet": "0ca7d566632bd39c6fa6ca54743134e24970615b",
+      "xml_blob": "8602a3a7e5d8bacbaac6ca4a20e7d1ff7e511eb6",
+      "limit": "This is an actual executed modeled Win32 descriptor-rule control on Linux, not an actual privileged SYSTEM process. The latter is not imposed by the original clause."
+    },
+    {
+      "clause": "Loopback authentication",
+      "finding": "substantiated",
+      "actual_evidence": "Retained Rust Windows/Linux logs contain exact passing non-loopback endpoint refusal, real TCP socket-pair successful nonce/HMAC exchange, invalid server proof fatal/nonretryable refusal and fragmented-proof absolute-budget controls. Current deadline-test676fa271 and client/transport providers preserve those exact bodies. Final Unix authenticated positive separately traverses original header, digest and response binding.",
+      "evidence_packets": [
+        "85f4a71d995fbe7a22c3ffbeea3470e50b222c6b",
+        "143661732418039fde4ee62d3d484157a84ce30e",
+        "34b0e1a845b9bf200fd37e0b38cacd72a58f3bfe"
+      ],
+      "limit": "Legacy Python malicious-loopback compatibility test is supplementary; it is not substituted for these current Rust controls."
+    },
+    {
+      "clause": "Exact package process",
+      "finding": "substantiated",
+      "actual_evidence": "Retained Windows/Linux Rust same-binary control validates the actual package process and actual start marker, then rejects a stale marker. The final real Unix positive validates the actual child package path/start marker before original exchange; the negative selects another real live same-package process and rejects the socket peer mismatch before authentication bytes. Installed identity reports retained separately also exercise source/version mismatch and same-size restored-mtime corruption on unchanged identity providers.",
+      "limit": "The own clause does not prescribe a dedicated foreign-executable child campaign. No such execution is invented, and no PATH-only identity or changed installed wheel is qualified."
+    },
+    {
+      "clause": "Unix private paths and permissions",
+      "finding": "substantiated by actual retained POSIX executions",
+      "actual_evidence": "Original Linux run35511038686/source9b479556 has unskipped passes for public-file-or-parent rejection, symlink rejection and parent-mode-change-during-read rejection. Original before/after source metadata binds exact test72892475 and product4b90f5ad, both unchanged at current source. Retained native socket/startup-lock/private-scope controls independently cover the native transport layer.",
+      "evidence_packet": "8f5c699e940b543d6ef31f8177fdab5a78515e1d",
+      "xml_blob": "626450ca87433cbcf2f882e88d1f8fa351c3cad3",
+      "existing_data_peer": "5d79b2aa5f395816b1800a21eb42d67816c36f53",
+      "limit": "The three POSIX nodes are actual Linux passes, not their separate Windows skips. Python private-token reader coverage does not claim every native ancestor race."
+    },
+    {
+      "clause": "Unix peer identity",
+      "finding": "substantiated on all three supported POSIX targets",
+      "actual_evidence": "Original run35540033572 has four exact passing parent controls and two actual owned child passes per Linux x64/macOS ARM/macOS Intel, plus11 driver controls each. Positive uses original authenticated exchange; negative requires native_client_peer_identity_mismatch, nonretryability and actual zero authentication bytes received. Both peers are reaped and directories removed. Original in-budget and expired-budget controls also pass. Exact two test-only source leaves are now integrated unchanged into cbd9399.",
+      "evidence_packet": "34b0e1a845b9bf200fd37e0b38cacd72a58f3bfe",
+      "result_blob": "c701176526dfe14a68c07d8f85f21271b10e491f",
+      "independent_data_peer": "443e84d05afcc8c7902c9aa61c8f3ab6465c673f",
+      "limit": "The original isolated source is a63cfdf9/tree9c4725, not the later integration commit. No installed/performance result is relabeled."
+    }
+  ],
+  "remaining_limits": [
+    "RSP089 recovery/ambiguous-commit races and RSP090 conditional ingress prototype remain separate original dependencies. No completion of them follows from this own-clause assessment.",
+    "The original H profile/ADR selection gate remains. These tests preserve the existing transport; they neither authorize a new ingress design nor require one to satisfy this clause.",
+    "No privileged SYSTEM-run, foreign-executable campaign, global performance, resource, release or fresh installed-wheel gate is added to the original test clause.",
+    "Windows original normal400 default-auto20/21 failure remains unchanged. Selected source-suite passes do not repair it. Later21/21 nonreproduction and other normal results remain their own populations.",
+    "Earlier zero-job and both Mac fixture failures remain intact. Final successful Unix source controls do not retrospectively identify their lost raw errors.",
+    "The separate resident source-build binary was not retained in the historical Windows log packet; no binary digest is inferred for it.",
+    "No tests, compiler, native executable, product import, artifact download or workload was run for this assessment; only existing source/data were read and mechanically reconciled."
+  ],
+  "concrete_missing_own_clause_cases": [],
+  "evidence_extension": "This extends the previous partial map only with now-located actual private-path/SYSTEM execution and the separately peered final Unix population; earlier map limits are preserved where still applicable.",
+  "predecessors": {
+    "map": "bcedfa850d5af3839435a94d8abab3b52355f3ef",
+    "map_report": "2c702b00d565587cc9bccb95660fd3975f82565c",
+    "unix_addendum": "55b962649f80d84a174a7ac200002523e7cfbe42",
+    "addendum_blob": "3af6e8c0f8fcfb0328e17f4cd6b9c9483e09ac88"
+  }
+}

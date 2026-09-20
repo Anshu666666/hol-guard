@@ -1,0 +1,98 @@
+{
+  "schema": "pr2974.rsp091-real-peer-validation.v1",
+  "cases": [
+    {
+      "case": "resident_transport::peer_identity_tests::unix_peer_actual_owner_completes_original_exchange",
+      "passed": true,
+      "observations": [
+        {
+          "accepted": 1,
+          "authenticated": true,
+          "payload_bytes": 32,
+          "request_digest_valid": true,
+          "response_written": true
+        }
+      ],
+      "cleanup": [
+        {
+          "negative": false,
+          "reaped": true,
+          "directory_removed": true
+        }
+      ],
+      "parent_pass_count": 1,
+      "owned_child_fixture_pass_count": 1
+    },
+    {
+      "case": "resident_transport::peer_identity_tests::unix_peer_other_process_is_rejected_before_auth",
+      "passed": true,
+      "observations": [
+        {
+          "accepted": 1,
+          "authenticated": false,
+          "received_bytes": 0
+        }
+      ],
+      "cleanup": [
+        {
+          "negative": true,
+          "reaped": true,
+          "directory_removed": true
+        }
+      ],
+      "parent_pass_count": 1,
+      "owned_child_fixture_pass_count": 1
+    },
+    {
+      "case": "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline",
+      "passed": true,
+      "observations": [
+        {
+          "case": "unix_socket_setup_cannot_admit_after_original_deadline",
+          "connected": false,
+          "expired_on_release": true,
+          "owned_cleanup": true,
+          "result": "deadline"
+        }
+      ],
+      "cleanup": [],
+      "parent_pass_count": 1,
+      "owned_child_fixture_pass_count": 0
+    },
+    {
+      "case": "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection",
+      "passed": true,
+      "observations": [
+        {
+          "case": "unix_socket_setup_retains_in_budget_connection",
+          "connected": true,
+          "expired_on_release": false,
+          "owned_cleanup": true,
+          "result": "connected"
+        }
+      ],
+      "cleanup": [],
+      "parent_pass_count": 1,
+      "owned_child_fixture_pass_count": 0
+    }
+  ],
+  "passed": true,
+  "lane": "macos-arm64",
+  "binary_before": {
+    "bytes": 22805376,
+    "sha256": "96772e2bda61da6f4ff8fe817dba3aba8ebd40aace62e799304077462d68a4dc"
+  },
+  "selected_parent_cases": [
+    "resident_transport::peer_identity_tests::unix_peer_actual_owner_completes_original_exchange",
+    "resident_transport::peer_identity_tests::unix_peer_other_process_is_rejected_before_auth",
+    "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline",
+    "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection"
+  ],
+  "ignored_child_fixture": "resident_transport::peer_identity_tests::owned_peer_process",
+  "binary_after": {
+    "bytes": 22805376,
+    "sha256": "96772e2bda61da6f4ff8fe817dba3aba8ebd40aace62e799304077462d68a4dc"
+  },
+  "binary_unchanged": true,
+  "bindings_unchanged": true
+}

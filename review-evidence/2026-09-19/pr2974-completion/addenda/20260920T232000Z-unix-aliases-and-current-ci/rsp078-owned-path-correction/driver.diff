@@ -1,0 +1,142 @@
+--- before/scripts/ci/managed_aliases_installed/driver.py
++++ after/scripts/ci/managed_aliases_installed/driver.py
+@@ -11,6 +11,7 @@
+ import stat
+ import subprocess
+ import sys
++import tempfile
+ import zipfile
+ from pathlib import Path, PurePosixPath
+ from typing import Any
+@@ -289,11 +290,12 @@
+     require(value.get("passed") is True and label == "managed-aliases", "cohort_report_failed")
+     require(type(value.get("declared_cases")) is int and value["declared_cases"] == 14, "managed_population")
+     validate_population(value)
+-    cases = (
+-        daemon_cases(Path("/rsp078-result-oracle"))
+-        + permission_cases(Path("/rsp078-result-oracle"), kind="permission_no_daemon")
+-        + watch_cases(Path("/rsp078-result-oracle"))
+-    )
++    # Catalog construction writes fixture files; later checks use only its expected fields.
++    with tempfile.TemporaryDirectory(prefix="hg-managed-oracle-") as directory:
++        workspace = Path(directory)
++        cases = (
++            daemon_cases(workspace) + permission_cases(workspace, kind="permission_no_daemon") + watch_cases(workspace)
++        )
+     empty_hash = hashlib.sha256(b"").hexdigest()
+     for case, row in zip(cases, value["rows"], strict=True):
+         require(
+--- before/.github/workflows/managed-aliases-installed-correctness.yml
++++ after/.github/workflows/managed-aliases-installed-correctness.yml
+@@ -2,7 +2,7 @@
+ 
+ on:
+   push:
+-    branches: [codex/pr2974-managed-aliases-installed-20260920-v1]
++    branches: [codex/pr2974-managed-aliases-installed-20260920-v2]
+     paths: [.github/workflows/managed-aliases-installed-correctness.yml]
+ 
+ permissions:
+@@ -82,7 +82,7 @@
+           python - "$OUT/source-controls.xml" <<'PY'
+           import sys, xml.etree.ElementTree as ET
+           rows = list(ET.parse(sys.argv[1]).iter("testcase"))
+-          assert len(rows) == 288 and not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))
++          assert len(rows) == 290 and not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))
+           PY
+       - name: Install only the selected hash-enforced native wheel
+         run: |
+--- before/tests/test_managed_aliases_installed_driver.py
++++ after/tests/test_managed_aliases_installed_driver.py
+@@ -12,6 +12,7 @@
+ import json
+ import os
+ import subprocess
++import tempfile
+ import zipfile
+ from pathlib import Path
+ from types import SimpleNamespace
+@@ -23,7 +24,7 @@
+ from scripts.ci.managed_aliases_installed import driver
+ 
+ 
+-def report() -> dict[str, Any]:
++def report(workspace: Path) -> dict[str, Any]:
+     from scripts.native_slo_managed_aliases import (
+         PERMISSION_RESPONSE,
+         daemon_cases,
+@@ -33,7 +34,6 @@
+     )
+     from scripts.native_slo_registered_surfaces_run import delivery_expectation
+ 
+-    workspace = Path("/modeled-population-control")
+     cases = daemon_cases(workspace) + permission_cases(workspace, kind="permission_no_daemon") + watch_cases(workspace)
+     rows = []
+     for case in cases:
+@@ -104,8 +104,8 @@
+     }
+ 
+ 
+-def test_complete_registered_population_is_admitted_as_correctness_only():
+-    value = report()
++def test_complete_registered_population_is_admitted_as_correctness_only(tmp_path):
++    value = report(tmp_path)
+     before = copy.deepcopy(value)
+     assert driver.population("managed-aliases", value) == {
+         "validated_cases": 14,
+@@ -152,8 +152,8 @@
+         "declared",
+     ],
+ )
+-def test_pass_flag_cannot_admit_incomplete_or_overclaimed_population(fault):
+-    value = report()
++def test_pass_flag_cannot_admit_incomplete_or_overclaimed_population(fault, tmp_path):
++    value = report(tmp_path)
+     first, permission, absent = value["rows"][0], value["rows"][4], value["rows"][8]
+     if fault == "missing":
+         value["rows"].pop()
+@@ -381,7 +381,7 @@
+         output = Path(command[command.index("--output") + 1])
+         label = output.stem
+         offered.append(label)
+-        output.write_text(json.dumps(report()))
++        output.write_text(json.dumps(report(tmp_path)))
+         return SimpleNamespace(
+             returncode=0,
+             timed_out=False,
+@@ -405,3 +405,35 @@
+     monkeypatch.setattr(driver, "git", lambda *args: pytest.fail("unadmitted contract reached Git"))
+     with pytest.raises(RuntimeError, match="input_contract_unadmitted"):
+         driver.binding(argparse.Namespace(), {"ready": False})
++
++
++@pytest.mark.parametrize("fault", [False, True], ids=["accepted", "refused"])
++def test_population_owns_private_catalog_and_cleans_after_result(tmp_path, monkeypatch, fault):
++    from scripts import native_slo_managed_aliases as aliases
++
++    value = report(tmp_path / "modeled")
++    before = copy.deepcopy(value)
++    if fault:
++        value["rows"][0]["returncode"] = 0
++        before = copy.deepcopy(value)
++    original = aliases.daemon_cases
++    observed = []
++    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
++
++    def owned_cases(workspace):
++        # Refuse an unowned path before the original factory can write, even as root.
++        assert workspace.is_relative_to(tmp_path)
++        assert workspace.is_dir() and workspace.stat().st_mode & 0o777 == 0o700
++        observed.append(workspace)
++        return original(workspace)
++
++    monkeypatch.setattr(aliases, "daemon_cases", owned_cases)
++    if fault:
++        with pytest.raises(AssertionError, match="managed_alias_delivery_projection"):
++            driver.population("managed-aliases", value)
++    else:
++        result = driver.population("managed-aliases", value)
++        assert result["validated_cases"] == 14
++        assert str(tmp_path) not in json.dumps(result)
++    assert len(observed) == 1 and not observed[0].exists()
++    assert value == before

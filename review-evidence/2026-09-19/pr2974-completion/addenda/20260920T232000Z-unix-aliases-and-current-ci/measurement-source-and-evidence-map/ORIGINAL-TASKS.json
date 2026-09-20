@@ -1,0 +1,48 @@
+{
+  "source_overlay_sha256": "b2f2f84f76dcff9ad34ded079df234461ff7ad5dd731b9b2c1de5514f33aada4",
+  "original_prd_git_blob": "39d27bfa693117f8df3816d44b106921ca8efc94",
+  "tasks": [
+    {
+      "id": "RSP-008",
+      "title": "Add attributable phase measurements",
+      "original_object_sha256": "86f87b0c8709f52f32c20915cfff8365ac2b58d1ab03507b1d016722fed08427",
+      "original_acceptance": "Measure hashing, config lookup, JSON, admission, queue, native connection, evaluation, evidence submission and response. Export aggregate-only bounded fields.",
+      "original_dependencies": "RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-003"
+      ]
+    },
+    {
+      "id": "RSP-025",
+      "title": "Profile executable validation on the ordinary route",
+      "original_object_sha256": "7f3a91360c41c3f92e0fa427ce43550a0405d8eb9140f7fdc032d9976b585571",
+      "original_acceptance": "Count status lookups, full executable bytes hashed and latency for warm/cold hooks. Do not confuse capability-cache hits with digest-cache hits.",
+      "original_dependencies": "RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-008"
+      ]
+    },
+    {
+      "id": "RSP-085",
+      "title": "Profile discovery/connect/auth versus evaluation",
+      "original_object_sha256": "22551fefa25d05fe9f55e3cc722c2e1d58b7804900529cf3f526126cc4f41a29",
+      "original_acceptance": "Measure platform-specific per-request work through the existing persistent helper and resident; count current socket opens.",
+      "original_dependencies": "RSP-035,RSP-048,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-035",
+        "RSP-048",
+        "RSP-010"
+      ]
+    },
+    {
+      "id": "RSP-121",
+      "title": "Measure foreground evidence submission cost",
+      "original_object_sha256": "fae8ae7a5aaa11d911892cf599e9a7c64d8c105c9344266056f53caabe4326fb",
+      "original_acceptance": "Attribute full payload copies/JSON before response, queue admission, native receipt validation and rejected work; use maximum envelopes.",
+      "original_dependencies": "RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-008"
+      ]
+    }
+  ]
+}

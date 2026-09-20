@@ -1,0 +1,66 @@
+{
+  "schema": "pr2974.current-first-admission-initial-refusal-path.v1",
+  "source": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+  "artifact_build": "9f511875b236c12e5f23c783e958a536ac0360ba",
+  "source_body_bindings": [
+    {
+      "path": "scripts/native_slo_workspace_lifecycle.py",
+      "git_blob": "2228638126776fa992a482375f472acc9e9bc927"
+    },
+    {
+      "path": "scripts/native_slo_workspace_lifecycle_runner.py",
+      "git_blob": "88eeef82ea2010a9676fda22a55aec2b8d47947b"
+    }
+  ],
+  "actual_failure": {
+    "category": "RuntimeError",
+    "diagnostic_digest": "9d9c107f3b5055870bb2456f4b29411929ee7723de9f4b3c211296c5378c593a",
+    "line": 73,
+    "origin": "native_slo_workspace_lifecycle.await_ack",
+    "reason": "unclassified_failure",
+    "schema": "hol-guard.native-qualification-failure.v1"
+  },
+  "initial_scope": {
+    "original_order": [
+      "owned path validation, existing daemon worker/publisher lookup",
+      "strict overlay atomic_write_settings returns",
+      "original publisher.request_publish returns",
+      "await_ack called for workspace99,minimum1,allow,stricttrue with original time.monotonic()+400ms",
+      "original await_ack raises its line73 deadline error",
+      "original finally closes publisher and checks closed/thread containment",
+      "original control returns failed cell, fixture exits, ledger retains terminal"
+    ],
+    "deadline_ms": 400,
+    "deadline_origin": "Original monotonic call at initial await invocation after overlay and publication request; not cell entry or daemon constructor start.",
+    "initial_clock_values_retained": false,
+    "first_reply_fault_activation_reached": false,
+    "cold_registration_acceptance_reached": false,
+    "recovered_400ms_window_reached": false
+  },
+  "surviving_facts": {
+    "registered_workspaces": 100,
+    "declared_probe_index": 99,
+    "status": "completed means caught-failure control response, not readiness success",
+    "publisher_contained": true,
+    "publisher_containment_meaning": "After original close, closed and thread absent/not alive. No broader descendant-reaping certificate.",
+    "publication_events": 0,
+    "publication_events_scope": "Original observer is only installed inside later replacement prepare callback; zero reflects observer not activated, not proof no publication happened.",
+    "lifecycle_boundaries": {},
+    "fault_report_absent": true,
+    "service_replacement_report_absent": true,
+    "request_receipt_witness_absent": true,
+    "secondary_workspace_probed": false,
+    "cleanup_failure_retained": false,
+    "independent_source_driver_installed_identity_passed": true,
+    "installed_runtime_matches_false_meaning": "Original sweep derives this from successful cell binding; binding absent after initial failure. Not evidence of different installed bytes."
+  },
+  "unobserved": [
+    "Publisher last_error or exception details from its background publication",
+    "Prepared-policy return value and snapshot availability",
+    "Generation, epoch, ACK currentness and authority readback",
+    "Per-predicate true/false values or exact monotonic samples",
+    "Daemon PID/thread state at failed predicate",
+    "Any recovered native request/SQL receipt or fault discard"
+  ],
+  "minimal_source_assessment": "This actual record locates the original initial readiness refusal before the selected fault. It cannot assign a publisher, transport, authority, overlay, thread or import cause. No source correction or authority-leaf observer is justified from this record alone, and no replay is proposed here."
+}

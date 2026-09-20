@@ -1,0 +1,588 @@
+﻿2026-09-20T22:20:02.9812451Z Current runner version: '2.337.0'
+2026-09-20T22:20:02.9836421Z ##[group]Runner Image Provisioner
+2026-09-20T22:20:02.9837321Z Hosted Compute Agent
+2026-09-20T22:20:02.9838307Z Version: 20260828.587
+2026-09-20T22:20:02.9838965Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T22:20:02.9839742Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T22:20:02.9840495Z Worker ID: {f2456bfb-1a5a-436b-af38-7b68356719f2}
+2026-09-20T22:20:02.9841281Z Azure Region: westus
+2026-09-20T22:20:02.9841895Z ##[endgroup]
+2026-09-20T22:20:02.9843378Z ##[group]Operating System
+2026-09-20T22:20:02.9844008Z Ubuntu
+2026-09-20T22:20:02.9844620Z 24.04.5
+2026-09-20T22:20:02.9845201Z LTS
+2026-09-20T22:20:02.9845755Z ##[endgroup]
+2026-09-20T22:20:02.9846318Z ##[group]Runner Image
+2026-09-20T22:20:02.9846951Z Image: ubuntu-24.04
+2026-09-20T22:20:02.9847795Z Version: 20260907.300.1
+2026-09-20T22:20:02.9849066Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-20T22:20:02.9850720Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-20T22:20:02.9851694Z ##[endgroup]
+2026-09-20T22:20:02.9852901Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T22:20:02.9854833Z Contents: read
+2026-09-20T22:20:02.9855541Z Metadata: read
+2026-09-20T22:20:02.9856097Z ##[endgroup]
+2026-09-20T22:20:02.9858397Z Secret source: Actions
+2026-09-20T22:20:02.9859431Z Cache mode: write
+2026-09-20T22:20:02.9860151Z Prepare workflow directory
+2026-09-20T22:20:03.0230622Z Prepare all required actions
+2026-09-20T22:20:03.0293606Z Getting action download info
+2026-09-20T22:20:03.4113348Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T22:20:03.5582977Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T22:20:03.6315260Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T22:20:04.1800821Z Download action repository 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' (SHA:3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c)
+2026-09-20T22:20:04.5972202Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T22:20:04.8161744Z Complete job name: native-artifact-matrix
+2026-09-20T22:20:04.9078561Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T22:20:04.9080343Z with:
+2026-09-20T22:20:04.9081168Z   persist-credentials: false
+2026-09-20T22:20:04.9082213Z   repository: hashgraph-online/hol-guard
+2026-09-20T22:20:04.9090620Z   token: ***
+2026-09-20T22:20:04.9091432Z   ssh-strict: true
+2026-09-20T22:20:04.9092271Z   ssh-user: git
+2026-09-20T22:20:04.9093075Z   clean: true
+2026-09-20T22:20:04.9093910Z   sparse-checkout-cone-mode: true
+2026-09-20T22:20:04.9094943Z   fetch-depth: 1
+2026-09-20T22:20:04.9095769Z   fetch-tags: false
+2026-09-20T22:20:04.9096622Z   show-progress: true
+2026-09-20T22:20:04.9097490Z   lfs: false
+2026-09-20T22:20:04.9098422Z   submodules: false
+2026-09-20T22:20:04.9099286Z   set-safe-directory: true
+2026-09-20T22:20:04.9100483Z ##[endgroup]
+2026-09-20T22:20:05.0120721Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T22:20:05.0123472Z ##[group]Getting Git version info
+2026-09-20T22:20:05.0125050Z Working directory is '/home/runner/work/hol-guard/hol-guard'
+2026-09-20T22:20:05.0127200Z [command]/usr/bin/git version
+2026-09-20T22:20:05.0181591Z git version 2.55.0
+2026-09-20T22:20:05.0235615Z ##[endgroup]
+2026-09-20T22:20:05.0250861Z Temporarily overriding HOME='/home/runner/work/_temp/9e92d547-ff92-4472-9b90-1de0a4c4b049' before making global git config changes
+2026-09-20T22:20:05.0254147Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T22:20:05.0257460Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:05.0302268Z Deleting the contents of '/home/runner/work/hol-guard/hol-guard'
+2026-09-20T22:20:05.0305940Z ##[group]Determining repository object format
+2026-09-20T22:20:05.0308286Z ##[endgroup]
+2026-09-20T22:20:05.0310211Z ##[group]Initializing the repository
+2026-09-20T22:20:05.0313114Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:05.0433636Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T22:20:05.0437010Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T22:20:05.0440672Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T22:20:05.0443310Z hint: call:
+2026-09-20T22:20:05.0444667Z hint:
+2026-09-20T22:20:05.0446646Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T22:20:05.0449302Z hint:
+2026-09-20T22:20:05.0451293Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T22:20:05.0454597Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T22:20:05.0457178Z hint:
+2026-09-20T22:20:05.0458884Z hint: 	git branch -m <name>
+2026-09-20T22:20:05.0460480Z hint:
+2026-09-20T22:20:05.0462692Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T22:20:05.0466423Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/.git/
+2026-09-20T22:20:05.0472716Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T22:20:05.0489867Z ##[endgroup]
+2026-09-20T22:20:05.0492432Z ##[group]Disabling automatic garbage collection
+2026-09-20T22:20:05.0494707Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-20T22:20:05.0528704Z ##[endgroup]
+2026-09-20T22:20:05.0531116Z ##[group]Setting up auth
+2026-09-20T22:20:05.0532881Z Removing SSH command configuration
+2026-09-20T22:20:05.0540819Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T22:20:05.0575427Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T22:20:05.0940662Z Removing HTTP extra header
+2026-09-20T22:20:05.0949360Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T22:20:05.0981318Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T22:20:05.1192239Z Removing includeIf entries pointing to credentials config files
+2026-09-20T22:20:05.1197060Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T22:20:05.1226536Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T22:20:05.1443366Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T22:20:05.1478878Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:05.1509663Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:05.1542399Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:05.1571651Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:05.1597777Z ##[endgroup]
+2026-09-20T22:20:05.1599222Z ##[group]Fetching the repository
+2026-09-20T22:20:05.1606199Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +9f511875b236c12e5f23c783e958a536ac0360ba:refs/remotes/pull/2974/merge
+2026-09-20T22:20:07.9852651Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T22:20:07.9854382Z  * [new ref]         9f511875b236c12e5f23c783e958a536ac0360ba -> pull/2974/merge
+2026-09-20T22:20:07.9859876Z ##[endgroup]
+2026-09-20T22:20:07.9860891Z ##[group]Determining the checkout info
+2026-09-20T22:20:07.9862305Z ##[endgroup]
+2026-09-20T22:20:07.9868592Z [command]/usr/bin/git sparse-checkout disable
+2026-09-20T22:20:07.9914863Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T22:20:07.9940992Z ##[group]Checking out the ref
+2026-09-20T22:20:07.9944424Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T22:20:08.3580691Z Note: switching to 'refs/remotes/pull/2974/merge'.
+2026-09-20T22:20:08.3581258Z 
+2026-09-20T22:20:08.3581692Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T22:20:08.3582691Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T22:20:08.3583732Z state without impacting any branches by switching back to a branch.
+2026-09-20T22:20:08.3584339Z 
+2026-09-20T22:20:08.3584809Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T22:20:08.3585664Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T22:20:08.3586165Z 
+2026-09-20T22:20:08.3586389Z   git switch -c <new-branch-name>
+2026-09-20T22:20:08.3586727Z 
+2026-09-20T22:20:08.3586953Z Or undo this operation with:
+2026-09-20T22:20:08.3587277Z 
+2026-09-20T22:20:08.3587477Z   git switch -
+2026-09-20T22:20:08.3587979Z 
+2026-09-20T22:20:08.3588260Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T22:20:08.3588677Z 
+2026-09-20T22:20:08.3589064Z HEAD is now at 9f51187 Merge a1d509404b0803a91031cb51f4b0c919408bfeba into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T22:20:08.3620298Z ##[endgroup]
+2026-09-20T22:20:08.3668607Z [command]/usr/bin/git log -1 --format=%H
+2026-09-20T22:20:08.3671574Z 9f511875b236c12e5f23c783e958a536ac0360ba
+2026-09-20T22:20:08.3682440Z ##[group]Removing auth
+2026-09-20T22:20:08.3683535Z Removing SSH command configuration
+2026-09-20T22:20:08.3686398Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T22:20:08.3718636Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T22:20:08.3936622Z Removing HTTP extra header
+2026-09-20T22:20:08.3940673Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T22:20:08.3971311Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T22:20:08.4186893Z Removing includeIf entries pointing to credentials config files
+2026-09-20T22:20:08.4190520Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T22:20:08.4214347Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T22:20:08.4215298Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T22:20:08.4216120Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T22:20:08.4216543Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T22:20:08.4222892Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T22:20:08.4243427Z /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4252394Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4282879Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T22:20:08.4303279Z /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4312147Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4343037Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T22:20:08.4364832Z /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4372114Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4405126Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T22:20:08.4426284Z /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4443215Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config
+2026-09-20T22:20:08.4476414Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T22:20:08.4690367Z Removing credentials config '/home/runner/work/_temp/git-credentials-2a057791-8474-47ca-a2dc-0bc87c33a1c1.config'
+2026-09-20T22:20:08.4697790Z ##[endgroup]
+2026-09-20T22:20:08.4995590Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T22:20:08.4996050Z with:
+2026-09-20T22:20:08.4996265Z   python-version: 3.12
+2026-09-20T22:20:08.4996506Z   check-latest: false
+2026-09-20T22:20:08.4999208Z   token: ***
+2026-09-20T22:20:08.4999456Z   update-environment: true
+2026-09-20T22:20:08.4999712Z   allow-prereleases: false
+2026-09-20T22:20:08.4999949Z   freethreaded: false
+2026-09-20T22:20:08.5000168Z ##[endgroup]
+2026-09-20T22:20:08.6315788Z ##[group]Installed versions
+2026-09-20T22:20:08.6414666Z Successfully set up CPython (3.12.14)
+2026-09-20T22:20:08.6415806Z ##[endgroup]
+2026-09-20T22:20:08.6623109Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T22:20:08.6623541Z with:
+2026-09-20T22:20:08.6623737Z   version: 0.9.26
+2026-09-20T22:20:08.6623949Z   enable-cache: true
+2026-09-20T22:20:08.6624190Z   activate-environment: false
+2026-09-20T22:20:08.6624495Z   no-project: false
+2026-09-20T22:20:08.6624795Z   working-directory: /home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:08.6627372Z   github-token: ***
+2026-09-20T22:20:08.6628164Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T22:20:08.6628842Z   restore-cache: true
+2026-09-20T22:20:08.6629076Z   save-cache: true
+2026-09-20T22:20:08.6629286Z   prune-cache: true
+2026-09-20T22:20:08.6629499Z   cache-python: false
+2026-09-20T22:20:08.6629737Z   ignore-nothing-to-cache: false
+2026-09-20T22:20:08.6630013Z   ignore-empty-workdir: false
+2026-09-20T22:20:08.6630318Z   download-from-astral-mirror: true
+2026-09-20T22:20:08.6630601Z   add-problem-matchers: true
+2026-09-20T22:20:08.6630842Z   quiet: false
+2026-09-20T22:20:08.6631051Z   resolution-strategy: highest
+2026-09-20T22:20:08.6631291Z env:
+2026-09-20T22:20:08.6631548Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:08.6632003Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:08.6632621Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:08.6633022Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:08.6633410Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:08.6633798Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:08.6634125Z ##[endgroup]
+2026-09-20T22:20:08.8484283Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T22:20:08.9220924Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-09-20T22:20:09.1644967Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/db105ebf-87ad-46b8-942a-5ab1d35e4676 -f /home/runner/work/_temp/cfed99e3-2a52-4ea5-ba14-86b05d435917
+2026-09-20T22:20:09.6187896Z Added /home/runner/.local/bin to the path
+2026-09-20T22:20:09.6192490Z Added /opt/hostedtoolcache/uv/0.9.26/x86_64 to the path
+2026-09-20T22:20:09.6193794Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:09.6194741Z Added /home/runner/work/_temp/uv-python-dir to the path
+2026-09-20T22:20:09.6204029Z Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:09.6204720Z Successfully installed uv version 0.9.26
+2026-09-20T22:20:09.7532040Z Searching files using cache dependency glob: /home/runner/work/hol-guard/hol-guard/**/*requirements*.txt,/home/runner/work/hol-guard/hol-guard/**/*requirements*.in,/home/runner/work/hol-guard/hol-guard/**/*constraints*.txt,/home/runner/work/hol-guard/hol-guard/**/*constraints*.in,/home/runner/work/hol-guard/hol-guard/**/pyproject.toml,/home/runner/work/hol-guard/hol-guard/**/uv.lock,/home/runner/work/hol-guard/hol-guard/**/*.py.lock
+2026-09-20T22:20:09.7599675Z /home/runner/work/hol-guard/hol-guard/.clusterfuzzlite/requirements-atheris.txt
+2026-09-20T22:20:09.7795887Z /home/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.in
+2026-09-20T22:20:09.7803781Z /home/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.txt
+2026-09-20T22:20:09.7813057Z /home/runner/work/hol-guard/hol-guard/action/scanner-cisco-runtime-requirements.txt
+2026-09-20T22:20:09.7824835Z /home/runner/work/hol-guard/hol-guard/action/scanner-runtime-requirements.txt
+2026-09-20T22:20:09.8601450Z /home/runner/work/hol-guard/hol-guard/distributions/mcpb/pyproject.toml
+2026-09-20T22:20:09.8611917Z /home/runner/work/hol-guard/hol-guard/docker-requirements.txt
+2026-09-20T22:20:09.8851245Z /home/runner/work/hol-guard/hol-guard/pyproject.toml
+2026-09-20T22:20:09.8861442Z /home/runner/work/hol-guard/hol-guard/requirements.txt
+2026-09-20T22:20:10.2246537Z /home/runner/work/hol-guard/hol-guard/uv.lock
+2026-09-20T22:20:10.2269599Z Found 10 files to hash.
+2026-09-20T22:20:10.2345616Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T22:20:10.4725002Z Cache hit for: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T22:20:11.4267861Z Received 431681 of 431681 (100.0%), 0.6 MBs/sec
+2026-09-20T22:20:11.4268962Z Cache Size: ~0 MB (431681 B)
+2026-09-20T22:20:11.4299758Z [command]/usr/bin/tar -xf /home/runner/work/_temp/79599441-0603-4913-9be8-2a319e328722/cache.tzst -P -C /home/runner/work/hol-guard/hol-guard --use-compress-program unzstd
+2026-09-20T22:20:11.4446014Z Cache restored successfully
+2026-09-20T22:20:11.4460068Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T22:20:11.5623749Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T22:20:11.5624227Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T22:20:11.5665789Z shell: /usr/bin/bash -e {0}
+2026-09-20T22:20:11.5666264Z env:
+2026-09-20T22:20:11.5666535Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:11.5666991Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:11.5667451Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:11.5668139Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:11.5668526Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:11.5668919Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:11.5669343Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:11.5669723Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:11.5670234Z ##[endgroup]
+2026-09-20T22:20:11.6121815Z Using CPython 3.12.14 interpreter at: /opt/hostedtoolcache/Python/3.12.14/x64/bin/python3.12
+2026-09-20T22:20:11.6122461Z Creating virtual environment at: .venv
+2026-09-20T22:20:11.6400728Z    Building hol-guard @ file:///home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:11.7032987Z Downloading cryptography (4.5MiB)
+2026-09-20T22:20:11.7041292Z Downloading pydantic-core (2.0MiB)
+2026-09-20T22:20:11.7061053Z Downloading ruff (11.0MiB)
+2026-09-20T22:20:11.7064489Z Downloading nodejs-wheel-binaries (57.9MiB)
+2026-09-20T22:20:11.7067569Z Downloading basedpyright (12.6MiB)
+2026-09-20T22:20:11.7073333Z Downloading pygments (1.2MiB)
+2026-09-20T22:20:11.7076688Z Downloading libcst (2.2MiB)
+2026-09-20T22:20:12.0261065Z  Downloaded pydantic-core
+2026-09-20T22:20:12.2809168Z  Downloaded ruff
+2026-09-20T22:20:12.3205671Z  Downloaded cryptography
+2026-09-20T22:20:12.4434454Z  Downloaded libcst
+2026-09-20T22:20:12.4455042Z  Downloaded pygments
+2026-09-20T22:20:13.2352154Z       Built hol-guard @ file:///home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:13.5193042Z  Downloaded basedpyright
+2026-09-20T22:20:13.6270561Z  Downloaded nodejs-wheel-binaries
+2026-09-20T22:20:13.6272566Z Prepared 69 packages in 1.99s
+2026-09-20T22:20:13.7941733Z Installed 69 packages in 166ms
+2026-09-20T22:20:13.7942367Z  + annotated-types==0.7.0
+2026-09-20T22:20:13.7943530Z  + anyio==4.14.2
+2026-09-20T22:20:13.7943920Z  + attrs==26.1.0
+2026-09-20T22:20:13.7944299Z  + basedpyright==1.39.8
+2026-09-20T22:20:13.7944697Z  + build==1.5.0
+2026-09-20T22:20:13.7945051Z  + certifi==2026.2.25
+2026-09-20T22:20:13.7945442Z  + cffi==2.0.0
+2026-09-20T22:20:13.7945828Z  + charset-normalizer==3.4.7
+2026-09-20T22:20:13.7946254Z  + click==8.4.1
+2026-09-20T22:20:13.7946601Z  + coverage==7.13.5
+2026-09-20T22:20:13.7946985Z  + cryptography==50.0.0
+2026-09-20T22:20:13.7947367Z  + h11==0.16.0
+2026-09-20T22:20:13.7948327Z  + hol-guard==3.0.1 (from file:///home/runner/work/hol-guard/hol-guard)
+2026-09-20T22:20:13.7948998Z  + httpcore==1.0.9
+2026-09-20T22:20:13.7949357Z  + httpx==0.28.1
+2026-09-20T22:20:13.7953195Z  + httpx-sse==0.4.3
+2026-09-20T22:20:13.7953576Z  + idna==3.15
+2026-09-20T22:20:13.7953951Z  + importlib-metadata==8.9.0
+2026-09-20T22:20:13.7954392Z  + iniconfig==2.3.0
+2026-09-20T22:20:13.7954761Z  + jaraco-classes==3.4.0
+2026-09-20T22:20:13.7955162Z  + jaraco-context==6.1.2
+2026-09-20T22:20:13.7955568Z  + jaraco-functools==4.4.0
+2026-09-20T22:20:13.7955971Z  + jeepney==0.9.0
+2026-09-20T22:20:13.7956329Z  + jsonschema==4.26.0
+2026-09-20T22:20:13.7956744Z  + jsonschema-specifications==2025.9.1
+2026-09-20T22:20:13.7957212Z  + keyring==25.7.0
+2026-09-20T22:20:13.7957742Z  + libcst==1.9.0
+2026-09-20T22:20:13.7958109Z  + linkify-it-py==2.1.0
+2026-09-20T22:20:13.7958513Z  + markdown-it-py==4.0.0
+2026-09-20T22:20:13.7958903Z  + mcp==1.28.1
+2026-09-20T22:20:13.7959277Z  + mdit-py-plugins==0.5.0
+2026-09-20T22:20:13.7959682Z  + mdurl==0.1.2
+2026-09-20T22:20:13.7960047Z  + more-itertools==11.0.1
+2026-09-20T22:20:13.7960436Z  + mutmut==3.7.0
+2026-09-20T22:20:13.7961167Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T22:20:13.7961652Z  + packaging==26.0
+2026-09-20T22:20:13.7962032Z  + platformdirs==4.9.4
+2026-09-20T22:20:13.7962492Z  + pluggy==1.6.0
+2026-09-20T22:20:13.7963077Z  + psutil==7.2.2
+2026-09-20T22:20:13.7963469Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T22:20:13.7963926Z  + pycparser==3.0
+2026-09-20T22:20:13.7964285Z  + pydantic==2.12.5
+2026-09-20T22:20:13.7964617Z  + pydantic-core==2.41.5
+2026-09-20T22:20:13.7964992Z  + pydantic-settings==2.14.1
+2026-09-20T22:20:13.7965369Z  + pygments==2.20.0
+2026-09-20T22:20:13.7965675Z  + pyjwt==2.13.0
+2026-09-20T22:20:13.7966003Z  + pyproject-hooks==1.2.0
+2026-09-20T22:20:13.7966356Z  + pytest==9.0.3
+2026-09-20T22:20:13.7966666Z  + pytest-cov==7.1.0
+2026-09-20T22:20:13.7967002Z  + python-dotenv==1.2.2
+2026-09-20T22:20:13.7967362Z  + python-multipart==0.0.32
+2026-09-20T22:20:13.7967966Z  + pyyaml==6.0.3
+2026-09-20T22:20:13.7968285Z  + referencing==0.37.0
+2026-09-20T22:20:13.7968621Z  + regex==2026.4.4
+2026-09-20T22:20:13.7968931Z  + requests==2.33.1
+2026-09-20T22:20:13.7969263Z  + rich==14.2.0
+2026-09-20T22:20:13.7969579Z  + rpds-py==0.30.0
+2026-09-20T22:20:13.7969884Z  + ruff==0.15.17
+2026-09-20T22:20:13.7970209Z  + secretstorage==3.5.0
+2026-09-20T22:20:13.7970555Z  + setproctitle==1.3.7
+2026-09-20T22:20:13.7970899Z  + sse-starlette==3.4.4
+2026-09-20T22:20:13.7971257Z  + starlette==1.3.1
+2026-09-20T22:20:13.7971721Z  + textual==7.5.0
+2026-09-20T22:20:13.7972119Z  + typing-extensions==4.15.0
+2026-09-20T22:20:13.7972520Z  + typing-inspection==0.4.2
+2026-09-20T22:20:13.7972889Z  + uc-micro-py==2.0.0
+2026-09-20T22:20:13.7973234Z  + urllib3==2.7.0
+2026-09-20T22:20:13.7973577Z  + uvicorn==0.40.0
+2026-09-20T22:20:13.7973933Z  + zipp==3.23.0
+2026-09-20T22:20:13.8099763Z ##[group]Run uv run --no-sync python -m pytest tests/test_aggregate_native_wheel_artifacts.py tests/test_validate_release_artifacts.py --tb=short
+2026-09-20T22:20:13.8100950Z [36;1muv run --no-sync python -m pytest tests/test_aggregate_native_wheel_artifacts.py tests/test_validate_release_artifacts.py --tb=short[0m
+2026-09-20T22:20:13.8138735Z shell: /usr/bin/bash -e {0}
+2026-09-20T22:20:13.8138990Z env:
+2026-09-20T22:20:13.8139266Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:13.8139737Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:13.8140169Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:13.8140562Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:13.8140965Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:13.8141354Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:13.8141786Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:13.8142161Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:13.8142461Z ##[endgroup]
+2026-09-20T22:20:20.6662581Z ============================= test session starts ==============================
+2026-09-20T22:20:20.6663377Z platform linux -- Python 3.12.14, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T22:20:20.6663836Z rootdir: /home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:20.6664186Z configfile: pyproject.toml
+2026-09-20T22:20:20.6664502Z plugins: cov-7.1.0, anyio-4.14.2
+2026-09-20T22:20:20.6664781Z collected 21 items
+2026-09-20T22:20:20.6664933Z 
+2026-09-20T22:20:20.7596767Z tests/test_aggregate_native_wheel_artifacts.py .............             [ 61%]
+2026-09-20T22:20:20.9761083Z tests/test_validate_release_artifacts.py ........                        [100%]
+2026-09-20T22:20:20.9761727Z 
+2026-09-20T22:20:20.9761933Z ============================== 21 passed in 0.87s ==============================
+2026-09-20T22:20:21.1613645Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-09-20T22:20:21.1614096Z with:
+2026-09-20T22:20:21.1614318Z   pattern: hol-guard-native-wheel-*
+2026-09-20T22:20:21.1614605Z   path: native-matrix-input
+2026-09-20T22:20:21.1614853Z   merge-multiple: false
+2026-09-20T22:20:21.1615113Z   repository: hashgraph-online/hol-guard
+2026-09-20T22:20:21.1615388Z   run-id: 35539716189
+2026-09-20T22:20:21.1615608Z   skip-decompress: false
+2026-09-20T22:20:21.1616018Z   digest-mismatch: error
+2026-09-20T22:20:21.1616237Z env:
+2026-09-20T22:20:21.1616490Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:21.1616920Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:21.1617345Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:21.1618062Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:21.1618484Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:21.1618878Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:21.1619284Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:21.1619659Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:21.1619964Z ##[endgroup]
+2026-09-20T22:20:21.5779273Z Found 5 artifact(s)
+2026-09-20T22:20:21.5780243Z Filtering artifacts by pattern 'hol-guard-native-wheel-*'
+2026-09-20T22:20:21.5800579Z Preparing to download the following artifacts:
+2026-09-20T22:20:21.5801516Z - hol-guard-native-wheel-linux-x64 (ID: 10615025870, Size: 13731205, Expected Digest: sha256:1e7469afdf860466f7b7ca438f81ed3ef18f6d57bd381e6c9cff92e55b74dfeb)
+2026-09-20T22:20:21.5802780Z - hol-guard-native-wheel-aarch64-apple-darwin (ID: 10614825404, Size: 13289259, Expected Digest: sha256:3e552a633b59118e9caac134b710f6b218d9ab8081b44ba7cabc0fd27c387a35)
+2026-09-20T22:20:21.5804024Z - hol-guard-native-wheel-windows-x64 (ID: 10614277518, Size: 8256941, Expected Digest: sha256:ac6096766a737a28b40d501880b3e66824076d0a2d8f655b1dc59f42f063a631)
+2026-09-20T22:20:21.5805207Z - hol-guard-native-wheel-x86_64-apple-darwin (ID: 10614003430, Size: 13433129, Expected Digest: sha256:46db53e8fffc7305eee29e1869ac7f2828254f295617356698ab8d09420efeaa)
+2026-09-20T22:20:22.0798468Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/0b488b4b-23af-4715-870a-a38f86672cc4/workflow-job-run-b13cf705-8fd5-529d-8301-e4e25776543a/artifacts/a1202ef1838bf96af6fbba539dc14bc527e60b5e4b293b9115dda6693ca0855b.zip
+2026-09-20T22:20:22.0800928Z Starting download of artifact to: /home/runner/work/hol-guard/hol-guard/native-matrix-input/hol-guard-native-wheel-x86_64-apple-darwin
+2026-09-20T22:20:22.0945295Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/0b488b4b-23af-4715-870a-a38f86672cc4/workflow-job-run-ec348a79-462d-53c2-8fa2-79dd804c5179/artifacts/bde852b4f47b2a90846ec8ab6353992658ee5774d608eda9f9294b6c98f657f7.zip
+2026-09-20T22:20:22.0947024Z Starting download of artifact to: /home/runner/work/hol-guard/hol-guard/native-matrix-input/hol-guard-native-wheel-windows-x64
+2026-09-20T22:20:22.0984417Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/0b488b4b-23af-4715-870a-a38f86672cc4/workflow-job-run-979dab7a-6823-5598-8f66-cbd7a8272e49/artifacts/f01892027e36e955e393bbd56816fa6cca5a0e17662e6da770718653a4ef683f.zip
+2026-09-20T22:20:22.0986614Z Starting download of artifact to: /home/runner/work/hol-guard/hol-guard/native-matrix-input/hol-guard-native-wheel-linux-x64
+2026-09-20T22:20:22.1051901Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/0b488b4b-23af-4715-870a-a38f86672cc4/workflow-job-run-123c48de-b04f-51cf-b3e2-97f216745a8a/artifacts/d8decc13b483c1d2dda01878776ba2c63e6d449bc704a45879618525fb581c6e.zip
+2026-09-20T22:20:22.1054424Z Starting download of artifact to: /home/runner/work/hol-guard/hol-guard/native-matrix-input/hol-guard-native-wheel-aarch64-apple-darwin
+2026-09-20T22:20:22.3935613Z (node:2448) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-09-20T22:20:22.3936723Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T22:20:23.7051828Z SHA256 digest of downloaded artifact is ac6096766a737a28b40d501880b3e66824076d0a2d8f655b1dc59f42f063a631
+2026-09-20T22:20:23.7053307Z Artifact download completed successfully.
+2026-09-20T22:20:23.8245374Z SHA256 digest of downloaded artifact is 3e552a633b59118e9caac134b710f6b218d9ab8081b44ba7cabc0fd27c387a35
+2026-09-20T22:20:23.8245995Z Artifact download completed successfully.
+2026-09-20T22:20:23.8559048Z SHA256 digest of downloaded artifact is 46db53e8fffc7305eee29e1869ac7f2828254f295617356698ab8d09420efeaa
+2026-09-20T22:20:23.8560152Z Artifact download completed successfully.
+2026-09-20T22:20:23.9369875Z SHA256 digest of downloaded artifact is 1e7469afdf860466f7b7ca438f81ed3ef18f6d57bd381e6c9cff92e55b74dfeb
+2026-09-20T22:20:23.9370564Z Artifact download completed successfully.
+2026-09-20T22:20:23.9370952Z Total of 4 artifact(s) downloaded
+2026-09-20T22:20:23.9377751Z Download artifact has finished successfully
+2026-09-20T22:20:23.9504590Z ##[group]Run VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+2026-09-20T22:20:23.9505285Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T22:20:23.9505882Z [36;1muv run --no-sync python -m scripts.ci.aggregate_native_wheel_artifacts \[0m
+2026-09-20T22:20:23.9506358Z [36;1m  --artifacts-dir native-matrix-input \[0m
+2026-09-20T22:20:23.9506698Z [36;1m  --version "$VERSION" \[0m
+2026-09-20T22:20:23.9507005Z [36;1m  --source-sha "$SOURCE_SHA" \[0m
+2026-09-20T22:20:23.9507325Z [36;1m  --rule-digest "$RULE_DIGEST" \[0m
+2026-09-20T22:20:23.9508618Z [36;1m  --output native-matrix-evidence.json[0m
+2026-09-20T22:20:23.9545174Z shell: /usr/bin/bash -e {0}
+2026-09-20T22:20:23.9545449Z env:
+2026-09-20T22:20:23.9545751Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:23.9546241Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:23.9546744Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:23.9547191Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:23.9547913Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:23.9548354Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:23.9548802Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:23.9549213Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:23.9549591Z   SOURCE_SHA: 9f511875b236c12e5f23c783e958a536ac0360ba
+2026-09-20T22:20:23.9550067Z   RULE_DIGEST: 1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d
+2026-09-20T22:20:23.9550502Z ##[endgroup]
+2026-09-20T22:20:24.4726650Z {
+2026-09-20T22:20:24.4727465Z   "collected": [
+2026-09-20T22:20:24.4728278Z     {
+2026-09-20T22:20:24.4728882Z       "artifact": "hol-guard-native-wheel-linux-x64",
+2026-09-20T22:20:24.4729476Z       "bytes": 5179283,
+2026-09-20T22:20:24.4729879Z       "identical_duplicate": false,
+2026-09-20T22:20:24.4730398Z       "member": "native-dist/hol_guard-3.0.1-py3-none-any.whl",
+2026-09-20T22:20:24.4731096Z       "sha256": "6893a225524e70cbb42f80a6ee1baa06262000cd43bbc385e3514bc9ef91d891"
+2026-09-20T22:20:24.4731703Z     },
+2026-09-20T22:20:24.4731977Z     {
+2026-09-20T22:20:24.4732336Z       "artifact": "hol-guard-native-wheel-linux-x64",
+2026-09-20T22:20:24.4732800Z       "bytes": 8952594,
+2026-09-20T22:20:24.4733143Z       "identical_duplicate": false,
+2026-09-20T22:20:24.4733717Z       "member": "native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+2026-09-20T22:20:24.4734340Z       "sha256": "2c4cd2bf706a263cb5e104e818e76dc4eb320f2873668b549e0f8c6b3ac4754c"
+2026-09-20T22:20:24.4734805Z     },
+2026-09-20T22:20:24.4735027Z     {
+2026-09-20T22:20:24.4735344Z       "artifact": "hol-guard-native-wheel-x86_64-apple-darwin",
+2026-09-20T22:20:24.4735756Z       "bytes": 5179283,
+2026-09-20T22:20:24.4736043Z       "identical_duplicate": true,
+2026-09-20T22:20:24.4736484Z       "member": "native-dist/hol_guard-3.0.1-py3-none-any.whl",
+2026-09-20T22:20:24.4737045Z       "sha256": "6893a225524e70cbb42f80a6ee1baa06262000cd43bbc385e3514bc9ef91d891"
+2026-09-20T22:20:24.4737996Z     },
+2026-09-20T22:20:24.4738227Z     {
+2026-09-20T22:20:24.4738541Z       "artifact": "hol-guard-native-wheel-x86_64-apple-darwin",
+2026-09-20T22:20:24.4738952Z       "bytes": 8646256,
+2026-09-20T22:20:24.4739236Z       "identical_duplicate": false,
+2026-09-20T22:20:24.4739690Z       "member": "native-dist/hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl",
+2026-09-20T22:20:24.4740289Z       "sha256": "7096ab45878081e32a170ead2a13fee7f4d736816ecc0389d1236fb545bfe4e9"
+2026-09-20T22:20:24.4740748Z     },
+2026-09-20T22:20:24.4740968Z     {
+2026-09-20T22:20:24.4741295Z       "artifact": "hol-guard-native-wheel-aarch64-apple-darwin",
+2026-09-20T22:20:24.4741716Z       "bytes": 5179283,
+2026-09-20T22:20:24.4742002Z       "identical_duplicate": true,
+2026-09-20T22:20:24.4742591Z       "member": "native-dist/hol_guard-3.0.1-py3-none-any.whl",
+2026-09-20T22:20:24.4743150Z       "sha256": "6893a225524e70cbb42f80a6ee1baa06262000cd43bbc385e3514bc9ef91d891"
+2026-09-20T22:20:24.4743622Z     },
+2026-09-20T22:20:24.4743847Z     {
+2026-09-20T22:20:24.4744174Z       "artifact": "hol-guard-native-wheel-aarch64-apple-darwin",
+2026-09-20T22:20:24.4744570Z       "bytes": 8503159,
+2026-09-20T22:20:24.4744823Z       "identical_duplicate": false,
+2026-09-20T22:20:24.4745227Z       "member": "native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl",
+2026-09-20T22:20:24.4745777Z       "sha256": "09cee24ff59347bf4ac4f04409a906c23bdb573dfde6a325b654b7b892531082"
+2026-09-20T22:20:24.4746208Z     },
+2026-09-20T22:20:24.4746401Z     {
+2026-09-20T22:20:24.4746704Z       "artifact": "hol-guard-native-wheel-windows-x64",
+2026-09-20T22:20:24.4747057Z       "bytes": 8458641,
+2026-09-20T22:20:24.4747307Z       "identical_duplicate": false,
+2026-09-20T22:20:24.4747899Z       "member": "native-dist/hol_guard-3.0.1-py3-none-win_amd64.whl",
+2026-09-20T22:20:24.4748411Z       "sha256": "fd15fd772632689c358d6a376cd8c9f632ab02826e70724f418bba606922bd9e"
+2026-09-20T22:20:24.4748814Z     }
+2026-09-20T22:20:24.4749012Z   ],
+2026-09-20T22:20:24.4749212Z   "passed": true,
+2026-09-20T22:20:24.4759605Z   "schema": "hol-guard-native-matrix-admission.v1",
+2026-09-20T22:20:24.4760557Z   "scope": "offline wheel identity admission; no installed execution, signing or release qualification",
+2026-09-20T22:20:24.4761357Z   "validation": {
+2026-09-20T22:20:24.4761728Z     "artifacts": [
+2026-09-20T22:20:24.4762082Z       {
+2026-09-20T22:20:24.4762518Z         "name": "hol_guard-3.0.1-py3-none-any.whl",
+2026-09-20T22:20:24.4763164Z         "role": "python-wheel",
+2026-09-20T22:20:24.4763876Z         "sha256": "6893a225524e70cbb42f80a6ee1baa06262000cd43bbc385e3514bc9ef91d891",
+2026-09-20T22:20:24.4764638Z         "size": 5179283
+2026-09-20T22:20:24.4765078Z       },
+2026-09-20T22:20:24.4765428Z       {
+2026-09-20T22:20:24.4765945Z         "name": "hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl",
+2026-09-20T22:20:24.4766609Z         "platform": "macosx_11_0_arm64",
+2026-09-20T22:20:24.4767157Z         "role": "native-wheel",
+2026-09-20T22:20:24.4768176Z         "sha256": "09cee24ff59347bf4ac4f04409a906c23bdb573dfde6a325b654b7b892531082",
+2026-09-20T22:20:24.4768955Z         "size": 8503159,
+2026-09-20T22:20:24.4769417Z         "target": "aarch64-apple-darwin"
+2026-09-20T22:20:24.4769927Z       },
+2026-09-20T22:20:24.4770291Z       {
+2026-09-20T22:20:24.4770772Z         "name": "hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl",
+2026-09-20T22:20:24.4771442Z         "platform": "macosx_13_0_x86_64",
+2026-09-20T22:20:24.4771983Z         "role": "native-wheel",
+2026-09-20T22:20:24.4772722Z         "sha256": "7096ab45878081e32a170ead2a13fee7f4d736816ecc0389d1236fb545bfe4e9",
+2026-09-20T22:20:24.4773498Z         "size": 8646256,
+2026-09-20T22:20:24.4773962Z         "target": "x86_64-apple-darwin"
+2026-09-20T22:20:24.4774453Z       },
+2026-09-20T22:20:24.4774801Z       {
+2026-09-20T22:20:24.4775336Z         "name": "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+2026-09-20T22:20:24.4776023Z         "platform": "manylinux_2_17_x86_64",
+2026-09-20T22:20:24.4776944Z         "role": "native-wheel",
+2026-09-20T22:20:24.4778021Z         "sha256": "2c4cd2bf706a263cb5e104e818e76dc4eb320f2873668b549e0f8c6b3ac4754c",
+2026-09-20T22:20:24.4778809Z         "size": 8952594,
+2026-09-20T22:20:24.4779290Z         "target": "x86_64-unknown-linux-musl"
+2026-09-20T22:20:24.4779817Z       },
+2026-09-20T22:20:24.4780169Z       {
+2026-09-20T22:20:24.4780615Z         "name": "hol_guard-3.0.1-py3-none-win_amd64.whl",
+2026-09-20T22:20:24.4781232Z         "platform": "win_amd64",
+2026-09-20T22:20:24.4781726Z         "role": "native-wheel",
+2026-09-20T22:20:24.4782467Z         "sha256": "fd15fd772632689c358d6a376cd8c9f632ab02826e70724f418bba606922bd9e",
+2026-09-20T22:20:24.4783243Z         "size": 8458641,
+2026-09-20T22:20:24.4783720Z         "target": "x86_64-pc-windows-msvc"
+2026-09-20T22:20:24.4784494Z       }
+2026-09-20T22:20:24.4784871Z     ],
+2026-09-20T22:20:24.4785253Z     "package_version": "3.0.1",
+2026-09-20T22:20:24.4785769Z     "platforms": [
+2026-09-20T22:20:24.4786191Z       "macosx_11_0_arm64",
+2026-09-20T22:20:24.4786465Z       "macosx_13_0_x86_64",
+2026-09-20T22:20:24.4786732Z       "manylinux_2_17_x86_64",
+2026-09-20T22:20:24.4786988Z       "win_amd64"
+2026-09-20T22:20:24.4787209Z     ],
+2026-09-20T22:20:24.4787855Z     "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
+2026-09-20T22:20:24.4788392Z     "schema": "hol-guard-release-artifact-evidence.v1",
+2026-09-20T22:20:24.4788810Z     "source_sha": "9f511875b236c12e5f23c783e958a536ac0360ba",
+2026-09-20T22:20:24.4789161Z     "windows_waiver": null
+2026-09-20T22:20:24.4789409Z   }
+2026-09-20T22:20:24.4789601Z }
+2026-09-20T22:20:24.4900306Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T22:20:24.4900774Z with:
+2026-09-20T22:20:24.4901017Z   name: native-wheel-matrix-admission
+2026-09-20T22:20:24.4901346Z   path: native-matrix-evidence.json
+2026-09-20T22:20:24.4901649Z   if-no-files-found: error
+2026-09-20T22:20:24.4901913Z   compression-level: 6
+2026-09-20T22:20:24.4902175Z   overwrite: false
+2026-09-20T22:20:24.4902423Z   include-hidden-files: false
+2026-09-20T22:20:24.4902691Z   archive: true
+2026-09-20T22:20:24.4902914Z env:
+2026-09-20T22:20:24.4903195Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:24.4903674Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T22:20:24.4904140Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:24.4904554Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:24.4904969Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T22:20:24.4905422Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T22:20:24.4905864Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:24.4906272Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:24.4906593Z ##[endgroup]
+2026-09-20T22:20:24.6305424Z With the provided path, there will be 1 file uploaded
+2026-09-20T22:20:24.6310705Z Artifact name is valid!
+2026-09-20T22:20:24.6311254Z Root directory input is valid!
+2026-09-20T22:20:25.0352686Z Uploading artifact: native-wheel-matrix-admission.zip
+2026-09-20T22:20:25.0418418Z Beginning upload of artifact content to blob storage
+2026-09-20T22:20:25.3691393Z Uploaded bytes 1116
+2026-09-20T22:20:25.4483982Z Finished uploading artifact content to blob storage!
+2026-09-20T22:20:25.4485084Z SHA256 digest of uploaded artifact is 3de5e44222b1d2504c737df28ff274568c4b13c5aed7cf37e83649a61373eccb
+2026-09-20T22:20:25.4486298Z Finalizing artifact upload
+2026-09-20T22:20:25.8402933Z Artifact native-wheel-matrix-admission successfully finalized. Artifact ID 10615435093
+2026-09-20T22:20:25.8404003Z Artifact native-wheel-matrix-admission has been successfully uploaded! Final size is 1116 bytes. Artifact ID is 10615435093
+2026-09-20T22:20:25.8407405Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35539716189/artifacts/10615435093
+2026-09-20T22:20:25.8586377Z Post job cleanup.
+2026-09-20T22:20:25.9676575Z UV_CACHE_DIR is already set to /home/runner/work/_temp/setup-uv-cache
+2026-09-20T22:20:25.9688995Z UV_PYTHON_INSTALL_DIR is already set to /home/runner/work/_temp/uv-python-dir
+2026-09-20T22:20:25.9690184Z Cache hit occurred on key setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d, not saving cache.
+2026-09-20T22:20:26.0816319Z Post job cleanup.
+2026-09-20T22:20:26.2220350Z Post job cleanup.
+2026-09-20T22:20:26.3037558Z [command]/usr/bin/git version
+2026-09-20T22:20:26.3074173Z git version 2.55.0
+2026-09-20T22:20:26.3113168Z Temporarily overriding HOME='/home/runner/work/_temp/2393f064-b650-456d-9035-b33fe5cfdc37' before making global git config changes
+2026-09-20T22:20:26.3114702Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T22:20:26.3118375Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard
+2026-09-20T22:20:26.3148859Z Removing SSH command configuration
+2026-09-20T22:20:26.3155431Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T22:20:26.3188158Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T22:20:26.3414412Z Removing HTTP extra header
+2026-09-20T22:20:26.3419503Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T22:20:26.3450748Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T22:20:26.3667749Z Removing includeIf entries pointing to credentials config files
+2026-09-20T22:20:26.3674078Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T22:20:26.3703571Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T22:20:26.4054796Z Cleaning up orphan processes

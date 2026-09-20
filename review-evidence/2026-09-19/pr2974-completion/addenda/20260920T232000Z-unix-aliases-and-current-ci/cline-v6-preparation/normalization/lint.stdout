@@ -1,0 +1,35 @@
+B010 [*] Do not call `setattr` with a constant attribute value. It is not any safer than normal property access.
+   --> scripts/ci/cline_witness/method_observation.py:310:9
+    |
+308 |         observed.__annotations__ = dict(original.__annotations__)
+309 |         observed.__dict__.update(original.__dict__)
+310 |         setattr(observed, "__wrapped__", original)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+311 |         return observed
+    |
+help: Replace `setattr` with assignment
+
+E501 Line too long (168 > 120)
+   --> tests/test_cline_method_observation.py:233:121
+    |
+231 | …
+232 | …
+233 | …home_dir, cwd, source_ref_external_allowed, observe_mode, deadline, policy_snapshot=None):
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+234 | …
+235 | …
+    |
+
+E501 Line too long (186 > 120)
+   --> tests/test_cline_method_observation.py:428:121
+    |
+426 | …lse ""
+427 | …
+428 | …er\nassert sys.getprofile() is None\nworker=HookWorker()\nworker.review_http_payload(payload={})\n"
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+429 | …
+430 | …
+    |
+
+Found 3 errors.
+[*] 1 fixable with the `--fix` option.

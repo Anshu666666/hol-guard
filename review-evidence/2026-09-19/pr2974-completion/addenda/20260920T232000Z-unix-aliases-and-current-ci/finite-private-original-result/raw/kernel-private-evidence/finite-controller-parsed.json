@@ -1,0 +1,92 @@
+{
+  "cleanup_complete": true,
+  "collection_failure": null,
+  "fault": null,
+  "original_workload_executed": false,
+  "passed": true,
+  "schema": "hol-guard.kernel-resource-host-controller.v1",
+  "stderr_retained_bytes": 0,
+  "stderr_retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_retained_bytes": 1438,
+  "stdout_retained_sha256": "cdf59a19915b8fd7dba4813c47f9de222dea8a89ce1d71b701b1d841c172e61e",
+  "stream_capture_complete": true,
+  "worker_exit": 0,
+  "worker_launched": true,
+  "worker_report": {
+    "admission_refusal": null,
+    "admitted": true,
+    "controls": [
+      {
+        "error": null,
+        "facts": {
+          "denied_private_observed": false,
+          "member_count": 3,
+          "metric_minimum_met": {
+            "descriptors": true,
+            "private_bytes": true,
+            "processes": true,
+            "rss_bytes": true,
+            "threads": true
+          },
+          "non_ancestry_members": 0,
+          "only_worker_live_after": true,
+          "orphan_reaped_by_worker": false,
+          "private_bytes": 29040640,
+          "rss_bytes": 54648832,
+          "sampled_peak_only": true,
+          "samples": 33
+        },
+        "name": "child_and_grandchild",
+        "passed": true
+      },
+      {
+        "error": null,
+        "facts": {
+          "denied_private_observed": false,
+          "member_count": 2,
+          "metric_minimum_met": {
+            "descriptors": true,
+            "private_bytes": true,
+            "processes": true,
+            "rss_bytes": true,
+            "threads": true
+          },
+          "non_ancestry_members": 1,
+          "only_worker_live_after": true,
+          "orphan_reaped_by_worker": false,
+          "private_bytes": 22040576,
+          "rss_bytes": 40517632,
+          "sampled_peak_only": true,
+          "samples": 33
+        },
+        "name": "reparented_member",
+        "passed": true
+      },
+      {
+        "error": null,
+        "facts": {
+          "denied_private_observed": true,
+          "member_count": 2,
+          "metric_minimum_met": {
+            "descriptors": false,
+            "private_bytes": false,
+            "processes": true,
+            "rss_bytes": true,
+            "threads": true
+          },
+          "non_ancestry_members": 0,
+          "only_worker_live_after": true,
+          "orphan_reaped_by_worker": false,
+          "private_bytes": null,
+          "rss_bytes": 40419328,
+          "sampled_peak_only": true,
+          "samples": 33
+        },
+        "name": "denied_private_memory",
+        "passed": true
+      }
+    ],
+    "passed": true,
+    "schema": "hol-guard.live-member-resource-controls.v1"
+  }
+}

@@ -1,0 +1,384 @@
+--- executed-f8/admission.py
++++ draft-a1d/admission.py
+@@ -1,4 +1,4 @@
+-"""Reconstruct original lifecycle evidence before separate five-cell admission."""
++"""Reconstruct original lifecycle evidence before separate current first-admission cell admission."""
+ 
+ from __future__ import annotations
+ 
+@@ -8,6 +8,7 @@
+ from typing import Any, cast
+ 
+ SCENARIOS = ("lost_metadata_hint", "key_rotation", "first_admission_fault", "expiry_fault", "service_restart")
++SELECTED_SCENARIOS = ("first_admission_fault",)
+ MAX_LEDGER = 2 * 1024 * 1024
+ 
+ 
+@@ -117,7 +118,7 @@
+ ) -> dict[str, Any]:
+     require(returncode == 1, "original_subset_exit")
+     require(report.get("schema") == "hol-guard.native-workspace-lifecycle.v1", "report_schema")
+-    require(report.get("counts") == [100] and report.get("scenarios") == list(SCENARIOS), "declared_roster")
++    require(report.get("counts") == [100] and report.get("scenarios") == list(SELECTED_SCENARIOS), "declared_roster")
+     require(report.get("declared_cells_visited") is True, "declared_visit")
+     for flag in (
+         "complete_lifecycle_matrix_visited",
+@@ -133,7 +134,7 @@
+         observed_runtime.get("mode") == "auto" and observed_runtime.get("package_origin") == "installed",
+         "installed_default",
+     )
+-    require(len(cells) == 5 and [cell["scenario"] for cell in cells] == list(SCENARIOS), "terminal_roster")
++    require(len(cells) == 1 and [cell["scenario"] for cell in cells] == list(SELECTED_SCENARIOS), "terminal_roster")
+     for cell in cells:
+         require(cell["registered_workspaces"] == 100 and cell["status"] == "completed", "terminal_identity")
+         for flag in (
+@@ -171,9 +172,46 @@
+             "secondary_scope",
+         )
+         require(cell["binding"]["runtime_identity"] == runtime["runtime_sha256"], "cell_runtime")
++        fault = cell.get("fault", {})
++        require(
++            fault.get("scope") == "one_real_accepted_reply_discarded_before_first_python_admission"
++            and all(
++                fault.get(flag) is True
++                for flag in (
++                    "real_accepted_reply_discarded",
++                    "production_ack_error_observed",
++                    "first_error_withheld_ack",
++                    "subsequent_transport_forwarded",
++                )
++            )
++            and fault.get("successful_ack_fabricated") is False
++            and type(fault.get("real_client_calls")) is int
++            and fault["real_client_calls"] >= 2,
++            "original_fault_not_proved",
++        )
++        replacement = cell.get("service_replacement", {})
++        require(
++            replacement.get("scope") == "two_python_service_instances_same_process_same_owned_home"
++            and replacement.get("service_instances") == 2
++            and replacement.get("python_process_restarted") is False
++            and all(
++                replacement.get(flag) is True
++                for flag in (
++                    "old_publisher_stopped",
++                    "old_resident_contained",
++                    "old_service_contained",
++                    "old_owner_lock_released",
++                    "same_owned_home_identity",
++                    "fresh_store_and_service",
++                    "cold_publisher_without_ack",
++                    "empty_command_authority_reloaded",
++                )
++            ),
++            "original_replacement_not_proved",
++        )
+     return {
+-        "schema": "hol-guard.current-workspace100-admission.v1",
+-        "current100_subset_passed": True,
++        "schema": "hol-guard.current-first-admission-admission.v1",
++        "current_first_admission_passed": True,
+         "exact_cells": [{"scenario": cell["scenario"], "registered_workspaces": 100, "passed": True} for cell in cells],
+         "original_exit": returncode,
+         "original_complete_lifecycle_matrix_visited": False,
+--- executed-f8/install.py
++++ draft-a1d/install.py
+@@ -82,10 +82,13 @@
+ 
+ 
+ def inspect_install(source: Path, expected: dict[str, Any]) -> dict[str, Any]:
++    prefix = source / ".venv"
++    require(Path(sys.executable).absolute() == prefix / "bin/python", "owned_python_executable")
++    require(Path(sys.prefix).resolve(strict=True) == prefix.resolve(strict=True), "owned_python_prefix")
++    require(Path(sys.base_prefix).resolve(strict=True) != prefix.resolve(strict=True), "owned_python_venv")
+     distribution = importlib.metadata.distribution("hol-guard")
+     direct = json.loads(distribution.read_text("direct_url.json") or "{}")
+     require(direct.get("dir_info", {}).get("editable") is not True, "editable_install")
+-    prefix = source / ".venv"
+     files = distribution.files
+     require(files is not None, "installed_record")
+     installed = {
+@@ -99,6 +102,7 @@
+         require(path.is_relative_to(prefix) and not path.is_relative_to(source / "src"), "installed_origin")
+         require(digest(path, 64 * 1024 * 1024) == identity, "installed_package_bytes")
+     runtime = Path(str(distribution.locate_file("codex_plugin_scanner/_native/hol-guard-runtime"))).resolve(strict=True)
++    dependencies = sorted((str(item.metadata["Name"]), item.version) for item in importlib.metadata.distributions())
+     return {
+         "package_version": distribution.version,
+         "runtime_relative": runtime.relative_to(source).as_posix(),
+@@ -106,6 +110,13 @@
+         "noneditable": True,
+         "runtime": expected["runtime_manifest"],
+         "native_process_launched": False,
++        "interpreter": {
++            "version": list(sys.version_info[:3]),
++            "executable_identity": digest(Path(sys.executable).resolve(strict=True), 64 * 1024 * 1024),
++            "owned_venv": True,
++        },
++        "dependency_names_versions": dependencies,
++        "dependency_scope": "installed distribution names and versions; not a full dependency-file attestation",
+     }
+ 
+ 
+--- executed-f8/read_result.py
++++ draft-a1d/read_result.py
+@@ -31,7 +31,7 @@
+         "runtime_sha256": installed["runtime_sha256"],
+     }
+     result = admit(report, cells, returncode=args.returncode, runtime=runtime)
+-    write(output / "five-cell-admission.json", result)
++    write(output / "first-admission.json", result)
+     return 0
+ 
+ 
+--- executed-f8/reader_controls/test_admission.py
++++ draft-a1d/reader_controls/test_admission.py
+@@ -12,7 +12,7 @@
+ from scripts.native_slo_workspace_lifecycle_evidence import retain_cell
+ from scripts.native_slo_workspace_trace import event_digest
+ 
+-from admission import SCENARIOS, MemoryLedger, admit, decode, reconstruct
++from admission import SCENARIOS, SELECTED_SCENARIOS, MemoryLedger, admit, decode, reconstruct
+ 
+ pytest_plugins = ["tests.test_native_slo_workspace_lifecycle_evidence"]
+ 
+@@ -48,9 +48,32 @@
+     compile_row = model["publication_rows"][0]
+     compile_row.update(registered_workspaces=100, cache_entries=101, scope_loads=[1] * 101)
+     model["publication_observer"]["event_digest"] = event_digest(model["publication_rows"])
++    model["fault"] = {
++        "scope": "one_real_accepted_reply_discarded_before_first_python_admission",
++        "real_client_calls": 2,
++        "real_accepted_reply_discarded": True,
++        "production_ack_error_observed": True,
++        "first_error_withheld_ack": True,
++        "subsequent_transport_forwarded": True,
++        "successful_ack_fabricated": False,
++    }
++    model["service_replacement"] = {
++        "scope": "two_python_service_instances_same_process_same_owned_home",
++        "service_instances": 2,
++        "cold_observation_boundary": "before_real_constructor_start",
++        "python_process_restarted": False,
++        "old_publisher_stopped": True,
++        "old_resident_contained": True,
++        "old_service_contained": True,
++        "old_owner_lock_released": True,
++        "same_owned_home_identity": True,
++        "fresh_store_and_service": True,
++        "cold_publisher_without_ack": True,
++        "empty_command_authority_reloaded": True,
++    }
+     ledger = MemoryLedger()
+     summaries = []
+-    for scenario in SCENARIOS:
++    for scenario in SELECTED_SCENARIOS:
+         owned = {**model, "scenario": scenario}
+         ledger.write({"kind": "lifecycle_cell_offer", "scenario": scenario, "registered_workspaces": 100})
+         summaries.append(retain_cell(ledger, owned))
+@@ -61,7 +84,7 @@
+     report = {
+         "schema": "hol-guard.native-workspace-lifecycle.v1",
+         "counts": [100],
+-        "scenarios": list(SCENARIOS),
++        "scenarios": list(SELECTED_SCENARIOS),
+         "cells": summaries,
+         "declared_cells_visited": True,
+         "complete_lifecycle_matrix_visited": False,
+@@ -79,10 +102,10 @@
+     original = copy.deepcopy(report)
+     cells = reconstruct(report, raw)
+     result = admit(report, cells, returncode=1, runtime=runtime)
+-    assert result["current100_subset_passed"] is True
++    assert result["current_first_admission_passed"] is True
+     assert result["original_implemented_checks_passed"] is False
+     assert report == original
+-    assert len(cells) == 5
++    assert len(cells) == 1
+     assert (
+         cells[0]["requests"]["actual_request_rows"][0]["native_receipt"]
+         == cell["requests"]["actual_request_rows"][0]["native_receipt"]
+@@ -133,7 +156,7 @@
+     elif damage == "full_matrix":
+         report["implemented_checks_passed"] = True
+     elif damage == "case_order":
+-        cells.reverse()
++        cells[0]["scenario"] = "key_rotation"
+     elif damage == "missing_case":
+         cells.pop()
+     elif damage == "failed_cell":
+@@ -156,3 +179,59 @@
+ def test_ambiguous_json_is_refused(raw: bytes) -> None:
+     with pytest.raises(ValueError):
+         decode(raw)
++
++
++def test_selected_cell_preserves_original_canonical_fifteen_cell_census() -> None:
++    from scripts import native_slo_workspace_lifecycle_runner as original
++
++    assert SCENARIOS == original.LIFECYCLE_SCENARIOS
++    assert original.WORKSPACE_COUNTS == (1, 10, 100)
++    matrix = [(count, scenario) for count in original.WORKSPACE_COUNTS for scenario in SCENARIOS]
++    assert len(matrix) == len(set(matrix)) == 15
++    assert SELECTED_SCENARIOS == ("first_admission_fault",)
++    assert [(100, scenario) for scenario in SELECTED_SCENARIOS] != matrix
++
++
++def test_duplicate_census_refuses_before_any_original_setup(tmp_path, monkeypatch) -> None:
++    from scripts import native_slo_workspace_lifecycle_runner as original
++
++    calls = []
++    monkeypatch.setattr(original, "_clear_proof_overrides", lambda: calls.append("setup"))
++    invalid = (
++        "lost_metadata_hint",
++        "first_admission_fault",
++        "first_admission_fault",
++        "expiry_fault",
++        "service_restart",
++    )
++    ledger = tmp_path / "not-created.jsonl"
++    with pytest.raises(ValueError, match="declared matrix invalid"):
++        original.run_lifecycle_sweep(tmp_path / "not-executed", ledger_path=ledger, scenarios=invalid)
++    assert calls == [] and not ledger.exists()
++
++
++@pytest.mark.parametrize(
++    "field",
++    [
++        "real_accepted_reply_discarded",
++        "production_ack_error_observed",
++        "first_error_withheld_ack",
++        "subsequent_transport_forwarded",
++        "successful_ack_fabricated",
++    ],
++)
++def test_fault_evidence_is_required_despite_a_true_top_level_pass(cell, field) -> None:
++    report, raw, runtime = packet(cell)
++    cells = reconstruct(report, raw)
++    cells[0]["fault"][field] = field == "successful_ack_fabricated"
++    with pytest.raises(ValueError, match="original_fault_not_proved"):
++        admit(report, cells, returncode=1, runtime=runtime)
++
++
++@pytest.mark.parametrize("field", ["fresh_store_and_service", "old_resident_contained", "cold_publisher_without_ack"])
++def test_actual_replacement_evidence_is_required(cell, field) -> None:
++    report, raw, runtime = packet(cell)
++    cells = reconstruct(report, raw)
++    cells[0]["service_replacement"][field] = False
++    with pytest.raises(ValueError, match="original_replacement_not_proved"):
++        admit(report, cells, returncode=1, runtime=runtime)
+--- executed-f8/reader_controls/test_install.py
++++ draft-a1d/reader_controls/test_install.py
+@@ -11,7 +11,7 @@
+ 
+ import pytest
+ 
+-from install import SOURCE_EXCLUSION, admitted_wheel
++from install import SOURCE_EXCLUSION, admitted_wheel, inspect_install
+ 
+ 
+ def identity(raw: bytes) -> dict[str, Any]:
+@@ -94,3 +94,8 @@
+     source, archive, spec = fixture(tmp_path, damage)
+     with pytest.raises(ValueError):
+         admitted_wheel(archive, spec, source)
++
++
++def test_current_shared_interpreter_cannot_claim_an_unrelated_owned_venv(tmp_path: Path) -> None:
++    with pytest.raises(ValueError, match="owned_python_executable"):
++        inspect_install(tmp_path, {})
+--- executed-f8/retain_results.py
++++ draft-a1d/retain_results.py
+@@ -15,7 +15,7 @@
+ CHUNK = 12288
+ NAMES = (
+     "validation-result.json",
+-    "five-cell-admission.json",
++    "first-admission.json",
+     "commands.json",
+     "binding-before.json",
+     "binding-after.json",
+@@ -37,8 +37,8 @@
+     "commands/ruff.stderr",
+     "commands/format.stdout",
+     "commands/format.stderr",
+-    "commands/original-five-cells.stdout",
+-    "commands/original-five-cells.stderr",
++    "commands/original-first-admission.stdout",
++    "commands/original-first-admission.stderr",
+     "commands/admit-original.stdout",
+     "commands/admit-original.stderr",
+     "commands/installed-before.stdout",
+@@ -49,7 +49,7 @@
+ 
+ 
+ def emit(value: dict[str, Any]) -> None:
+-    print("HG_WORKSPACE100_FILE_V1 " + json.dumps(value, separators=(",", ":"), allow_nan=False), flush=True)
++    print("HG_CURRENT_FIRST_ADMISSION_FILE_V1 " + json.dumps(value, separators=(",", ":"), allow_nan=False), flush=True)
+ 
+ 
+ def frame(name: str, raw: bytes) -> dict[str, Any]:
+@@ -102,7 +102,7 @@
+         except Exception:
+             unavailable.append({"path": name, "status": "unavailable"})
+     index = {
+-        "schema": "hol-guard.workspace100-log-projection.v1",
++        "schema": "hol-guard.current-first-admission-log-projection.v1",
+         "admitted": admitted,
+         "unavailable": unavailable,
+         "total_source_bytes": total,
+--- executed-f8/run.py
++++ draft-a1d/run.py
+@@ -1,4 +1,4 @@
+-"""Validate one exact installed five-cell subset without repeating admitted source tests."""
++"""Validate one exact installed first-admission cell without repeating admitted source tests."""
+ 
+ from __future__ import annotations
+ 
+@@ -12,8 +12,8 @@
+ from common import COMMANDS, digest, run, source_state, verify_files, write
+ from install import install
+ 
+-SOURCE_SHA = "f8f190a286159b46bf14a624a62ba52b5d2371a3"
+-SOURCE_TREE = "341d2c02c79b0c510544df5297600d5a3a47f211"
++SOURCE_SHA = "a1d509404b0803a91031cb51f4b0c919408bfeba"
++SOURCE_TREE = "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80"
+ 
+ 
+ def reader_controls(python: Path, source: Path, driver: Path, output: Path, expected: list[str]) -> None:
+@@ -74,7 +74,7 @@
+     parser.add_argument("--output", type=Path, required=True)
+     args = parser.parse_args()
+     source, root = args.source.resolve(strict=True), args.driver.resolve(strict=True)
+-    driver = root / "workspace100-validation"
++    driver = root / "current-first-admission-validation"
+     output = args.output.absolute()
+     output.mkdir(mode=0o700, parents=True, exist_ok=False)
+     (output / "commands").mkdir(mode=0o700)
+@@ -160,7 +160,7 @@
+         runtime = source / installed_before["runtime_relative"]
+         original_calls += 1
+         code = run(
+-            "original-five-cells",
++            "original-first-admission",
+             [
+                 str(python),
+                 str(source / "scripts/native_slo_workspace_lifecycle_runner.py"),
+@@ -172,6 +172,8 @@
+                 str(output / "workspace-lifecycle.json"),
+                 "--counts",
+                 "100",
++                "--scenarios",
++                "first_admission_fault",
+             ],
+             cwd=source,
+             output=output,
+@@ -231,7 +233,7 @@
+         write(
+             output / "validation-result.json",
+             {
+-                "schema": "hol-guard.current-workspace100-validation.v1",
++                "schema": "hol-guard.current-current-first-admission-validation.v1",
+                 "source_sha": SOURCE_SHA,
+                 "source_tree": SOURCE_TREE,
+                 "driver_sha": args.driver_sha,

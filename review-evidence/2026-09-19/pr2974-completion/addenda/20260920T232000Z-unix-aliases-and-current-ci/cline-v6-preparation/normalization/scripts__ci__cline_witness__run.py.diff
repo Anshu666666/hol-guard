@@ -1,0 +1,51 @@
+--- before/scripts/ci/cline_witness/run.py
++++ after/scripts/ci/cline_witness/run.py
+@@ -132,20 +132,29 @@
+ def admit_method_observation(child: dict[str, Any]) -> None:
+     require(child.get("schema") == "hol-guard.cline-child-edge.v3", "child_schema")
+     require(child.get("callback_count_scope") == "selected_methods_only", "callback_count_scope")
+-    require(type(child.get("maximum_counted_callbacks")) is int and child["maximum_counted_callbacks"] == 0, "callback_count_bound")
++    require(
++        type(child.get("maximum_counted_callbacks")) is int and child["maximum_counted_callbacks"] == 0,
++        "callback_count_bound",
++    )
+     require(type(child.get("callbacks")) is int and child["callbacks"] == 0, "callback_count")
+     require(child.get("callbacks_saturated") is False, "callback_count_saturation")
+     methods = child.get("method_observation")
+     expected_methods = {
+         "schema": "hol-guard.cline-selected-method-observation.v1",
+-        "selected_imports": 1, "bound": True, "finder_restored": True,
+-        "methods_restored": True, "faults": [], "global_profile_installed": False,
++        "selected_imports": 1,
++        "bound": True,
++        "finder_restored": True,
++        "methods_restored": True,
++        "faults": [],
++        "global_profile_installed": False,
+         "complete": True,
+     }
+-    require(type(methods) is dict and set(methods) == set(expected_methods) and all(
+-        type(methods[key]) is type(value) and methods[key] == value
+-        for key, value in expected_methods.items()
+-    ), "method_observation")
++    require(
++        type(methods) is dict
++        and set(methods) == set(expected_methods)
++        and all(type(methods[key]) is type(value) and methods[key] == value for key, value in expected_methods.items()),
++        "method_observation",
++    )
+ 
+ 
+ def reconcile(worker: dict[str, Any], child: dict[str, Any], config: dict[str, Any], manifest: dict[str, Any]) -> None:
+@@ -156,7 +165,10 @@
+     else:
+         require(child.get("schema") == "hol-guard.cline-child-edge.v2", "child_schema")
+         require(child.get("callback_count_scope") == "all_profile_events_saturating", "callback_count_scope")
+-        require(type(child.get("maximum_counted_callbacks")) is int and child["maximum_counted_callbacks"] == 2_000_000, "callback_count_bound")
++        require(
++            type(child.get("maximum_counted_callbacks")) is int and child["maximum_counted_callbacks"] == 2_000_000,
++            "callback_count_bound",
++        )
+         require(type(child.get("callbacks")) is int and 4 <= child["callbacks"] <= 2_000_000, "callback_count")
+         require(type(child.get("callbacks_saturated")) is bool, "callback_count_saturation_type")
+         require(not child["callbacks_saturated"] or child["callbacks"] == 2_000_000, "callback_count_saturation")

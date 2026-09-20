@@ -1,0 +1,146 @@
+{
+  "schema": "pr2974.public-updater-input-plan.v1",
+  "ready": false,
+  "execution_authorized_by_this_plan": false,
+  "source_review_current_sha": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+  "source_review_current_tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+  "candidate": {
+    "product_sha": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+    "tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+    "normal_run_id": 35539716189,
+    "build_sha": null,
+    "artifact_id": null,
+    "archive_sha256": null,
+    "native_wheel": null,
+    "rule_digest": null,
+    "native_runtime": null,
+    "version_expected_from_unchanged_source": "3.0.1"
+  },
+  "predecessor": {
+    "artifact_id": 10607997348,
+    "build_sha": "753850955c33eb15f992d1fe7ca375dd26c3a070",
+    "bytes": 13696076,
+    "members": [
+      {
+        "bytes": 5178811,
+        "path": "native-dist/hol_guard-3.0.1-py3-none-any.whl",
+        "sha256": "27442a3ef1f1faf13968f7a26d90a913060304da7158d0276dad7086ac74a90a"
+      },
+      {
+        "bytes": 8917001,
+        "path": "native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+        "sha256": "c339b15ef4a2277c03c4b26c1a92fe70e6e730d92fa629be335cea4e1f8f6134"
+      },
+      {
+        "bytes": 2586,
+        "path": "native-default-auto.json",
+        "sha256": "c5f156c295daa1ccfdfe3d616b5805ce55226fc7bb09d9bbe5be3a32d17b6c8c"
+      },
+      {
+        "bytes": 3072,
+        "path": "native-installed-identity.json",
+        "sha256": "8454eaeb8ad20be7997cde0e1881cf357b7c8efe1dfc2cf4f5c4107ed9cd018a"
+      },
+      {
+        "bytes": 3932,
+        "path": "installed-pi-output.json",
+        "sha256": "6b1c9954e84e09e9ff9574e334f18e81b629aac420df051bb543186a89f124ed"
+      },
+      {
+        "bytes": 9279,
+        "path": "native-installed-slo.json",
+        "sha256": "a7b5bcebea1571e869b7dd0f534f9714c54edcf86061c5a1f98c772728eef3fc"
+      },
+      {
+        "bytes": 528,
+        "path": "native-soak.json",
+        "sha256": "a41264823827bc8355efe310687ed923e860299f257d6de48aba77068c26b705"
+      },
+      {
+        "bytes": 863,
+        "path": "native-artifact-evidence.json",
+        "sha256": "84db9a723fd35b087575b2292d6629d7831c3dd9b842e1c4cf5cba5b2266d383"
+      },
+      {
+        "bytes": 292,
+        "path": "native-stop-diagnostic.json",
+        "sha256": "9647f5c4ac23426a542ec9c342aac46bf6d2f52b4beb96fd0f638708322f774f"
+      }
+    ],
+    "name": "hol-guard-native-wheel-linux-x64",
+    "path": "/workspace/scratch/745337b67ff9/ci-review-evidence/f8f190a2/linux/10607997348/artifact.zip",
+    "product_sha": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+    "run_id": 35517566371,
+    "sha256": "275dc27e48cfc257b2b750d5fce085e376218a6822bdd18e41cc140faa474571"
+  },
+  "rehearsal": {
+    "tree": "297a00f1ef02a51b3145831d0057ea2e4ad8d060",
+    "source": {
+      "build_sha": "753850955c33eb15f992d1fe7ca375dd26c3a070",
+      "clean_checkout_required": false,
+      "product_sha": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+      "provider_comparison_paths": [
+        "tests/claude_launcher_conformance.py",
+        "tests/fixtures/claude-launcher-current-conformance-v2.json",
+        "tests/test_claude_launcher_conformance_binding.py"
+      ],
+      "tree": "341d2c02c79b0c510544df5297600d5a3a47f211",
+      "version": "3.0.1"
+    },
+    "passed": true,
+    "signed": false,
+    "published": false,
+    "transitions_executed": false
+  },
+  "installed_ollama_prior": {
+    "tree": "803d8012f1f75cac9146562ed5a34e35c57caae9",
+    "run": 35523481186,
+    "peer_tree": "93fc980d955b7fc429025db880d02b94ef5bde0f",
+    "peer_receipt": "84b70af5b9a01009275fcb1368e3e0997bff09e1",
+    "scope": "three POSIX cells;22 settings/control cases and durable receipts each; no package downgrade/updater/live Ollama invocation/approval consumption"
+  },
+  "same_version_transition": {
+    "offered_public_update_calls": 3,
+    "sequence": [
+      "predecessor_to_candidate",
+      "candidate_to_predecessor",
+      "predecessor_to_candidate"
+    ],
+    "maximum_selected_workload_requests": 8,
+    "registered_cases_fixed": false,
+    "original_updater_argv_template": [
+      "<owned-installed-python>",
+      "-I",
+      "-m",
+      "codex_plugin_scanner.cli",
+      "guard",
+      "update",
+      "--home",
+      "<owned-home>",
+      "--guard-home",
+      "<owned-guard-home>",
+      "--workspace",
+      "<owned-workspace>",
+      "--wheel",
+      "<exact-admitted-wheel>",
+      "--json"
+    ]
+  },
+  "pending": [
+    "Exact current a1d native Linux build/archive/wheel/runtime/RECORD/package-source admission.",
+    "Both dependency closure manifests and complete hashed wheelhouse satisfying both authentic METADATA sets.",
+    "Actual isolated HTTPS simple-index fixture and trusted root-owned machine policy/CA admission/cleanup controls.",
+    "Exact selected registered/native requests and fixed expected delivery/receipt schema, source-bound across both installed versions.",
+    "Executable source fixture, meaningful controls, immutable source/driver parents/trees and operational peer.",
+    "Distinct authentic compatible lower/higher version pair for protected refusal and optional separately unenrolled downgrade.",
+    "Independent deterministic real in-flight boundary before any in-flight claim.",
+    "Authorized signed/frozen selected artifacts and cryptographic attestations for separate release clauses."
+  ],
+  "forbidden_substitutes": [
+    "Changing wheel version or packaged bytes to fabricate a pair.",
+    "Direct forced package replacement in place of the public updater.",
+    "Clearing protected authority or overriding its lower-version refusal.",
+    "Relabeling settings rollback or stopped replacement as live/package/version rollback.",
+    "Release publication/signing or canary mutation."
+  ]
+}

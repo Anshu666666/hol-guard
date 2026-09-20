@@ -1,0 +1,15 @@
+{
+  "schema": "hol-guard.windows-admission-observer-audit-limit.v1",
+  "prospective_plan_tree": "37dedb264dcf07ed1d1eb93c66f28fc8ee231b94",
+  "prospective_plan_blob": "a0670ba8359a9e07a90352983cd403b372e08912",
+  "status": "Additive prospective design limitation only; no implementation, control or workload executed.",
+  "primary_source": "https://docs.python.org/3.12/library/sys.html#sys._getframe",
+  "documented_behavior": "sys._getframe raises an auditing event named sys._getframe with the frame object as argument.",
+  "requirements": [
+    "The proposed observer must invoke the original record_native_hook_result once before any observer frame access.",
+    "Audit-hook refusal during observer frame access is a diagnostic recording loss; it must not replace the original returned object or exception.",
+    "The diagnostic does not claim an unchanged complete audit-event sequence: the frame-inspection audit event is additional and occurs after the original operation.",
+    "A meaningful control must install a refusing audit hook in an isolated child and prove original outcome identity and incomplete observer admission without exposing frame locals.",
+    "Unknown historical failure cause, original source/runtime identity limits and existing workload/deadline constraints remain unchanged."
+  ]
+}

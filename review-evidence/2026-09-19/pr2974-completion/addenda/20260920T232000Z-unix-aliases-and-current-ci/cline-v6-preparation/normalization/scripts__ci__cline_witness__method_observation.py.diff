@@ -1,0 +1,83 @@
+--- before/scripts/ci/cline_witness/method_observation.py
++++ after/scripts/ci/cline_witness/method_observation.py
+@@ -14,10 +14,24 @@
+ METHODS = {"review_http_payload": "worker", "_review_raw_hook_native": "edge"}
+ DEFAULTS = {"review_http_payload": "deadline", "_review_raw_hook_native": "policy_snapshot"}
+ CODE_FIELDS = (
+-    "co_argcount", "co_posonlyargcount", "co_kwonlyargcount", "co_nlocals",
+-    "co_stacksize", "co_flags", "co_code", "co_consts", "co_names", "co_varnames",
+-    "co_filename", "co_name", "co_qualname", "co_firstlineno", "co_linetable",
+-    "co_exceptiontable", "co_freevars", "co_cellvars",
++    "co_argcount",
++    "co_posonlyargcount",
++    "co_kwonlyargcount",
++    "co_nlocals",
++    "co_stacksize",
++    "co_flags",
++    "co_code",
++    "co_consts",
++    "co_names",
++    "co_varnames",
++    "co_filename",
++    "co_name",
++    "co_qualname",
++    "co_firstlineno",
++    "co_linetable",
++    "co_exceptiontable",
++    "co_freevars",
++    "co_cellvars",
+ )
+ 
+ 
+@@ -48,11 +62,7 @@
+     classes = [code for code in module.co_consts if type(code) is CodeType and code.co_name == "HookWorker"]
+     if len(classes) != 1:
+         raise ValueError("cline_method_class_code")
+-    result = {
+-        code.co_name: code
+-        for code in classes[0].co_consts
+-        if type(code) is CodeType and code.co_name in METHODS
+-    }
++    result = {code.co_name: code for code in classes[0].co_consts if type(code) is CodeType and code.co_name in METHODS}
+     if set(result) != set(METHODS):
+         raise ValueError("cline_method_code_roster")
+     return result
+@@ -160,8 +170,10 @@
+             return None
+         self.selected_imports = min(2, self.selected_imports + 1)
+         current = tuple(finder for finder in sys.meta_path if finder is not self)
+-        if self.selected_imports != 1 or len(current) != len(self.finders) or any(
+-            actual is not expected for actual, expected in zip(current, self.finders, strict=True)
++        if (
++            self.selected_imports != 1
++            or len(current) != len(self.finders)
++            or any(actual is not expected for actual, expected in zip(current, self.finders, strict=True))
+         ):
+             self.fault("finder_state_changed")
+             self.remove_finder()
+@@ -305,7 +317,11 @@
+                     if code_image(self.originals[name].__code__) != self.images[name]:
+                         self.fault("selected_code_changed")
+                     defaults = self.originals[name].__kwdefaults__
+-                    if type(defaults) is not dict or set(defaults) != {DEFAULTS[name]} or defaults[DEFAULTS[name]] is not None:
++                    if (
++                        type(defaults) is not dict
++                        or set(defaults) != {DEFAULTS[name]}
++                        or defaults[DEFAULTS[name]] is not None
++                    ):
+                         self.fault("selected_defaults_changed")
+                 except BaseException:
+                     self.fault("selected_code_unavailable")
+@@ -317,8 +333,10 @@
+                 except BaseException:
+                     self.fault("method_restore_failed")
+         try:
+-            self.methods_restored = bool(self.bound) and self.owner is not None and all(
+-                self.owner.__dict__.get(name) is original for name, original in self.originals.items()
++            self.methods_restored = (
++                bool(self.bound)
++                and self.owner is not None
++                and all(self.owner.__dict__.get(name) is original for name, original in self.originals.items())
+             )
+         except BaseException:
+             self.fault("method_restore_failed")

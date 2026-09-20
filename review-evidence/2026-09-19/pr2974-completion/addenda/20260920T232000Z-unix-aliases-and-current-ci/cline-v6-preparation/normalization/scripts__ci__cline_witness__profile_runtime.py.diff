@@ -1,0 +1,14 @@
+--- before/scripts/ci/cline_witness/profile_runtime.py
++++ after/scripts/ci/cline_witness/profile_runtime.py
+@@ -139,10 +139,7 @@
+         if self.method_observation is not None:
+             try:
+                 self.method_observation.restore()
+-                self.restored = (
+-                    self.method_observation.document()["complete"]
+-                    and sys.getprofile() is self.previous
+-                )
++                self.restored = self.method_observation.document()["complete"] and sys.getprofile() is self.previous
+             except BaseException:
+                 self.restored = False
+                 self.fault("method_restoration_failed")

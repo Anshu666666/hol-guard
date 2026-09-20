@@ -1,0 +1,845 @@
+{
+  "intel_original_c16_hash": {
+    "calling_thread_cpu_ms_range": [
+      26.490656,
+      38.34875899999995
+    ],
+    "complete_at_snapshot": true,
+    "driver": "77747aa81bf59bbc698d52e67ca370daf183bf37",
+    "job": 105952440827,
+    "limits": [
+      "All timings include forwarding observer overhead.",
+      "Constructor counts cover this parent process after observer installation, not spawn children.",
+      "No new Store or HookWorker is created by the observer.",
+      "Inclusive spans overlap; do not sum or infer native CPU by subtraction.",
+      "Native client wait includes Rust work, transport and response delivery.",
+      "Receipt submission return is not unique enqueue or durable SQLite persistence.",
+      "Publication events cover the original wave interval; in-flight events at freeze are incomplete.",
+      "Original failures and original uninstrumented latency records remain unchanged."
+    ],
+    "logical_bytes_hashed": 180512192,
+    "logical_bytes_read": 180512192,
+    "operations": 448,
+    "phase_counts": {
+      "activity_submission": 16,
+      "admission_and_queue": 16,
+      "authority_fence_enter": 16,
+      "authority_fence_exit": 16,
+      "byte_admission": 16,
+      "client_pool_lease_inclusive": 16,
+      "client_response_wait_inclusive": 16,
+      "client_snapshot_start_or_attestation": 16,
+      "client_stream_exchange_inclusive": 16,
+      "daemon_hook_inclusive": 16,
+      "http_post_inclusive": 16,
+      "native_client_inclusive": 16,
+      "policy_current_binding": 32,
+      "policy_prepare_inclusive": 32,
+      "policy_readiness_wait": 32,
+      "policy_snapshot_inclusive": 16,
+      "policy_workspace_registration": 32,
+      "receipt_submission": 16,
+      "receipt_validate_submit_inclusive": 16,
+      "runtime_identity_including_hash": 16,
+      "shared_worker_fast_path": 16,
+      "worker_review_inclusive": 16
+    },
+    "phase_events": 416,
+    "qualification_complete": false,
+    "report_identities": {
+      "hash-operation-admission.json": {
+        "bytes": 3472,
+        "git_blob": "ff4cbd9ccd3e610bb2cc6381d67ce5c03c1c44a0",
+        "sha256": "601ee38f0c1796370540ec45bdaad7d6dcfc2d9a437df2939b807df04ad21423"
+      },
+      "hash-operations.json": {
+        "bytes": 189395,
+        "git_blob": "8c2280b4960614a1f55dfdbf72f6ab642322b0e2",
+        "sha256": "43389ceb54df1d05fec5e62a0c4e998afd5143ba4622a65adf7cab24914fe77f"
+      },
+      "outcome.json": {
+        "bytes": 1807,
+        "git_blob": "e61149d25c6e58636a8118242c0557b0216127dc",
+        "sha256": "a9f7f03ea155826b73d65f65057bf9ee99db4a2c26a62331b6dbf975b99d5667"
+      },
+      "phase-observation.json": {
+        "bytes": 515312,
+        "git_blob": "b3e6cc5669d124fc2423fc36dfb545a929d3d9ce",
+        "sha256": "789cd118ae1a4c6f82b04eb55de6d11a28e07fec180dc295453fe60661050675"
+      }
+    },
+    "run": 35463874805,
+    "scope": "parent_current_validation_calling_thread",
+    "source": "2564d9a4dda22ff73e53e6dfae793ef95cbeb259",
+    "transport": {
+      "bytes": 4168474,
+      "git_blob": "98800c72d0fec677569596de47324e5b3d2e4e4b",
+      "sha256": "582707b5772acfdec4c93aa0392e2a3534bc4d3894940c09eeaa921f2603d2cb"
+    },
+    "validation_wall_ms_range": [
+      28.611888000000363,
+      265.75276199992004
+    ],
+    "validations": 16,
+    "verified_original_members": 42
+  },
+  "linux_four_inline_cases": {
+    "attempts": 4,
+    "boundary": "AUTHENTICATED_DAEMON_ADAPTER",
+    "checkouts": {
+      "baseline": {
+        "available": true,
+        "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+        "matches_expected": true,
+        "tracked_files_unchanged": true,
+        "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+      },
+      "binding_driver_sha256": "0f357543912536b86eabb1cdcfec6eaf052fc8824eb281155930c9a7d7359405",
+      "candidate": {
+        "available": true,
+        "commit": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+        "matches_expected": true,
+        "tracked_files_unchanged": true,
+        "tree": "b0a1de665e3e0ea5da1252ad15fdf25716738d32"
+      },
+      "phase": "before",
+      "schema": "hol-guard.native-qualification-checkouts.v1",
+      "workflow_attempt": "1",
+      "workflow_commit": "c24e5687a74db8ae3850ab45b589d05d9b8755a4",
+      "workflow_run": "35483934026"
+    },
+    "complete_run": false,
+    "groups": {
+      "maximum_supported_inline": {
+        "actual_phase_counts_and_work": {
+          "activity_submission": {
+            "count": 2,
+            "work": {}
+          },
+          "admission_and_queue": {
+            "count": 2,
+            "work": {
+              "admitted": 2,
+              "attempted_payload_bytes": 1999948,
+              "enqueued_attempts": 2
+            }
+          },
+          "byte_admission": {
+            "count": 2,
+            "work": {
+              "attempted_payload_bytes": 1999948,
+              "reserved": 2
+            }
+          },
+          "client_frame_header_pack": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 8
+            }
+          },
+          "client_frame_header_unpack": {
+            "count": 2,
+            "work": {
+              "attempted_header_bytes": 8
+            }
+          },
+          "client_frame_write": {
+            "count": 2,
+            "work": {
+              "attempted_frame_bytes": 2001086,
+              "completed_frame_bytes": 2001086
+            }
+          },
+          "client_pool_lease_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "client_response_wait_inclusive": {
+            "count": 2,
+            "work": {
+              "delivered_payload_bytes": 2891
+            }
+          },
+          "client_snapshot_start_or_attestation": {
+            "count": 2,
+            "work": {}
+          },
+          "client_stream_exchange_inclusive": {
+            "count": 2,
+            "work": {
+              "attempted_payload_bytes": 2001078,
+              "returned_payload_bytes": 2891
+            }
+          },
+          "daemon_hook_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "daemon_json_dumps": {
+            "count": 6,
+            "work": {
+              "returned_characters": 4000539
+            }
+          },
+          "daemon_json_loads": {
+            "count": 2,
+            "work": {
+              "attempted_input_characters": 2000000
+            }
+          },
+          "edge_json_dumps": {
+            "count": 2,
+            "work": {
+              "returned_characters": 2001078
+            }
+          },
+          "edge_json_loads": {
+            "count": 2,
+            "work": {
+              "attempted_input_bytes": 2891
+            }
+          },
+          "envelope_encode": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 2001078
+            }
+          },
+          "evidence_json_dumps": {
+            "count": 6,
+            "work": {
+              "returned_characters": 3390
+            }
+          },
+          "http_body_read": {
+            "count": 34,
+            "work": {
+              "returned_bytes": 2000000
+            }
+          },
+          "http_body_read_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "http_post_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "http_response_write": {
+            "count": 4,
+            "work": {
+              "attempted_bytes": 1030,
+              "written_bytes": 1030
+            }
+          },
+          "native_client_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "receipt_record_serialization": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 1980
+            }
+          },
+          "receipt_submission": {
+            "count": 2,
+            "work": {}
+          },
+          "response_decode_validate": {
+            "count": 2,
+            "work": {}
+          },
+          "response_encode_write": {
+            "count": 2,
+            "work": {}
+          },
+          "runtime_manifest_sha256_finalize": {
+            "count": 4,
+            "work": {}
+          },
+          "runtime_manifest_sha256_init": {
+            "count": 4,
+            "work": {
+              "attempted_input_bytes": 1636,
+              "hashed_bytes": 1636
+            }
+          },
+          "scheduler_queue_admitted": {
+            "count": 2,
+            "work": {}
+          }
+        },
+        "attempted": 2,
+        "kind": "inline",
+        "unobserved_config_lookup": true,
+        "unobserved_executable_hash_updates": true,
+        "validated": 2,
+        "wire_bytes": 1000000
+      },
+      "small_inline": {
+        "actual_phase_counts_and_work": {
+          "activity_submission": {
+            "count": 2,
+            "work": {}
+          },
+          "admission_and_queue": {
+            "count": 2,
+            "work": {
+              "admitted": 2,
+              "attempted_payload_bytes": 1996,
+              "enqueued_attempts": 2
+            }
+          },
+          "byte_admission": {
+            "count": 2,
+            "work": {
+              "attempted_payload_bytes": 1996,
+              "reserved": 2
+            }
+          },
+          "client_frame_header_pack": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 8
+            }
+          },
+          "client_frame_header_unpack": {
+            "count": 2,
+            "work": {
+              "attempted_header_bytes": 8
+            }
+          },
+          "client_frame_write": {
+            "count": 2,
+            "work": {
+              "attempted_frame_bytes": 3134,
+              "completed_frame_bytes": 3134
+            }
+          },
+          "client_pool_lease_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "client_response_wait_inclusive": {
+            "count": 2,
+            "work": {
+              "delivered_payload_bytes": 2891
+            }
+          },
+          "client_snapshot_start_or_attestation": {
+            "count": 2,
+            "work": {}
+          },
+          "client_stream_exchange_inclusive": {
+            "count": 2,
+            "work": {
+              "attempted_payload_bytes": 3126,
+              "returned_payload_bytes": 2891
+            }
+          },
+          "daemon_hook_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "daemon_json_dumps": {
+            "count": 6,
+            "work": {
+              "returned_characters": 4635
+            }
+          },
+          "daemon_json_loads": {
+            "count": 2,
+            "work": {
+              "attempted_input_characters": 2048
+            }
+          },
+          "edge_json_dumps": {
+            "count": 2,
+            "work": {
+              "returned_characters": 3126
+            }
+          },
+          "edge_json_loads": {
+            "count": 2,
+            "work": {
+              "attempted_input_bytes": 2891
+            }
+          },
+          "envelope_encode": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 3126
+            }
+          },
+          "evidence_json_dumps": {
+            "count": 6,
+            "work": {
+              "returned_characters": 3390
+            }
+          },
+          "http_body_read": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 2048
+            }
+          },
+          "http_body_read_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "http_post_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "http_response_write": {
+            "count": 4,
+            "work": {
+              "attempted_bytes": 1030,
+              "written_bytes": 1030
+            }
+          },
+          "native_client_inclusive": {
+            "count": 2,
+            "work": {}
+          },
+          "receipt_record_serialization": {
+            "count": 2,
+            "work": {
+              "returned_bytes": 1980
+            }
+          },
+          "receipt_submission": {
+            "count": 2,
+            "work": {}
+          },
+          "response_decode_validate": {
+            "count": 2,
+            "work": {}
+          },
+          "response_encode_write": {
+            "count": 2,
+            "work": {}
+          },
+          "runtime_manifest_sha256_finalize": {
+            "count": 4,
+            "work": {}
+          },
+          "runtime_manifest_sha256_init": {
+            "count": 4,
+            "work": {
+              "attempted_input_bytes": 1636,
+              "hashed_bytes": 1636
+            }
+          },
+          "scheduler_queue_admitted": {
+            "count": 2,
+            "work": {}
+          }
+        },
+        "attempted": 2,
+        "kind": "inline",
+        "unobserved_config_lookup": true,
+        "unobserved_executable_hash_updates": true,
+        "validated": 2,
+        "wire_bytes": 1024
+      }
+    },
+    "installed_identity_component": {
+      "build_sha": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+      "cases": [
+        {
+          "case": "steady_without_client",
+          "hashed_bytes": 37384608,
+          "result": "passed",
+          "validation_calls": 3
+        },
+        {
+          "case": "fresh_child",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "steady_with_client",
+          "hashed_bytes": 0,
+          "result": "passed",
+          "validation_calls": 0
+        },
+        {
+          "case": "death_before_restart",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "live_replacement",
+          "result": "replaced"
+        },
+        {
+          "case": "replacement_first_status",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "replacement_fresh_child",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "source_sha_mismatch",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "source_sha_restoration",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "source_sha_restoration_child",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "package_version_mismatch",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "package_version_restoration",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "package_version_restoration_child",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "same_size_restored_mtime_corruption",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "original_artifact_restoration",
+          "hashed_bytes": 12461536,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "restoration_fresh_child",
+          "hashed_bytes": 24923072,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "retired_client_status",
+          "hashed_bytes": 37384608,
+          "result": "passed",
+          "validation_calls": 3
+        }
+      ],
+      "cross_release_upgrade_rollback": "not_exercised",
+      "identity_module_sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe",
+      "machine": "x86_64",
+      "manifest_sha256": "a579d74c793971f20d4645f4591512f18521713eb224ae894cb880dd271d0e9e",
+      "package_version": "3.0.1",
+      "platform": "linux",
+      "runtime_module_sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55",
+      "runtime_sha256": "ceb6ce3ee1de8535ca6ebc31740aca9f54faf66a13cfa8e8cd0cc3c0bb5abd42",
+      "runtime_size": 12461536,
+      "schema": "hol-guard.installed-runtime-identity.v1",
+      "scope": "installed_status_and_real_stdio_child",
+      "signing_qualification": "not_exercised"
+    },
+    "native": {
+      "bounds": {
+        "datagram_bytes": 8192,
+        "datagrams": 4096,
+        "processes": 16,
+        "received_bytes": 33554432,
+        "seconds": 60.0
+      },
+      "complete_run": false,
+      "counts": {
+        "accepted": 109,
+        "ordinal_gaps": 1,
+        "received": 109,
+        "received_bytes": 213052,
+        "refused": 0
+      },
+      "diagnostic_sockets_excluded_from_request_counts": true,
+      "final_tail_delivery_guaranteed": false,
+      "headline_timing_eligible": false,
+      "observed_call_scope": "actual_boundaries_include_startup_control_and_request_calls",
+      "platform_support": "linux",
+      "processes": [
+        {
+          "diagnostic_socket_opens": 1,
+          "export_window_exhausted": false,
+          "last_frame_ordinal": 55,
+          "prior_export_loss_observed": true,
+          "role": "persistent_client",
+          "run_state_when_last_sampled": "running",
+          "slot": 1,
+          "snapshot": {
+            "active_observations_when_read": 0,
+            "all_platform_socket_opens": null,
+            "collector_loss_observed": false,
+            "complete_run": false,
+            "headline_timing_eligible": false,
+            "loopback_failed_internal_socket_creations": null,
+            "max_duration_ns": 60000000000,
+            "max_observations_per_phase": 100000,
+            "phases": [
+              {
+                "phase": "client_connect_inclusive",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 149578,
+                  "duration_ns_min": 90226,
+                  "duration_ns_sum": 556083,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "client_authenticate",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 4483281,
+                  "duration_ns_min": 830528,
+                  "duration_ns_sum": 13079422,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "client_request_write_flush",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 1360860,
+                  "duration_ns_min": 8113,
+                  "duration_ns_sum": 1864548,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "client_committed_response_read",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 62529765,
+                  "duration_ns_min": 5518,
+                  "duration_ns_sum": 77670417,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "resident_evaluate_inclusive",
+                "statistics": null
+              },
+              {
+                "phase": "unix_socket_creation",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 10836,
+                  "duration_ns_min": 4978,
+                  "duration_ns_sum": 39549,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "loopback_connect_handle",
+                "statistics": null
+              }
+            ],
+            "schema": "hol-guard-native-phase-diagnostics.v1",
+            "scope": "diagnostic_instrumented_process_snapshot",
+            "snapshot_atomic": false,
+            "span_semantics": "inclusive_do_not_sum",
+            "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+          },
+          "snapshot_ordinal": 55
+        },
+        {
+          "diagnostic_socket_opens": 1,
+          "export_window_exhausted": false,
+          "last_frame_ordinal": 55,
+          "prior_export_loss_observed": false,
+          "role": "managed_resident",
+          "run_state_when_last_sampled": "running",
+          "slot": 2,
+          "snapshot": {
+            "active_observations_when_read": 1,
+            "all_platform_socket_opens": null,
+            "collector_loss_observed": false,
+            "complete_run": false,
+            "headline_timing_eligible": false,
+            "loopback_failed_internal_socket_creations": null,
+            "max_duration_ns": 60000000000,
+            "max_observations_per_phase": 100000,
+            "phases": [
+              {
+                "phase": "client_connect_inclusive",
+                "statistics": null
+              },
+              {
+                "phase": "client_authenticate",
+                "statistics": null
+              },
+              {
+                "phase": "client_request_write_flush",
+                "statistics": null
+              },
+              {
+                "phase": "client_committed_response_read",
+                "statistics": null
+              },
+              {
+                "phase": "resident_evaluate_inclusive",
+                "statistics": {
+                  "abandoned": 0,
+                  "duration_clipped": false,
+                  "duration_ns_max": 62472408,
+                  "duration_ns_min": 391408,
+                  "duration_ns_sum": 77468841,
+                  "observations_discarded_at_cap": false,
+                  "retained_count": 5,
+                  "returned_err": 0,
+                  "returned_ok": 5,
+                  "unwound": 0
+                }
+              },
+              {
+                "phase": "unix_socket_creation",
+                "statistics": null
+              },
+              {
+                "phase": "loopback_connect_handle",
+                "statistics": null
+              }
+            ],
+            "schema": "hol-guard-native-phase-diagnostics.v1",
+            "scope": "diagnostic_instrumented_process_snapshot",
+            "snapshot_atomic": false,
+            "span_semantics": "inclusive_do_not_sum",
+            "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+          },
+          "snapshot_ordinal": 55
+        }
+      ],
+      "qualification_complete": false,
+      "receiver_loss_observed": true,
+      "receiver_status": "receiver_stopped",
+      "receiver_terminal": true,
+      "request_socket_counts": "observed_successful_creation_returns_only_not_live_fd_counts",
+      "runtime_file_identity_scope": "last_observation_outside_snapshot_lock",
+      "runtime_file_identity_unchanged_at_last_check": true,
+      "runtime_sha256": "ceb6ce3ee1de8535ca6ebc31740aca9f54faf66a13cfa8e8cd0cc3c0bb5abd42",
+      "schema": "hol-guard-native-phase-receiver.v1",
+      "scope": "diagnostic_instrumented_owned_live_process_observations",
+      "snapshot_aggregation": "latest_retained_per_process_do_not_sum_cumulative_frames",
+      "unobserved_phase": "null_missing_or_unretained_not_zero_cost"
+    },
+    "qualification_complete": false,
+    "report": {
+      "bytes": 36110,
+      "git_blob": "b9fdcf3fe5fae16abf65eac7f8d7e67d70aea05f",
+      "sha256": "25d0a1c28f0610de415f27ba99ab7c9c6fb0361901ee726040caeea250d816f4"
+    },
+    "validated": 4
+  },
+  "registered_priority_88": {
+    "actual_daemon_stage_counts": {
+      "activity_submit": 88,
+      "admission_policy": 88,
+      "decode_edge": 88,
+      "encode_envelope": 88,
+      "hook_handler": 88,
+      "native_client_exchange": 88,
+      "native_client_lease": 88,
+      "native_edge": 88,
+      "receipt_submit": 88,
+      "runtime_status": 88,
+      "scheduler_acquire": 88,
+      "worker_review": 88,
+      "workspace_policy": 176
+    },
+    "allow": 84,
+    "deny": 4,
+    "driver": "e612bc6effafd9989bda6053b46483d4b283c188",
+    "launches": 88,
+    "limitations": [
+      "Inclusive nested stage durations are not additive across labels.",
+      "No cross-process clock subtraction or residual attribution.",
+      "Child interpreter/import, discovery/HTTP authentication, native internal phases, asynchronous SQLite and physical I/O remain unmeasured.",
+      "All original serial50/100 and c16 200ms ceilings remain missed; small diagnostic populations do not meet original qualification minima.",
+      "Prior observer-failed88 rows remain failed; they were not reprocessed as passing."
+    ],
+    "observation_complete": true,
+    "original_sample_minima_met": false,
+    "packet": "bd63025378a0cfe65a6fee2d3783498e0b85bf32",
+    "peer": "7e24e94734cb1d60a673879d1309326c305d5d7b",
+    "product": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+    "qualification_eligible": false,
+    "report_identities": {
+      "VERIFIED-RESULT.json": {
+        "bytes": 61577,
+        "git_blob": "624e09fd3b1f36b7a54bb43422b1d287ca2b1cb5",
+        "sha256": "074982d5155a1522c60e5508cbe731911eb64f4f4303b493380cc3132d4b6109"
+      },
+      "observation-daemon.json": {
+        "bytes": 457328,
+        "git_blob": "2a142ece004d647d411bbf55d71a69c9cf91c305",
+        "sha256": "e1e6f310caa57bff0507d579a06f8204c63b69c9cb0384da05d2a4dbbc476680"
+      },
+      "observation.json": {
+        "bytes": 734317,
+        "git_blob": "022bfd86d363d8488101a931d0b7aa479b7dff3b",
+        "sha256": "a31f82c635977709369006be4d9ac2c341a123057a7030aa2ad6c2742470efd9"
+      }
+    },
+    "run": 35517987547,
+    "source": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+    "unmeasured": [
+      "child_interpreter_and_imports",
+      "discovery_and_http_authentication",
+      "native_internal_phases",
+      "asynchronous_sqlite_commit",
+      "physical_io"
+    ]
+  }
+}

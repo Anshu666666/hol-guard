@@ -1,0 +1,25 @@
+# Work in progress
+
+Latest PR source is **cbd9399e39adc4fe338bff468807656ebab3af13**, tree **3c59e6f81f531e7b4496ae49a278c9ddf3961380**, on `chore/resolve-2797-conflicts`, with sole parent a1d5094. It integrates two test-only Unix peer controls after the original a1 native workflow completed. All 4802 final leaves and the exact two-file delta were independently verified. Production code remains the reviewed a1 Copilot correction; the separate cbd normal population is now terminal with two failed workflows.
+
+The completed package subject is **a1d509404b0803a91031cb51f4b0c919408bfeba**, actual build **9f511875b236c12e5f23c783e958a536ac0360ba**, tree **e60dfd218cd7cc9f29c9f2cd66223c866ea86c80**. All 32 normal workflows passed. The final check census is 176 success/19 skip/one Kilo rate-limit failure. Its original Linux/Windows/Mac ARM/Mac Intel jobs and strict collector are complete, and all original package artifacts have independent data review.
+
+Current cbd normal CI is terminal: 30 of 32 workflows passed and two failed. Its 196 checks are 173 success, 20 skipped and three failures: Windows native delivery, macOS recovery, and the Kilo rate limit. The native Linux and both Mac jobs passed; the strict collector was skipped after Windows failed. The actual build is ef40a5833b75109593755ca3a4e74f9b2a193caa, with the exact cbd tree. No current complete quartet is claimed. [Current census and original Mac log](cbd-normal-ci-census).
+
+Read the [complete unchanged original PRD](https://github.com/hashgraph-online/hol-guard/blob/3c84bd59e9ca2cc90fb8799e5a50fe40ed734076/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T065000Z-surviving-records/originals/PRD.md), [TODO](TODO.md), [Takeaway prompt](TAKEAWAY.md), [task overlay](task-status-overlay.json), [acceptance decisions](current-acceptance-decisions.json), [current source continuity](current-source-continuity.json) and [previous checkpoint](https://github.com/hashgraph-online/hol-guard/tree/23a8314814887086f6f37966361ea5cc7a12e286/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T215600Z-b222-scopes-and-copilot-source) together.
+
+1. Preserve the completed RSP-078 installed population and its independent data peer; no replay is needed. Keep original v1 failures, the exact 14 case identities, four evaluated-native versus ten availability cases, original deadlines and authentic a1 package identities. Remaining RSP-077/approval/Windows/performance clauses stay explicit.
+
+2. The current initial-ACK failure from 35541994314 has a complete independent data review. Preserve the original 400 ms initial deadline and the later unoffered fault/recovery cell. Empty events precede observer installation; independent installed identity passes. No source correction or additional observation has yet been justified by the retained initial-path evidence.
+
+3. Cline V6 has passed root concrete/operational review and was launched once as run 35544126274, driver f9cf45bf296700eed8f6f28b88a54e2894e11d51/tree 5fa9b2049190294a0cf6df55488d1265c8a2a69b, sole source parent b7f7ac898d1e6bf752315450de675e896b9b8442. Root peer 43bb425a and publication 44f3c068 verify all 4,819 final leaves, exact four driver files, authentic a1 Intel artifact and original 9 s/10 s/180 s deadlines. Retrieve the original run without a repeat dispatch; no installed result or historical cause is yet claimed.
+
+4. Finish the bounded child-turnover check and matched-hardware/outer-driver admission for the paired priority comparison. The nine-path source peer and 84 controls are complete; finite CPU 5/private 3 evidence remains valid within its scope. Use 30 complete steady-state resource samples and the original matched timing populations. Retain unknown counts after outer kill. No full campaign has launched.
+
+5. Complete public updater/dependency HTTPS implementation and meaningful controls. Use the actual installed public updater, owned machine-policy/CA fixture on a disposable runner, exact dependency closure and original public argv. Keep genuine same-version restoration, authentic 3.0.0 protected refusal, durable sessions, actual in-flight work and signing separate. Stop on original failure and retain cleanup outcomes.
+
+6. Implement the concrete missing measurement producers and assemble the joined retained observations identified by the RSP-008/025/085/121 map. Continue freshness, policy, approval, durability, inventory and mixed-load requirements. Keep missing 313/321 decisions unassigned, the pre-lock-truncate hypothesis disproved, and the three persistence error families distinct.
+
+7. Account for the terminal cbd Windows delivery and Mac recovery failures using their original logs/source. Linux and both native Mac jobs passed, but the Windows wheel and strict quartet are absent. Do not replay normal workflows or use a second account to approve. Finish full original qualification and release work before final eligible human approval.
+
+Full technical qualification, release readiness and eligible final approval remain open. Use source-and-status.json and the original task overlay for exact current scopes.

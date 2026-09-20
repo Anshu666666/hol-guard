@@ -1,0 +1,9 @@
+# Actual current-artifact first-admission result
+
+Run 35541994314 failed before the first-reply fault was offered. It used the authentic a1d5094 source / 9f511875 installed wheel, with all source, driver and installed identities preserved. Forty-one reader controls passed; the original CLI ran once and returned 1.
+
+The initial await_ack raised its original line 73 authenticated acknowledgement deadline error. That initial 400 ms deadline begins after the strict overlay write and request_publish return. Replacement, fault activation, cold-registration acceptance and the recovered request were not reached. No original clock samples or failed-predicate state survive. PublicationObserver is installed only in the later replacement callback, so publication_events=0 is not proof that no background publication happened.
+
+The original publisher cleanup reports contained=true. This does not establish earlier readiness or a full descendant cleanup census. The original cell has no successful binding; its derived installed_runtime_matches=false is not a runtime mismatch, because independent before/after package and runtime bindings pass. No source correction, historical cause or full15/performance qualification is established.
+
+VERIFIED-RESULT.json is produced by the retained pure-data verify.py against the original local ZIP, wheel, log and reports. FAILURE-PATH.json binds the exact original two source bodies and separates the initial and recovered deadlines. ENCODINGS.json reversibly preserves large original text bodies as gzip/base64 chunks. ORIGINALS.json inventories every retained original and explicitly identifies binary ZIP/wheel bytes retained locally rather than in this Git tree. Signed download URLs are excluded. No workload or native test was repeated during this data admission.

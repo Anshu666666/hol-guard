@@ -1,0 +1,68 @@
+{
+  "schema": "pr2974.rsp091-final-unix-peer-clause-addendum.v1",
+  "original_map": {
+    "tree": "bcedfa850d5af3839435a94d8abab3b52355f3ef",
+    "report": "2c702b00d565587cc9bccb95660fd3975f82565c",
+    "peer": "c70c78a5b7d8625684295c9d268929762ab38b5e"
+  },
+  "original_requirement": {
+    "id": "RSP-091",
+    "acceptance": "Test DACL/owner/SYSTEM rules, loopback authentication, exact package process, Unix private paths, permissions and peer identity.",
+    "dependencies": [
+      "RSP-089",
+      "RSP-090"
+    ],
+    "section": "P2 conditional; begin only if post-optimization profiles justify added protocol complexity."
+  },
+  "changed_execution_clause": "Unix peer identity",
+  "verified_population": {
+    "source": "a63cfdf9c5f49d7bd3199e65ae48f393297a391b",
+    "base": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "run": 35540033572,
+    "result_tree": "34b0e1a845b9bf200fd37e0b38cacd72a58f3bfe",
+    "platforms": [
+      "Linux x64",
+      "macOS ARM64",
+      "macOS Intel"
+    ],
+    "per_platform": {
+      "parents_passed": 4,
+      "owned_children_passed": 2,
+      "driver_controls_passed": 11
+    },
+    "independent_data_peer": {
+      "tree": "443e84d05afcc8c7902c9aa61c8f3ab6465c673f",
+      "blob": "ed89c51be86290a7cc3195984bc41e1258bf30bc"
+    }
+  },
+  "positive": "Actual child owns Unix socket, selected package-path/start-marker identity is verified, original authentication/request header/digest/bound response succeeds; child/stream lives through parent receipt.",
+  "negative": "Actual child owns Unix socket but selected identity is a different real live process of the same package. Original connector returns exact nonretryable native_client_peer_identity_mismatch; actual receiver observes EOF with zero authentication bytes.",
+  "deadline_controls": "Original in-budget connection and original expired-budget refusal pass. Product client2s/auth250ms unchanged; negative fixture read has same2s budget.",
+  "cleanup": "Actual owned-child reaping and directory removal true in both new controls on all three platforms.",
+  "source_delta": "Only test-only module declaration and new Linux/macOS test module; no production transport, authentication, retry, permission or deadline changes.",
+  "prior_failures": [
+    {
+      "run": 35538263044,
+      "scope": "Workflow invalid context; zero jobs/no controls."
+    },
+    {
+      "run": 35538594974,
+      "result_tree": "89b9b13611929d07bd0f426f6d0b3a820041fa18",
+      "scope": "Linux4passes;Mac first positive fixture failed before original exchange."
+    },
+    {
+      "run": 35539478823,
+      "result_tree": "96945acdc477dbd11c7a5a321dc05b1d46a1b14d",
+      "scope": "Linux4passes;Mac positive passes, negative timeout setterOS22 before EOF observation."
+    }
+  ],
+  "unchanged_clause_limits": [
+    "Other mapped DACL/owner/SYSTEM/loopback/private-path clauses retain original report evidence and its Python-versus-Rust parser distinctions.",
+    "Actual SYSTEM-launched execution is not proved or invented as an additional acceptance requirement.",
+    "Selected exact-package positive and stale-marker controls do not establish a dedicated foreign-executable negative that was not located in this bounded map.",
+    "Ordinary source controls do not supply installed performance or activate an unselected ingress prototype.",
+    "RSP089/090 conditional dependencies and whole RSP091 task status remain separately assessed."
+  ],
+  "correction": "Earlier map prose calling the b222 identity packet b458 is historical shorthand only; exact raw successor is4c2ba0dddc5c71c8fe9c9ce7cfa066a130d09059 with peer2922a31456ab54823890809e286106c4258c5295.",
+  "integration": "Root owns integration of exact transport0121df862f8999338ced7224bb7eba262757990c and controlsee5fa8562fb0ef97e76db7bfab16320182e6b0e6 after current normal CI finishes. This addendum does not claim PR integration."
+}

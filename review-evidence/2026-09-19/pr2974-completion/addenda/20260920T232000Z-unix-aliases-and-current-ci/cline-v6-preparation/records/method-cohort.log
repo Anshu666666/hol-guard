@@ -1,0 +1,28 @@
+........................................................................ [ 27%]
+........................................................................ [ 54%]
+.....................................................................F.. [ 81%]
+..................................................                       [100%]
+=================================== FAILURES ===================================
+_____________ test_nested_cli_profile_class_has_no_callback_change _____________
+
+    def test_nested_cli_profile_class_has_no_callback_change() -> None:
+        current = Path(__file__).parents[1] / "scripts/ci/cline_witness/profile_runtime.py"
+    
+        def image(path: Path) -> str:
+            module = ast.parse(path.read_bytes())
+            return ast.dump(next(node for node in module.body if isinstance(node, ast.ClassDef) and node.name == "Profile"))
+    
+        # SHA256 of the exact executed V4 Profile AST; source bytes are separately bound.
+>       assert (
+            hashlib.sha256(image(current).encode()).hexdigest()
+            == "47963e18f8259b370e263a22859ef69e88f527f33c74d19e6e3e5799c5460633"
+        )
+E       AssertionError: assert '95e5f768ab06...9a0fe27491e7a' == '47963e18f825...e5799c5460633'
+E         
+E         - 47963e18f8259b370e263a22859ef69e88f527f33c74d19e6e3e5799c5460633
+E         + 95e5f768ab06beefd8dc9529ec218197de524dda8bda194c3b79a0fe27491e7a
+
+tests/test_cline_process_observation.py:319: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cline_process_observation.py::test_nested_cli_profile_class_has_no_callback_change
+1 failed, 265 passed in 16.02s

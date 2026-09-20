@@ -1,6 +1,10 @@
 use super::command_floor_tests::{control_snapshot, resign};
 use super::*;
 
+#[cfg(windows)]
+#[path = "policy_store_command_authority_windows_open_tests.rs"]
+mod windows_open_controls;
+
 pub(super) fn publish_marker(
     store: &PolicySnapshotStore,
     snapshot: &PolicySnapshotV3,

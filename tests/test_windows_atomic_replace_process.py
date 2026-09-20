@@ -153,10 +153,12 @@ def test_actual_writer_matches_original_destination_outcomes(tmp_path, record_pr
                 assert code == 1
                 assert report["replace_returned"] is native["rename_returned"] is False
                 if case == "crt_destination":
-                    # Retain both real errors before the exact comparison below.
-                    assert report["error"]["kind"] == "PermissionError"
-                    assert report["error"]["errno"] == 13
-                    assert type(report["error"]["winerror"]) is int
+                    # Each primitive exposes its actual OS error without translation.
+                    assert report["error"] == {
+                        "kind": "PermissionError",
+                        "errno": 13,
+                        "winerror": 32 if candidate else 5,
+                    }
                 else:
                     assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 5}
                 if case == "directory_destination":
@@ -174,7 +176,16 @@ def test_actual_writer_matches_original_destination_outcomes(tmp_path, record_pr
                 target.chmod(stat.S_IREAD | stat.S_IWRITE)
             record_property(f"{label}_temporary_siblings_removed", not list(home.glob(".daemon-auth-token.*")))
     record_property("original_candidate_exact_result_parity", results[0] == results[1])
-    assert results[0] == results[1]
+    if case == "crt_destination":
+        record_property("native_error_codes", json.dumps({"MoveFileExW": 5, "FileRenameInfoEx": 32}, sort_keys=True))
+        comparable = []
+        for code, result in results:
+            error = {key: value for key, value in result["error"].items() if key != "winerror"}
+            comparable.append((code, {**result, "error": error}))
+        record_property("original_candidate_compatibility", comparable[0] == comparable[1])
+        assert comparable[0] == comparable[1]
+    else:
+        assert results[0] == results[1]
 
 
 @pytest.mark.parametrize("refuse", [False, True], ids=["observe", "refuse"])

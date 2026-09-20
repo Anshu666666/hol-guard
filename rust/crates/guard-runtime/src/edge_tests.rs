@@ -14,7 +14,7 @@ fn write_fixture_file(path: &std::path::Path, bytes: &[u8]) {
     std::fs::write(path, bytes).unwrap();
 }
 
-fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
+pub(super) fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
     let digest = "a".repeat(64);
     let guard_home = std::env::temp_dir().join(format!(
         "hol-guard-native-edge-generation-test-{}-{}",
@@ -61,7 +61,7 @@ fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
     }
 }
 
-fn evaluate_isolated(envelope: GuardHookEnvelopeV2) -> Result<Vec<u8>, String> {
+pub(super) fn evaluate_isolated(envelope: GuardHookEnvelopeV2) -> Result<Vec<u8>, String> {
     let guard_home = std::path::PathBuf::from(&envelope.source.guard_home);
     let result = validate_envelope_shape(envelope, Instant::now())
         .and_then(|validated| evaluate_validated_envelope(validated, None));

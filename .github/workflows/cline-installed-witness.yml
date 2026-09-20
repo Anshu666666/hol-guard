@@ -1,0 +1,127 @@
+name: Cline Intel original nested-call diagnostic
+
+on:
+  push:
+    branches: [codex/pr2974-cline-intel-nested-run-20260920-v4]
+    paths: [.github/workflows/cline-installed-witness.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cline-installed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  correctness:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: mac-x64
+            runner: macos-15-intel
+            artifact: 10606991867
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 50
+    defaults:
+      run:
+        shell: bash
+        working-directory: driver
+    env:
+      BUILD_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+      CELL: ${{ matrix.cell }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 6
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          path: artifact-source
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.10'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Retain exact input contract and allocated paths
+        run: |
+          mkdir "$GITHUB_WORKSPACE/cline-evidence"
+          cp scripts/ci/cline_installed_driver/input-contract.json "$GITHUB_WORKSPACE/cline-evidence/"
+          echo "OUT=$GITHUB_WORKSPACE/cline-evidence" >> "$GITHUB_ENV"
+          echo "DRIVER_TREE=$(git rev-parse HEAD^{tree})" >> "$GITHUB_ENV"
+      - name: Download selected original native artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          artifact-ids: ${{ matrix.artifact }}
+          run-id: 35516487925
+          github-token: ${{ github.token }}
+          path: retained-artifact
+          merge-multiple: true
+      - name: Bind actual source and every retained artifact member
+        run: |
+          python scripts/ci/cline_installed_driver/driver.py before --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Install frozen test dependencies without the source project
+        run: uv sync --frozen --extra dev --no-install-project --python 3.12
+      - name: Check the exact observer and driver before any installed workload
+        run: |
+          .venv/bin/ruff check scripts/ci/cline_witness scripts/ci/cline_installed_driver/driver.py tests/test_cline_child_witness.py tests/test_cline_invocation.py tests/test_cline_installed_driver.py tests/test_cline_nested_run.py > "$OUT/ruff.txt" 2>&1
+          .venv/bin/ruff format --check scripts/ci/cline_witness scripts/ci/cline_installed_driver/driver.py tests/test_cline_child_witness.py tests/test_cline_invocation.py tests/test_cline_installed_driver.py tests/test_cline_nested_run.py > "$OUT/format.txt" 2>&1
+          .venv/bin/basedpyright --pythonversion 3.12 --pythonpath .venv/bin/python --outputjson scripts/ci/cline_witness scripts/ci/cline_installed_driver/driver.py tests/test_cline_child_witness.py tests/test_cline_invocation.py tests/test_cline_installed_driver.py tests/test_cline_nested_run.py > "$OUT/types.json" 2>&1
+          PYTHONPATH=src:. .venv/bin/python -m pytest -q tests/test_cline_child_witness.py tests/test_cline_invocation.py tests/test_cline_installed_driver.py tests/test_cline_nested_run.py --junitxml="$OUT/source-controls.xml" > "$OUT/source-controls.txt" 2>&1
+          python - "$OUT/source-controls.xml" <<'PYTEST'
+          import sys, xml.etree.ElementTree as ET
+          rows = list(ET.parse(sys.argv[1]).iter("testcase"))
+          assert len(rows) == 181 and len({(r.get("classname"), r.get("name")) for r in rows}) == len(rows)
+          assert not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))
+          PYTEST
+      - name: Install only the selected hash-enforced native wheel
+        run: |
+          python - "$OUT" <<'PY'
+          import hashlib, json, os, pathlib, signal, subprocess, sys
+          out = pathlib.Path(sys.argv[1])
+          requirement = out / "wheel-requirements.txt"
+          command = ["uv", "--no-config", "pip", "install", "--python", str(pathlib.Path(".venv/bin/python").absolute()),
+                     "--no-index", "--no-deps", "--force-reinstall", "--require-hashes", "--only-binary", ":all:",
+                     "-r", str(requirement)]
+          record = {"require_hashes": True, "requirement": {"bytes": requirement.stat().st_size,
+                    "sha256": hashlib.sha256(requirement.read_bytes()).hexdigest()}, "command": command}
+          with (out / "install.stdout").open("wb") as stdout, (out / "install.stderr").open("wb") as stderr:
+              process = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
+              try:
+                  record["return_code"] = process.wait(timeout=180)
+              except subprocess.TimeoutExpired:
+                  record.update(return_code=None, timed_out=True)
+                  os.killpg(process.pid, signal.SIGKILL)
+                  record["reaped_return_code"] = process.wait(timeout=10)
+          (out / "install-record.json").write_text(json.dumps(record, indent=2) + "\n")
+          raise SystemExit(0 if record["return_code"] == 0 else 1)
+          PY
+      - name: Admit installation and prepare the exact owned interpreter
+        run: |
+          .venv/bin/python -I scripts/ci/cline_installed_driver/driver.py provision --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Execute only the four original Cline cases once
+        run: |
+          .venv/bin/python -I scripts/ci/cline_installed_driver/driver.py run --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Preserve after bindings without another workload
+        if: always()
+        run: |
+          python scripts/ci/cline_installed_driver/driver.py after --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/cline-evidence"
+      - name: Retain partial results, source controls and original failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: cline-installed-${{ matrix.cell }}-${{ github.run_id }}
+          path: cline-evidence/
+          if-no-files-found: error
+          retention-days: 30

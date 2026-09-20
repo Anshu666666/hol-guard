@@ -4,12 +4,14 @@ import sys
 import threading
 import time
 from pathlib import Path
+from queue import Queue
 from types import FunctionType
 
 import pytest
 
 from codex_plugin_scanner.guard import native_resident_client as client_module
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+from codex_plugin_scanner.guard.native_resident_stream import _PersistentNativeClient
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts import native_publication_worker_diagnostic as diagnostic
 from scripts.native_publication_diagnostic import observe_publication
@@ -171,3 +173,58 @@ def test_spoofed_function_name_and_source_path_do_not_match_trusted_code_identit
     spoofed = FunctionType(sample.__code__.replace(co_name=trusted.co_name, co_filename=trusted.co_filename), globals())
     phase, _scan = spoofed()
     assert phase == "unknown"
+
+
+@pytest.mark.parametrize("native_request", [False, True])
+def test_actual_response_queue_wait_requires_trusted_native_request_context(
+    monkeypatch: pytest.MonkeyPatch, native_request: bool
+) -> None:
+    entered = threading.Event()
+
+    class NotifyingQueue(Queue[bytes]):
+        def get(self, block: bool = True, timeout: float | None = None) -> bytes:
+            entered.set()
+            return super().get(block=block, timeout=timeout)
+
+    responses = NotifyingQueue(maxsize=1)
+    client = _PersistentNativeClient(
+        executable=Path("synthetic-private-executable"),
+        state_dir=Path("synthetic-private-state"),
+        environment={},
+    )
+    monkeypatch.setattr(client, "_request_snapshot", lambda: (object(), object(), responses))
+    monkeypatch.setattr(client, "_request_is_current", lambda *_args: True)
+    monkeypatch.setattr(client, "_write_frame", lambda *_args, **_kwargs: True)
+    returned: list[bytes | None] = []
+
+    def worker() -> None:
+        returned.append(
+            client.request(b"synthetic-private-payload", deadline_monotonic=time.monotonic() + 3)
+            if native_request
+            else responses.get(timeout=3)
+        )
+
+    publisher = _publisher()
+    thread = threading.Thread(target=worker)
+    publisher._thread = thread
+    thread.start()
+    try:
+        assert entered.wait(1)
+        expected = "client_response_wait" if native_request else "unknown"
+        deadline = time.monotonic() + 1
+        while True:
+            phase, scan = diagnostic._worker_phase(thread)
+            if phase == expected or time.monotonic() >= deadline:
+                break
+            time.sleep(0.001)
+        assert phase == expected
+        assert scan == ("matched" if native_request else "complete")
+        facts = diagnostic.describe_publication_worker(publisher)
+        assert f"worker_phase={expected}" in facts
+        assert "private" not in facts and "payload" not in facts
+        assert returned == []
+    finally:
+        responses.put_nowait(b"synthetic-private-response")
+        thread.join(2)
+    assert not thread.is_alive()
+    assert returned == [b"synthetic-private-response"]

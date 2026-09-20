@@ -15,6 +15,7 @@ from codex_plugin_scanner.guard import native_cloud_policy_inputs as cloud
 from codex_plugin_scanner.guard import native_policy_authority_managed as managed
 from codex_plugin_scanner.guard import native_policy_authority_read as authority
 from codex_plugin_scanner.guard import native_policy_snapshot_publisher_context as context
+from codex_plugin_scanner.guard import native_resident_stream as stream
 from codex_plugin_scanner.guard import store_maintenance
 from codex_plugin_scanner.guard import store_secret_policy_integrity as integrity
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
@@ -34,6 +35,16 @@ def _invocation(
     stop: Callable[..., NoReturn],
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[], object]:
+    if phase in {"client_snapshot", "client_start", "client_frame_write"}:
+        client = stream._PersistentNativeClient(executable=store.guard_home, state_dir=store.guard_home, environment={})
+        if phase == "client_snapshot":
+            monkeypatch.setattr(client, "_start", stop)
+            return client._request_snapshot
+        if phase == "client_start":
+            monkeypatch.setattr(stream.subprocess, "Popen", stop)
+            return client._start
+        monkeypatch.setattr(stream, "write_frame", stop)
+        return lambda: client._write_frame(object(), b"synthetic-private-frame", deadline_monotonic=1.0)
     if phase == "v3_source_capture":
         monkeypatch.setattr(context, "refresh_source_requirement", stop)
         return lambda: context.compiled_v3_compatible_policy(publisher)
@@ -86,6 +97,9 @@ def _invocation(
         "integrity_marker",
         "store_connection",
         "store_permissions",
+        "client_snapshot",
+        "client_start",
+        "client_frame_write",
     ],
 )
 def test_actual_source_frames_select_finite_phase_without_rendering_private_values(

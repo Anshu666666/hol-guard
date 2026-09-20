@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import threading
+from queue import Queue
 from types import CodeType, FrameType, FunctionType
 
 from codex_plugin_scanner.guard.native_cloud_policy_inputs import read_native_cloud_policy_inputs
@@ -37,6 +38,8 @@ def _wrapped_source_code(function: object) -> CodeType | None:
 
 
 _MAX_STACK_FRAMES = 32
+_RESPONSE_QUEUE_GET_CODE = Queue.get.__code__
+_NATIVE_CLIENT_REQUEST_CODE = _PersistentNativeClient.request.__code__
 _PHASE_CODES: tuple[tuple[CodeType | None, str], ...] = (
     (NativePolicySnapshotPublisher._run.__code__, "publisher_loop"),
     (NativePolicySnapshotPublisher._publish_once.__code__, "publication"),
@@ -59,7 +62,10 @@ _PHASE_CODES: tuple[tuple[CodeType | None, str], ...] = (
     (StoreSecretPolicyIntegrityMixin._repair_store_permissions.__code__, "store_permissions"),
     (_publish_snapshot_v3.__code__, "snapshot_transport"),
     (native_resident_client_request.__code__, "resident_transport"),
-    (_PersistentNativeClient.request.__code__, "resident_transport"),
+    (_NATIVE_CLIENT_REQUEST_CODE, "resident_transport"),
+    (_PersistentNativeClient._request_snapshot.__code__, "client_snapshot"),
+    (_PersistentNativeClient._start.__code__, "client_start"),
+    (_PersistentNativeClient._write_frame.__code__, "client_frame_write"),
     (_PersistentNativeClientPool._lease.__code__, "transport_capacity"),
 )
 
@@ -70,14 +76,19 @@ def _boolean(value: object) -> str:
 
 def _stack_phase(frame: object) -> tuple[str, str]:
     """Read code identity only; never read locals, source paths, or arguments."""
+    response_queue = False
     try:
         for _ in range(_MAX_STACK_FRAMES):
             if frame is None:
                 return "unknown", "complete"
             if type(frame) is not FrameType:
                 return "unknown", "unavailable"
+            if frame.f_code is _RESPONSE_QUEUE_GET_CODE:
+                response_queue = True
             for code, phase in _PHASE_CODES:
                 if frame.f_code is code:
+                    if response_queue and code is _NATIVE_CLIENT_REQUEST_CODE:
+                        return "client_response_wait", "matched"
                     return phase, "matched"
             frame = frame.f_back
         return "unknown", "truncated" if frame is not None else "complete"

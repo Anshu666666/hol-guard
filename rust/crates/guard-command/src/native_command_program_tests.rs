@@ -211,6 +211,46 @@ fn disabled_permission_and_failed_authority_cannot_become_allow() {
 }
 
 #[test]
+fn immutable_self_authorization_retains_its_packaged_review_floor() {
+    let program = packaged_command_program().unwrap();
+    let extension = program
+        .extensions
+        .iter()
+        .find(|extension| extension.extension_id == "command.guard-self-protection")
+        .unwrap();
+    let permission = &extension.permissions[0];
+    assert!(extension.required);
+    assert!(!permission.configurable);
+    assert_eq!(permission.baseline_floor, "review");
+
+    // A required review floor is a denial pending authorized review. It is
+    // distinct from an unconditional block and cannot be disabled by a local
+    // permission enable or weakened by a permissive neighboring permission.
+    for controls in [
+        binding(&[], false),
+        binding(
+            &[("permission", permission.permission_id.as_str(), "enabled")],
+            false,
+        ),
+        binding(
+            &[("permission", "command.git.permission.force-push", "enabled")],
+            false,
+        ),
+    ] {
+        let actual = decision("hol-guard approvals approve synthetic-request", &controls);
+        assert_eq!(actual.decision, "deny");
+        assert_eq!(actual.minimum_action, "review");
+        assert_eq!(actual.policy_action, "review");
+        let observations = actual.command_extensions.unwrap().observations;
+        assert!(observations.iter().any(|row| {
+            row.rule_id == "command.guard-self-protection.self-authorization"
+                && row.effective_segment_indexes == [0]
+                && row.uncertainty_reasons.is_empty()
+        }));
+    }
+}
+
+#[test]
 fn matching_disabled_permission_retains_its_reason_during_global_lockdown() {
     let mut controls = binding(
         &[(

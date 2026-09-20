@@ -58,6 +58,61 @@ from scripts.native_publication_diagnostic import cleanup_after_failure, cleanup
 
 _PERMISSION = "command.git.permission.force-push"
 _IMMUTABLE_PERMISSION = "command.guard-self-protection.permission.self-authorization"
+_IMMUTABLE_RULE = "command.guard-self-protection.self-authorization"
+_CASES = frozenset(
+    f"{prefix}-{mode}"
+    for prefix in (
+        "managed-permission",
+        "intrinsic",
+        "immutable-baseline",
+        "immutable-enable-rejected",
+        "managed-after-immutable-rejection",
+        "managed-lockdown",
+        "approved-read-lockdown",
+        "recovered-lockdown",
+        "recovered-managed-permission",
+    )
+    for mode in ("enforce", "observe")
+) | {"later-local-enable", "signed-enable-rejected"}
+
+
+class NativeFloorMismatchError(ProbeError):
+    """Retain only finite case and decision enums, never request material."""
+
+    def __init__(self, label: str, result: dict[str, Any], expected: str) -> None:
+        super().__init__("native_floor_weakened")
+        decision = result.get("decision")
+        minimum = result.get("minimum_action")
+        self.observation = {
+            "case": label if label in _CASES else "other",
+            "expected_minimum_action": expected if expected in {"block", "review"} else "invalid",
+            "decision": decision if isinstance(decision, str) and decision in {"allow", "deny"} else "invalid",
+            "minimum_action": minimum
+            if isinstance(minimum, str)
+            and minimum in {"allow", "warn", "review", "require-reapproval", "sandbox-required", "block"}
+            else "invalid",
+        }
+
+
+def verify_native_floor(result: dict[str, Any], *, label: str, immutable_review: bool = False) -> None:
+    expected = "review" if immutable_review else "block"
+    if result.get("decision") != "deny" or result.get("minimum_action") != expected:
+        raise NativeFloorMismatchError(label, result, expected)
+    require(result.get("policy_action") == expected, "native_floor_action_mismatch")
+    if immutable_review:
+        extensions = mapping(result.get("command_extensions"), "immutable_controls_missing")
+        observations = extensions.get("observations")
+        require(
+            isinstance(observations, list)
+            and any(
+                isinstance(row, dict)
+                and row.get("rule_id") == _IMMUTABLE_RULE
+                and row.get("effective_segment_indexes") == [0]
+                and row.get("uncertainty_reasons") == []
+                for row in observations
+            ),
+            "immutable_rule_not_observed",
+        )
 
 
 def verify_delivery(
@@ -69,17 +124,25 @@ def verify_delivery(
     previous_receipt: object,
     expected_reason: str,
     expected_request_digest: str,
+    immutable_review: bool = False,
 ) -> None:
-    """Raw denial and a receipt cannot substitute for actual harness denial."""
+    """A raw floor and receipt cannot substitute for its exact HTTP disposition."""
     output = mapping(response.get("hookSpecificOutput"), "http_output_missing")
+    expected = "review" if immutable_review else "block"
     require(
-        output.get("permissionDecision") == "deny" and response.get("policy_action") == "block",
+        output.get("permissionDecision") == ("ask" if immutable_review else "deny")
+        and response.get("policy_action") == expected,
         "http_floor_weakened",
     )
-    require(
-        response.get("approval_reuse_status") != "accepted" and "approval_request_id" not in response,
-        "block_entered_approval",
-    )
+    require(response.get("approval_reuse_status") != "accepted", "floor_reused_approval")
+    if immutable_review:
+        request_id = response.get("approval_request_id")
+        require(
+            isinstance(request_id, str) and bool(request_id) and response.get("prompted") is True,
+            "immutable_review_not_queued",
+        )
+    else:
+        require("approval_request_id" not in response, "block_entered_approval")
     accepted = mapping(receipt, "receipt_missing")
     for field in ("decision_id", "request_id", "request_digest"):
         value = accepted.get(field)
@@ -88,7 +151,7 @@ def verify_delivery(
             require(value != previous_receipt.get(field), "receipt_not_fresh")
     require(accepted.get("request_digest") == expected_request_digest, "receipt_request_mismatch")
     require(
-        accepted.get("reason_code") == expected_reason and accepted.get("policy_action") == "block",
+        accepted.get("reason_code") == expected_reason and accepted.get("policy_action") == expected,
         "receipt_result_mismatch",
     )
     require(accepted.get("authority") == "rust" and accepted.get("decision") == "deny", "receipt_not_native_deny")
@@ -199,6 +262,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         *,
         reason: str | None = None,
         approved_payload: dict[str, object] | None = None,
+        immutable_review: bool = False,
     ) -> dict[str, object]:
         binding = bound(mode)
         payload: dict[str, object] = approved_payload or {
@@ -226,7 +290,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         require(
             edge["authority"] == "rust" and edge["schema"] == "guard-hook-edge-result.v2", "native_authority_missing"
         )
-        require(result["decision"] == "deny" and result["minimum_action"] == "block", "native_floor_weakened")
+        verify_native_floor(result, label=label, immutable_review=immutable_review)
         if reason is not None:
             require(result["reason_code"] == reason, f"native_floor_reason_mismatch:{label}")
         extensions = mapping(result.get("command_extensions"), "result_control_binding_missing")
@@ -243,13 +307,28 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             previous_receipt=previous_receipt,
             expected_reason=result["reason_code"],
             expected_request_digest=mapping(edge.get("receipt"), "raw_receipt_missing")["request_digest"],
+            immutable_review=immutable_review,
         )
+        if immutable_review:
+            request_id = response.get("approval_request_id")
+            require(isinstance(request_id, str), "immutable_review_request_missing")
+            assert isinstance(request_id, str)
+            pending = store.get_approval_request(request_id)
+            require(pending is not None and pending.get("status") == "pending", "immutable_review_not_pending")
+            assert pending is not None
+            require(
+                pending.get("policy_action") == "review"
+                and pending.get("resolution_action") is None
+                and pending.get("launch_target") == command
+                and pending.get("workspace") == str(workspace),
+                "immutable_review_request_mismatch",
+            )
         rows.append(
             {
                 "case": label,
                 "mode": mode,
                 "decision": "deny",
-                "minimum_action": "block",
+                "minimum_action": "review" if immutable_review else "block",
                 "native_reason": result["reason_code"],
             }
         )
@@ -292,6 +371,18 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             "observe",
             reason="native_command_permission_disabled",
         )
+        # The immutable packaged permission is a required review floor, not a
+        # hard block. Witness that exact native floor and a real pending HTTP
+        # review before and after the rejected signed enable in both modes.
+        for mode in ("enforce", "observe"):
+            set_mode(mode)
+            case(
+                f"immutable-baseline-{mode}",
+                "hol-guard approvals approve synthetic-request",
+                mode,
+                immutable_review=True,
+            )
+        retained = copy.deepcopy(store.get_sync_payload("policy_bundle_ack"))
         retained_source = copy.deepcopy(store.get_sync_payload("policy_bundle"))
         rejected = signed(2, enable=True, permission=_IMMUTABLE_PERMISSION, authority_mode="workspace-shared")
         require(rejected.get("policy_validation_status") == "rejected", "immutable_enable_accepted")
@@ -300,7 +391,12 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         require(store.get_sync_payload("policy_bundle") == retained_source, "rejected_enable_replaced_source")
         for mode in ("enforce", "observe"):
             set_mode(mode)
-            case(f"immutable-enable-rejected-{mode}", "hol-guard approvals approve synthetic-request", mode)
+            case(
+                f"immutable-enable-rejected-{mode}",
+                "hol-guard approvals approve synthetic-request",
+                mode,
+                immutable_review=True,
+            )
             case(
                 f"managed-after-immutable-rejection-{mode}",
                 "git push --force origin main",
@@ -422,6 +518,8 @@ def main() -> int:
         report["passed"] = True
     except ProbeError as error:
         report["failure"] = str(error)
+        if isinstance(error, NativeFloorMismatchError):
+            report["failure_observation"] = error.observation
     except Exception:
         report["failure"] = "probe_execution_failed"
     args.json.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n", encoding="utf-8")

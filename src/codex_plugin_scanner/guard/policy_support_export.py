@@ -11,6 +11,7 @@ from .passive_status_store import PassiveStatusStore
 from .policy_bundle_parser import policy_bundle_rejection_message
 from .policy_runtime_error_catalog import explain_policy_runtime_error, policy_runtime_error_catalog
 from .runtime.cloud_review_status import _project_cloud_review_status
+from .runtime.review_event_delivery import StoredReviewEventError, decode_stored_review_event
 from .store import GuardStore
 
 _SECRET_MARKERS = (
@@ -48,6 +49,9 @@ def _build_support_export(store: GuardStore, *, observed_at: datetime) -> dict[s
     last_error = store.get_sync_payload("policy_bundle_last_error")
     sync_summary = store.get_sync_payload("sync_summary")
     binding = store.get_review_event_oauth_binding() or {}
+    continuation_failure = review.get("connected") is True and _has_retained_continuation_failure(
+        store, binding, observed_at=observed_at
+    )
     error_code = None
     if isinstance(last_error, dict):
         reason = last_error.get("reason")
@@ -66,7 +70,7 @@ def _build_support_export(store: GuardStore, *, observed_at: datetime) -> dict[s
             "wrong_target": explained["code"] == "remote_exact_wrong_target",
             "runtime_publication": isinstance(sync_summary, dict)
             and sync_summary.get("policy_application_status") == "rejected",
-            "continuation": settings.get("delivery_state") not in {None, "idle", "unknown"},
+            "continuation": continuation_failure,
         },
         "policy": _bundle_identity(bundle, last_error, policy_evidence),
         "cloud_review": {
@@ -79,6 +83,11 @@ def _build_support_export(store: GuardStore, *, observed_at: datetime) -> dict[s
             "isolated_events": settings.get("isolated_events"),
             "activation_error": _public_error_code(settings.get("activation_error")),
             "delivery_state": settings.get("delivery_state"),
+            "continuation_evidence": {
+                "scope": "retained_current_connection_events",
+                "failure_observed": continuation_failure,
+                "runtime_state": "unknown",
+            },
             "diagnostics": _public_diagnostics(review.get("diagnostics")),
         },
         "sync": _public_sync_summary(sync_summary),
@@ -95,6 +104,42 @@ def _build_support_export(store: GuardStore, *, observed_at: datetime) -> dict[s
     if any(marker in dumped for marker in _SECRET_MARKERS):
         raise RuntimeError("policy_support_export_secret_leak")
     return export
+
+
+def _has_retained_continuation_failure(store: GuardStore, binding: dict[str, str], *, observed_at: datetime) -> bool:
+    """Report retained terminal evidence, never current worker state or authority."""
+    if not binding:
+        return False
+    with store._connect() as connection:
+        rows = connection.execute(
+            """select event.* from guard_review_outbox_events as event
+               join guard_review_outbox_request_sequences as request
+                 on request.local_request_id = event.local_request_id
+                 and request.last_sequence = event.request_sequence
+               where event.event_type = 'review.continuation.failed'
+                 and event.binding_status = 'ready'
+                 and event.oauth_source = ? and event.oauth_subject_hash = ?
+                 and event.workspace_id = ? and event.machine_id = ?
+                 and event.machine_installation_id = ?
+                 and datetime(event.occurred_at) <= datetime(?)
+               order by event.stream_sequence desc""",
+            (
+                binding["oauth_source"],
+                binding["oauth_subject_hash"],
+                binding["workspace_id"],
+                binding["machine_id"],
+                binding["machine_installation_id"],
+                observed_at.isoformat(),
+            ),
+        )
+        for row in rows:
+            try:
+                event = decode_stored_review_event(dict(row))
+            except StoredReviewEventError:
+                continue
+            if event.continuation_result is not None and event.continuation_result.get("status") == "failed":
+                return True
+    return False
 
 
 def _bundle_identity(bundle: object, last_error: object, evidence: dict[str, object]) -> dict[str, object]:

@@ -198,3 +198,117 @@ def test_each_platform_runs_source_bound_probe_and_retains_its_report() -> None:
             "installed-managed-floors.json" in step.get("with", {}).get("path", "") and step.get("if") == "always()"
             for step in steps
         )
+
+
+@pytest.mark.parametrize("immutable_review", [False, True])
+@pytest.mark.parametrize("fault", [None, "allow", "wrong_floor", "wrong_action", "missing_rule", "uncertain_rule"])
+def test_native_floor_predicate_distinguishes_exact_immutable_review_from_hard_block(
+    immutable_review: bool, fault: str | None
+) -> None:
+    """Predicate controls only; the corresponding Rust test evaluates the catalog."""
+    floor = "review" if immutable_review else "block"
+    row: dict[str, object] = {
+        "rule_id": "command.guard-self-protection.self-authorization",
+        "effective_segment_indexes": [0],
+        "uncertainty_reasons": [],
+    }
+    result = {
+        "decision": "deny",
+        "minimum_action": floor,
+        "policy_action": floor,
+        "command_extensions": {"observations": [row]},
+    }
+    if fault == "allow":
+        result["decision"] = "allow"
+    elif fault == "wrong_floor":
+        result["minimum_action"] = "allow" if immutable_review else "review"
+    elif fault == "wrong_action":
+        result["policy_action"] = "allow"
+    elif fault == "missing_rule":
+        row["rule_id"] = "different-rule"
+    elif fault == "uncertain_rule":
+        row["uncertainty_reasons"] = ["uncertain"]
+    rejected = fault is not None and (immutable_review or fault not in {"missing_rule", "uncertain_rule"})
+    if rejected:
+        with pytest.raises(probe.ProbeError):
+            probe.verify_native_floor(
+                result, label="immutable-enable-rejected-enforce", immutable_review=immutable_review
+            )
+    else:
+        probe.verify_native_floor(result, label="immutable-enable-rejected-enforce", immutable_review=immutable_review)
+
+
+@pytest.mark.parametrize("fault", [None, "allow", "deny", "missing_approval", "unprompted", "reused", "receipt_block"])
+def test_immutable_review_requires_exact_http_pause_and_native_review_receipt(fault: str | None) -> None:
+    response: dict[str, object] = {
+        "hookSpecificOutput": {"permissionDecision": "ask"},
+        "policy_action": "review",
+        "approval_request_id": "synthetic-pending",
+        "prompted": True,
+    }
+    binding: dict[str, object] = {"generation": 3, "policy_digest": "a" * 64, "runtime_identity": "b" * 64}
+    receipt = {
+        "decision_id": "current-decision",
+        "request_id": "current-request",
+        "request_digest": "e" * 64,
+        "reason_code": "native_command_extension_review",
+        "policy_action": "review",
+        "authority": "rust",
+        "decision": "deny",
+        "policy_generation": 3,
+        "policy_digest": binding["policy_digest"],
+        "runtime_identity": binding["runtime_identity"],
+        "command_extensions": {"revision": 7},
+    }
+    if fault in {"allow", "deny"}:
+        response["hookSpecificOutput"] = {"permissionDecision": fault}
+    elif fault == "missing_approval":
+        del response["approval_request_id"]
+    elif fault == "unprompted":
+        response["prompted"] = False
+    elif fault == "reused":
+        response["approval_reuse_status"] = "accepted"
+    elif fault == "receipt_block":
+        receipt["policy_action"] = "block"
+
+    def verify() -> None:
+        probe.verify_delivery(
+            response,
+            binding=binding,
+            receipt=receipt,
+            command_binding={"revision": 7},
+            previous_receipt=None,
+            expected_reason="native_command_extension_review",
+            expected_request_digest="e" * 64,
+            immutable_review=True,
+        )
+
+    if fault is None:
+        verify()
+    else:
+        with pytest.raises(probe.ProbeError):
+            verify()
+
+
+def test_floor_failure_observation_preserves_only_finite_decision_values() -> None:
+    error = probe.NativeFloorMismatchError(
+        "synthetic-private-case",
+        {"decision": "synthetic-private-value", "minimum_action": "private-material"},
+        "private-expectation",
+    )
+    assert str(error) == "native_floor_weakened"
+    assert error.observation == {
+        "case": "other",
+        "expected_minimum_action": "invalid",
+        "decision": "invalid",
+        "minimum_action": "invalid",
+    }
+    actual = probe.NativeFloorMismatchError(
+        "immutable-enable-rejected-enforce", {"decision": "deny", "minimum_action": "review"}, "block"
+    )
+    assert actual.observation == {
+        "case": "immutable-enable-rejected-enforce",
+        "expected_minimum_action": "block",
+        "decision": "deny",
+        "minimum_action": "review",
+    }

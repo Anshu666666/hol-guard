@@ -57,9 +57,10 @@ fn read_exact(
     stream: &mut dyn crate::ResidentStream,
     output: &mut [u8],
 ) -> Result<(), ResidentClientError> {
-    stream
-        .read_exact(output)
-        .map_err(|_| ResidentClientError::fatal("native_client_frame_read_failed".to_owned()))
+    stream.read_exact(output).map_err(|_error| {
+        crate::record_resident_startup_io!(&_error);
+        ResidentClientError::fatal("native_client_frame_read_failed".to_owned())
+    })
 }
 
 fn authenticate(
@@ -76,12 +77,13 @@ fn authenticate(
     let _ = stream.configure_low_latency();
     let mut nonce = [0u8; AUTH_NONCE_BYTES];
     getrandom::fill(&mut nonce).map_err(|_| "native_client_random_failed".to_owned())?;
-    stream
-        .write_all(&nonce)
-        .map_err(|error| ResidentClientError {
+    stream.write_all(&nonce).map_err(|error| {
+        crate::record_resident_startup_io!(&error);
+        ResidentClientError {
             code: "native_client_auth_nonce_failed".to_owned(),
             retryable_teardown: is_retryable_teardown_io_error(&error),
-        })?;
+        }
+    })?;
     let mut server_proof = [0u8; AUTH_PROOF_BYTES];
     // A server-proof read happens after the client has sent its nonce.  Even
     // an EOF that looks like a transport teardown at this phase is not safe
@@ -271,7 +273,10 @@ fn write_request(
     stream
         .write_all(&frame)
         .and_then(|()| stream.flush())
-        .map_err(|_| ResidentClientError::fatal("native_client_frame_write_failed".to_owned()))?;
+        .map_err(|_error| {
+            crate::record_resident_startup_io!(&_error);
+            ResidentClientError::fatal("native_client_frame_write_failed".to_owned())
+        })?;
     Ok(request_id)
 }
 
@@ -330,11 +335,14 @@ pub(crate) fn send_request_for_digest_detailed(
     if timeout.is_zero() {
         return Err("native_client_deadline_exceeded".to_owned().into());
     }
-    let mut stream = crate::observe_native_phase!(
-        ClientConnect,
-        connect(transport, endpoint, deadline, identity)
-    )
-    .map_err(ResidentClientError::fatal)?;
+    let mut stream = crate::observe_resident_startup!(
+        Connect,
+        crate::observe_native_phase!(
+            ClientConnect,
+            connect(transport, endpoint, deadline, identity)
+        )
+        .map_err(ResidentClientError::fatal)
+    )?;
     exchange_request(&mut *stream, token, payload, deadline)
 }
 
@@ -352,9 +360,12 @@ fn exchange_request(
         // read_exact/write_all perform multiple syscalls. Their per-socket
         // timeout alone is an inactivity timeout, not an overall deadline.
         let mut stream = DeadlineStream::new(stream, deadline);
-        let nonce = crate::observe_native_phase!(
-            ClientAuthenticate,
-            authenticate(&mut stream, token, remaining)
+        let nonce = crate::observe_resident_startup!(
+            Authenticate,
+            crate::observe_native_phase!(
+                ClientAuthenticate,
+                authenticate(&mut stream, token, remaining)
+            )
         )?;
         let remaining = deadline.saturating_duration_since(Instant::now());
         if remaining.is_zero() {
@@ -366,13 +377,19 @@ fn exchange_request(
         stream
             .set_resident_write_timeout(Some(remaining))
             .map_err(|_| "native_client_timeout_failed".to_owned())?;
-        let request_id = crate::observe_native_phase!(
-            ClientRequestWriteFlush,
-            write_request(&mut stream, token, &nonce, payload)
+        let request_id = crate::observe_resident_startup!(
+            RequestWriteFlush,
+            crate::observe_native_phase!(
+                ClientRequestWriteFlush,
+                write_request(&mut stream, token, &nonce, payload)
+            )
         )?;
-        crate::observe_native_phase!(
-            ClientCommittedResponseRead,
-            read_committed_response(&mut stream, &request_id)
+        crate::observe_resident_startup!(
+            CommittedResponseRead,
+            crate::observe_native_phase!(
+                ClientCommittedResponseRead,
+                read_committed_response(&mut stream, &request_id)
+            )
         )
     })();
     if Instant::now() >= deadline {

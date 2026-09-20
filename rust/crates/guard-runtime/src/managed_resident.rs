@@ -159,11 +159,11 @@ fn try_home_states(
             &identity,
         ) {
             Ok(response) => return Ok(Some(response)),
-            // The exchange phase determines replay safety. A later owner or
-            // serving-process exit cannot make authentication or response
-            // failures safe to send to another resident.
             Err(error) if containment::is_retryable_live_request_error(&error) => {}
-            Err(_) => return Err("native_resident_live_request_failed".to_owned()),
+            Err(_error) => {
+                crate::record_resident_startup_fatal!(&_error);
+                return Err("native_resident_live_request_failed".to_owned());
+            }
         }
     }
     Ok(None)

@@ -15,6 +15,7 @@ mod policy_store;
 mod resident_client;
 mod resident_process_identity;
 mod resident_protocol;
+mod resident_startup_diagnostic;
 mod resident_state;
 mod resident_state_encoding;
 mod resident_transport;
@@ -186,6 +187,17 @@ fn run() -> Result<(), String> {
                 std::path::Path::new(state_dir),
                 &bytes,
                 started_at + timeout,
+            )?;
+            write_bytes_response(&response)
+        }
+        #[cfg(feature = "diagnostic-phases")]
+        [command, flag, state_dir]
+            if command == "resident-client-diagnostic" && flag == "--stdin" =>
+        {
+            let bytes = read_stdin_bounded()?;
+            let response = resident_startup_diagnostic::run(
+                std::path::Path::new(state_dir),
+                &bytes,
             )?;
             write_bytes_response(&response)
         }

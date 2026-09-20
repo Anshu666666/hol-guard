@@ -46,6 +46,18 @@ def test_full_original_256k_string_remains_bounded_without_value_retention() -> 
         (json.dumps({"x": "a" * (1024 * 1024 + 1)}).encode(), "maximum_string_bytes", 1024 * 1024 + 1),
         (json.dumps({"a" * (1024 * 1024 + 1): 1}).encode(), "maximum_key_bytes", 1024 * 1024 + 1),
     ],
+    ids=[
+        "invalid-json",
+        "invalid-utf8",
+        "duplicate-keys",
+        "nan-number",
+        "infinite-number",
+        "lone-surrogate",
+        "depth-over-bound",
+        "collection-over-bound",
+        "string-over-bound",
+        "key-over-bound",
+    ],
 )
 def test_malformed_or_out_of_bounds_shapes_stay_failed(encoded: bytes, key: str, expected: object) -> None:
     shape = json_shape(encoded)

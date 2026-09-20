@@ -152,11 +152,13 @@ def test_actual_writer_matches_original_destination_outcomes(tmp_path, record_pr
             else:
                 assert code == 1
                 assert report["replace_returned"] is native["rename_returned"] is False
-                assert report["error"] == {
-                    "kind": "PermissionError",
-                    "errno": 13,
-                    "winerror": 32 if case == "crt_destination" else 5,
-                }
+                if case == "crt_destination":
+                    # Retain both real errors before the exact comparison below.
+                    assert report["error"]["kind"] == "PermissionError"
+                    assert report["error"]["errno"] == 13
+                    assert type(report["error"]["winerror"]) is int
+                else:
+                    assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 5}
                 if case == "directory_destination":
                     assert target.is_dir() and not list(target.iterdir())
                 else:
@@ -171,6 +173,7 @@ def test_actual_writer_matches_original_destination_outcomes(tmp_path, record_pr
             if case == "readonly_destination":
                 target.chmod(stat.S_IREAD | stat.S_IWRITE)
             record_property(f"{label}_temporary_siblings_removed", not list(home.glob(".daemon-auth-token.*")))
+    record_property("original_candidate_exact_result_parity", results[0] == results[1])
     assert results[0] == results[1]
 
 

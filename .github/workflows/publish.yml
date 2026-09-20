@@ -78,8 +78,8 @@ jobs:
               fi
               ;;
             "stable:main:refs/tags/v${RELEASE_VERSION}")
-              if [[ "$GITHUB_ACTOR_ID" != "41898282" ]]; then
-                echo "Tagged stable dispatches are limited to the Actions bot" >&2
+              if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
+                echo "Release dispatch actor is not an authorized maintainer" >&2
                 exit 1
               fi
               ;;
@@ -208,10 +208,6 @@ jobs:
               fi
               if [[ "$GITHUB_REF" != "refs/heads/main" && "$GITHUB_REF" != "refs/tags/v${RELEASE_VERSION}" ]]; then
                 echo "Stable releases must run from refs/heads/main" >&2
-                exit 1
-              fi
-              if [[ "$GITHUB_REF" == "refs/tags/v${RELEASE_VERSION}" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
-                echo "Tagged stable dispatches are limited to the Actions bot" >&2
                 exit 1
               fi
               PYPI_VERSIONS=$(uv run --no-sync python scripts/verify_release_registry.py \
@@ -1162,11 +1158,21 @@ jobs:
       - name: Revalidate main source before TestPyPI
         env:
           SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          VERSION: ${{ needs.build.outputs.version }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          remote_main_sha=$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')
-          if [[ "$remote_main_sha" != "$SOURCE_SHA" ]]; then
-            echo "Main publication source is no longer the branch head" >&2
-            exit 1
+          git fetch --force origin refs/heads/main:refs/remotes/origin/main
+          if [[ "$GITHUB_REF" == "refs/tags/v${VERSION}" ]]; then
+            if ! git merge-base --is-ancestor "$SOURCE_SHA" origin/main; then
+              echo "Stable tag source is not an ancestor of main" >&2
+              exit 1
+            fi
+          else
+            remote_main_sha=$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')
+            if [[ "$remote_main_sha" != "$SOURCE_SHA" ]]; then
+              echo "Main publication source is no longer the branch head" >&2
+              exit 1
+            fi
           fi
       - name: Inspect TestPyPI release state
         id: testpypi
@@ -1244,11 +1250,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
           VERSION: ${{ needs.build.outputs.version }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          remote_main_sha=$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')
-          if [[ "$remote_main_sha" != "$SOURCE_SHA" ]]; then
-            echo "Stable tag source is no longer the main branch head" >&2
-            exit 1
+          git fetch --force origin refs/heads/main:refs/remotes/origin/main
+          if [[ "$GITHUB_REF" == "refs/tags/v${VERSION}" ]]; then
+            if ! git merge-base --is-ancestor "$SOURCE_SHA" origin/main; then
+              echo "Stable tag source is not an ancestor of main" >&2
+              exit 1
+            fi
+          else
+            remote_main_sha=$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')
+            if [[ "$remote_main_sha" != "$SOURCE_SHA" ]]; then
+              echo "Stable tag source is no longer the main branch head" >&2
+              exit 1
+            fi
           fi
           tag="v${VERSION}"
           remote_tag_sha=$(git ls-remote origin "refs/tags/${tag}" | awk '{print $1}')

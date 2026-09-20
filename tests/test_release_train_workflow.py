@@ -79,6 +79,8 @@ def test_release_branch_pushes_publish_alpha_while_stable_publish_is_manual() ->
         if step.get("name") == "Bind stable tag to the exact main source"
     )
     assert "git ls-remote --exit-code origin refs/heads/main" in reserve_run
+    assert "git merge-base --is-ancestor" in reserve_run
+    assert "Stable tag source is not an ancestor of main" in reserve_run
     assert '-f ref="refs/tags/${tag}"' in reserve_run
     assert '-f sha="$SOURCE_SHA"' in reserve_run
     assert 'git fetch --force --no-tags origin "+refs/tags/${tag}:refs/tags/${tag}"' in reserve_run

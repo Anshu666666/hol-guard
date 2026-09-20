@@ -100,7 +100,6 @@ def test_stable_dispatch_allows_actions_bot_while_alpha_stays_maintainer_only() 
     assert '"$GITHUB_ACTOR_ID" != "41898282"' in stable_gate
     assert '"$GITHUB_ACTOR_ID" != "41898282"' in compute
     assert "refs/tags/v${RELEASE_VERSION}" in authorize
-    assert "Tagged stable dispatches are limited to the Actions bot" in authorize
     assert compute.index('"$CHANNEL" == "stable" && "$TRAIN" == "main"') < compute.index("41898282")
     assert compute.index("VALIDATOR_ARGS=(") < compute.index("41898282")
     assert '--arg candidate "$RELEASE_VERSION"' in compute
@@ -137,3 +136,16 @@ def test_stable_jobs_accept_the_release_please_tag_ref() -> None:
         assert "github.ref == 'refs/heads/main'" in condition
         assert tag_ref in condition
         assert f"(github.ref == 'refs/heads/main' || {tag_ref})" in condition
+    reserve_run = next(
+        step["run"]
+        for step in jobs["reserve-main-tag"]["steps"]
+        if step.get("name") == "Bind stable tag to the exact main source"
+    )
+    testpypi_run = next(
+        step["run"]
+        for step in jobs["publish-main-testpypi"]["steps"]
+        if step.get("name") == "Revalidate main source before TestPyPI"
+    )
+    assert "git merge-base --is-ancestor" in reserve_run
+    assert "git merge-base --is-ancestor" in testpypi_run
+    assert "Stable tag source is not an ancestor of main" in reserve_run

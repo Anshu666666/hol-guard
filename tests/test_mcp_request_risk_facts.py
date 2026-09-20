@@ -12,7 +12,9 @@ import pytest
 from codex_plugin_scanner.guard import mcp_tool_calls as calls
 from codex_plugin_scanner.guard.adapters.base import HarnessContext
 from codex_plugin_scanner.guard.config import GuardConfig
+from codex_plugin_scanner.guard.mcp_authority_binding import proxy_authority_scope
 from codex_plugin_scanner.guard.proxy import CodexMcpGuardProxy
+from codex_plugin_scanner.guard.proxy.tool_call_binding import use_tool_call_binding
 from codex_plugin_scanner.guard.store import GuardStore
 
 
@@ -107,13 +109,29 @@ def test_retained_default_derives_facts_at_both_authority_consumers(tmp_path, mo
     assert len(seen) == 2
     second = proxy._resolve_tool_call_authority(tool_name="run_terminal_command", arguments=arguments)
     assert len(seen) == 4
-    assert second == first
+    original_arguments = deepcopy(arguments)
     arguments["command"] = "cat .env"
     changed = proxy._resolve_tool_call_authority(tool_name="run_terminal_command", arguments=arguments)
     assert len(seen) == 6
     assert changed.artifact_hash != first.artifact_hash
     assert "secret_access" in changed.decision.risk_categories
     assert not hasattr(changed, "risk_facts")
+    for authority, captured_arguments in (
+        (first, original_arguments),
+        (second, original_arguments),
+        (changed, arguments),
+    ):
+        original_artifact = deepcopy(authority.artifact)
+        before = len(seen)
+        with proxy_authority_scope(), use_tool_call_binding(None):
+            artifact, artifact_hash, decision = proxy._evaluate_tool_call_authority(
+                artifact=authority.artifact, arguments=captured_arguments, config=proxy.config
+            )
+        assert len(seen) == before + 2
+        assert artifact is authority.artifact
+        assert authority.artifact == original_artifact
+        assert artifact_hash == authority.artifact_hash
+        assert decision == authority.decision
 
 
 @pytest.mark.parametrize(

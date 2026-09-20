@@ -47,6 +47,11 @@ def _decode_hook_input(payload: Mapping[str, object]) -> dict[str, object] | Non
     decoded = json.loads(raw)
     if not isinstance(decoded, dict) or decoded.get("hook_event_name") != "PreToolUse":
         return None
+    # Initial daemon ingress consumes these root transport hints before native
+    # review. Resume owns its existing deadline and must forward that same
+    # semantic input; nested tool arguments remain part of Rust's commitment.
+    decoded.pop("guard_remaining_seconds", None)
+    decoded.pop("guard_remaining_ms", None)
     return decoded
 
 

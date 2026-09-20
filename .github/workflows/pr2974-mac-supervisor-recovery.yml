@@ -1,0 +1,82 @@
+name: Exact Mac supervisor recovery observation
+on:
+  push:
+    branches: ["codex/pr2974-mac-supervisor-recovery-e440-20260920-v3"]
+permissions:
+  contents: read
+jobs:
+  mac-supervisor-recovery:
+    runs-on: macos-14
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "f9ae6c1ca772a4945fef07ea9519935574f8cf08"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare frozen development environment
+        working-directory: candidate
+        run: uv sync --frozen --extra dev --python 3.12.10
+      - name: Install exact Rust toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+      - name: Bind source and driver before local data controls
+        env:
+          SOURCE_SHA: "f9ae6c1ca772a4945fef07ea9519935574f8cf08"
+          SOURCE_TREE: "c5a1f8fcd339d91d03660397bf6cfb48a793df5c"
+        run: |
+          set -euo pipefail
+          test "$(git -C driver rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C driver rev-parse HEAD^)" = "$SOURCE_SHA"
+          test "$(git -C candidate rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git -C candidate rev-parse HEAD^{tree})" = "$SOURCE_TREE"
+      - name: Validate data-only driver controls
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/mac-recovery-driver-controls"
+          candidate/.venv/bin/python -m pytest -c /dev/null --confcutdir=driver/mac-recovery-validation \
+            driver/mac-recovery-validation/test_driver.py -q --tb=short \
+            --junitxml="$RUNNER_TEMP/mac-recovery-driver-controls/controls.xml" \
+            > "$RUNNER_TEMP/mac-recovery-driver-controls/controls.log" 2>&1
+          candidate/.venv/bin/python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          rows = list(ET.parse(Path(os.environ["RUNNER_TEMP"]) / "mac-recovery-driver-controls/controls.xml").iter("testcase"))
+          identities = [(r.attrib["classname"], r.attrib["name"]) for r in rows]
+          assert len(rows) == 28 and len(set(identities)) == 28
+          assert not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))
+          PY
+      - name: Run strict controls then the original selector once
+        run: |
+          candidate/.venv/bin/python driver/mac-recovery-validation/run.py \
+            --source candidate --driver driver --output "$RUNNER_TEMP/mac-recovery-output"
+      - name: Retain tracked checkout status after every outcome
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/mac-recovery-driver-controls"
+          git -C candidate status --short --untracked-files=no > "$RUNNER_TEMP/mac-recovery-driver-controls/source-status-after.txt"
+          git -C driver status --short --untracked-files=no > "$RUNNER_TEMP/mac-recovery-driver-controls/driver-status-after.txt"
+          test ! -s "$RUNNER_TEMP/mac-recovery-driver-controls/source-status-after.txt"
+          test ! -s "$RUNNER_TEMP/mac-recovery-driver-controls/driver-status-after.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: mac-supervisor-recovery-observation
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            ${{ runner.temp }}/mac-recovery-driver-controls/
+            ${{ runner.temp }}/mac-recovery-output/

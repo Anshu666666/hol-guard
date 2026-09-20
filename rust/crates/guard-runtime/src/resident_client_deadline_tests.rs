@@ -5,6 +5,39 @@ use std::thread;
 
 const TOKEN: [u8; crate::AUTH_TOKEN_BYTES] = [0x5a; crate::AUTH_TOKEN_BYTES];
 
+#[cfg(feature = "diagnostic-phases")]
+#[test]
+fn resident_stream_diagnostic_expired_precheck_is_not_a_socket_setter_error() {
+    let (mut client, _server) = socket_pair();
+    let started = Instant::now() - Duration::from_secs(1);
+    let deadline = started + Duration::from_millis(1);
+    let (_, report) =
+        crate::resident_startup_diagnostic::capture_at(b"{}", started, deadline, || {
+            let mut stream = DeadlineStream::new(&mut client, deadline);
+            assert_eq!(
+                stream.read(&mut [0; 1]).unwrap_err().kind(),
+                io::ErrorKind::TimedOut
+            );
+            assert_eq!(
+                stream.write(b"x").unwrap_err().kind(),
+                io::ErrorKind::TimedOut
+            );
+            assert_eq!(stream.flush().unwrap_err().kind(), io::ErrorKind::TimedOut);
+            assert_eq!(
+                stream.set_resident_read_timeout(None).unwrap_err().kind(),
+                io::ErrorKind::TimedOut
+            );
+            assert_eq!(
+                stream.set_resident_write_timeout(None).unwrap_err().kind(),
+                io::ErrorKind::TimedOut
+            );
+            Ok(Vec::new())
+        });
+    let value = serde_json::to_value(report).unwrap();
+    assert_eq!(value["unassigned_io_failure"], serde_json::Value::Null);
+    assert_eq!(value["events"], serde_json::json!([]));
+}
+
 fn socket_pair() -> (TcpStream, TcpStream) {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();

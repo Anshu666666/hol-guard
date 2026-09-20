@@ -39,10 +39,16 @@ use crate::resident_state::{
     process_start_marker, runtime_digest, state_scope, token_from_state,
     validate_package_process_identity, validate_runtime_process_identity,
 };
+pub(crate) use client_stream::client_timeout;
 use containment::try_live_or_restart;
 
 pub(crate) fn client_stream(state_base: &Path) -> Result<(), String> {
     client_stream::run(state_base)
+}
+
+#[cfg(feature = "diagnostic-phases")]
+pub(crate) fn client_stream_diagnostic(state_base: &Path) -> Result<(), String> {
+    client_stream::run_diagnostic(state_base)
 }
 
 const CLIENT_START_TIMEOUT: Duration =
@@ -163,7 +169,10 @@ fn try_home_states(
             // serving-process exit cannot make authentication or response
             // failures safe to send to another resident.
             Err(error) if containment::is_retryable_live_request_error(&error) => {}
-            Err(_) => return Err("native_resident_live_request_failed".to_owned()),
+            Err(_error) => {
+                crate::record_resident_startup_fatal!(&_error);
+                return Err("native_resident_live_request_failed".to_owned());
+            }
         }
     }
     Ok(None)
@@ -477,15 +486,6 @@ pub(crate) fn parse_process_id(value: &str) -> Result<u32, String> {
         .ok()
         .filter(|process_id| *process_id > 0)
         .ok_or_else(|| "native_resident_owner_process_invalid".to_owned())
-}
-
-pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
-    let budget = crate::strict_json::deadline_budget_ms(payload)
-        .ok()
-        .flatten()
-        .unwrap_or(750)
-        .clamp(1, 9_000);
-    Duration::from_millis(budget)
 }
 
 #[cfg(test)]

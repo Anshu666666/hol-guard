@@ -15,6 +15,7 @@ mod policy_store;
 mod resident_client;
 mod resident_process_identity;
 mod resident_protocol;
+mod resident_startup_diagnostic;
 mod resident_state;
 mod resident_state_encoding;
 mod resident_transport;
@@ -193,6 +194,12 @@ fn run() -> Result<(), String> {
             if command == "resident-client-stream" && flag == "--stdin" =>
         {
             managed_resident::client_stream(std::path::Path::new(state_dir))
+        }
+        #[cfg(feature = "diagnostic-phases")]
+        [command, flag, state_dir]
+            if command == "resident-client-stream-diagnostic" && flag == "--stdin" =>
+        {
+            managed_resident::client_stream_diagnostic(std::path::Path::new(state_dir))
         }
         [command, flag, state_dir] if command == "resident-stop" && flag == "--state-dir" => {
             managed_resident::stop_managed(std::path::Path::new(state_dir))

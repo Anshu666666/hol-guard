@@ -2,8 +2,18 @@
 
 use std::io::{Read, Write};
 use std::path::Path;
+use std::time::Duration;
 
 const FRAME_HEADER_BYTES: usize = 4;
+
+pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
+    let budget = crate::strict_json::deadline_budget_ms(payload)
+        .ok()
+        .flatten()
+        .unwrap_or(750)
+        .clamp(1, 9_000);
+    Duration::from_millis(budget)
+}
 
 pub(super) fn read_frame(input: &mut impl Read) -> Result<Option<Vec<u8>>, String> {
     let mut header = [0u8; FRAME_HEADER_BYTES];
@@ -38,6 +48,22 @@ pub(super) fn write_frame(output: &mut impl Write, response: &[u8]) -> Result<()
 }
 
 pub(super) fn run(state_base: &Path) -> Result<(), String> {
+    run_stream(
+        state_base,
+        #[cfg(feature = "diagnostic-phases")]
+        false,
+    )
+}
+
+#[cfg(feature = "diagnostic-phases")]
+pub(super) fn run_diagnostic(state_base: &Path) -> Result<(), String> {
+    run_stream(state_base, true)
+}
+
+fn run_stream(
+    state_base: &Path,
+    #[cfg(feature = "diagnostic-phases")] diagnostic: bool,
+) -> Result<(), String> {
     // Hold the client lease for the stream lifetime so idle holders keep the
     // resident alive. Still wait for a request before answering, so a lease
     // failure is framed instead of exiting with an empty stdout.
@@ -46,21 +72,45 @@ pub(super) fn run(state_base: &Path) -> Result<(), String> {
     let stdout = std::io::stdout();
     let mut input = stdin.lock();
     let mut output = stdout.lock();
+    #[cfg(feature = "diagnostic-phases")]
+    let mut sequence = 0usize;
     loop {
         let Some(payload) = read_frame(&mut input)? else {
             return Ok(());
         };
         let started_at = std::time::Instant::now();
         let deadline = started_at + super::client_timeout(&payload);
+        #[cfg(feature = "diagnostic-phases")]
+        let mut report = None;
         let response = match client_lease.as_ref() {
             Ok(lease) => {
-                match super::client_request_with_lease(state_base, &payload, deadline, lease) {
+                match crate::observe_resident_stream_request!(
+                    diagnostic,
+                    sequence,
+                    &payload,
+                    started_at,
+                    deadline,
+                    report,
+                    super::client_request_with_lease(state_base, &payload, deadline, lease)
+                ) {
                     Ok(response) => response,
                     Err(error) => crate::resident_protocol::safe_error_response(&error, false),
                 }
             }
             Err(error) => crate::resident_protocol::safe_error_response(error, false),
         };
-        write_frame(&mut output, &response)?;
+        let frame_result = write_frame(&mut output, &response);
+        #[cfg(feature = "diagnostic-phases")]
+        if diagnostic {
+            crate::resident_startup_diagnostic::finish_frame(
+                report,
+                sequence,
+                &payload,
+                &response,
+                &frame_result,
+            );
+            sequence = sequence.saturating_add(1);
+        }
+        frame_result?;
     }
 }

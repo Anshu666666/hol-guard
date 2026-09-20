@@ -1,0 +1,33 @@
+{
+  "schema": "pr2974-windows-startup-formatter-adaptation.v1",
+  "reference_runner": "88140fbc3a1519628f4ab10aa99fc08f11835406",
+  "reference_projection": "f977d2185ed8e8479118d34409fbb4e8d0f6673f",
+  "reference_workflow": "37c33c477fdac0f79ed1abb5e6bbc9b0e2611810",
+  "runner_changes": [
+    {
+      "from": "SOURCE_PATHS = (\n    \"rust/crates/guard-runtime/src/managed_resident.rs\",\n    \"rust/crates/guard-runtime/src/resident_client.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs\",\n    \"rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs\",\n)",
+      "to": "SOURCE_PATHS = (\n    \"rust/crates/guard-runtime/src/main.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident.rs\",\n    \"rust/crates/guard-runtime/src/resident_state_discovery.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_containment.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs\",\n)"
+    },
+    {
+      "from": "len(rows) == 5",
+      "to": "len(rows) == 8"
+    },
+    {
+      "from": "len(files) == 5",
+      "to": "len(files) == 8"
+    }
+  ],
+  "projection_changes": [
+    {
+      "from": "SOURCE_NAMES = (\n    \"managed_resident.rs\",\n    \"resident_client.rs\",\n    \"managed_resident_deadline.rs\",\n    \"managed_resident_deadline_tests.rs\",\n    \"resident_client_connect_deadline_tests.rs\",\n)",
+      "to": "SOURCE_NAMES = (\n    \"main.rs\",\n    \"managed_resident_deadline.rs\",\n    \"managed_resident.rs\",\n    \"resident_state_discovery.rs\",\n    \"managed_resident_containment.rs\",\n    \"native_windows_startup_observation.rs\",\n    \"native_windows_startup_observation_enabled.rs\",\n    \"native_windows_startup_observation_tests.rs\",\n)"
+    },
+    {
+      "from": "len(formatted) > 5",
+      "to": "len(formatted) > 8"
+    }
+  ],
+  "local_availability": "Native owner confirms the component-only Rustfmt was not usable on asnf (missing librustc_driver, prior exit127); no repeat or installation attempted here.",
+  "execution_scope": "Hosted formatter only. No Cargo/compiler/controls/workload. Original result/error returns and all bounds remain unchanged.",
+  "manifest_sha256": "341a3638a59dbfaaf2f2add6091b608b520530ee68733df7d334f6ac9cdf0bc3"
+}

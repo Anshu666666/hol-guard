@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -75,10 +76,8 @@ def write_checkpoint(path: Path | None, mode: str, source: str, runtime: str, ph
         "runtime_sha256": runtime,
         "phase": phase,
     }
-    try:
+    with suppress(OSError):
         path.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
-    except OSError:
-        pass
 
 
 def read_checkpoint(path: Path, mode: str, source: str, runtime: str) -> str:

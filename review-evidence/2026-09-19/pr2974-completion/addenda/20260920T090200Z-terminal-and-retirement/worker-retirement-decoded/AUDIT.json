@@ -1,0 +1,996 @@
+{
+  "schema": "hol-guard.pr2974.worker-retirement-decoded-original-audit.v1",
+  "scope": "Independent bounded data-only reconciliation of original run 35496733388; no native, tests or installed workload rerun.",
+  "source": {
+    "commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+    "tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+    "parent": "4d10758e2cb44e5afa72a08aa631a02541dad534"
+  },
+  "driver": {
+    "commit": "869856a68204fe4662fbbc87414f492d8306ef7b",
+    "tree": "6f9abad241bce945bff7acd5d19446872bc9ddf4"
+  },
+  "run": {
+    "id": 35496733388,
+    "job": 106040961917,
+    "attempt": 1,
+    "original_terminal_conclusion": "success"
+  },
+  "original": {
+    "log_url": "https://raw.githubusercontent.com/hashgraph-online/hol-guard/e5dd87805911e0f95d25f1474398d62235eee2fb/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T075800Z-worker-terminal/worker-terminal/original-terminal.log",
+    "log_git_blob": "04bd8fc0f63ed498359e1d57c967b5d2767c4f4a",
+    "log_bytes": 13397608,
+    "log_sha256": "a6a7da3ab90f3f689bdb0c4d6173c79f4f68b7ae4bf1d3dfa80f6e67954e9ad7",
+    "compressed_bytes": 9583213,
+    "compressed_sha256": "edbf83343a0a47eca316e5d4d0f53e2097d6b2a10eb301c24a3a287365ad6dbb",
+    "raw_bytes": 57292752,
+    "raw_sha256": "fddb9ac6055a15229d7f425f5a924a83d12492b55747ba158d033049123764cb",
+    "parts": 2130,
+    "member_names": 114,
+    "retained_original_bytes_declared": 53976229
+  },
+  "admission": {
+    "memory_limit_bytes": 99614720,
+    "encoded_member_and_semantic_value_limit_bytes": 8388608,
+    "stream_chunk_bytes": 65536,
+    "stream_log_gzip_raw_hashes_verified": true,
+    "verified_members": 111,
+    "verified_original_member_bytes": 20088977,
+    "all_member_semantics_admitted": false,
+    "oversized_exclusions": [
+      "installed-diagnostic-admission.json",
+      "installed-environment-before.json",
+      "installed-environment-after.json"
+    ],
+    "scope": "Three encoded-member values exceed the unchanged 8 MiB selection bound. Their standalone metadata/content is not admitted or independently verified; the complete original packet hash still matches."
+  },
+  "reader_validation": {
+    "synthetic_parser_controls": 18,
+    "passed": true,
+    "native_or_original_workload_executed": false,
+    "peak_rss_bytes": {
+      "synthetic": 21041152,
+      "stream": 25538560,
+      "inline_members": 40464384,
+      "control_semantics": 35676160,
+      "installed_semantics": 31526912
+    }
+  },
+  "controls": {
+    "python_cohorts": [
+      {
+        "cases": 29,
+        "cohort": "python",
+        "definitions": 27,
+        "junit_cases": 29,
+        "passed": true,
+        "phases": 87,
+        "projection": {
+          "bytes": 514467,
+          "path": "python-rows.json",
+          "sha256": "21f7513f462466d528dfced3cbd48406f7b9b30558ca4d1407c5113a684f0fcb"
+        },
+        "providers": 7,
+        "selectors": [
+          {
+            "cases": 18,
+            "selector": "tests/test_native_slo_workspace_poststart_evidence.py"
+          },
+          {
+            "cases": 11,
+            "selector": "tests/test_native_slo_workspace_poststart_session.py"
+          }
+        ]
+      },
+      {
+        "cases": 6,
+        "cohort": "native-fixture",
+        "definitions": 17,
+        "junit_cases": 6,
+        "passed": true,
+        "phases": 18,
+        "projection": {
+          "bytes": 144625,
+          "path": "native-fixture-rows.json",
+          "sha256": "4c52933e59b00e6cd3a8fad373f1ab203ee08271339f5d5405883f0320e7cf1c"
+        },
+        "providers": 8,
+        "selectors": [
+          {
+            "cases": 1,
+            "selector": "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[network]"
+          },
+          {
+            "cases": 1,
+            "selector": "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[network_url]"
+          },
+          {
+            "cases": 1,
+            "selector": "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[read]"
+          },
+          {
+            "cases": 1,
+            "selector": "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[mcp]"
+          },
+          {
+            "cases": 1,
+            "selector": "tests/test_native_noncommand_review_rust.py::test_actual_rust_command_receipt_cannot_be_reused_as_unmarked_noncommand"
+          },
+          {
+            "cases": 1,
+            "selector": "tests/test_installed_ollama_legacy_retry.py::test_actual_signed_ollama_review_cannot_reuse_resolved_legacy_approval"
+          }
+        ]
+      }
+    ],
+    "python_cases": 35,
+    "python_phases": 105,
+    "rust_distinct_tests": 24,
+    "rust_groups": [
+      {
+        "name": "command-controls",
+        "count": 9
+      },
+      {
+        "name": "runtime-noncommand",
+        "count": 3
+      },
+      {
+        "name": "runtime-deadlines",
+        "count": 9
+      },
+      {
+        "name": "runtime-retry",
+        "count": 3
+      }
+    ],
+    "unique_definition_digests": 31,
+    "unique_provider_identities": 10,
+    "source_Git_census": {
+      "all_source_content_downloaded": false,
+      "independent_Git_blob_metadata_match": true,
+      "rows": 4751,
+      "sha256": "5409dcf40418d0b6bfffe4f2b27db29679bbc16354dd18ea1c6fbb36920c8edb"
+    },
+    "original_pytest_version_scope": "Original Python 3.12.13 capture; data reader Python 3.13.13 reproduces AST dumps with show_empty=True.",
+    "source_inputs_per_snapshot": 296,
+    "no_original_tests_executed_by_reader": true
+  },
+  "actual_native_consumers": {
+    "cases": 3,
+    "exact_original_output_binding": true,
+    "full_http_worker_exercised": false,
+    "installed_qualification": false,
+    "labels": [
+      "WebFetch",
+      "Read",
+      "MCP"
+    ],
+    "six_case_producer": {
+      "case_names": [
+        "network",
+        "network_url",
+        "ollama",
+        "read",
+        "mcp",
+        "mcp_command"
+      ],
+      "is_additional_unique_Rust_test": false,
+      "original_invocations": 1,
+      "payload_sha256": "9e5244cc5ebb74a49b7e049c6a47dc05c128645920ca0c4b2c501aad04a99b46"
+    }
+  },
+  "installed": {
+    "actual_native_receipts": 9,
+    "automatic_workspace_restore_tested": false,
+    "declared_counts": [
+      1,
+      10,
+      100
+    ],
+    "identity": {
+      "architecture": "x86_64",
+      "build_sha": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "installed_package_sha256": "0ab16e9356054d954ed030799ad58c0a0e8109203b127ab597769861fb76ada4",
+      "mode": "auto",
+      "package_origin": "installed",
+      "package_record_sha256": "4eb89f82b5dabfe310d3aa778b7eb85e34b0e2ecc7bc49534d9c9d74ef0b398d",
+      "package_version": "3.0.1",
+      "protocol_version": 1,
+      "python_version": "3.12.13",
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "runtime_sha256": "c1ab3d77f604489e65ff7b9b89dcc1782f73779126b21ddda8704d577e22fe80",
+      "runtime_version": "3.0.1",
+      "system": "Linux",
+      "target": "x86_64-linux"
+    },
+    "pending": [
+      "full installed sampling and paired baselines",
+      "lost metadata hints",
+      "key rotation",
+      "expiry fault",
+      "first admission fault",
+      "Python process restart",
+      "matched platform hardware"
+    ],
+    "phase_rows": [
+      {
+        "accept_to_ack_ms": 93.5286689999657,
+        "attempt": "mixed-policy-0",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "6bfd2c828182c3222fd5aaa96a2cb765a3d8333786098d98a2e1172d710f42e2",
+        "delivered_decision": "allow",
+        "index": 0,
+        "instance": 0,
+        "phase": "poststart_registration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 82.87728699997388,
+          "accepted_to_compile_started_ms": 9.623896999983117,
+          "accepted_to_push_started_ms": 42.72365700001046,
+          "accepted_to_validated_transport_ack_ms": 48.896550999984356,
+          "compile_ms": 2.3460510000177237,
+          "compile_thread_cpu_ms": 2.0154549999999993,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 6.105196999953932
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "70bf5509baab58deb6d097df939e991a8d7d2ffc046ffb1c2043e845373dd303",
+        "registered_workspaces": 1,
+        "request_id": "sha256:c0e40536982d151afe41a1432698bba7743a3a7a0c79fb286ccb34a070a68988",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 87.90680699996756,
+        "attempt": "mixed-policy-1",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "8db2dc09b28f30b5287baa7c83c177b4d9e51d10c4d18bd53d326fbd325d6377",
+        "delivered_decision": "deny",
+        "index": 1,
+        "instance": 0,
+        "phase": "public_policy",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 75.70324799996797,
+          "accepted_to_compile_started_ms": 5.991477999998551,
+          "accepted_to_push_started_ms": 40.90206899996929,
+          "accepted_to_validated_transport_ack_ms": 49.53951999999617,
+          "compile_ms": 2.188044999968497,
+          "compile_thread_cpu_ms": 2.1691230000000505,
+          "matched": true,
+          "publication": 2,
+          "push_ms": 8.577377999984037
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "c48d72cf46de012d4b9f658a7af1f083b1cf14260fbd0c36d774767f3e114e23",
+        "registered_workspaces": 1,
+        "request_id": "sha256:280406585a32e59ae28b74d1b43f6cae0262ac955b9d5be82e03f6a43d13b14c",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 85.33315900001526,
+        "attempt": "mixed-policy-2",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "810fbd2710ab25b2c29c97d489c371e48c4e643a7a631d008f53f5e240e37ba4",
+        "delivered_decision": "deny",
+        "index": 0,
+        "instance": 1,
+        "phase": "explicit_reregistration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 71.98992000002136,
+          "accepted_to_compile_started_ms": 8.574773000020741,
+          "accepted_to_push_started_ms": 41.80266999998139,
+          "accepted_to_validated_transport_ack_ms": 46.84508100001494,
+          "compile_ms": 1.5440139999896019,
+          "compile_thread_cpu_ms": 1.5437839999999925,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 4.979103000039231
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "5ffb54af6e85759445b6e9a6a9cdd74f8ba697c757292c1c6ea6c57cdea22934",
+        "registered_workspaces": 1,
+        "request_id": "sha256:03058239e9cab91d17cff941da73d060abac90ef778b911261330c296c1c8331",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 101.00041100002954,
+        "attempt": "mixed-policy-0",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "311706b878a578f69b0fa22f480ea861ec343ccad9db22c029a2a8b5492eba34",
+        "delivered_decision": "allow",
+        "index": 0,
+        "instance": 0,
+        "phase": "poststart_registration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 88.18646600002467,
+          "accepted_to_compile_started_ms": 6.946869000046263,
+          "accepted_to_push_started_ms": 59.33324500000481,
+          "accepted_to_validated_transport_ack_ms": 62.77383900004452,
+          "compile_ms": 10.52903299995478,
+          "compile_thread_cpu_ms": 10.480278999999925,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 3.3808320000048298
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "ecfc9db5bdbe138dd33059f64678e4fb0861ecdf75d5a1e7623b6d2d6994150f",
+        "registered_workspaces": 10,
+        "request_id": "sha256:c237ee42c8acdc7201d7f6d059837807ca89f0171f9d00e320729e43dfa8da5d",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 99.0414529999839,
+        "attempt": "mixed-policy-1",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "f1125aebc5abf7c80a9b5d94d9b7bd3c857077f40e891bf76c4e2d2197f7bab9",
+        "delivered_decision": "deny",
+        "index": 1,
+        "instance": 0,
+        "phase": "public_policy",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 82.35579600000165,
+          "accepted_to_compile_started_ms": 6.322280999995655,
+          "accepted_to_push_started_ms": 51.07129700002133,
+          "accepted_to_validated_transport_ack_ms": 55.88127400000076,
+          "compile_ms": 11.976722000042628,
+          "compile_thread_cpu_ms": 11.404600999999959,
+          "matched": true,
+          "publication": 2,
+          "push_ms": 4.752730000006977
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "99df3a77c6f428a1c21cc257aaef4757c9075e91d1ad50f40544046313ff27f2",
+        "registered_workspaces": 10,
+        "request_id": "sha256:495aafff650ed223437409cb0a1b19983cc5908c9f4b6df30a28a4bae8b614a5",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 118.90807600002518,
+        "attempt": "mixed-policy-2",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "5758dc8032f33a02fdbeecf2f94bb43971a79e306d00f6a63e5701a88c4c5d10",
+        "delivered_decision": "deny",
+        "index": 0,
+        "instance": 1,
+        "phase": "explicit_reregistration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 105.77602000000752,
+          "accepted_to_compile_started_ms": 13.933225000016591,
+          "accepted_to_push_started_ms": 72.70023699999228,
+          "accepted_to_validated_transport_ack_ms": 79.8216880000382,
+          "compile_ms": 17.59401300000718,
+          "compile_thread_cpu_ms": 16.060366000000048,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 7.061408000026859
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "ff335bdfc562fd01008845997a09ded704a70787d985c721fa67662da916f1a1",
+        "registered_workspaces": 10,
+        "request_id": "sha256:2e12698c565fdc125c11e0ec703d2eeac82bf7e85f5fcc82112d1f051172635a",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 197.41481599999133,
+        "attempt": "mixed-policy-0",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "899e7fb03950a49ecd1086d8025e0914647c40a094f25c5601cac0060a1d2b95",
+        "delivered_decision": "allow",
+        "index": 0,
+        "instance": 0,
+        "phase": "poststart_registration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 186.2085299999876,
+          "accepted_to_compile_started_ms": 6.0049250000133725,
+          "accepted_to_push_started_ms": 152.97292700000753,
+          "accepted_to_validated_transport_ack_ms": 158.98182500001212,
+          "compile_ms": 116.9332580000173,
+          "compile_thread_cpu_ms": 111.52306899999998,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 5.949346000022615
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "7762fdfcd700e65d18f28f4f085af8bd9f60cba1bfb5b016166051795c81068a",
+        "registered_workspaces": 100,
+        "request_id": "sha256:41b1ed29302cfcb4e9be1d5c445cfc0cd0d4b7e7a05e79ebc56314289f1132cd",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 195.90274199998703,
+        "attempt": "mixed-policy-1",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "ffe51ea924e5f4b5d5492b7a1f4c58d0492665e6730e0cd2e582ca43cfa40902",
+        "delivered_decision": "deny",
+        "index": 1,
+        "instance": 0,
+        "phase": "public_policy",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 183.32357700001012,
+          "accepted_to_compile_started_ms": 5.618717000004381,
+          "accepted_to_push_started_ms": 149.36794099997996,
+          "accepted_to_validated_transport_ack_ms": 155.99674499998173,
+          "compile_ms": 105.34824399996978,
+          "compile_thread_cpu_ms": 102.10176199999998,
+          "matched": true,
+          "publication": 2,
+          "push_ms": 6.569202000036967
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "bfa904c5797b1e9ace4ba439c8ad75901ef0f9d106d21278dfc5553d7736d5fd",
+        "registered_workspaces": 100,
+        "request_id": "sha256:3aae2fafc9b301306b1da7ac5fce57c76cce15a884935e1f4479700ccea34f83",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      },
+      {
+        "accept_to_ack_ms": 189.18448099998386,
+        "attempt": "mixed-policy-2",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "complete_native_and_SQL_receipt_equal": true,
+        "decision_id": "454a0198ca33ecaf6ace4a5a4e354d24450d58868a58bf4d2b639cd7e02b4cd5",
+        "delivered_decision": "deny",
+        "index": 0,
+        "instance": 1,
+        "phase": "explicit_reregistration",
+        "publication_chain": {
+          "accepted_to_committed_barrier_ms": 178.6658940000052,
+          "accepted_to_compile_started_ms": 6.686536000017895,
+          "accepted_to_push_started_ms": 138.11662800003432,
+          "accepted_to_validated_transport_ack_ms": 147.02550700002348,
+          "compile_ms": 96.7514650000112,
+          "compile_thread_cpu_ms": 94.58773499999995,
+          "matched": true,
+          "publication": 1,
+          "push_ms": 8.848725999996532
+        },
+        "readiness_deadline_ms": 400,
+        "receipt_sha256": "bcf5b04af74607fc4f6778e62c6328c7b3e3814c16814adedf2bd871bd1761dc",
+        "registered_workspaces": 100,
+        "request_id": "sha256:33d24dd5f7ed293929df82c9effb03b880a9aec6dbef347fe37ecff5e577593d",
+        "timing_scope": "owned Python wrapper endpoints including diagnostic overhead"
+      }
+    ],
+    "phases": 9,
+    "python_process_restart_tested": false,
+    "retained_worker_exit_codes": {
+      "-9": 12
+    },
+    "retained_worker_processes": 12,
+    "retired_service_instances": 6,
+    "retirements": [
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 0,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 1,
+        "retained_direct_workers": [
+          {
+            "pid": 5931,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 5932,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      },
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 1,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 1,
+        "retained_direct_workers": [
+          {
+            "pid": 6042,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 6043,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      },
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 0,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 10,
+        "retained_direct_workers": [
+          {
+            "pid": 6147,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 6148,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      },
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 1,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 10,
+        "retained_direct_workers": [
+          {
+            "pid": 6257,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 6258,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      },
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 0,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 100,
+        "retained_direct_workers": [
+          {
+            "pid": 6362,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 6363,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      },
+      {
+        "checks": {
+          "no_active_hook_requests": true,
+          "owner_lock_released": true,
+          "publisher_closed": true,
+          "publisher_thread_retired": true,
+          "request_executors_stopped": true,
+          "retained_direct_workers_reaped": true,
+          "retained_threads_retired": true,
+          "runner_closed_and_empty": true,
+          "same_guard_home_preserved": true,
+          "same_root_preserved": true,
+          "serve_thread_cleared": true,
+          "service_finish_completed": true,
+          "service_not_quarantined": true,
+          "service_not_ready": true,
+          "writer_thread_retired": true
+        },
+        "instance": 1,
+        "native_stop_observations": [
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "verified",
+              "authenticated": "verified",
+              "endpoint": "verified",
+              "generation_present": "verified",
+              "marker_lock": "verified",
+              "operation": "resident-stop",
+              "owner_lock": "verified",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "verified",
+              "status": "contained"
+            },
+            "stage": "before_service_stop"
+          },
+          {
+            "contained": true,
+            "diagnostic": {
+              "acknowledged": "unknown",
+              "authenticated": "unknown",
+              "endpoint": "unknown",
+              "generation_present": "unknown",
+              "marker_lock": "unknown",
+              "operation": "resident-stop",
+              "owner_lock": "unknown",
+              "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+              "serving_shutdown": "unknown",
+              "status": "already-stopped"
+            },
+            "stage": "after_service_stop"
+          }
+        ],
+        "registered_workspaces": 100,
+        "retained_direct_workers": [
+          {
+            "pid": 6481,
+            "reaped": true,
+            "returncode": -9
+          },
+          {
+            "pid": 6482,
+            "reaped": true,
+            "returncode": -9
+          }
+        ],
+        "retained_thread_objects": 54,
+        "scope": "Actual service state, owned registries and every retained object; not a complete escaped-descendant census."
+      }
+    ],
+    "same_process_service_replacement": true,
+    "startup_initial_compilation_observed": false,
+    "three_owned_homes_removed": true
+  },
+  "ledger": {
+    "bytes": 1150147,
+    "packet_kind_counts": {
+      "poststart_cell_offer": 3,
+      "poststart_cell_terminal": 3,
+      "poststart_matrix_offer": 1,
+      "poststart_phase_offer": 9,
+      "poststart_phase_terminal": 9,
+      "poststart_publisher_event": 53,
+      "poststart_service_offer": 6,
+      "poststart_service_terminal": 6,
+      "poststart_stricter_overlay": 3
+    },
+    "packets": 93,
+    "projection": {
+      "bytes": 18798,
+      "path": "ledger-packet-identities.json",
+      "sha256": "582a62519fde18825e6104dab444af3df356b3fff093996e291a1c5a82118884"
+    },
+    "records": 707,
+    "sha256": "adcfd7e219569557f7b1c8c6b46a8fdc1664e82552ce5f3fca61f2cf487bfa86"
+  },
+  "installed_provenance": {
+    "full_installed_inventory_admitted": false,
+    "hash_enforced_original_installer": true,
+    "installer_timeout_seconds": 180,
+    "oversized_exclusions": [
+      "installed-diagnostic-admission.json",
+      "installed-environment-before.json",
+      "installed-environment-after.json"
+    ],
+    "recorded_wheel_bytes": 8834419,
+    "recorded_wheel_sha256": "769db2fd9e7bdc6b1ddeeab0f548af83ceb355f0cc9896a91089fcb66e782f86",
+    "runtime_manifest": {
+      "package_version": "3.0.1",
+      "platform_tag": "linux_x86_64",
+      "protocol_version": 1,
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "runtime_sha256": "c1ab3d77f604489e65ff7b9b89dcc1782f73779126b21ddda8704d577e22fe80",
+      "runtime_size": 12287032,
+      "schema": "hol-guard-native-runtime.v1",
+      "source_sha": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "target": "x86_64-unknown-linux-gnu"
+    },
+    "runtime_sha256": "c1ab3d77f604489e65ff7b9b89dcc1782f73779126b21ddda8704d577e22fe80",
+    "source_member_metadata_joins": 1487,
+    "wheel_member_metadata_count": 1494,
+    "wheel_or_binary_archive_bytes_independently_downloaded_by_this_readback": false
+  },
+  "prior_failed_run": {
+    "run_id": 35493601886,
+    "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "decoded_tree": "19e538a8af9ce76984ae18ff51ab7390c5446ad5",
+    "source_peer_tree": "5e1cc7683c78f38ed82be4d9a6eff001db71b824",
+    "preserved": true,
+    "meaning": "Earlier bounded diagnostic stopped after count-1 first service because fixture retirement used Popen.poll on actual multiprocessing workers. Its failed cleanup flags and unvisited replacements/counts remain unchanged. This later 2ac run is a separate original invocation."
+  },
+  "reader_corrections": {
+    "preserved_failures": [
+      {
+        "reader_version": 1,
+        "reader_sha256": "bc602bd1357ad8168da16e7437b5c328b9091a177299082deac1a318573a6267",
+        "result": {
+          "bytes": 1323,
+          "path": "result.json",
+          "sha256": "a3e63efc59a25a8c38d457a9fb73855966cd2bf2e0c5489513479d248a5524b4"
+        },
+        "failure": {
+          "detail": "phase success facts",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/user/pr2974-worker-retirement-parser-prep/semantic_installed.py\", line 173, in main\n    require(phase[\"passed\"] is True and phase[\"request_offered\"] is True and phase[\"writer_drained_before_readback\"] is True and phase[\"cleanup_errors\"]==[],\"phase success facts\")\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/pr2974-worker-retirement-parser-prep/semantic_installed.py\", line 17, in require\n    raise AssertionError(label)\nAssertionError: phase success facts\n",
+          "type": "AssertionError"
+        }
+      },
+      {
+        "reader_version": 2,
+        "reader_sha256": "08b65f520456fd3cbf5f8919da58319f0bf109008d32c62aea5556219f0585e7",
+        "result": {
+          "bytes": 21378,
+          "path": "result.json",
+          "sha256": "f291ec9b0348d1989b3c8b93dbaaf930d5fa5e863fc7e6aa1648a9ef49e98602"
+        },
+        "failure": {
+          "detail": "original single producer exact six cases",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/user/pr2974-worker-retirement-parser-prep/semantic_installed_v2.py\", line 243, in main\n    require(candidates==[sixraw] and [r[\"case\"] for r in six]==[\"network\",\"network_url\",\"ollama\",\"read\",\"mcp\",\"mcp_command\"],\"original single producer exact six cases\")\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/user/pr2974-worker-retirement-parser-prep/semantic_installed_v2.py\", line 17, in require\n    raise AssertionError(label)\nAssertionError: original single producer exact six cases\n",
+          "type": "AssertionError"
+        }
+      }
+    ],
+    "final_version": 3,
+    "changes": [
+      "v1 wrongly treated the structured writer snapshot and receipt retention bounds as booleans. v2 instead checks exact drained counters and original 3-request/16384-byte bounds.",
+      "v2 compared a splitlines producer payload without its line delimiter to the separately retained newline-terminated payload file. v3 adds exactly that original single newline and proves byte equality."
+    ],
+    "limits_unchanged": true,
+    "original_input_bytes_unchanged": true,
+    "original_workload_rerun": false
+  },
+  "limits": [
+    "All nine 400 ms accepted-to-ACK checks describe the bounded Linux poststart fixture and its own clock origin. They do not provide percentile sampling, an optimized Python comparison or matched-platform full qualification.",
+    "Nine native receipts equal their exact committed SQL getter readbacks. The recorded SQL observation time includes polling and is not the transaction commit instant. Internal Rust decision time and all daemon traffic are not observed.",
+    "Six service retirement records retain 12 direct worker processes with exit code -9. Reaped is not graceful shutdown. Native stop reports distinguish authenticated contained-before-stop from already-stopped/unknown-after-stop; no complete escaped-descendant census is claimed.",
+    "Initial construction/compilation, a Python-process restart, automatic workspace restore, lost metadata hints, key rotation, expiry and first-admission faults remain outside this run.",
+    "The original installer uses --require-hashes and the 180-second budget; its wheel/native/member identities join metadata. This readback did not download or hash the binary ZIP, wheel or native binary bodies, and the three oversized installed inventory records remain unadmitted.",
+    "SQLite physical fsync/bytes and full persistence metric coverage remain unavailable. Three unit-output consumers do not exercise the full HTTP worker or installed qualification.",
+    "Original qualification and task statuses remain unchanged; no original gate, corpus, deadline or blocked F plan was changed."
+  ],
+  "qualification_complete": false,
+  "task_promotions": 0
+}

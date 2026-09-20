@@ -1,0 +1,149 @@
+{
+  "actual_windows_executed": false,
+  "before_control_tree": "17c89a7661ddc769f20678abc61e8d5633ddf15d",
+  "candidate_tree": "26bfd0b7fb6a45978948e03e2120f504f2067825",
+  "checks": [
+    "All three product blobs and unchanged descriptor-control blob match the reviewed f929/17c source exactly.",
+    "API lint edits only reorder os/subprocess imports, spell the existing synthetic winerror attribute directly and use str.encode's existing UTF8 default. Actual error object identity and assertions remain unchanged.",
+    "Writer observer replacement remains at the same module boundary. typing.cast returns the identical observer; direct manager.os assignment and restoration remain in the same original try/finally lifetime.",
+    "The narrow SIM115 annotation documents the existing returned handle's caller-owned context. It neither introduces an early close nor extends handle lifetime.",
+    "No test is added/removed and no parametrization, deadline, expected outcome or privacy predicate changes. Existing77 total/20 actual Windows declared membership remains unchanged.",
+    "All seven source paths remain below500physical lines. The separate CI owner reviews the revised Windows driver; this source peer does not duplicate or approve that driver."
+  ],
+  "classification": "independent_explicit_lint_delta_peer_unexecuted_windows_source",
+  "deltas_blob": "07505d164694d067c154ae56d5e0aea67decd67d",
+  "exact_diffs": {
+    "api": [
+      {
+        "kind": "+",
+        "line": 6,
+        "text": "import os"
+      },
+      {
+        "kind": "-",
+        "line": 7,
+        "text": "import os"
+      },
+      {
+        "kind": "+",
+        "line": 63,
+        "text": "    error.winerror = 32"
+      },
+      {
+        "kind": "-",
+        "line": 63,
+        "text": "    setattr(error, \"winerror\", 32)"
+      },
+      {
+        "kind": "+",
+        "line": 142,
+        "text": "    assert error.winerror == 32"
+      },
+      {
+        "kind": "-",
+        "line": 142,
+        "text": "    assert getattr(error, \"winerror\") == 32"
+      },
+      {
+        "kind": "+",
+        "line": 193,
+        "text": "    error.winerror = 0"
+      },
+      {
+        "kind": "-",
+        "line": 193,
+        "text": "    setattr(error, \"winerror\", 0)"
+      },
+      {
+        "kind": "+",
+        "line": 228,
+        "text": "    target.write_bytes(\"first\\r\\nsecond\\né\".encode())"
+      },
+      {
+        "kind": "-",
+        "line": 228,
+        "text": "    target.write_bytes(\"first\\r\\nsecond\\né\".encode(\"utf-8\"))"
+      }
+    ],
+    "child": [
+      {
+        "kind": "+",
+        "line": 13,
+        "text": "from typing import Any, cast"
+      },
+      {
+        "kind": "+",
+        "line": 89,
+        "text": "    manager.os = cast(Any, observer)"
+      },
+      {
+        "kind": "-",
+        "line": 88,
+        "text": "    setattr(manager, \"os\", observer)"
+      },
+      {
+        "kind": "+",
+        "line": 98,
+        "text": "        manager.os = original"
+      },
+      {
+        "kind": "-",
+        "line": 97,
+        "text": "        setattr(manager, \"os\", original)"
+      }
+    ],
+    "process": [
+      {
+        "kind": "+",
+        "line": 296,
+        "text": "        # The returned handle is owned by the original caller's context manager."
+      },
+      {
+        "kind": "+",
+        "line": 297,
+        "text": "        handle = builtins.open(path, *arguments, **keywords)  # noqa: SIM115"
+      },
+      {
+        "kind": "-",
+        "line": 296,
+        "text": "        handle = builtins.open(path, *arguments, **keywords)"
+      }
+    ]
+  },
+  "executed_cases": 0,
+  "formatted_preimage_tree": "ca04cd211ecafea9eeeef06d9386cb3ee40c05be",
+  "identities": [
+    {
+      "bytes": 16986,
+      "name": "win-final-api",
+      "physical_lines": 442,
+      "sha256": "2fbdef7b196e09bd4545b36c3d9a0d1f42a57192dd123d89675af3888a2f9935"
+    },
+    {
+      "bytes": 9790,
+      "name": "win-final-child",
+      "physical_lines": 262,
+      "sha256": "f356bb2307010c5cd082ddce45af3dbaefec771071fe336510f16977a5c74cc7"
+    },
+    {
+      "bytes": 15342,
+      "name": "win-final-process",
+      "physical_lines": 428,
+      "sha256": "3de4f2b92b1999bafcb977b0fbb7bd582071d76fb99afa536859e76340f30c35"
+    }
+  ],
+  "limits": [
+    "Unicode default-mode parity remains an explicit product acceptance gate.",
+    "Custom/static/embedded CRT and generated standalone Cursor remain unsupported.",
+    "No new Windows owner/SID/DACL proof is claimed.",
+    "No installed or performance qualification or historical handle attribution is supplied."
+  ],
+  "manifest_blob": "8e60f6a50ee981272f97020ec41eb0dfdfe23ce4",
+  "prior_control_peer_tree": "17661303a4afbfbfa3a369ceb9c312a7769617c9",
+  "qualification_complete": false,
+  "reviewer": "partition_regression",
+  "schema_version": 1,
+  "source_imports": 0,
+  "unchanged_product_tree": "f92974b6d01e081fc8c7e9d58aa298b10df5ca2e",
+  "verdict": "No new source-body blocker found in the exact declared lint deltas. Final formatting/readback and actual hosted collection/controls remain required."
+}

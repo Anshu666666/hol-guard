@@ -1,0 +1,112 @@
+2026-09-20T08:16:58.7384312Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T08:16:58.7384545Z ##[endgroup]
+2026-09-20T08:16:58.8309475Z I001 [*] Import block is un-sorted or un-formatted
+2026-09-20T08:16:58.8310048Z   --> ci/native_runtime/linux_live_cause_identity.py:3:1
+2026-09-20T08:16:58.8310458Z    |
+2026-09-20T08:16:58.8310937Z  1 |   """Exact Git, dependency and import bindings for the Linux cause diagnostic."""
+2026-09-20T08:16:58.8311341Z  2 |
+2026-09-20T08:16:58.8311629Z  3 | / from __future__ import annotations
+2026-09-20T08:16:58.8311988Z  4 | |
+2026-09-20T08:16:58.8312201Z  5 | | import hashlib
+2026-09-20T08:16:58.8312650Z  6 | | import importlib.metadata
+2026-09-20T08:16:58.8313008Z  7 | | import json
+2026-09-20T08:16:58.8313318Z  8 | | import os
+2026-09-20T08:16:58.8313584Z  9 | | import platform
+2026-09-20T08:16:58.8313845Z 10 | | import re
+2026-09-20T08:16:58.8314086Z 11 | | import subprocess
+2026-09-20T08:16:58.8314350Z 12 | | import sys
+2026-09-20T08:16:58.8314583Z 13 | | import tomllib
+2026-09-20T08:16:58.8314857Z 14 | | from pathlib import Path
+2026-09-20T08:16:58.8315169Z    | |________________________^
+2026-09-20T08:16:58.8315448Z 15 |
+2026-09-20T08:16:58.8315728Z 16 |   SOURCE = "4d10758e2cb44e5afa72a08aa631a02541dad534"
+2026-09-20T08:16:58.8316098Z    |
+2026-09-20T08:16:58.8316326Z help: Organize imports
+2026-09-20T08:16:58.8316500Z 
+2026-09-20T08:16:58.8316768Z UP022 Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`
+2026-09-20T08:16:58.8317323Z   --> ci/native_runtime/linux_live_cause_identity.py:73:14
+2026-09-20T08:16:58.8317684Z    |
+2026-09-20T08:16:58.8317951Z 71 |   def git(root: Path, *arguments: str) -> bytes:
+2026-09-20T08:16:58.8318296Z 72 |       # The command and committed tree are fixed; this never runs repository code.
+2026-09-20T08:16:58.8318631Z 73 |       result = subprocess.run(
+2026-09-20T08:16:58.8318833Z    |  ______________^
+2026-09-20T08:16:58.8319024Z 74 | |         ["git", "-C", str(root), *arguments],
+2026-09-20T08:16:58.8319384Z 75 | |         stdin=subprocess.DEVNULL,
+2026-09-20T08:16:58.8319715Z 76 | |         stdout=subprocess.PIPE,
+2026-09-20T08:16:58.8320047Z 77 | |         stderr=subprocess.PIPE,
+2026-09-20T08:16:58.8320354Z 78 | |         timeout=15,
+2026-09-20T08:16:58.8320547Z 79 | |         check=True,
+2026-09-20T08:16:58.8320759Z 80 | |     )
+2026-09-20T08:16:58.8321242Z    | |_____^
+2026-09-20T08:16:58.8321569Z 81 |       require(len(result.stdout) <= 4_000_000, "git_output_bound")
+2026-09-20T08:16:58.8321997Z 82 |       return result.stdout
+2026-09-20T08:16:58.8322265Z    |
+2026-09-20T08:16:58.8322694Z help: Replace with `capture_output` keyword argument
+2026-09-20T08:16:58.8322945Z 
+2026-09-20T08:16:58.8323084Z I001 [*] Import block is un-sorted or un-formatted
+2026-09-20T08:16:58.8323472Z   --> ci/native_runtime/native_hook_client_support.py:1:1
+2026-09-20T08:16:58.8323824Z    |
+2026-09-20T08:16:58.8324090Z  1 | / from __future__ import annotations
+2026-09-20T08:16:58.8324405Z  2 | |
+2026-09-20T08:16:58.8324629Z  3 | | import hashlib
+2026-09-20T08:16:58.8324882Z  4 | | import hmac
+2026-09-20T08:16:58.8325115Z  5 | | import json
+2026-09-20T08:16:58.8325348Z  6 | | import os
+2026-09-20T08:16:58.8325585Z  7 | | import re
+2026-09-20T08:16:58.8325821Z  8 | | import secrets
+2026-09-20T08:16:58.8326069Z  9 | | import signal
+2026-09-20T08:16:58.8326313Z 10 | | import socket
+2026-09-20T08:16:58.8326565Z 11 | | import subprocess
+2026-09-20T08:16:58.8326832Z 12 | | import time
+2026-09-20T08:16:58.8327080Z 13 | | from collections.abc import Iterator
+2026-09-20T08:16:58.8327459Z 14 | | from contextlib import contextmanager, suppress
+2026-09-20T08:16:58.8327707Z 15 | | from pathlib import Path
+2026-09-20T08:16:58.8327891Z 16 | |
+2026-09-20T08:16:58.8328037Z 17 | | import pytest
+2026-09-20T08:16:58.8328200Z 18 | |
+2026-09-20T08:16:58.8328455Z 19 | | from ci.native_runtime.native_live_failure_diagnostic import retain_diagnostic
+2026-09-20T08:16:58.8328760Z 20 | |
+2026-09-20T08:16:58.8329045Z 21 | | from codex_plugin_scanner.guard.live_process_identity import process_start_token
+2026-09-20T08:16:58.8329678Z 22 | | from codex_plugin_scanner.guard.native_policy_snapshot import (
+2026-09-20T08:16:58.8330136Z 23 | |     _policy_snapshot_push_bytes_v3,
+2026-09-20T08:16:58.8330481Z 24 | |     build_policy_snapshot_v3,
+2026-09-20T08:16:58.8330809Z 25 | |     derive_native_policy_verifier_key,
+2026-09-20T08:16:58.8331147Z 26 | |     provision_native_policy_verifier_key,
+2026-09-20T08:16:58.8331478Z 27 | | )
+2026-09-20T08:16:58.8331681Z    | |_^
+2026-09-20T08:16:58.8331870Z 28 |
+2026-09-20T08:16:58.8332082Z 29 |   _NATIVE_BINARY = os.environ.get("HOL_GUARD_NATIVE_BINARY")
+2026-09-20T08:16:58.8332336Z    |
+2026-09-20T08:16:58.8332486Z help: Organize imports
+2026-09-20T08:16:58.8332776Z 
+2026-09-20T08:16:58.8332959Z SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+2026-09-20T08:16:58.8333340Z    --> ci/native_runtime/native_live_failure_diagnostic.py:122:5
+2026-09-20T08:16:58.8333599Z     |
+2026-09-20T08:16:58.8333852Z 120 |       # Formatting uses only validated closed fields or fixed refusal categories.
+2026-09-20T08:16:58.8334264Z 121 |       # A diagnostic exporter failure must not replace the original assertion.
+2026-09-20T08:16:58.8334566Z 122 | /     try:
+2026-09-20T08:16:58.8334884Z 123 | |         print("HG_LIVE_FAILURE_RETAINED " + json.dumps(decode_diagnostic(stderr), sort_keys=True))
+2026-09-20T08:16:58.8335242Z 124 | |     except Exception:
+2026-09-20T08:16:58.8335438Z 125 | |         pass
+2026-09-20T08:16:58.8335610Z     | |____________^
+2026-09-20T08:16:58.8335769Z     |
+2026-09-20T08:16:58.8336033Z help: Replace `try`-`except`-`pass` with `with contextlib.suppress(Exception): ...`
+2026-09-20T08:16:58.8336273Z 
+2026-09-20T08:16:58.8336347Z Found 4 errors.
+2026-09-20T08:16:58.8336657Z [*] 2 fixable with the `--fix` option (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
+2026-09-20T08:16:58.8345287Z ##[error]Process completed with exit code 1.
+2026-09-20T08:16:58.8422831Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T08:16:58.8423177Z with:
+2026-09-20T08:16:58.8423377Z   name: linux-live-cause-4d10758-35499109256-1
+2026-09-20T08:16:58.8423803Z   path: linux-live-cause-evidence/*.json
+linux-live-cause-evidence/*.xml
+linux-live-cause-evidence/*.log
+
+2026-09-20T08:16:58.8424192Z   if-no-files-found: warn
+2026-09-20T08:16:58.8424380Z   retention-days: 30
+2026-09-20T08:16:58.8424557Z   compression-level: 6
+2026-09-20T08:16:58.8424738Z   overwrite: false
+2026-09-20T08:16:58.8424917Z   include-hidden-files: false
+2026-09-20T08:16:58.8425112Z   archive: true
+2026-09-20T08:16:58.8425269Z env:
+2026-09-20T08:16:58.8425472Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64

@@ -1,0 +1,84 @@
+{
+  "schema": "hol-guard.pr2974.normal-2ac-qualified-scope-peer.v1",
+  "reviewer": "qualification_audit",
+  "reviewed_tree": "819f16e50c493f8a61afe2ac2a215e4e681aefe8",
+  "audit": {
+    "path": "AUDIT.json",
+    "bytes": 18002,
+    "sha256": "5d9e9966f85540eeb6967b55ccd160491e57e9dccc796f225d03a1d250f5e369",
+    "git_blob": "3c52c1f076caa3aad8db62d1fa81b3f1c96094a5"
+  },
+  "verdict": "clear",
+  "scope": "Read-only exact source/test-merge binding, Linux original-log projection and qualification-limit review; no archive download or workload execution.",
+  "source_commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+  "test_merge_commit": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+  "source_tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+  "independent_Git_commit_readbacks_equal_tree": true,
+  "checked_original_projections": [
+    "log-projections/native-soak.json",
+    "log-projections/installed-slo.json",
+    "log-projections/default-auto.json"
+  ],
+  "evidence": [
+    {
+      "path": "original/linux-job-106044717892.log",
+      "bytes": 104873,
+      "sha256": "5a3d86e8f37190634155a661a99090ac9f2645aab78536b2205262c53bfc4972",
+      "git_blob": "7ce0d1bfc0fe6c54d8e4313f5e13b3e080c25b61"
+    },
+    {
+      "path": "log-projections/native-soak.json",
+      "bytes": 528,
+      "sha256": "f624134ce2fd733986da00a426141a136a96d0e71524ea47b0922af6c5879e6c",
+      "git_blob": "581dde9fb3a99162a5b870a3db20238f780c91ac"
+    },
+    {
+      "path": "log-projections/installed-slo.json",
+      "bytes": 9271,
+      "sha256": "6eb377a50e69d712ef8ae01cb4eb9ba3b603f16730e98ca8ac1fe96cc3baf9ec",
+      "git_blob": "648e793c83a48c968946f1a9161c0df0c11441d7"
+    },
+    {
+      "path": "log-projections/default-auto.json",
+      "bytes": 2586,
+      "sha256": "c5f156c295daa1ccfdfe3d616b5805ce55226fc7bb09d9bbe5be3a32d17b6c8c",
+      "git_blob": "82207d43f764caaa6dd5daf25973cf5857247cef"
+    },
+    {
+      "path": "log-projections/INDEX.json",
+      "bytes": 2439,
+      "sha256": "3068fc26b2b8e76ecf9b7833e05843965bc4336c9b244a4b051a70f638a1012c",
+      "git_blob": "ac4c91976f062f8ef738b4118b6044ab09b65a95"
+    }
+  ],
+  "verified": {
+    "ordinary_smoke_gates": 14,
+    "ordinary_smoke_all_pass": true,
+    "ordinary_smoke_qualification_complete": false,
+    "concurrency16_gate_ms": 1000,
+    "concurrency64_latency_ceiling": null,
+    "original_PRD200ms_qualification_unchanged": true,
+    "normalized_default_auto_native_receipts": 21,
+    "receipt_failures": 0,
+    "soak_requests": 100000,
+    "soak_receipts": 250000,
+    "soak_errors": 0,
+    "soak_health_failures": 0,
+    "rss_reported_fraction": 0.035436,
+    "rss_recomputed_fraction": 0.035436312923362995,
+    "rss_rounded_percent": 3.5436
+  },
+  "interpretation": [
+    "PR source 2ac and actual normal build a570 share the complete source tree but remain distinct commit/runtime build identities.",
+    "The checked original printed JSON exactly reproduces all three selected log projections after the explicitly stated timestamp/CR removal and one final LF.",
+    "All14 ordinary smoke gates are true at their actual 150/1000/400ms thresholds. c16 633.602ms is not success against the original200ms PRD target; c64 has no latency ceiling and retains30 engine-bypassed overloads.",
+    "The installed launcher observation covers only two Claude PostToolUse cases and retains process startup; it does not complete priority-route sampling.",
+    "100000 requests/250000 receipts with zero errors/health failures and3.5436%reported RSS growth support this ordinary Linux soak. Its start/ready/stopped and stable-PID observations do not prove complete descendant containment.",
+    "Artifact hashes in this audit remain metadata/log identities. This peer did not download or independently hash wheel/runtime/ZIP bodies.",
+    "The prior Mac/Windows packet remains a separate immutable original-log scope. No full paired/performance, rollout/signing, stoppedF-plan or formal-approval requirement is closed.",
+    "The remaining Kilo rate-limit failure and zero formal APPROVED reviews remain actual blockers distinct from59 resolved discussions."
+  ],
+  "blocking_findings": [],
+  "no_original_tests_or_workloads_run": true,
+  "qualification_complete": false
+}

@@ -1,0 +1,27 @@
+# Verified terminal CI and original retirement results
+
+This additive checkpoint preserves completed results from source `2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd`, tree `89c4343c8a528e2abdc0b755b3242f9ae52e6323`. The PR subsequently advanced to [`4afa20cf014ccba918bf2fa61552dafe66767930`](https://github.com/hashgraph-online/hol-guard/commit/4afa20cf014ccba918bf2fa61552dafe66767930), tree `0f924adeb6501adb22f68f82f1c20b9a6e945513`, a direct child of 2ac with four Rust deadline paths. That concurrent change is preserved and requires its own validation; no predecessor result is silently reassigned to it.
+
+The complete [PRD](https://github.com/hashgraph-online/hol-guard/blob/aba7420f54eaa658d0422f09b08767a030317de8/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T065000Z-surviving-records/PRD.md), [144-task TODO](https://github.com/hashgraph-online/hol-guard/blob/aba7420f54eaa658d0422f09b08767a030317de8/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T065000Z-surviving-records/TODO.md) and [Takeaway](https://github.com/hashgraph-online/hol-guard/blob/aba7420f54eaa658d0422f09b08767a030317de8/review-evidence/2026-09-19/pr2974-completion/addenda/20260920T065000Z-surviving-records/TAKEAWAY.md) remain intact. The new [task action overlay](task-status-overlay.json) preserves every original object identity, acceptance clause, dependency and archived status. It adds current actions; no task is promoted.
+
+The [terminal normal CI audit](normal-2ac-terminal/AUDIT.json) completes the earlier interim 2ac observation. All four platform jobs in [run 35498078469](https://github.com/hashgraph-online/hol-guard/actions/runs/35498078469) passed. The actual installed build was equal-tree test merge `a570e051dd4796bc8fe3f9950d97c2296602f35e`. Linux completed 100,000 responses and 250,000 receipts, with zero request/health failures, 21,246 health checks, stable PID, p95 570.57 ms, maximum 718.43 ms and RSS growth 3.5436%. Original ordinary smoke gates passed, including c16 p99 633.602 ms against its 1,000 ms smoke ceiling. The original PRD 200 ms target remains unchanged and unfulfilled by this smoke observation. The [independent peer](normal-2ac-peer/) reproduces the Linux log projections and verifies the source/build distinction. Binary/wheel/ZIP digests remain metadata/log observations, not independently rehashed bodies.
+
+The exact 2ac census contained 187 checks: 167 success, 19 skipped and one failed Kilo review reporting rate limiting. All 59 threads were resolved, but all 51 formal review records were COMMENTED and none APPROVED. These are 2ac checkpoint facts, not the new 4afa census or independent final-head approval.
+
+The [retirement decoder](worker-retirement-decoded/AUDIT.json) reconciles existing [run 35496733388](https://github.com/hashgraph-online/hol-guard/actions/runs/35496733388), source 2ac and driver 869856a6. It independently verifies the original log, all 2,130 compressed frames and raw packet hash, admits 111 of 114 members under the unchanged 95 MiB/8 MiB bounds, and retains three oversized inventory exclusions. The exact original 29 Python cases/87 phases, separate six producer-fixture cases/18 phases, 24 distinct Rust tests and three actual-output consumers reconcile. The reader did not execute those tests or rerun an installed workload.
+
+| Registered workspaces | Registration ACK, ms | Policy ACK, ms | Explicit re-registration ACK, ms |
+| --- | ---: | ---: | ---: |
+| 1 | 93.529 | 87.907 | 85.333 |
+| 10 | 101.000 | 99.041 | 118.908 |
+| 100 | 197.415 | 195.903 | 189.184 |
+
+All nine observations meet the original 400 ms accepted-to-ACK bound and have complete matching native/SQL receipt objects. These are individual wrapper observations including diagnostic overhead; SQL timing is validated getter readback, not transaction commit time. All 707 ledger records reconstruct 93 checksummed packets and match the original report's complete cell, service, phase and publisher objects.
+
+Six service instances retire; 12 retained direct workers are reaped with exit code -9. Reaping does not mean graceful shutdown. Native stop evidence distinguishes authenticated contained-before-stop from already-stopped/unknown-after-stop. Initial compilation, Python-process restart, automatic workspace restoration, lost hints, key rotation, expiry, complete escaped-descendant accounting and full performance qualification remain outside this run. Its two earlier reader-only shape/delimiter failures and exact corrections are preserved.
+
+Two further independent peers confirm the earlier [634-case reconciliation](supplemental-634-peer/peer.json) and [selector/source semantics](supplemental-634-semantic-peer/): 634 distinct cases, 1,902 passed phases and 634 ordered matching JUnit cases, with the original 593 and separate 41 distinguished. The original tests were not rerun.
+
+The [second Linux cause attempt](linux-cause-lint-failure/AUDIT.json) remains failed: source binding and Rust formatting passed, then four Ruff findings stopped execution before all Python/Rust controls, runtime build and the two historical selectors. A formatting/source peer is not cause attribution. Normalized-source peers and the earlier exact PR readback are retained separately.
+
+Selected implementation, final combined-source validation, full original performance/resource/rollback/signing requirements, eligible independent review, activation and release remain incomplete. Historical failed attempts, immutable stopped campaigns and unavailable-byte statements remain unchanged.

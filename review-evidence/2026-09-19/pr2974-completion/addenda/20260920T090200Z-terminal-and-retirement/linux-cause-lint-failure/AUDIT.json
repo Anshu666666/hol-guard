@@ -1,0 +1,70 @@
+{
+  "schema": "pr2974.linux-cause-second-preflight-failure.v1",
+  "observed_at_utc": "2026-09-20T08:40:17.920Z",
+  "source": {
+    "product": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "product_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+    "diagnostic_commit": "93ab0ab2c77f0b1091ace69e95881f54883a406b",
+    "diagnostic_tree": "25d6f05d50952049d4bae3261c780e02eec47cf8",
+    "parent": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "branch": "codex/pr2974-linux-live-cause-format-4d10758-20260920"
+  },
+  "run": {
+    "id": 35499109256,
+    "job": 106047545750,
+    "conclusion": "failure",
+    "updated_at": "2026-09-20T08:17:03Z"
+  },
+  "actual_stage": {
+    "prebuild_source_identity": "passed",
+    "rust_fmt_check": "passed",
+    "python_ruff_check": "failed",
+    "findings": [
+      {
+        "rule": "I001",
+        "path": "ci/native_runtime/linux_live_cause_identity.py"
+      },
+      {
+        "rule": "UP022",
+        "path": "ci/native_runtime/linux_live_cause_identity.py"
+      },
+      {
+        "rule": "I001",
+        "path": "ci/native_runtime/native_hook_client_support.py"
+      },
+      {
+        "rule": "SIM105",
+        "path": "ci/native_runtime/native_live_failure_diagnostic.py"
+      }
+    ],
+    "python_format_check": "not reached within failed step",
+    "rust_controls": "skipped",
+    "python_controls": "skipped",
+    "runtime_build": "skipped",
+    "original_two_selected_tests": "skipped"
+  },
+  "artifact": {
+    "id": 10601639049,
+    "size_in_bytes": 743170,
+    "digest": "sha256:bc1753e48386a78b1bdea400b153bb8c9f5569a48bec5605d92f2a451968e4d5",
+    "verification": "GitHub API metadata only; no archive download or byte rehash"
+  },
+  "preceding_attempt": {
+    "commit": "efd6df226a38821fc4da20a986465befe77475e1",
+    "run": 35496528142,
+    "job": 106040401475,
+    "failure": "five Rust formatter hunks; no native execution"
+  },
+  "next_preparation": {
+    "intermediate_style_tree": "073d18d86556fc3f9401cd2da7c85cd4ec45429d",
+    "formatter_result_tree": "ca04cd211ecafea9eeeef06d9386cb3ee40c05be",
+    "terminal_exception_correction_tree": "1d98857f69848c4aff1b1ede8404c22dcc263763",
+    "scope": "These are separate source preparations. The suppress intermediate is not the final selected exception behavior; root selected original terminal except Exception:return. Final formatting/hash rebinding and future source dispatch remain pending."
+  },
+  "limits": [
+    "No compiler, native control or original workload ran in this failed attempt.",
+    "No observed startup leaf cause, causal repair or qualification result is inferred.",
+    "The earlier five-hunk Rust-format correction did pass its actual hosted formatter check; the next Python lint failure is retained rather than relabeled as native regression.",
+    "Current PR source 2ac ordinary native success is a separate source and does not identify the cause of historical 4d startup failure."
+  ]
+}

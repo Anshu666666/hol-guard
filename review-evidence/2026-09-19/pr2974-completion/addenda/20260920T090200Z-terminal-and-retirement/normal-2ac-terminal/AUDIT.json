@@ -1,0 +1,563 @@
+{
+  "schema": "pr2974.current-2ac-terminal-normal-results.v1",
+  "observed_at_utc": "2026-09-20T08:37:43.865Z",
+  "scope": "Terminal normal CI and Linux log audit only. This additive packet preserves the earlier interim snapshot unchanged.",
+  "prior_interim_tree": "a63918fcfa76086429de75678357bde4fce6a25b",
+  "source": {
+    "commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+    "tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+    "base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "base_branch": "release/3.2",
+    "head_branch": "chore/resolve-2797-conflicts"
+  },
+  "build": {
+    "commit": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+    "tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+    "meaning": "GitHub PR test-merge source used by the actual normal installed wheel/runtime; equal source tree, different commit identity"
+  },
+  "checks": {
+    "total": 187,
+    "success": 167,
+    "skipped": 19,
+    "failure": 1,
+    "active": 0,
+    "remaining_failure": {
+      "id": 106044719158,
+      "name": "Kilo Code Review",
+      "title": "Kilo Code Review failed",
+      "summary": "Review failed: Assistant request was rate limited",
+      "meaning": "Retained failed bot check; this response reports no code finding, and is not a passing independent review"
+    }
+  },
+  "review": {
+    "threads": 59,
+    "resolved": 59,
+    "unresolved": 0,
+    "formal_review_records": 51,
+    "states": {
+      "COMMENTED": 51
+    },
+    "approved": 0,
+    "requested_reviewer": "deep-purple-boots",
+    "mergeable_state": "blocked",
+    "limit": "Resolved discussion threads and COMMENTED bot reviews do not satisfy the required independent latest-push approval. Prior release ruleset scope remains unchanged."
+  },
+  "normal_run": {
+    "id": 35498078469,
+    "status": "completed",
+    "conclusion": "success",
+    "updated_at": "2026-09-20T08:27:48Z",
+    "jobs": [
+      {
+        "id": 106044717703,
+        "name": "macos (macos-15, macosx_11_0_arm64, aarch64-apple-darwin, 11.0)",
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-09-20T07:56:36Z"
+      },
+      {
+        "id": 106044717868,
+        "name": "windows-x64",
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-09-20T07:57:00Z"
+      },
+      {
+        "id": 106044717892,
+        "name": "linux-x64",
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-09-20T08:27:47Z"
+      },
+      {
+        "id": 106044717897,
+        "name": "macos (macos-15-intel, macosx_13_0_x86_64, x86_64-apple-darwin, 13.0)",
+        "status": "completed",
+        "conclusion": "success",
+        "completed_at": "2026-09-20T07:59:18Z"
+      }
+    ]
+  },
+  "linux": {
+    "job": 106044717892,
+    "source_controls": {
+      "name": "wheel-builder contracts",
+      "passed": 21,
+      "seconds": 4.74
+    },
+    "installed_identity": {
+      "build_sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+      "cases": [
+        {
+          "case": "steady_without_client",
+          "hashed_bytes": 37208472,
+          "result": "passed",
+          "validation_calls": 3
+        },
+        {
+          "case": "fresh_child",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "steady_with_client",
+          "hashed_bytes": 0,
+          "result": "passed",
+          "validation_calls": 0
+        },
+        {
+          "case": "death_before_restart",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "live_replacement",
+          "result": "replaced"
+        },
+        {
+          "case": "replacement_first_status",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "replacement_fresh_child",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "source_sha_mismatch",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "source_sha_restoration",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "source_sha_restoration_child",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "package_version_mismatch",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "package_version_restoration",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "package_version_restoration_child",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "same_size_restored_mtime_corruption",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "original_artifact_restoration",
+          "hashed_bytes": 12402824,
+          "result": "passed",
+          "validation_calls": 1
+        },
+        {
+          "case": "restoration_fresh_child",
+          "hashed_bytes": 24805648,
+          "result": "passed",
+          "validation_calls": 2
+        },
+        {
+          "case": "retired_client_status",
+          "hashed_bytes": 37208472,
+          "result": "passed",
+          "validation_calls": 3
+        }
+      ],
+      "cross_release_upgrade_rollback": "not_exercised",
+      "identity_module_sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe",
+      "machine": "x86_64",
+      "manifest_sha256": "ac8cf519b301a0cbaa2488cf939a1bf6410feb0abc7f2c56a37be70b764e6e74",
+      "package_version": "3.0.1",
+      "platform": "linux",
+      "runtime_module_sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55",
+      "runtime_sha256": "a70513b09fcd1395c7f73e6f086c90eba1ee70b8f13b3b88ebc2efdcc5789de5",
+      "runtime_size": 12402824,
+      "schema": "hol-guard.installed-runtime-identity.v1",
+      "scope": "installed_status_and_real_stdio_child",
+      "signing_qualification": "not_exercised"
+    },
+    "default_auto": {
+      "command_authority_fixture": {
+        "enrollment_flow": "not_exercised",
+        "provisioning": "isolated_ci_generated_key_empty_authority",
+        "verified_health": "protected"
+      },
+      "corpus_decisions": 21,
+      "corpus_scope": "normalized_daemon_ingress",
+      "default_mode": "auto",
+      "evidence_failure_diagnostics": {
+        "all_evidence": {},
+        "native_receipts": {}
+      },
+      "fail_safe_decisions": 0,
+      "fast_path": "enabled",
+      "mode_invariants": {
+        "off": {
+          "decision": null,
+          "python_oracle": false,
+          "reason_code": "native_hook_disabled"
+        },
+        "shadow": {
+          "decision": null,
+          "python_oracle": false,
+          "reason_code": "native_shadow_diagnostic_disabled"
+        }
+      },
+      "oneshot_decisions": 0,
+      "python_semantic_decisions": 0,
+      "reason_code_counts": {
+        "native_policy_warning": 15
+      },
+      "receipt_metrics": {
+        "accepted": 21,
+        "deduped": 0,
+        "dropped": 0,
+        "durable_pending": 0,
+        "failures": 0,
+        "processed": 21
+      },
+      "resident_decisions": 21,
+      "resident_share": 1,
+      "rollback": "off",
+      "route_receipts": [
+        {
+          "event": "PreToolUse",
+          "harness": "claude-code",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "claude-code",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "cline",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "cline",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "codex",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "codex",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "copilot",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "copilot",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "cursor",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "cursor",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "grok",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "hermes",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "kimi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "kimi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "omp",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "omp",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "openclaw",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "opencode",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "pi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "pi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "zcode",
+          "route": "native_resident"
+        }
+      ],
+      "runtime_reason": "native_ready",
+      "schema": "hol-guard.native-default-installed-receipt.v1",
+      "target": "x86_64-linux"
+    },
+    "ordinary_smoke": {
+      "passed": true,
+      "qualification_complete": false,
+      "evidence_class": "smoke",
+      "gates": {
+        "1m_latency": true,
+        "250k_latency": true,
+        "5m_latency": true,
+        "cold_latency": true,
+        "concurrency": true,
+        "concurrency_64_bounded": true,
+        "installed_corpus": true,
+        "python_fallback": true,
+        "readiness": true,
+        "recovery_latency": true,
+        "resident_share": true,
+        "rss": true,
+        "safe_corpus": true,
+        "warm_latency": true
+      },
+      "thresholds": {
+        "direct_cold_p95_ms": 150,
+        "installed_adapter_concurrent_p99_ms": 1000,
+        "installed_adapter_p95_ms": 1000,
+        "readiness_p95_ms": 400
+      },
+      "c16": {
+        "deadline_ms": 1000,
+        "errors": 0,
+        "latency": {
+          "count": 16,
+          "max_ms": 633.602,
+          "p50_ms": 606.58,
+          "p95_ms": 633.602,
+          "p99_ms": 633.602
+        },
+        "native_overloads": 0,
+        "overloaded": 0,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "native_resident": 16
+        }
+      },
+      "c64": {
+        "bounded": true,
+        "errors": 0,
+        "fail_safe": 0,
+        "latency": {
+          "count": 64,
+          "max_ms": 597.722,
+          "p50_ms": 385.187,
+          "p95_ms": 572.854,
+          "p99_ms": 597.722
+        },
+        "latency_ceiling_ms": null,
+        "native_overloads": 0,
+        "overloaded": 30,
+        "route_attribution": "isolated_batch_counter_conservation",
+        "routes": {
+          "engine_bypassed": 30,
+          "native_resident": 34
+        }
+      },
+      "recovery": {
+        "count": 2,
+        "max_ms": 179.15,
+        "p50_ms": 170.4,
+        "p95_ms": 179.15,
+        "p99_ms": 179.15
+      },
+      "readiness": {
+        "count": 2,
+        "max_ms": 0.042,
+        "p50_ms": 0.039,
+        "p95_ms": 0.042,
+        "p99_ms": 0.042
+      },
+      "installed_launcher": {
+        "boundary": "INSTALLED_LAUNCHER",
+        "cases_validated": [
+          "benign",
+          "redacted"
+        ],
+        "configuration": "registered_argv",
+        "event": "PostToolUse",
+        "evidence_class": "smoke",
+        "harness": "claude-code",
+        "latency": {
+          "count": 2,
+          "max_ms": 213.743,
+          "p50_ms": 213.3,
+          "p95_ms": 213.743,
+          "p99_ms": 213.743
+        },
+        "process_startup_included": true,
+        "qualification_complete": false,
+        "remaining_routes": "not_measured",
+        "stdout_and_exit_checked": true
+      }
+    },
+    "soak": {
+      "daemon_process_count": 1,
+      "database_bytes": 177692672,
+      "errors": 0,
+      "health_checks": 21246,
+      "health_failures": 0,
+      "lifecycle_events": [
+        "start_requested",
+        "ready",
+        "stopped"
+      ],
+      "max_file_descriptors": 202,
+      "max_hook_latency_ms": 4500,
+      "max_ms": 718.43,
+      "max_threads": 71,
+      "p95_ms": 570.57,
+      "passed": true,
+      "pid_stable": true,
+      "receipts": 250000,
+      "requests": 100000,
+      "responses": 100000,
+      "rss_baseline_bytes": 616775680,
+      "rss_growth": 0.035436,
+      "rss_peak_bytes": 638631936,
+      "soak_passed": true,
+      "transient_health_failures": 0,
+      "rss_growth_percent": 3.5436,
+      "completed_report_at": "2026-09-20T08:27:43.7488105Z",
+      "started_step_at": "2026-09-20T07:55:46Z",
+      "original_command": "scripts/stress_guard_daemon.py --requests 100000 --receipts 250000 --settle-seconds 0 --enforce-soak --json native-soak.json"
+    },
+    "release_artifacts": {
+      "artifacts": [
+        {
+          "name": "hol_guard-3.0.1-py3-none-any.whl",
+          "role": "python-wheel",
+          "sha256": "39351ae2ef684da49d9f1c4db943db6af1b3ff1d382c80296ffdbd8c88299870",
+          "size": 5156408
+        },
+        {
+          "name": "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+          "platform": "manylinux_2_17_x86_64",
+          "role": "native-wheel",
+          "sha256": "96007a2f9a334ed5bd6ccbfe3d2cdff3dda9c346f89ebc028ea4d32d8c2a7904",
+          "size": 8893596,
+          "target": "x86_64-unknown-linux-musl"
+        }
+      ],
+      "package_version": "3.0.1",
+      "platforms": [
+        "manylinux_2_17_x86_64"
+      ],
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "schema": "hol-guard-release-artifact-evidence.v1",
+      "source_sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+      "windows_waiver": "validated by the platform matrix"
+    },
+    "artifact": {
+      "id": 10601654974,
+      "name": "hol-guard-native-wheel-linux-x64",
+      "size_in_bytes": 13649462,
+      "digest": "sha256:108dc87a5eccd04fd4b5fa58f46567b2dff3b2d33086b748cab8df55b1c06d6d",
+      "url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10601654974/zip",
+      "verification": "API metadata and original uploader log agree. ZIP, wheel and runtime byte bodies have not been fetched or independently rehashed by this audit."
+    }
+  },
+  "other_platforms": "The unchanged prior interim tree retains full original Mac/Windows job logs, raw printed JSON projections and exact artifact metadata. Both Macs passed 22 resident-client controls, default-auto 21/21 with empty failure maps and all 14 smoke gates; Windows passed 13 storage controls and default-auto 21/21 with empty failure maps. Their artifact/binary digest fields retain the metadata/log-only verification limit.",
+  "security": {
+    "gitleaks": {
+      "job": 106044717563,
+      "range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "commits": 1348,
+      "reported_approx_bytes": 69167045,
+      "leaks": 0,
+      "seconds": 28.7
+    },
+    "sonar": {
+      "job": 106045887166,
+      "check": 106046427548,
+      "quality_gate": "passed",
+      "scm_revision": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "ce_task": "AaC92vp6wLlCYChRzerZ",
+      "new_issues": 0,
+      "accepted_issues": 0,
+      "hotspots": 0,
+      "new_code_coverage_percent": 83.4,
+      "new_duplication_percent": 0,
+      "analysis_id": "not independently retrieved; CE task is not the analysis ID"
+    },
+    "codeql": {
+      "check": 106044797394,
+      "conclusion": "success",
+      "reported_scope": "No new alerts in code changed by this pull request",
+      "individual_alert_386_state": "not reverified in this packet"
+    }
+  },
+  "limits": [
+    "All ordinary normal jobs completed; the one retained Kilo check still failed because of rate limiting.",
+    "The full PRD paired sampling, original gates, frozen baseline, stopped F plan, rollout/signing and formal approval requirements are not completed by ordinary CI or this soak.",
+    "The current successful Ubuntu edge cohort does not identify the leaf cause of the historical 4d signed-policy startup failure. That separate diagnostic stopped before workload at formatting/lint.",
+    "Smoke concurrency uses its original 1,000 ms ordinary gate; c64 has no latency ceiling. These must not be relabeled as the original PRD 200 ms qualification.",
+    "The soak reports lifecycle start_requested/ready/stopped and stable PID; it does not supply a complete descendant-containment certificate.",
+    "All exports are public repository CI/log records. Hosted runner paths and masked credential setup lines are retained as original log data; no secret values are intentionally exported."
+  ]
+}

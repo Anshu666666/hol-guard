@@ -40,6 +40,7 @@ MEMBERS = {
 }
 DRIVER_FILES = (
     ".github/workflows/windows-storage-diagnostics.yml",
+    ".github/workflows/windows-first-review-diagnostics.yml",
     "scripts/ci/windows_storage_diagnostics.py",
     "scripts/ci/windows_storage_failure_capture.py",
     "tests/test_windows_storage_diagnostics.py",
@@ -106,7 +107,7 @@ def binding(candidate: Path, artifact: Path, phase: str) -> dict[str, object]:
         "product_source_changed": False,
         "runtime_deadline_changed": False,
         "runtime_retries_changed": False,
-        "first_review_scope": "driver_fixture_with_original_ci_force_mode_on_installed_package_and_runtime",
+        "first_review_scope": "driver_fixture_with_original_ci_force_mode_on_unchanged_source_and_installed_runtime",
         "first_review_installed_qualification": False,
         "headline_qualification": False,
     }

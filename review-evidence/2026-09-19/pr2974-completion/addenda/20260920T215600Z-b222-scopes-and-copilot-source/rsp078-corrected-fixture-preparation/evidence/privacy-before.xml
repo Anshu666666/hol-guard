@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="1.013" timestamp="2026-09-20T18:35:51.189392-03:00" hostname="localhost"><testcase classname="tests.test_native_slo_managed_aliases" name="test_process_exception_retains_owned_private_root_and_original_error" time="0.041"><failure message="AssertionError: assert (False)&#10; +  where False = is_dir()&#10; +    where is_dir = PosixPath('/dev/shm/pytest-of-root/pytest-2/test_process_exception_retains0/owned').is_dir">tmp_path = PosixPath('/dev/shm/pytest-of-root/pytest-2/test_process_exception_retains0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f928ffecda0&gt;
+
+    def test_process_exception_retains_owned_private_root_and_original_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+        ambient = dict(os.environ)
+        for name in clear_proof_environment(ambient):
+            monkeypatch.delenv(name, raising=False)
+        owned = tmp_path / "owned"
+        owned.mkdir()
+        monkeypatch.setattr(runner.tempfile, "mkdtemp", lambda **kwargs: str(owned))
+        original = RuntimeError("modeled post-spawn failure before containment result")
+        def process(*args: Any, **kwargs: Any) -&gt; Any:
+            raise original
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        report: dict[str, Any] = {"rows": []}
+        with pytest.raises(RuntimeError) as raised:
+            runner.run_no_daemon_cases(report, watch=False)
+        assert raised.value is original
+&gt;       assert owned.is_dir() and (owned / "guard-home/config.toml").is_file()
+E       AssertionError: assert (False)
+E        +  where False = is_dir()
+E        +    where is_dir = PosixPath('/dev/shm/pytest-of-root/pytest-2/test_process_exception_retains0/owned').is_dir
+
+tests/test_native_slo_managed_aliases.py:316: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_managed_aliases" name="test_full_original_delivery_is_validated_without_exporting_private_reason_or_extra_fields[0]" time="0.476"><failure message="assert ('/private/ca...o-not-export' not in '{&quot;stage&quot;: &quot;...nged&quot;: true}'&#10;  &#10;  '/private/case/toke...hetic-do-not-export' is contained here:&#10;    essage&quot;: &quot;/private/case/token=synthetic-do-not-export&quot;, &quot;agent_message&quot;: &quot;/private/case/token=synthetic-do-not-export&quot;, &quot;scanner_evidence&quot;: {&quot;private_extra&quot;: &quot;/private/case/token=synthetic-do-not-export&quot;}}, &quot;registration_unchanged&quot;: true}&#10;  ?           +++++++++++++++++++++++++++++++++++++++++++)">tmp_path = PosixPath('/dev/shm/pytest-of-root/pytest-2/test_full_original_delivery_is0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9290207860&gt;
+index = 0
+
+    @pytest.mark.parametrize("index", (0, 2))
+    def test_full_original_delivery_is_validated_without_exporting_private_reason_or_extra_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, index: int) -&gt; None:
+        import hashlib
+        ambient = dict(os.environ)
+        for name in clear_proof_environment(ambient):
+            monkeypatch.delenv(name, raising=False)
+        for name in ("home", "workspace", "guard-home"):
+            (tmp_path / name).mkdir()
+        context = HarnessContext(tmp_path / "home", tmp_path / "workspace", tmp_path / "guard-home")
+        case = daemon_cases(tmp_path / "workspace")[index]
+        assert case.normal_case is not None
+        install_registered_surface(context, case.harness)
+        expected, exit_code = delivery_expectation(case.normal_case)
+        secret = "/private/case/token=synthetic-do-not-export"
+        response: dict[str, object] = dict(expected.fields)
+        response.update(dict.fromkeys(expected.nonempty_fields, secret))
+        response["scanner_evidence"] = {"private_extra": secret}
+        def process(*args: Any, **kwargs: Any) -&gt; BoundedHookProcessResult:
+            return BoundedHookProcessResult(exit_code, json.dumps(response), False, False)
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        assert runner.invoke(context, case, row) == response
+&gt;       assert secret not in json.dumps(row) and "private_extra" not in json.dumps(row)
+E       assert ('/private/ca...o-not-export' not in '{"stage": "...nged": true}'
+E         
+E         '/private/case/toke...hetic-do-not-export' is contained here:
+E           essage": "/private/case/token=synthetic-do-not-export", "agent_message": "/private/case/token=synthetic-do-not-export", "scanner_evidence": {"private_extra": "/private/case/token=synthetic-do-not-export"}}, "registration_unchanged": true}
+E         ?           +++++++++++++++++++++++++++++++++++++++++++)
+
+tests/test_native_slo_managed_aliases.py:344: AssertionError</failure></testcase><testcase classname="tests.test_native_slo_managed_aliases" name="test_full_original_delivery_is_validated_without_exporting_private_reason_or_extra_fields[2]" time="0.071"><failure message="assert ('/private/ca...o-not-export' not in '{&quot;stage&quot;: &quot;...nged&quot;: true}'&#10;  &#10;  '/private/case/toke...hetic-do-not-export' is contained here:&#10;    Reason&quot;: &quot;/private/case/token=synthetic-do-not-export&quot;, &quot;scanner_evidence&quot;: {&quot;private_extra&quot;: &quot;/private/case/token=synthetic-do-not-export&quot;}}, &quot;registration_unchanged&quot;: true}&#10;  ?           +++++++++++++++++++++++++++++++++++++++++++)">tmp_path = PosixPath('/dev/shm/pytest-of-root/pytest-2/test_full_original_delivery_is1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f9290207f80&gt;
+index = 2
+
+    @pytest.mark.parametrize("index", (0, 2))
+    def test_full_original_delivery_is_validated_without_exporting_private_reason_or_extra_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, index: int) -&gt; None:
+        import hashlib
+        ambient = dict(os.environ)
+        for name in clear_proof_environment(ambient):
+            monkeypatch.delenv(name, raising=False)
+        for name in ("home", "workspace", "guard-home"):
+            (tmp_path / name).mkdir()
+        context = HarnessContext(tmp_path / "home", tmp_path / "workspace", tmp_path / "guard-home")
+        case = daemon_cases(tmp_path / "workspace")[index]
+        assert case.normal_case is not None
+        install_registered_surface(context, case.harness)
+        expected, exit_code = delivery_expectation(case.normal_case)
+        secret = "/private/case/token=synthetic-do-not-export"
+        response: dict[str, object] = dict(expected.fields)
+        response.update(dict.fromkeys(expected.nonempty_fields, secret))
+        response["scanner_evidence"] = {"private_extra": secret}
+        def process(*args: Any, **kwargs: Any) -&gt; BoundedHookProcessResult:
+            return BoundedHookProcessResult(exit_code, json.dumps(response), False, False)
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        assert runner.invoke(context, case, row) == response
+&gt;       assert secret not in json.dumps(row) and "private_extra" not in json.dumps(row)
+E       assert ('/private/ca...o-not-export' not in '{"stage": "...nged": true}'
+E         
+E         '/private/case/toke...hetic-do-not-export' is contained here:
+E           Reason": "/private/case/token=synthetic-do-not-export", "scanner_evidence": {"private_extra": "/private/case/token=synthetic-do-not-export"}}, "registration_unchanged": true}
+E         ?           +++++++++++++++++++++++++++++++++++++++++++)
+
+tests/test_native_slo_managed_aliases.py:344: AssertionError</failure></testcase></testsuite></testsuites>

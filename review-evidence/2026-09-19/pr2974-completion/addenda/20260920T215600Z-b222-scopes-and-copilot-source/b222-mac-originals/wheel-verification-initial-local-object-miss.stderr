@@ -1,0 +1,16 @@
+fatal: ambiguous argument 'b222318cca2811ac7ae90c7364e2ec6d0a10651f^{tree}': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+Traceback (most recent call last):
+  File "/workspace/scratch/745337b67ff9/normalb222-posix/verify_wheels.py", line 12, in <module>
+    assert git('rev-parse', commit + '^{tree}').decode().strip() == tree
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/745337b67ff9/normalb222-posix/verify_wheels.py", line 10, in git
+    return subprocess.check_output(['git', '-C', str(repo), *args], timeout=30)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', '-C', '/workspace/scratch/745337b67ff9/normalb222-posix/source.git', 'rev-parse', 'b222318cca2811ac7ae90c7364e2ec6d0a10651f^{tree}']' returned non-zero exit status 128.

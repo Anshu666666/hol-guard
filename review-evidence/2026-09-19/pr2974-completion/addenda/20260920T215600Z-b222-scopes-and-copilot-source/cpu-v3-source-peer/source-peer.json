@@ -1,0 +1,58 @@
+{
+  "checked_images": [
+    {
+      "after": {
+        "bytes": 8751,
+        "git_blob": "e13ac62cdb0824839ea85d43faf3f49410caa13e",
+        "sha256": "a151f7861c49e640337a3527c0cbdceb48de975292fd91ce0daf4e9e2896c0c0"
+      },
+      "before": {
+        "bytes": 8524,
+        "git_blob": "e9eb21256ea737d85607450f973847328b4eccb1",
+        "sha256": "fd71ac7919e79c08cae857027791e843fcf9f1bdd2cf788ed5fc35f8aca96500"
+      },
+      "path": "scripts/native_slo_lifetime_cpu.py"
+    },
+    {
+      "after": {
+        "bytes": 10592,
+        "git_blob": "6a76a6bbac4bad05e460ee6fa3aebfa22e9067f7",
+        "sha256": "e6b93a3542ef489c25e30bc204f7828ba94a300bcb2dd82ef6bae57d88c47eed"
+      },
+      "before": {
+        "bytes": 8031,
+        "git_blob": "cd0bb1b4e5c07af4bff3c6fc7164548722643390",
+        "sha256": "c283421ac5c670057766feb988ec9d1c7889f6d8cfd1cedea03935cc82e5d660"
+      },
+      "path": "tests/test_native_slo_lifetime_cpu.py"
+    }
+  ],
+  "execution_by_reviewer": false,
+  "findings": [
+    "Exact exception admits core_sched.force_idle_usec only; all prior key grammar, required totals, ASCII decoding, decimal/numeric bounds, duplicate rejection and row/byte bounds remain unchanged.",
+    "All other core top-level AST nodes independently compare equal. The 17 added cases include all four insertion positions, duplicate/malformed/unknown dotted keys, every missing required total and original size limits.",
+    "Retained pinned upstream Linux v6.8 and v6.17 rstat.c bodies both visibly emit this exact auxiliary spelling under CONFIG_SCHED_CORE.",
+    "No actual refused hosted cpu.stat body was retained; this source-supported parser defect is not assigned as the historical failure cause."
+  ],
+  "manifest_git_blob": "bda42b942e0f64ab86c3a440687f22275e49d505",
+  "owner_validation_independently_parsed": {
+    "errors": 0,
+    "passed": 135,
+    "skipped": [
+      "test_real_protected_group_accounts_exited_child_and_grandchild"
+    ],
+    "types": {
+      "errorCount": 0,
+      "filesAnalyzed": 2,
+      "informationCount": 0,
+      "timeInSec": 0.876,
+      "warningCount": 87
+    }
+  },
+  "packet_tree": "c8c9ab0829dd118ebe03a17a9afdc8870132dae6",
+  "protected_group_or_workload_credit": false,
+  "reviewer": "native_runtime_audit",
+  "schema": "hol-guard.cpu-stat-exact-key-source-peer.v1",
+  "scope": "source/control review only; future exact driver/environment admission remains separate",
+  "verdict": "clear"
+}

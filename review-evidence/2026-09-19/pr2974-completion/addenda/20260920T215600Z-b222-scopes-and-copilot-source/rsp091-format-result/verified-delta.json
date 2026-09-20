@@ -1,0 +1,30 @@
+[
+  {
+    "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+    "before": {
+      "bytes": 16144,
+      "sha256": "1e523158d8f68f94ca8ea8afd41e8892d5d4c78c08b9aa2f91efd55e8f6100b6",
+      "git_blob": "0121df862f8999338ced7224bb7eba262757990c"
+    },
+    "after": {
+      "bytes": 16144,
+      "sha256": "1e523158d8f68f94ca8ea8afd41e8892d5d4c78c08b9aa2f91efd55e8f6100b6",
+      "git_blob": "0121df862f8999338ced7224bb7eba262757990c"
+    },
+    "diff": ""
+  },
+  {
+    "path": "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs",
+    "before": {
+      "bytes": 9379,
+      "sha256": "75d616c50cd372d6a826391b467b13f553b679b7db417bf3fa447587776e7e71",
+      "git_blob": "36df9acc6ecc82e48949d499388d18beaffda119"
+    },
+    "after": {
+      "bytes": 9667,
+      "sha256": "52c61290e8e0e08198eb6a8d59b85e5d053b98af01c3981b9667d6ea51b4eae9",
+      "git_blob": "6b619737f2d5e1dd3e2607d9504dc1a77b2c0383"
+    },
+    "diff": "--- before/rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs\n+++ after/rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs\n@@ -54,11 +54,20 @@\n         let root = PathBuf::from(\"/tmp\").join(format!(\n             \"hg-peer-{}-{}\",\n             std::process::id(),\n-            SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()\n+            SystemTime::now()\n+                .duration_since(UNIX_EPOCH)\n+                .unwrap()\n+                .as_nanos()\n         ));\n         fs::DirBuilder::new().mode(0o700).create(&root).unwrap();\n         let child = Command::new(std::env::current_exe().unwrap())\n-            .args([\"--exact\", CHILD_TEST, \"--ignored\", \"--nocapture\", \"--test-threads=1\"])\n+            .args([\n+                \"--exact\",\n+                CHILD_TEST,\n+                \"--ignored\",\n+                \"--nocapture\",\n+                \"--test-threads=1\",\n+            ])\n             .env(ROOT_ENV, &root)\n             .env(CASE_ENV, if negative { \"negative\" } else { \"positive\" })\n             .stdin(Stdio::null())\n@@ -73,7 +82,11 @@\n                 panic!(\"owned_peer_spawn_failed: {error}\");\n             }\n         };\n-        Self { root, child, reaped: false }\n+        Self {\n+            root,\n+            child,\n+            reaped: false,\n+        }\n     }\n \n     fn poll_exit(&mut self, timeout: Duration) -> io::Result<Option<ExitStatus>> {\n@@ -91,8 +104,7 @@\n     }\n \n     fn finish(&mut self) -> Result<(), &'static str> {\n-        fs::write(self.root.join(\"release\"), b\"release\")\n-            .map_err(|_| \"fixture_release_failed\")?;\n+        fs::write(self.root.join(\"release\"), b\"release\").map_err(|_| \"fixture_release_failed\")?;\n         match self.poll_exit(FIXTURE_WAIT) {\n             Ok(Some(status)) if status.success() => {}\n             Ok(Some(_)) => return Err(\"owned_peer_failed\"),\n@@ -122,7 +134,11 @@\n         await_file(&peer.root.join(\"ready\"));\n         let actual_peer_pid = peer.child.id();\n         assert_ne!(actual_peer_pid, std::process::id());\n-        let selected_pid = if negative { std::process::id() } else { actual_peer_pid };\n+        let selected_pid = if negative {\n+            std::process::id()\n+        } else {\n+            actual_peer_pid\n+        };\n         let marker = crate::resident_state::process_start_marker(selected_pid).unwrap();\n         // Both selected identities are real live instances of this package image.\n         // Only the negative case's actual socket peer differs from the selection.\n@@ -218,7 +234,10 @@\n         authenticate_resident_stream(&mut stream, &TOKEN).unwrap();\n         let mut pending = read_request_header(Box::new(stream)).unwrap();\n         assert_eq!(pending.length, REQUEST.len());\n-        pending.stream.set_resident_read_timeout(Some(REQUEST_BUDGET)).unwrap();\n+        pending\n+            .stream\n+            .set_resident_read_timeout(Some(REQUEST_BUDGET))\n+            .unwrap();\n         let mut request = vec![0u8; pending.length];\n         pending.stream.read_exact(&mut request).unwrap();\n         assert_eq!(request, REQUEST);\n@@ -231,6 +250,10 @@\n         serde_json::json!({\"accepted\": 1, \"payload_bytes\": request.len(),\n             \"authenticated\": true, \"request_digest_valid\": true, \"response_written\": true})\n     };\n-    publish(&root, \"observed.json\", &serde_json::to_vec(&observed).unwrap());\n+    publish(\n+        &root,\n+        \"observed.json\",\n+        &serde_json::to_vec(&observed).unwrap(),\n+    );\n     await_file(&root.join(\"release\"));\n }\n"
+  }
+]

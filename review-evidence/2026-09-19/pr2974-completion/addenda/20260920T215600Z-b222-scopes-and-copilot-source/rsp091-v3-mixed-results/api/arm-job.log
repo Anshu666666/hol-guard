@@ -1,0 +1,421 @@
+﻿2026-09-20T21:41:37.4422900Z Current runner version: '2.337.0'
+2026-09-20T21:41:37.4456710Z ##[group]Runner Image Provisioner
+2026-09-20T21:41:37.4457440Z Hosted Compute Agent
+2026-09-20T21:41:37.4457880Z Version: 20260828.587
+2026-09-20T21:41:37.4459480Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T21:41:37.4460040Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T21:41:37.4460730Z Worker ID: {adfa129b-ec22-4a91-ab5a-69f80f869bec}
+2026-09-20T21:41:37.4461230Z Azure Region: westus
+2026-09-20T21:41:37.4461690Z ##[endgroup]
+2026-09-20T21:41:37.4462820Z ##[group]Operating System
+2026-09-20T21:41:37.4466380Z macOS
+2026-09-20T21:41:37.4467630Z 15.7.9
+2026-09-20T21:41:37.4468510Z 24G830
+2026-09-20T21:41:37.4469500Z ##[endgroup]
+2026-09-20T21:41:37.4470560Z ##[group]Runner Image
+2026-09-20T21:41:37.4471640Z Image: macos-15-arm64
+2026-09-20T21:41:37.4472650Z Version: 20260907.0337.1
+2026-09-20T21:41:37.4475120Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+2026-09-20T21:41:37.4479300Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+2026-09-20T21:41:37.4481120Z ##[endgroup]
+2026-09-20T21:41:37.4484500Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T21:41:37.4488480Z Contents: read
+2026-09-20T21:41:37.4489540Z Metadata: read
+2026-09-20T21:41:37.4490340Z ##[endgroup]
+2026-09-20T21:41:37.4492270Z Secret source: Actions
+2026-09-20T21:41:37.4492870Z Cache mode: write
+2026-09-20T21:41:37.4493340Z Prepare workflow directory
+2026-09-20T21:41:37.4994290Z Prepare all required actions
+2026-09-20T21:41:37.5052580Z Getting action download info
+2026-09-20T21:41:37.9959950Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T21:41:38.2714290Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T21:41:38.3614740Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T21:41:38.5052250Z Complete job name: unix-peer (macos-arm64, macos-15)
+2026-09-20T21:41:38.5531910Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T21:41:38.5532710Z with:
+2026-09-20T21:41:38.5533460Z   path: driver
+2026-09-20T21:41:38.5533780Z   fetch-depth: 2
+2026-09-20T21:41:38.5534110Z   persist-credentials: false
+2026-09-20T21:41:38.5534490Z   repository: hashgraph-online/hol-guard
+2026-09-20T21:41:38.5537690Z   token: ***
+2026-09-20T21:41:38.5538030Z   ssh-strict: true
+2026-09-20T21:41:38.5538410Z   ssh-user: git
+2026-09-20T21:41:38.5538720Z   clean: true
+2026-09-20T21:41:38.5539050Z   sparse-checkout-cone-mode: true
+2026-09-20T21:41:38.5539430Z   fetch-tags: false
+2026-09-20T21:41:38.5539820Z   show-progress: true
+2026-09-20T21:41:38.5540190Z   lfs: false
+2026-09-20T21:41:38.5540570Z   submodules: false
+2026-09-20T21:41:38.5540900Z   set-safe-directory: true
+2026-09-20T21:41:38.5542090Z env:
+2026-09-20T21:41:38.5542510Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:38.5542860Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:38.5543260Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:38.5543620Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:38.5543950Z ##[endgroup]
+2026-09-20T21:41:39.0565680Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T21:41:39.0567370Z ##[group]Getting Git version info
+2026-09-20T21:41:39.0568080Z Working directory is '/Users/runner/work/hol-guard/hol-guard/driver'
+2026-09-20T21:41:39.0569050Z [command]/opt/homebrew/bin/git version
+2026-09-20T21:41:39.1082620Z git version 2.55.0
+2026-09-20T21:41:39.1095770Z ##[endgroup]
+2026-09-20T21:41:39.1105150Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/cb863b02-f4ed-4ff3-add8-116e63d9eeda/.gitconfig'
+2026-09-20T21:41:39.1114040Z Temporarily overriding HOME='/Users/runner/work/_temp/cb863b02-f4ed-4ff3-add8-116e63d9eeda' before making global git config changes
+2026-09-20T21:41:39.1116270Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T21:41:39.1120640Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T21:41:39.1240420Z ##[group]Determining repository object format
+2026-09-20T21:41:39.1241430Z ##[endgroup]
+2026-09-20T21:41:39.1242290Z ##[group]Initializing the repository
+2026-09-20T21:41:39.1245740Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T21:41:39.1437230Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T21:41:39.1438170Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T21:41:39.1439040Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T21:41:39.1439670Z hint: call:
+2026-09-20T21:41:39.1440060Z hint:
+2026-09-20T21:41:39.1440510Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T21:41:39.1441070Z hint:
+2026-09-20T21:41:39.1441550Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T21:41:39.1442320Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T21:41:39.1442920Z hint:
+2026-09-20T21:41:39.1444190Z hint: 	git branch -m <name>
+2026-09-20T21:41:39.1444620Z hint:
+2026-09-20T21:41:39.1445240Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T21:41:39.1446190Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/driver/.git/
+2026-09-20T21:41:39.1448010Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T21:41:39.1524460Z ##[endgroup]
+2026-09-20T21:41:39.1525390Z ##[group]Disabling automatic garbage collection
+2026-09-20T21:41:39.1526290Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T21:41:39.1591800Z ##[endgroup]
+2026-09-20T21:41:39.1593010Z ##[group]Setting up auth
+2026-09-20T21:41:39.1593630Z Removing SSH command configuration
+2026-09-20T21:41:39.1595590Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:41:39.1663530Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:41:39.2619790Z Removing HTTP extra header
+2026-09-20T21:41:39.2622540Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:41:39.2685020Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:41:39.3428940Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:41:39.3429980Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:41:39.3495480Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:41:39.4304620Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T21:41:39.4411850Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:39.4449770Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:39.4509330Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:39.4575850Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:39.4636860Z ##[endgroup]
+2026-09-20T21:41:39.4637920Z ##[group]Fetching the repository
+2026-09-20T21:41:39.4644000Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin +a4872bc5a1d0edfa39125b20752c90324c7f1c2a:refs/remotes/origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.0150780Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T21:41:42.0151950Z  * [new ref]         a4872bc5a1d0edfa39125b20752c90324c7f1c2a -> origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.0156430Z [command]/opt/homebrew/bin/git branch --list --remote origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.0231080Z   origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.0241480Z [command]/opt/homebrew/bin/git rev-parse refs/remotes/origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.0301460Z a4872bc5a1d0edfa39125b20752c90324c7f1c2a
+2026-09-20T21:41:42.0304710Z ##[endgroup]
+2026-09-20T21:41:42.0305790Z ##[group]Determining the checkout info
+2026-09-20T21:41:42.0307010Z ##[endgroup]
+2026-09-20T21:41:42.0310340Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T21:41:42.0406360Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T21:41:42.0482110Z ##[group]Checking out the ref
+2026-09-20T21:41:42.0484900Z [command]/opt/homebrew/bin/git checkout --progress --force -B codex/pr2974-rsp091-real-unix-peers-20260920-v3 refs/remotes/origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3
+2026-09-20T21:41:42.6075900Z Switched to a new branch 'codex/pr2974-rsp091-real-unix-peers-20260920-v3'
+2026-09-20T21:41:42.6084430Z branch 'codex/pr2974-rsp091-real-unix-peers-20260920-v3' set up to track 'origin/codex/pr2974-rsp091-real-unix-peers-20260920-v3'.
+2026-09-20T21:41:42.6090250Z ##[endgroup]
+2026-09-20T21:41:42.6193320Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T21:41:42.6261870Z a4872bc5a1d0edfa39125b20752c90324c7f1c2a
+2026-09-20T21:41:42.6268300Z ##[group]Removing auth
+2026-09-20T21:41:42.6268680Z Removing SSH command configuration
+2026-09-20T21:41:42.6271760Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:41:42.6336850Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:41:42.7163580Z Removing HTTP extra header
+2026-09-20T21:41:42.7165700Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:41:42.7226830Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:41:42.8248320Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:41:42.8250420Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:41:42.8302260Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T21:41:42.8303090Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T21:41:42.8303840Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T21:41:42.8304540Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T21:41:42.8309550Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T21:41:42.8361120Z /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8367520Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8424780Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T21:41:42.8476200Z /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8482380Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8539390Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T21:41:42.8594400Z /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8596340Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8658450Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T21:41:42.8707370Z /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8711760Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config
+2026-09-20T21:41:42.8769460Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:41:42.9591730Z Removing credentials config '/Users/runner/work/_temp/git-credentials-de9697bc-4782-486e-8515-ac67c7e67e14.config'
+2026-09-20T21:41:42.9594850Z ##[endgroup]
+2026-09-20T21:41:42.9812180Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T21:41:42.9812530Z with:
+2026-09-20T21:41:42.9812710Z   ref: 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:42.9812980Z   path: candidate
+2026-09-20T21:41:42.9813170Z   fetch-depth: 2
+2026-09-20T21:41:42.9813330Z   persist-credentials: false
+2026-09-20T21:41:42.9813540Z   repository: hashgraph-online/hol-guard
+2026-09-20T21:41:42.9816230Z   token: ***
+2026-09-20T21:41:42.9816420Z   ssh-strict: true
+2026-09-20T21:41:42.9816560Z   ssh-user: git
+2026-09-20T21:41:42.9816700Z   clean: true
+2026-09-20T21:41:42.9816850Z   sparse-checkout-cone-mode: true
+2026-09-20T21:41:42.9817050Z   fetch-tags: false
+2026-09-20T21:41:42.9817200Z   show-progress: true
+2026-09-20T21:41:42.9817350Z   lfs: false
+2026-09-20T21:41:42.9817480Z   submodules: false
+2026-09-20T21:41:42.9817640Z   set-safe-directory: true
+2026-09-20T21:41:42.9817870Z env:
+2026-09-20T21:41:42.9818040Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:42.9818260Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:42.9818440Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:42.9818620Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:42.9818770Z ##[endgroup]
+2026-09-20T21:41:43.0809610Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T21:41:43.0811360Z ##[group]Getting Git version info
+2026-09-20T21:41:43.0812520Z Working directory is '/Users/runner/work/hol-guard/hol-guard/candidate'
+2026-09-20T21:41:43.0845970Z [command]/opt/homebrew/bin/git version
+2026-09-20T21:41:43.0917600Z git version 2.55.0
+2026-09-20T21:41:43.0932060Z ##[endgroup]
+2026-09-20T21:41:43.0939020Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/2bb2dd5f-bbc2-4f5b-a257-8ded6a963d8e/.gitconfig'
+2026-09-20T21:41:43.0946430Z Temporarily overriding HOME='/Users/runner/work/_temp/2bb2dd5f-bbc2-4f5b-a257-8ded6a963d8e' before making global git config changes
+2026-09-20T21:41:43.0947510Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T21:41:43.0950800Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T21:41:43.1015090Z ##[group]Determining repository object format
+2026-09-20T21:41:43.1015730Z ##[endgroup]
+2026-09-20T21:41:43.1016200Z ##[group]Initializing the repository
+2026-09-20T21:41:43.1019350Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T21:41:43.1134890Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T21:41:43.1136090Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T21:41:43.1137490Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T21:41:43.1138330Z hint: call:
+2026-09-20T21:41:43.1138810Z hint:
+2026-09-20T21:41:43.1139380Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T21:41:43.1140330Z hint:
+2026-09-20T21:41:43.1140990Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T21:41:43.1142050Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T21:41:43.1142910Z hint:
+2026-09-20T21:41:43.1143350Z hint: 	git branch -m <name>
+2026-09-20T21:41:43.1143840Z hint:
+2026-09-20T21:41:43.1144780Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T21:41:43.1146050Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/candidate/.git/
+2026-09-20T21:41:43.1148290Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T21:41:43.1206140Z ##[endgroup]
+2026-09-20T21:41:43.1206530Z ##[group]Disabling automatic garbage collection
+2026-09-20T21:41:43.1217170Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T21:41:43.1267550Z ##[endgroup]
+2026-09-20T21:41:43.1267850Z ##[group]Setting up auth
+2026-09-20T21:41:43.1268900Z Removing SSH command configuration
+2026-09-20T21:41:43.1274620Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:41:43.1335090Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:41:43.2081330Z Removing HTTP extra header
+2026-09-20T21:41:43.2085090Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:41:43.2148260Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:41:43.3143520Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:41:43.3148300Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:41:43.3211790Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:41:43.3922990Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T21:41:43.3991060Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:43.4058800Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:43.4123140Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:43.4191210Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:43.4259640Z ##[endgroup]
+2026-09-20T21:41:43.4260500Z ##[group]Fetching the repository
+2026-09-20T21:41:43.4262130Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:45.8089230Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T21:41:45.8089630Z  * branch            641bcd6fb8e7d6149832b6ce07b421655f3351e5 -> FETCH_HEAD
+2026-09-20T21:41:45.8095730Z [command]/opt/homebrew/bin/git rev-parse --verify --quiet 641bcd6fb8e7d6149832b6ce07b421655f3351e5^{object}
+2026-09-20T21:41:45.8153790Z 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:45.8155490Z ##[endgroup]
+2026-09-20T21:41:45.8155810Z ##[group]Determining the checkout info
+2026-09-20T21:41:45.8156360Z ##[endgroup]
+2026-09-20T21:41:45.8159540Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T21:41:45.8230100Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T21:41:45.8284210Z ##[group]Checking out the ref
+2026-09-20T21:41:45.8286910Z [command]/opt/homebrew/bin/git checkout --progress --force 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:46.4050830Z HEAD is now at 641bcd6 test: match production blocking mode in owned Unix peer fixture
+2026-09-20T21:41:46.4061930Z ##[endgroup]
+2026-09-20T21:41:46.4161610Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T21:41:46.4228820Z 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:46.4235220Z ##[group]Removing auth
+2026-09-20T21:41:46.4235450Z Removing SSH command configuration
+2026-09-20T21:41:46.4238210Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:41:46.4295680Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:41:46.5125610Z Removing HTTP extra header
+2026-09-20T21:41:46.5128420Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:41:46.5190570Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:41:46.6095240Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:41:46.6097610Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:41:46.6155480Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T21:41:46.6156480Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T21:41:46.6157010Z includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T21:41:46.6158160Z includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T21:41:46.6164040Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T21:41:46.6216220Z /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6224430Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6285580Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T21:41:46.6336720Z /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6343620Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6404820Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T21:41:46.6455900Z /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6460200Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6527270Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T21:41:46.6582390Z /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6587730Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config
+2026-09-20T21:41:46.6649320Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:41:46.7391270Z Removing credentials config '/Users/runner/work/_temp/git-credentials-65a564b8-b22f-4f1b-96ea-2bc21d6ac9bb.config'
+2026-09-20T21:41:46.7398610Z ##[endgroup]
+2026-09-20T21:41:46.7515470Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T21:41:46.7515780Z with:
+2026-09-20T21:41:46.7515920Z   python-version: 3.12.10
+2026-09-20T21:41:46.7516110Z   check-latest: false
+2026-09-20T21:41:46.7518190Z   token: ***
+2026-09-20T21:41:46.7518350Z   update-environment: true
+2026-09-20T21:41:46.7518560Z   allow-prereleases: false
+2026-09-20T21:41:46.7518740Z   freethreaded: false
+2026-09-20T21:41:46.7518900Z env:
+2026-09-20T21:41:46.7519040Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:46.7519220Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:46.7519400Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:46.7519600Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:46.7519770Z ##[endgroup]
+2026-09-20T21:41:46.8774590Z ##[group]Installed versions
+2026-09-20T21:41:46.8811660Z Successfully set up CPython (3.12.10)
+2026-09-20T21:41:46.8812180Z ##[endgroup]
+2026-09-20T21:41:46.8885660Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+2026-09-20T21:41:46.8886210Z [36;1mrustup toolchain install 1.88.0 --profile minimal --component rustfmt[0m
+2026-09-20T21:41:46.8938080Z shell: /bin/bash -e {0}
+2026-09-20T21:41:46.8938300Z env:
+2026-09-20T21:41:46.8938510Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:46.8938690Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:46.8938940Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:46.8939210Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:46.8939480Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:46.8939910Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T21:41:46.8940330Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:46.8940700Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:46.8941130Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:46.8941450Z ##[endgroup]
+2026-09-20T21:41:46.9591170Z info: syncing channel updates for 1.88.0-aarch64-apple-darwin
+2026-09-20T21:41:47.0686390Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T21:41:47.0689990Z info: downloading 4 components
+2026-09-20T21:41:53.0167480Z 
+2026-09-20T21:41:53.0940040Z info: self-update is disabled for this build of rustup
+2026-09-20T21:41:53.0945110Z   1.88.0-aarch64-apple-darwin installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T21:41:53.0954120Z info: any updates to rustup will need to be fetched with your system package manager
+2026-09-20T21:41:53.0954430Z 
+2026-09-20T21:41:53.1069840Z ##[group]Run python -m unittest discover -v -s driver/rsp091-validation -p test_driver.py > "$RUNNER_TEMP/rsp091-driver-controls.log" 2>&1
+2026-09-20T21:41:53.1070720Z [36;1mpython -m unittest discover -v -s driver/rsp091-validation -p test_driver.py > "$RUNNER_TEMP/rsp091-driver-controls.log" 2>&1[0m
+2026-09-20T21:41:53.1106880Z shell: /bin/bash -e {0}
+2026-09-20T21:41:53.1107080Z env:
+2026-09-20T21:41:53.1107290Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:53.1107470Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:53.1107740Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:53.1107930Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:53.1108290Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.1108760Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T21:41:53.1109280Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.1109700Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.1110130Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.1110520Z ##[endgroup]
+2026-09-20T21:41:53.5621210Z ##[group]Run python driver/rsp091-validation/run.py
+2026-09-20T21:41:53.5621550Z [36;1mpython driver/rsp091-validation/run.py[0m
+2026-09-20T21:41:53.5651680Z shell: /bin/bash -e {0}
+2026-09-20T21:41:53.5651860Z env:
+2026-09-20T21:41:53.5652000Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:41:53.5652200Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:41:53.5652390Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:41:53.5652600Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:41:53.5652910Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.5653340Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T21:41:53.5653880Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.5654270Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.5654660Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:41:53.5655120Z   CARGO_TARGET_DIR: /Users/runner/work/_temp/rsp091-target
+2026-09-20T21:41:53.5655420Z   SOURCE_SHA: 641bcd6fb8e7d6149832b6ce07b421655f3351e5
+2026-09-20T21:41:53.5655710Z   SOURCE_TREE: 6a317d6a591f3505cec4431754761b60259c9b67
+2026-09-20T21:41:53.5655930Z   LANE: macos-arm64
+2026-09-20T21:41:53.5656080Z ##[endgroup]
+2026-09-20T21:42:39.1502530Z Traceback (most recent call last):
+2026-09-20T21:42:39.1514040Z   File "/Users/runner/work/hol-guard/hol-guard/driver/rsp091-validation/run.py", line 304, in <module>
+2026-09-20T21:42:39.1514660Z     main()
+2026-09-20T21:42:39.1515240Z   File "/Users/runner/work/hol-guard/hol-guard/driver/rsp091-validation/run.py", line 284, in main
+2026-09-20T21:42:39.1516320Z     stdout, stderr = attempt(
+2026-09-20T21:42:39.1516610Z                      ^^^^^^^^
+2026-09-20T21:42:39.1517280Z   File "/Users/runner/work/hol-guard/hol-guard/driver/rsp091-validation/run.py", line 123, in attempt
+2026-09-20T21:42:39.1518250Z     assert record["returncode"] == 0, f"{label}: original command failed; raw streams retained"
+2026-09-20T21:42:39.1518750Z            ^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-20T21:42:39.1519160Z AssertionError: case-1: original command failed; raw streams retained
+2026-09-20T21:42:39.1603100Z ##[error]Process completed with exit code 1.
+2026-09-20T21:42:39.1783340Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T21:42:39.1783850Z with:
+2026-09-20T21:42:39.1784110Z   name: rsp091-unix-peer-macos-arm64
+2026-09-20T21:42:39.1784470Z   retention-days: 30
+2026-09-20T21:42:39.1784750Z   if-no-files-found: error
+2026-09-20T21:42:39.1785260Z   path: /Users/runner/work/_temp/rsp091-validation/
+/Users/runner/work/_temp/rsp091-driver-controls.log
+
+2026-09-20T21:42:39.1792430Z   compression-level: 6
+2026-09-20T21:42:39.1792750Z   overwrite: false
+2026-09-20T21:42:39.1793040Z   include-hidden-files: false
+2026-09-20T21:42:39.1793360Z   archive: true
+2026-09-20T21:42:39.1793600Z env:
+2026-09-20T21:42:39.1793860Z   CARGO_BUILD_JOBS: 2
+2026-09-20T21:42:39.1794150Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-20T21:42:39.1794440Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-09-20T21:42:39.1794800Z   CARGO_INCREMENTAL: 0
+2026-09-20T21:42:39.1795200Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:42:39.1795920Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T21:42:39.1796450Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:42:39.1797020Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:42:39.1797430Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T21:42:39.1797900Z ##[endgroup]
+2026-09-20T21:42:39.5621830Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T21:42:39.5623350Z The least common ancestor is /Users/runner/work/_temp. This will be the root directory of the artifact
+2026-09-20T21:42:39.5624120Z With the provided path, there will be 26 files uploaded
+2026-09-20T21:42:39.5625030Z Artifact name is valid!
+2026-09-20T21:42:39.5626560Z Root directory input is valid!
+2026-09-20T21:42:39.9721480Z Uploading artifact: rsp091-unix-peer-macos-arm64.zip
+2026-09-20T21:42:39.9723690Z Beginning upload of artifact content to blob storage
+2026-09-20T21:42:41.3839800Z Uploaded bytes 6799257
+2026-09-20T21:42:41.4468600Z Finished uploading artifact content to blob storage!
+2026-09-20T21:42:41.4471370Z SHA256 digest of uploaded artifact is 7a669a5de838379a2f18ddfa3d952170051ef67705c5091b5fe44d17d42a9a2b
+2026-09-20T21:42:41.4471920Z Finalizing artifact upload
+2026-09-20T21:42:41.9030470Z Artifact rsp091-unix-peer-macos-arm64 successfully finalized. Artifact ID 10614057424
+2026-09-20T21:42:41.9031680Z Artifact rsp091-unix-peer-macos-arm64 has been successfully uploaded! Final size is 6799257 bytes. Artifact ID is 10614057424
+2026-09-20T21:42:41.9042290Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35539478823/artifacts/10614057424
+2026-09-20T21:42:41.9272780Z Post job cleanup.
+2026-09-20T21:42:42.0325130Z [command]/opt/homebrew/bin/git version
+2026-09-20T21:42:42.0449960Z git version 2.55.0
+2026-09-20T21:42:42.0472700Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/811c325b-a2b3-4e59-8a73-edb89e839813/.gitconfig'
+2026-09-20T21:42:42.0481800Z Temporarily overriding HOME='/Users/runner/work/_temp/811c325b-a2b3-4e59-8a73-edb89e839813' before making global git config changes
+2026-09-20T21:42:42.0482640Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T21:42:42.0485890Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T21:42:42.0549520Z Removing SSH command configuration
+2026-09-20T21:42:42.0559410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:42:42.0620450Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:42:42.1409090Z Removing HTTP extra header
+2026-09-20T21:42:42.1413500Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:42:42.1492600Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:42:42.2542190Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:42:42.2652230Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:42:42.2953570Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:42:42.4028870Z Post job cleanup.
+2026-09-20T21:42:42.5114260Z [command]/opt/homebrew/bin/git version
+2026-09-20T21:42:42.5191220Z git version 2.55.0
+2026-09-20T21:42:42.5217860Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/e14c6090-5d8d-498d-b02a-d45be901cf45/.gitconfig'
+2026-09-20T21:42:42.5226530Z Temporarily overriding HOME='/Users/runner/work/_temp/e14c6090-5d8d-498d-b02a-d45be901cf45' before making global git config changes
+2026-09-20T21:42:42.5227640Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T21:42:42.5228730Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T21:42:42.5301690Z Removing SSH command configuration
+2026-09-20T21:42:42.5302800Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T21:42:42.5379480Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T21:42:42.6358240Z Removing HTTP extra header
+2026-09-20T21:42:42.6365740Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T21:42:42.6682100Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T21:42:42.7437300Z Removing includeIf entries pointing to credentials config files
+2026-09-20T21:42:42.7443860Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T21:42:42.7527690Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T21:42:42.8595050Z Cleaning up orphan processes

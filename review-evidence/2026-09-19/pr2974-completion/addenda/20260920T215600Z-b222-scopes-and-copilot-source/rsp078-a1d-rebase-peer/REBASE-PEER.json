@@ -1,0 +1,85 @@
+{
+  "schema": "pr2974.rsp078.fixture-rebase-source-peer.v1",
+  "verdict": "CLEAR mechanical rebase; no repeated execution",
+  "previous_source_peer_tree": "695c33a8bf0bf1c51372adb1f9d9cb21ef4a4fb5",
+  "previous_source_peer_blob": "860148182d32dfba2487c986e7dc90e04f952ac8",
+  "previous_fixture_tree": "8d497e6ba43898588de7d272ec5d0d21d29028c5",
+  "published_product_commit": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+  "published_product_tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+  "rebased_fixture_tree": "9c00c49f09852f3444fe69ec0428e86d8488f07b",
+  "method": "Independently fetched complete untruncated published-product and rebased-fixture trees and the product commit; compared every leaf mode/type/blob to the earlier complete reviewed base. The four fixture blobs remain identical to the prior source peer.",
+  "checks": {
+    "productFromReviewedBase": [
+      {
+        "path": ".gitleaksignore",
+        "before": {
+          "sha": "f1d4bbe185919a34a1a44b19f7546e2253b9f9eb",
+          "mode": "100644",
+          "type": "blob"
+        },
+        "after": {
+          "sha": "8c0d72d2bbfa8faf3640352bf3ed04d1d8a7e2b3",
+          "mode": "100644",
+          "type": "blob"
+        }
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/edge_encrypted_tests.rs",
+        "before": {
+          "sha": "bca02f80519d1626cce0c60e76521c100ce3174e",
+          "mode": "100644",
+          "type": "blob"
+        },
+        "after": {
+          "sha": "a7a374eb08c0880a9b5726cdf694867f70479be0",
+          "mode": "100644",
+          "type": "blob"
+        }
+      }
+    ],
+    "fixtureFromPublishedProduct": [
+      {
+        "path": "scripts/ci/verify_installed_managed_aliases.py",
+        "after": {
+          "sha": "e15cee7ad8d0355ef18ad7763d4f779e1154db18",
+          "mode": "100644",
+          "type": "blob"
+        }
+      },
+      {
+        "path": "scripts/native_slo_managed_aliases.py",
+        "after": {
+          "sha": "dc960ecde26041ba3493c60f319e98f9a5372c8c",
+          "mode": "100644",
+          "type": "blob"
+        }
+      },
+      {
+        "path": "scripts/native_slo_managed_run.py",
+        "after": {
+          "sha": "97fa8d05bf70fa1f334bf43c350af3b7fc62d0ef",
+          "mode": "100644",
+          "type": "blob"
+        }
+      },
+      {
+        "path": "tests/test_native_slo_managed_aliases.py",
+        "after": {
+          "sha": "f69fc00d93cc41ba0708021f7d08ea521d1a7fe2",
+          "mode": "100644",
+          "type": "blob"
+        }
+      }
+    ],
+    "counts": [
+      4801,
+      4801,
+      4805
+    ]
+  },
+  "conclusion": "Exactly four unchanged fixture additions over the actual published product. Compared with the prior reviewed product base, only .gitleaksignore and edge_encrypted_tests.rs differ; all Python and runtime provider leaves remain identical. No product deletion or overwritten concurrent change.",
+  "limits": [
+    "No fresh test, import, installed invocation, build, workload or artifact admission. Existing source peer and its limitations remain applicable.",
+    "Operational ready-state still requires authentic corrected-product artifacts and independent source/driver binding; no earlier installed artifact is relabeled."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "pr2974.rsp091-real-unix-peer-control-plan.v1",
+  "base_source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "base_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+  "candidate_tree": "dc716c9d26924db164c46197e81f93a927065f55",
+  "source_rows": [
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "bytes": 16144,
+      "git_blob": "0121df862f8999338ced7224bb7eba262757990c",
+      "sha256": "1e523158d8f68f94ca8ea8afd41e8892d5d4c78c08b9aa2f91efd55e8f6100b6"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs",
+      "bytes": 9379,
+      "git_blob": "36df9acc6ecc82e48949d499388d18beaffda119",
+      "sha256": "75d616c50cd372d6a826391b467b13f553b679b7db417bf3fa447587776e7e71"
+    }
+  ],
+  "scope": "Test-only existing Unix peer identity and wire protocol. No product permission, retry, deadline or runtime behavior change.",
+  "parent_cases": [
+    "resident_transport::peer_identity_tests::unix_peer_actual_owner_completes_original_exchange",
+    "resident_transport::peer_identity_tests::unix_peer_other_process_is_rejected_before_auth"
+  ],
+  "fixture_case": {
+    "name": "resident_transport::peer_identity_tests::owned_peer_process",
+    "ignored_by_ordinary_suite": true,
+    "invoked_only_by_parent": true
+  },
+  "mechanism": [
+    "Current Rust test executable spawned as one owned child per case; private0700 short socket directory,0600 atomic readiness/result files.",
+    "Both selected PID/start-marker identities are explicitly verified real current-package processes before the original single request. Positive selects actual child; negative selects parent while socket listener remains a different child.",
+    "Positive child calls original production authenticate_resident_stream, read_request_header and write_bound_response; constant synthetic request/digest/correlation and exact response checked.",
+    "Negative original connector must return native_client_peer_identity_mismatch with retryable_teardown=false. Actual accepted socket must observe zero bytes before close; no authentication or request delivered.",
+    "Parent original send_request_for_digest_detailed called exactly once with2s budget; original250ms authentication remains. All fixture polling is before/after that call or in child setup, never added inside production request.",
+    "Original child stdout/stderr inherit the bounded outer test command retention. Parent test panic survives cleanup error; exact child is terminated/reaped on exceptional exit and owned directory removed only after reaping."
+  ],
+  "limits": [
+    "New control is existing source transport behavior, not installed registration, new ingress architecture, full089/090 acceptance or a performance gate.",
+    "Source candidate is not formatted, compiled or executed yet; Rust toolchain was absent from checked primary locations. No local native build attempted.",
+    "Linux PeerCredentials and macOS LocalPeerPid have different OS implementations; validate actual Linux and macOS separately, preferably both currently supported Mac architectures.",
+    "The ignored child fixture is not counted as an independent passing control; each parent verifies its actual child exit and cleanup.",
+    "Fixture deadlines are5s startup/accept/result/release/exit and2s kill-reap; caller request remains2s. The hosted outer test command must retain finite process containment and all first failures.",
+    "No new SYSTEM privilege or user-principal access was introduced; conditional original091 prerequisites stay as mapped."
+  ]
+}

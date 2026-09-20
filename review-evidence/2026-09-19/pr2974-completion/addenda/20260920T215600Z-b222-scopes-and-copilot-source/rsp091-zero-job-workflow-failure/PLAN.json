@@ -1,0 +1,81 @@
+{
+  "schema": "pr2974.rsp091-real-unix-peer-validation-plan.v1",
+  "source_commit": "7d3c5d84d4b535a46f8aabb9d99cd6d844510a1f",
+  "source_tree": "2092145b3d56bb6a96a49a2b9c7963d5b1d9aff5",
+  "sole_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "source_paths": [
+    "rust/crates/guard-runtime/src/resident_transport.rs",
+    "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs"
+  ],
+  "source_semantic_peer": "bd27933401dea8bb5ee793eff51b366299ca6f2e",
+  "format_result": "5127e8fdfe80d7a14d16d036be396723e54bb35f",
+  "format_peer": "54a2a3718b3c1b17f2300d67ce6e6748309955e1",
+  "driver_paths": [
+    "rsp091-validation/run.py",
+    "rsp091-validation/test_driver.py",
+    ".github/workflows/pr2974-rsp091-unix-peer-validation.yml"
+  ],
+  "lanes": [
+    "linux-x64 ubuntu-24.04",
+    "macos-x64 macos-15-intel",
+    "macos-arm64 macos-15"
+  ],
+  "toolchain": "Rust1.88.0 with rustfmt; Python3.12.10",
+  "control_scope": "One source test binary per lane, default features only (empty default feature can be reported as [] or [default]); exact two new real-peer parent tests and unchanged two Unix connect-deadline tests. Ignored owned child is launched by each new parent and separately counted as fixture execution, not an independent test. No original corpus or installed qualification.",
+  "admission": "Each exact selector is in the binary collection once; original command return0 plus exact one-parent successful summary/no ignored/failed tests. New peer cases additionally require one successful child summary, exact observed authentication or zero-byte refusal, reaping/directory cleanup. Existing controls retain actual deadline/connect/cleanup records. Raw output/binary/source/compiler artifact retained.",
+  "bounds": "30-minute outer jobs; build1200s; exact original parent invocation45s; driver cleanup SIGKILL own process group and communicate10s on timeout, retaining first TimeoutExpired and partial streams. This is driver containment, not a full escaped-descendant certificate. Original request2s/auth250ms/fixture5s untouched.",
+  "local_validation": {
+    "admission_tests": 11,
+    "passed": 11,
+    "types_errors": 0,
+    "types_warnings": 50,
+    "ruff_check": 0,
+    "format_check": 0,
+    "no_native_execution": true
+  },
+  "preparation_limits": "Initial data-only typing invocation from unrelated cwd could not resolve the sibling run module; corrected same-directory invocation records0errors/50warnings. No checker policy or source runtime changed. Initial unretained tool output was truncated; types.json is actual final full current-cwd output.",
+  "files": [
+    {
+      "path": "run.py",
+      "bytes": 12412,
+      "sha256": "8a896ceecb72f20777976ef46d33b29a57911a512ad4c26873a3be0adda6a76d",
+      "git_blob": "5a467cddedb6685d91c32970f7b6c13fc58385b0"
+    },
+    {
+      "path": "test_driver.py",
+      "bytes": 5758,
+      "sha256": "457706d2b8cea3c5b61609c13ece8c5fd66213969274c485ef3b123765e5b9f7",
+      "git_blob": "c4f33a9ca0aed5517962940bf51b3ab358a5bb83"
+    },
+    {
+      "path": "workflow-template.yml",
+      "bytes": 2108,
+      "sha256": "c206d54360debdb4847f2fe559c6d57aafca9c5e2f6b98c6c8e56d05fb9e10b3",
+      "git_blob": "6ab3e08ac6860ade6a8799a434a2c915ae83305d"
+    },
+    {
+      "path": "driver-controls.log",
+      "bytes": 1474,
+      "sha256": "9c5838ca58f30292fbd73359b9504e8d0b982058aef45b1bbe526379c6e7c853",
+      "git_blob": "89ab99a5550800fe342a876221905ff083c2f0ac"
+    },
+    {
+      "path": "types.json",
+      "bytes": 27396,
+      "sha256": "dd872b74a580068c8939c6e6d5e239dd02d391a8536cf4f00c5826f349e5ba75",
+      "git_blob": "d42bfd3f668bf393d32f47beadd94d5f634ebc7a"
+    },
+    {
+      "path": "ruff.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "git_blob": "1f5f344d054fae10f39140fb7199c99321d9190a"
+    },
+    {
+      "path": "format.log",
+      "bytes": 26,
+      "sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938",
+      "git_blob": "983e5b7d3b8260cd7b6465688368178dddd7e316"
+    }
+  ]
+}

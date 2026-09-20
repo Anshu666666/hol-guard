@@ -1,0 +1,60 @@
+{
+  "schema": "hol-guard.cpu-v3-operational-peer.v1",
+  "verdict": "clear",
+  "scope": "Independent narrow operational source read and byte readback only; no finite offer, workload, or local test execution by this peer.",
+  "packet": "ba09605245a7b96362892a34d6c1ee9c2f6b027c",
+  "commits": [
+    {
+      "sha": "f0dba4e5be79912089e50c9ed7146f75ed8668a2",
+      "tree": "8d3de6a1ae2f17beff142473ddf6dfcfef89a0e1",
+      "parents": [
+        "1c265e9025a4c9ef042fc930a865fd7bef718a2a"
+      ]
+    },
+    {
+      "sha": "75d4be975479a38fd0989d873228c59cb203acd0",
+      "tree": "f8d567654df774ca946dcc9a3fd11bf6bb7216e8",
+      "parents": [
+        "f0dba4e5be79912089e50c9ed7146f75ed8668a2"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "bytes": 2595,
+      "git_blob": "a63cfc5f8fc981edf53555eba8f830583a16a79e",
+      "path": "driver/.github/workflows/qualification-cpu-finite.yml",
+      "sha256": "5ea3964b3fac3325d80507a8eef9e61fe973b350eb97cb7eabc8b0dd9f0f2803"
+    },
+    {
+      "bytes": 15686,
+      "git_blob": "8bb8ae347fadc9b1d6a6a4ac6e5f53ab54c26d35",
+      "path": "driver/scripts/ci/kernel_cpu_contract.json",
+      "sha256": "9953308e20562c8c6a569bf911a20791f553a6b13389b5f6b50e776c20855639"
+    },
+    {
+      "bytes": 11492,
+      "git_blob": "76ad07caaba4d382b814d57a05b6e7281ecd9503",
+      "path": "driver/scripts/ci/verify_kernel_cpu_controls.py",
+      "sha256": "bcf79a3d97be0fe01523a30e2da32cc9a69b3987579e66a173c128959e32632e"
+    },
+    {
+      "bytes": 4235,
+      "git_blob": "d3e080823e618c57674a0a36304b1d6acda773bd",
+      "path": "driver/tests/test_verify_kernel_cpu_controls.py",
+      "sha256": "f8b8bfcca87c37b793bcc248402b07af005a5afb0cacf8d5d84c079ab2029530"
+    }
+  ],
+  "findings": [
+    "Compared complete helper/workflow/contract/test to exact v2 bodies. Helper only appends four explicit parser selectors comprising 17 cases after unchanged original 74; test body unchanged.",
+    "Parsed retained actual JUnit: exact contract order, 91 unique source cases and 18 unique driver cases, no failure/error/skip. Parsed source types 0 errors/285 warnings and driver types 0 errors/96 warnings; owner execution remains separate.",
+    "Contract retains eight source paths plus six unchanged provider rows, full before/after binding and unchanged five finite operations; changes base to exact prior source, two changed source paths/hashes, additive ordered nodes and peer metadata.",
+    "Workflow changes only unique v3 branch and two source SHA bindings. Privileged root-owned isolated controller, nonroot worker, time limits, cleanup and failed-result admission unchanged.",
+    "All four local driver bodies independently fetched by blob and compared exactly; both commit objects independently confirm stated trees and sole parents."
+  ],
+  "limits": [
+    "Native source peer fc242db93b6ca6e5bb96a2e392cc514fa53726db is separate source-semantic coverage.",
+    "Original v2 cpu_stat_invalid failure remains retained; unseen original cpu.stat body is not retrospectively attributed.",
+    "Fresh branch/ref/trigger guards remain owner responsibility before one authorized finite-only offer."
+  ]
+}

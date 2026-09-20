@@ -1,0 +1,213 @@
+........................................................................ [ 34%]
+.......................................F................................ [ 69%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+______ test_original_four_cases_and_complete_semantics_are_required[None] ______
+
+label = 'cline-witness'
+value = {'attempts': [{'case_id': 'cline/PreToolUse/benign/small', 'child': {'faults': [], 'observation_complete': True, 'orig...ostToolUse/benign/1k', 'cline/PostToolUse/block/1k'], 'historical_failed_run_reclassified': False, 'passed': True, ...}
+
+    def population(label: str, value: dict[str, Any]) -> dict[str, int]:
+        from scripts.ci.cline_witness.nested_run import validate as validate_nested_run
+        from scripts.ci.cline_witness.run import CASE_IDS
+    
+        require(label == "cline-witness" and value.get("passed") is True, "cohort_report_failed")
+        rows: Any = value.get("attempts")
+        require(type(rows) is list and len(rows) == 4 and all(type(row) is dict for row in rows), "cline_population")
+        admitted = cast(list[dict[str, Any]], rows)
+        require(tuple(row.get("case_id") for row in admitted) == CASE_IDS, "cline_case_identity")
+        require(value.get("declared_cases") == list(CASE_IDS), "cline_declaration")
+        require(
+            value.get("performance_qualified") is False and value.get("historical_failed_run_reclassified") is False,
+            "cline_scope",
+        )
+        for row in admitted:
+            require(row.get("passed") is True and row.get("cleanup_faults") == [], "cline_terminal")
+            require(row.get("original_delivery") == {"stdout_checked": True, "exit_checked": True}, "cline_delivery")
+            nested = row.get("nested_run")
+            worker = row.get("worker")
+            manifest = row.get("observer_installation")
+            require(type(nested) is dict and type(worker) is dict and type(manifest) is dict, "cline_nested_report")
+            nested = cast(dict[str, Any], nested)
+            worker = cast(dict[str, Any], worker)
+            manifest = cast(dict[str, Any], manifest)
+            try:
+>               validate_nested_run(nested, worker, manifest["configuration_sha256"])
+
+scripts/ci/cline_installed_driver/driver.py:303: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+report = {'configuration_sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'count_saturated': False, 'errno': None, 'faults': [], ...}
+worker = {'parent_pid': 100, 'pid': 101}
+digest = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+    def validate(report: object, worker: dict[str, Any], digest: str) -> None:
+        """A zero-offer observation is valid evidence, never native route credit."""
+        fields = {
+            "schema",
+            "configuration_sha256",
+            "pid",
+            "parent_pid",
+            "selected_calls",
+            "count_saturated",
+            "outcome",
+            "returncode",
+            "errno",
+            "faults",
+            "run_installed",
+            "run_restored",
+            "observation_complete",
+            "original_timeout_seconds",
+            "original_call_changed",
+            "raw_arguments_or_output_exported",
+            "performance_qualified",
+            "process_observation",
+        }
+        if type(report) is not dict or set(report) != fields:
+>           raise ValueError("cline_nested_schema")
+E           ValueError: cline_nested_schema
+
+scripts/ci/cline_witness/nested_run.py:234: ValueError
+
+The above exception was the direct cause of the following exception:
+
+fault = None
+
+    @pytest.mark.parametrize(
+        "fault",
+        (
+            None,
+            "missing_case",
+            "duplicate_case",
+            "delivery",
+            "cleanup",
+            "profile",
+            "oracle",
+            "timing",
+            "reclassify",
+            "nested_missing",
+            "nested_zero",
+            "nested_pid",
+            "nested_fault",
+        ),
+    )
+    def test_original_four_cases_and_complete_semantics_are_required(fault):
+        from scripts.ci.cline_witness.run import CASE_IDS
+    
+        value: dict[str, Any] = {
+            "passed": True,
+            "declared_cases": list(CASE_IDS),
+            "performance_qualified": False,
+            "historical_failed_run_reclassified": False,
+            "attempts": [
+                {
+                    "case_id": case,
+                    "passed": True,
+                    "cleanup_faults": [],
+                    "original_delivery": {"stdout_checked": True, "exit_checked": True},
+                    "worker": {"pid": 101, "parent_pid": 100},
+                    "observer_installation": {"configuration_sha256": "a" * 64},
+                    "nested_run": {
+                        "schema": "hol-guard.cline-original-nested-run.v1",
+                        "configuration_sha256": "a" * 64,
+                        "pid": 101,
+                        "parent_pid": 100,
+                        "selected_calls": 1,
+                        "count_saturated": False,
+                        "outcome": "returned",
+                        "returncode": 0,
+                        "errno": None,
+                        "faults": [],
+                        "run_installed": True,
+                        "run_restored": True,
+                        "observation_complete": True,
+                        "original_timeout_seconds": 9,
+                        "original_call_changed": False,
+                        "raw_arguments_or_output_exported": False,
+                        "performance_qualified": False,
+                    },
+                    "child": {
+                        "observation_complete": True,
+                        "profile_restored": True,
+                        "faults": [],
+                        "original_edge": {
+                            "original_validator_called": True,
+                            "original_native_validation_passed": True,
+                            "complete": True,
+                        },
+                    },
+                }
+                for case in CASE_IDS
+            ],
+        }
+        if fault == "missing_case":
+            value["attempts"].pop()
+        elif fault == "duplicate_case":
+            value["attempts"][-1] = value["attempts"][0]
+        elif fault == "delivery":
+            value["attempts"][0]["original_delivery"]["exit_checked"] = False
+        elif fault == "cleanup":
+            value["attempts"][0]["cleanup_faults"] = ["owned_file_cleanup_failed"]
+        elif fault == "profile":
+            value["attempts"][0]["child"]["profile_restored"] = False
+        elif fault == "oracle":
+            del value["attempts"][0]["child"]["original_edge"]["original_native_validation_passed"]
+        elif fault == "timing":
+            value["performance_qualified"] = True
+        elif fault == "reclassify":
+            value["historical_failed_run_reclassified"] = True
+        elif fault == "nested_missing":
+            del value["attempts"][0]["nested_run"]
+        elif fault == "nested_zero":
+            value["attempts"][0]["nested_run"].update(selected_calls=0, outcome="not_offered", returncode=None)
+        elif fault == "nested_pid":
+            value["attempts"][0]["nested_run"]["pid"] = 102
+        elif fault == "nested_fault":
+            value["attempts"][0]["nested_run"]["faults"] = ["capture_failed"]
+        if fault:
+            with pytest.raises(RuntimeError, match="rsp136_"):
+                driver.population("cline-witness", value)
+        else:
+>           assert driver.population("cline-witness", value) == {"validated_cases": 4, "declared_attempts": 4}
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_installed_driver.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+label = 'cline-witness'
+value = {'attempts': [{'case_id': 'cline/PreToolUse/benign/small', 'child': {'faults': [], 'observation_complete': True, 'orig...ostToolUse/benign/1k', 'cline/PostToolUse/block/1k'], 'historical_failed_run_reclassified': False, 'passed': True, ...}
+
+    def population(label: str, value: dict[str, Any]) -> dict[str, int]:
+        from scripts.ci.cline_witness.nested_run import validate as validate_nested_run
+        from scripts.ci.cline_witness.run import CASE_IDS
+    
+        require(label == "cline-witness" and value.get("passed") is True, "cohort_report_failed")
+        rows: Any = value.get("attempts")
+        require(type(rows) is list and len(rows) == 4 and all(type(row) is dict for row in rows), "cline_population")
+        admitted = cast(list[dict[str, Any]], rows)
+        require(tuple(row.get("case_id") for row in admitted) == CASE_IDS, "cline_case_identity")
+        require(value.get("declared_cases") == list(CASE_IDS), "cline_declaration")
+        require(
+            value.get("performance_qualified") is False and value.get("historical_failed_run_reclassified") is False,
+            "cline_scope",
+        )
+        for row in admitted:
+            require(row.get("passed") is True and row.get("cleanup_faults") == [], "cline_terminal")
+            require(row.get("original_delivery") == {"stdout_checked": True, "exit_checked": True}, "cline_delivery")
+            nested = row.get("nested_run")
+            worker = row.get("worker")
+            manifest = row.get("observer_installation")
+            require(type(nested) is dict and type(worker) is dict and type(manifest) is dict, "cline_nested_report")
+            nested = cast(dict[str, Any], nested)
+            worker = cast(dict[str, Any], worker)
+            manifest = cast(dict[str, Any], manifest)
+            try:
+                validate_nested_run(nested, worker, manifest["configuration_sha256"])
+            except (ValueError, KeyError, TypeError) as error:
+>               raise RuntimeError("rsp136_cline_nested_admission") from error
+E               RuntimeError: rsp136_cline_nested_admission
+
+scripts/ci/cline_installed_driver/driver.py:305: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_cline_installed_driver.py::test_original_four_cases_and_complete_semantics_are_required[None]
+1 failed, 206 passed in 13.88s

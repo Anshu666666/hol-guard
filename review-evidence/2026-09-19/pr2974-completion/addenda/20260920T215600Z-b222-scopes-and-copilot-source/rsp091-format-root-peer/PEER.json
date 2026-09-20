@@ -1,0 +1,64 @@
+{
+  "schema": "pr2974.rsp091-formatter-root-operational-peer.v1",
+  "recorded_at": "2026-09-20T20:58:00Z",
+  "verdict": "CLEAR for one pinned formatter-only execution on verified copies",
+  "preparation_tree": "cf0f8b0a1623e4c4660330888dada28bc3ca795d",
+  "source": {
+    "sha": "bfb8714018c327cc2184859e530bc729a00d0505",
+    "tree": "dc716c9d26924db164c46197e81f93a927065f55",
+    "sole_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f"
+  },
+  "driver": {
+    "sha": "18a61c0b38e6eec6de06996781cfa6b3fe85a95c",
+    "tree": "e148c3fd469dd88625de9ede0ffeb3a666551739",
+    "sole_parent": "bfb8714018c327cc2184859e530bc729a00d0505"
+  },
+  "branch": "codex/pr2974-rsp091-unix-peer-format-20260920",
+  "source_peer": {
+    "tree": "bd27933401dea8bb5ee793eff51b366299ca6f2e",
+    "blob": "89ae551a22c104a931c7d318d130a63938b01a53"
+  },
+  "exact_images": {
+    "script": {
+      "git_blob": "3f063f12e8bb3d0bd7286b20d7306b8de8d46dc4",
+      "bytes": 5336
+    },
+    "workflow": {
+      "git_blob": "f97663fd7de4a5b2ab9ed7ceda15cd9d28c7bbf1",
+      "bytes": 1421
+    },
+    "template": {
+      "git_blob": "29d8e587eac2199ab160b07de425c67e9a6b53fc",
+      "bytes": 1309
+    }
+  },
+  "root_checks": [
+    "Read the complete formatter, workflow template, final bound workflow and source peer. Matched local full formatter/template bytes to remote GitHub blobs.",
+    "Recomputed all three full untruncated Git trees:4800 b222 files,4801 candidate files,4803 driver files. Candidate has exactly existing test-module wiring and one new Unix peer control file; driver adds only the workflow and formatter script.",
+    "Matched both complete local Rust input bodies to candidate Git blob/size and the exact hardcoded SHA256s. Source and driver commits have exactly the declared sole parents and trees.",
+    "Reconstructed the final workflow from the exact template substitutions (branch,source commit,source tree) and matched full remote bytes; both driver additions match exact reviewed blobs.",
+    "Formatter validates original source/driver identities and clean tracked status before copying only the two known Rust inputs into a fresh runner temporary output. It invokes rustc -vV and rustfmt --version under rustup run1.88.0, then format and check on the copies only. It requires the actual Rust1.88.0 release string and zero command exits.",
+    "Every formatter subprocess has a60-second bound; job has10-minute timeout. Source hashes and source/driver tracked state are checked after execution; original/returned copies, command bytes/statuses and result are retained by an always-upload artifact step.",
+    "Workflow uses pinned checkout/setup-python/upload-artifact actions, read-only contents permission, exact3.12.10 Python, no persisted checkout credentials and exact1.88.0 minimal rustfmt toolchain. No cargo build, test, native policy request, installed launch or functional benchmark is invoked."
+  ],
+  "operational_scope": {
+    "formatting_only": true,
+    "source_checkout_mutated": false,
+    "build_or_test_credit": false,
+    "original_client_deadline_seconds": 2,
+    "original_authentication_deadline_ms": 250,
+    "deadlines_changed": false,
+    "per_command_timeout_seconds": 60,
+    "job_timeout_minutes": 10,
+    "artifact_retention_days": 30
+  },
+  "conditions": [
+    "Owner must freshly verify the intended branch and prior run are absent before one creation, then read back the exact driver ref/run identity.",
+    "Returned formatting must be admitted as exact new afterimages; retain the original unformatted draft. No AST-equivalence or functional passing credit follows from formatting.",
+    "Final returned source/control bytes still require appropriate real Linux and macOS validation and source-delta review before any PR integration."
+  ],
+  "full_RSP091_complete": false,
+  "dependency_edges_089_090_unchanged": true,
+  "full_prd_complete": false,
+  "new_workload_by_reviewer": false
+}

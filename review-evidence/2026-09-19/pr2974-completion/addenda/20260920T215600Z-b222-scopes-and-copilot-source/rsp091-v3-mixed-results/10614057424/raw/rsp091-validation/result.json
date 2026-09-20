@@ -1,0 +1,46 @@
+{
+  "schema": "pr2974.rsp091-real-peer-validation.v1",
+  "cases": [
+    {
+      "case": "resident_transport::peer_identity_tests::unix_peer_actual_owner_completes_original_exchange",
+      "passed": true,
+      "observations": [
+        {
+          "accepted": 1,
+          "authenticated": true,
+          "payload_bytes": 32,
+          "request_digest_valid": true,
+          "response_written": true
+        }
+      ],
+      "cleanup": [
+        {
+          "negative": false,
+          "reaped": true,
+          "directory_removed": true
+        }
+      ],
+      "parent_pass_count": 1,
+      "owned_child_fixture_pass_count": 1
+    }
+  ],
+  "passed": false,
+  "lane": "macos-arm64",
+  "binary_before": {
+    "bytes": 22805536,
+    "sha256": "c300ea927fb49e604897cc7ba884548f0ee62f5e7355e34662115cbf8f8b9537"
+  },
+  "selected_parent_cases": [
+    "resident_transport::peer_identity_tests::unix_peer_actual_owner_completes_original_exchange",
+    "resident_transport::peer_identity_tests::unix_peer_other_process_is_rejected_before_auth",
+    "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline",
+    "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection"
+  ],
+  "ignored_child_fixture": "resident_transport::peer_identity_tests::owned_peer_process",
+  "binary_after": {
+    "bytes": 22805536,
+    "sha256": "c300ea927fb49e604897cc7ba884548f0ee62f5e7355e34662115cbf8f8b9537"
+  },
+  "binary_unchanged": true,
+  "bindings_unchanged": true
+}

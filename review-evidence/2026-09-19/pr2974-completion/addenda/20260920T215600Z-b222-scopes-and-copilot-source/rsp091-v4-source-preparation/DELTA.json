@@ -1,0 +1,15 @@
+{
+  "schema": "pr2974.rsp091-nonblocking-eof-fixture.v1",
+  "source": "a63cfdf9c5f49d7bd3199e65ae48f393297a391b",
+  "source_tree": "9c472594937f085864e2cb0ff60227c6a9e0f713",
+  "driver": "178109c220a4f39744ef2b37abc177c32aa87918",
+  "driver_tree": "70a713c8f1b0e1fa4f373abd98c41e1368fc7adb",
+  "base": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "prior_actual": "96945acdc477dbd11c7a5a321dc05b1d46a1b14d",
+  "source_delta": "Only replace negative fixture receive-timeout configuration and blocking one-byte read by nonblocking true and fixed same2s loop. Each read is preceded by deadline check; only WouldBlock waits2ms. EOF0 remains required; any byte, other error, or expiry fails. Positive protocol/client2s/auth250ms unchanged.",
+  "driver_delta": "Only test source SHA256, source/tree/branch bindings; same four selectors, three lanes,11controls and all gates.",
+  "primary": "https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/uipc_socket.c",
+  "primary_line": 4749,
+  "causality_limit": "Actual OS22 at timeout setter observed; shutdown bit state was not observed, so compatibility with documented source is not unique historical-state proof.",
+  "format": "Pinned Rust1.88 format check precedes build; no new native execution yet."
+}

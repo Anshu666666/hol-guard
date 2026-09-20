@@ -1,0 +1,35 @@
+{
+  "schema": "hol-guard.finite-cpu-refusal-source-map.v1",
+  "run": 35535354663,
+  "source": "1c265e9025a4c9ef042fc930a865fd7bef718a2a",
+  "observed_label": "cpu_stat_invalid",
+  "bindings": [
+    {
+      "path": "scripts/native_slo_lifetime_cpu.py",
+      "blob": "e9eb21256ea737d85607450f973847328b4eccb1"
+    },
+    {
+      "path": "scripts/ci/qualification_cpu_worker.py",
+      "blob": "1339bd2a0fe96e8e351da9a52cadaf8983042965"
+    },
+    {
+      "path": "scripts/ci/qualification_cpu_controller.py",
+      "blob": "10cb21e50adedaca0a220e34c8d9099231fa837f"
+    }
+  ],
+  "call_chain": [
+    "worker.run: ProtectedCgroupCpu(group) before admitted=true and before all five operation calls",
+    "ProtectedCgroupCpu.__init__ -> _admit -> final initial snapshot",
+    "snapshot: membership check, read already-owned cpu.stat(max8192), parse_cpu_stat, then membership check",
+    "parse_cpu_stat maps UnicodeError, ValueError or KeyError to fixed cpu_stat_invalid",
+    "worker.run catches exact closed LifetimeCpuUnavailableError label while admitted=false",
+    "controller.read_worker_report retains strict closed failed projection; run still rejects nonadmission"
+  ],
+  "unavailable": [
+    "Original rejected cpu.stat body, keys and values",
+    "Inner parse failure reason",
+    "Historical predecessor's refusal label"
+  ],
+  "inferences_limited": "Observed current label reaches the parser boundary. It does not establish which schema clause failed or whether a later source defect explains the unretained actual body."
+}
+

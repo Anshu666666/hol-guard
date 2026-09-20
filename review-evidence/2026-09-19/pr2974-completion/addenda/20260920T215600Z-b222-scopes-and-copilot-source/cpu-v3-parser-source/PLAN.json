@@ -1,0 +1,36 @@
+{
+  "schema": "hol-guard.cpu-stat-source-schema-correction.v1",
+  "predecessor_source": "1c265e9025a4c9ef042fc930a865fd7bef718a2a",
+  "predecessor_result_packet": "8803753890bf257ff9fd0f50ef0550cdb98e2376",
+  "change": "Accept only the exact upstream auxiliary key core_sched.force_idle_usec in addition to the previously admitted underscore/alphanumeric keys. Preserve required usage_usec/user_usec/system_usec, ASCII decode, unsigned decimal checks, 2^63-1 numeric bound, duplicates,64-row and8192-byte limits, regression rejection and all protected-group admission.",
+  "proof": {
+    "upstream": [
+      {
+        "version": "v6.8",
+        "commit": "e8f897f4afef0031fe618a8e94127a0934896aba",
+        "path": "kernel/cgroup/rstat.c",
+        "local": "linux-v6.8-rstat.c",
+        "url": "https://github.com/torvalds/linux/blob/e8f897f4afef0031fe618a8e94127a0934896aba/kernel/cgroup/rstat.c#L560"
+      },
+      {
+        "version": "v6.17",
+        "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+        "path": "kernel/cgroup/rstat.c",
+        "local": "linux-v6.17-rstat.c",
+        "url": "https://github.com/torvalds/linux/blob/e5f0a698b34ed76002dc5cff3804a61c80233a7a/kernel/cgroup/rstat.c#L700"
+      }
+    ],
+    "condition": "Both upstream source versions emit the exact dotted key under CONFIG_SCHED_CORE. Upstream6.17 also emits nice_usec, already admitted by the unchanged key grammar.",
+    "runner_image": "Original hosted log selects ubuntu24/20260907.300. Its README says6.17.0-1022-azure; this image documentation is not a direct running-kernel/config or cpu.stat observation.",
+    "data_gap": "Original actual refused cpu.stat bytes/keys/values are unavailable. Source-proven defect is not retrospectively assigned as actual failure cause."
+  },
+  "controls": {
+    "new_cases": 17,
+    "positive": "Four insertion positions preserve all three totals; source-shaped old parser fails and new parser preserves exact200/120/78.",
+    "negative": "Duplicate/negative/fraction/nonfinite/overflow/extra-token and unrelated dotted keys rejected; each missing required total rejected; original row/byte bounds retained.",
+    "full_local": "135 passed/1 explicit real protected-group skip; no actual privileged group offered.",
+    "types": "Final explicit shared-venv Python invocation0errors/87warnings; initial checker invocation lacked pytest import path and its original1error is retained."
+  },
+  "unchanged": "All controller/worker placement, finite five operations/order, privilege checks, membership/migration invariants, timeouts and cleanup are byte-identical.",
+  "next_action": "Independent narrow source peer; bind a sole-parent successor and exact driver delta with the17 new parser controls before one finite-only hosted offer. No original benchmark."
+}

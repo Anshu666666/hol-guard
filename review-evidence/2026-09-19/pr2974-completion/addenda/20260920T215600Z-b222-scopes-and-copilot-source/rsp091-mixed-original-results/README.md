@@ -1,0 +1,5 @@
+# First functional RSP091 Unix peer matrix
+
+Run 35538594974 retains Linux four parent passes and two owned-child fixture passes, with both Macs failing the first positive parent/child authentication case. Eleven diagnostic admission controls passed on each lane. Three later parent cases were not offered on either Mac. Exact original archives and uploaded test executables were independently rehashed locally; this tree includes every text member, metadata and original ARM job log, but does not duplicate ZIP/binary bytes in Git. Artifact byte identities and binary hashes remain in the reader result and original reports.
+
+Mac cleanup reports reaped=true and directory_removed=false. The subsequent Drop removal attempt is not independently observed. Fixed collapsed errors do not retain their underlying OS error. No installed qualification, full-descendant cleanup, historical product cause or performance claim follows. Original prior zero-job workflow failure remains separately frozen. The read-only verifier reproduces these outcomes; no workload was replayed during recovery.

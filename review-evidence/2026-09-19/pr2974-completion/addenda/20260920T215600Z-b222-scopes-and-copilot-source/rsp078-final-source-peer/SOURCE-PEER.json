@@ -1,0 +1,134 @@
+{
+  "schema": "pr2974.rsp078.fixture-source-peer.v1",
+  "verdict": "CLEAR within the stated source-only scope",
+  "reviewer": "partition_regression",
+  "date_utc": "2026-09-20T21:45:17.496976+00:00",
+  "source_tree": "8d497e6ba43898588de7d272ec5d0d21d29028c5",
+  "product_base_tree": "be1b434e7caf3efcf96380fda9239bf2cf4b88f6",
+  "prior_fixture_tree": "cd969e247fcb08d0c07d4df978da3d6eb696e63c",
+  "owner_correction_evidence_tree": "86be1a40ee0c6bf0b31dba88f4d07393cf24e148",
+  "method": [
+    "Read all four original fixture bodies and the actual registration, native raw-edge, result-oracle, process containment and installed-binding providers. Read the complete three-body correction and new controls.",
+    "Fetched the complete untruncated base, prior and final Git trees and every final changed blob. Recomputed local blob SHA-1 and SHA-256 and required exact remote/local bytes. No product import or execution.",
+    "Parsed retained XML and type output as data. Owner test results are not peer execution credit."
+  ],
+  "source_checks": {
+    "files": [
+      {
+        "path": "scripts/ci/verify_installed_managed_aliases.py",
+        "git_blob": "e15cee7ad8d0355ef18ad7763d4f779e1154db18",
+        "bytes": 4409,
+        "sha256": "1e71584d755c9c40f70083834497ab21a5940dfc6a6d679e0894574241b2efe6"
+      },
+      {
+        "path": "scripts/native_slo_managed_aliases.py",
+        "git_blob": "dc960ecde26041ba3493c60f319e98f9a5372c8c",
+        "bytes": 11809,
+        "sha256": "f33f9bd9c076693beda2418fb2a1da0c11f8e5ea633f3ab12f57a5654eee1a5b"
+      },
+      {
+        "path": "scripts/native_slo_managed_run.py",
+        "git_blob": "97fa8d05bf70fa1f334bf43c350af3b7fc62d0ef",
+        "bytes": 8250,
+        "sha256": "4c7aec4650f846beaff4b4ee9fb20c746f02c5406d07eb228340761e7349fcdc"
+      },
+      {
+        "path": "tests/test_native_slo_managed_aliases.py",
+        "git_blob": "f69fc00d93cc41ba0708021f7d08ea521d1a7fe2",
+        "bytes": 18569,
+        "sha256": "3250d18325d26b89fe971eb1848a98b3d76adbfdf43a1204dc76c940774d1370"
+      }
+    ],
+    "base_leaves": 4801,
+    "prior_leaves": 4805,
+    "final_leaves": 4805,
+    "changes_from_base": [
+      "scripts/ci/verify_installed_managed_aliases.py",
+      "scripts/native_slo_managed_aliases.py",
+      "scripts/native_slo_managed_run.py",
+      "tests/test_native_slo_managed_aliases.py"
+    ],
+    "changes_from_prior": [
+      "scripts/native_slo_managed_aliases.py",
+      "scripts/native_slo_managed_run.py",
+      "tests/test_native_slo_managed_aliases.py"
+    ],
+    "removed": [
+      [],
+      []
+    ],
+    "unchanged_original_definition_asts": [
+      "ManagedCase",
+      "daemon_cases",
+      "permission_cases",
+      "watch_cases",
+      "registration",
+      "validate_delivery",
+      "validate_daemon_evidence",
+      "no_daemon_state",
+      "payload_digest"
+    ],
+    "parsed_owner_results": [
+      {
+        "path": "privacy-before.xml",
+        "bytes": 7806,
+        "sha256": "4d5bf8d69b34c99554a2fe8857f1d27b959d5646f5a4cd8839b1828cd8c4fa4a",
+        "unique_cases": 3,
+        "failures": 3,
+        "skips": 0
+      },
+      {
+        "path": "privacy-after-first.xml",
+        "bytes": 16684,
+        "sha256": "9b10a437d1d7d4c2c7c94094845befff635bacd8cdece608d39b89a9924efc37",
+        "unique_cases": 103,
+        "failures": 0,
+        "skips": 0
+      },
+      {
+        "path": "combined-privacy-final.xml",
+        "bytes": 47506,
+        "sha256": "34bd6571825f08e7d7ebd821b0268864f1166713b5f8c8f169dc8dcf71013b52",
+        "unique_cases": 288,
+        "failures": 0,
+        "skips": 0
+      }
+    ],
+    "owner_type_summary": "0 errors, 322 warnings"
+  },
+  "findings_resolved": [
+    {
+      "original_finding": "A process-stage exception before a returned containment result could delete the private owned root without proof the child was contained.",
+      "correction": "The exact process stage with absent containment_failed now marks containment_unavailable, prevents cleanup and retains the original exception. Existing returned timeout/output/containment failures remain failures. No extra waits, probes or retry.",
+      "control": "The retained original-source test failed because the root was removed; final control requires the same exception object, root/config retained and containment false/unavailable."
+    },
+    {
+      "original_finding": "Full delivery/native/setup objects could export unvalidated extra fields or nonempty private reason strings after the existing partial-shape oracles passed.",
+      "correction": "The unchanged original oracles run against complete private objects first. Export is restricted to the selected expected fields and fixed setup facts; required nonempty reasons are represented only by byte length and SHA-256. Full stdout and native/setup evidence are hash-bound. Failures occur before raw objects can be assigned to report rows.",
+      "control": "Retained original Cursor and Copilot tests leaked the sentinel. Corrected controls retain full response semantics privately, reject altered native policy, omit private extra fields and exercise six malformed projection refusals."
+    }
+  ],
+  "population": {
+    "registered_invocations": 14,
+    "original_evaluated_cases": 4,
+    "copilot_daemon_permission_alias_scope_cases": 4,
+    "copilot_fresh_protected_no_daemon_cases": 4,
+    "cursor_fresh_watch_no_daemon_cases": 2,
+    "order_and_original_cases_unchanged": true
+  },
+  "semantic_review": [
+    "The four evaluated cases retain original corpus delivery, native result, setup and route checks. Generated configured argv, registration/worker/executable hashes and post-call registration equality remain required; no substitute command or injected installed response.",
+    "Daemon permission cases deliberately require one raw native-edge attempt/completion, a None native result, native_fail_safe and the exact unavailable permission schema. This is availability handling, not a native evaluation or approval consumption.",
+    "Fresh no-daemon fixtures preserve actual protected/Watch modes, enforce endpoint/token absence including dangling symlinks before and after, and never start a daemon. Original generated product deadlines and outer 10/30-second containment ceilings are unchanged.",
+    "All original ManagedCase, case factories, registration, delivery/native/setup validators, daemon absence and payload digest definitions are AST-identical to cd969. New projection functions fail on unsupported nested/nonempty native expectations instead of assuming future schema support.",
+    "Installed entry is byte-identical. It retains POSIX/isolated invocation, original wheel-member/RECORD package binding, installed import origin, native build/mode identity and post-run package check. Generated caches are outside this existing declared scope.",
+    "Daemon cleanup still depends on the original fixture context and explicit resident retirement; successful population requires both cleanup facts. Unknown process containment refuses cleanup rather than claiming it."
+  ],
+  "limitations": [
+    "No installed invocation, native workload, build, test, type checker, formatter or download was run by this peer.",
+    "The 56 fixture and 47 driver controls, and combined 288 passes, are retained owner source/control evidence. Actual fourteen-call installed correctness remains pending authentic corrected-product artifacts and the independent operational peer.",
+    "No Windows, external host application, timing/resource, full RSP078/RSP136 acceptance, or native approval-consumption claim.",
+    "The new projection proves validation of the original private response through source-bound execution and hashes; it does not export full private payloads or reconstruct omitted native semantics."
+  ],
+  "blocking_findings": []
+}

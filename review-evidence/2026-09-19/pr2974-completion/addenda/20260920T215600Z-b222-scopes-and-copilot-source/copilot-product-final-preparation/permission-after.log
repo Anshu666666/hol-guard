@@ -1,0 +1,224 @@
+.......................F.F.............................................. [ 40%]
+........................................................................ [ 81%]
+................................                                         [100%]
+=================================== FAILURES ===================================
+_ test_real_registered_permission_entry_preserves_actual_producer[permissionRequest-global] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-666/test_real_registered_permissio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f86bd3df6e0>
+scope = 'global', event = 'permissionRequest'
+
+    @pytest.mark.parametrize("scope", ("global", "project"))
+    @pytest.mark.parametrize("event", ("permissionRequest", "permissionRequestV2"))
+    def test_real_registered_permission_entry_preserves_actual_producer(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scope: str, event: str
+    ) -> None:
+        """Real registration/entry; transport alone is modeled, not installed proof."""
+        home, workspace, guard_home = (tmp_path / name for name in ("home with spaces 雪", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        config_path = (
+            CopilotHarnessAdapter._config_path(context) if scope == "global" else CopilotHarnessAdapter._hook_path(context)
+        )
+        assert config_path is not None
+        surface = _registered(context, "copilot", event, scope, config_path)
+        config = json.loads(surface.argv[-1])
+        payload = {"hookName": event, "toolName": "Bash", "toolInput": {"command": "pwd"}}
+        response = availability_harness_response(
+            payload,
+            harness="copilot",
+            event_name=event,
+            reason_code="native_hook_event_unavailable",
+            reason="Original availability explanation.",
+        )
+        body = json.dumps(response).encode()
+        offered: list[object] = []
+    
+        class Response:
+            status = 200
+    
+            def __enter__(self) -> Response:
+                return self
+    
+            def __exit__(self, *_args: object) -> None:
+                pass
+    
+            def read(self, limit: int) -> bytes:
+                assert limit == 1_000_001
+                return body
+    
+            def geturl(self) -> str:
+                return "http://127.0.0.1:7777/v1/hooks/copilot"
+    
+        class Opener:
+            def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
+                parsed = urlsplit(request.full_url)
+                assert (parsed.scheme, parsed.netloc, parsed.path) == ("http", "127.0.0.1:7777", "/v1/hooks/copilot")
+                assert parse_qs(parsed.query) == {
+                    "guard-home": [str(guard_home)],
+                    "home": [str(home)],
+                    "workspace": [str(workspace)],
+                }
+                assert request.data is not None and json.loads(request.data) == payload
+                assert 0 < timeout <= 5
+                offered.append(payload)
+                return Response()
+    
+        monkeypatch.setattr(daemon, "_daemon_hook_endpoint", lambda *_args: "http://127.0.0.1:7777/v1/hooks/copilot")
+        monkeypatch.setattr(daemon, "_read_daemon_auth_token", lambda *_args: "synthetic-token")
+        monkeypatch.setattr(
+            daemon, "_build_loopback_opener", lambda: cast(urllib.request.OpenerDirector, cast(object, Opener()))
+        )
+    
+        def unexpected_fallback(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError("permission handoff unexpectedly left daemon route")
+    
+        monkeypatch.setattr(bridge, "run_isolated_hook_process", unexpected_fallback)
+        stdout, stderr = io.StringIO(), io.StringIO()
+        before = config_path.read_bytes()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+>           code = bridge.run_bounded_cli_hook(config, input_text=json.dumps(payload))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_copilot_permission_availability_delivery.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py:341: in run_bounded_cli_hook
+    daemon_result = try_daemon_hook(
+src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py:448: in try_daemon_hook
+    with opener.open(request, timeout=timeout) as response:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.test_copilot_permission_availability_delivery.test_real_registered_permission_entry_preserves_actual_producer.<locals>.Opener object at 0x7f86bd3de990>
+request = <urllib.request.Request object at 0x7f86bfbe4110>
+
+    def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
+        parsed = urlsplit(request.full_url)
+        assert (parsed.scheme, parsed.netloc, parsed.path) == ("http", "127.0.0.1:7777", "/v1/hooks/copilot")
+>       assert parse_qs(parsed.query) == {
+            "guard-home": [str(guard_home)],
+            "home": [str(home)],
+            "workspace": [str(workspace)],
+        }
+E       AssertionError: assert {'guard-home'...th spaces 雪']} == {'guard-home'...0/workspace']}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'workspace': ['/tmp/pytest-of-root/pytest-666/test_real_registered_permissio0/workspace']}
+E         Use -v to get more diff
+
+tests/test_copilot_permission_availability_delivery.py:138: AssertionError
+_ test_real_registered_permission_entry_preserves_actual_producer[permissionRequestV2-global] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-666/test_real_registered_permissio2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f86bd3dddf0>
+scope = 'global', event = 'permissionRequestV2'
+
+    @pytest.mark.parametrize("scope", ("global", "project"))
+    @pytest.mark.parametrize("event", ("permissionRequest", "permissionRequestV2"))
+    def test_real_registered_permission_entry_preserves_actual_producer(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scope: str, event: str
+    ) -> None:
+        """Real registration/entry; transport alone is modeled, not installed proof."""
+        home, workspace, guard_home = (tmp_path / name for name in ("home with spaces 雪", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        config_path = (
+            CopilotHarnessAdapter._config_path(context) if scope == "global" else CopilotHarnessAdapter._hook_path(context)
+        )
+        assert config_path is not None
+        surface = _registered(context, "copilot", event, scope, config_path)
+        config = json.loads(surface.argv[-1])
+        payload = {"hookName": event, "toolName": "Bash", "toolInput": {"command": "pwd"}}
+        response = availability_harness_response(
+            payload,
+            harness="copilot",
+            event_name=event,
+            reason_code="native_hook_event_unavailable",
+            reason="Original availability explanation.",
+        )
+        body = json.dumps(response).encode()
+        offered: list[object] = []
+    
+        class Response:
+            status = 200
+    
+            def __enter__(self) -> Response:
+                return self
+    
+            def __exit__(self, *_args: object) -> None:
+                pass
+    
+            def read(self, limit: int) -> bytes:
+                assert limit == 1_000_001
+                return body
+    
+            def geturl(self) -> str:
+                return "http://127.0.0.1:7777/v1/hooks/copilot"
+    
+        class Opener:
+            def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
+                parsed = urlsplit(request.full_url)
+                assert (parsed.scheme, parsed.netloc, parsed.path) == ("http", "127.0.0.1:7777", "/v1/hooks/copilot")
+                assert parse_qs(parsed.query) == {
+                    "guard-home": [str(guard_home)],
+                    "home": [str(home)],
+                    "workspace": [str(workspace)],
+                }
+                assert request.data is not None and json.loads(request.data) == payload
+                assert 0 < timeout <= 5
+                offered.append(payload)
+                return Response()
+    
+        monkeypatch.setattr(daemon, "_daemon_hook_endpoint", lambda *_args: "http://127.0.0.1:7777/v1/hooks/copilot")
+        monkeypatch.setattr(daemon, "_read_daemon_auth_token", lambda *_args: "synthetic-token")
+        monkeypatch.setattr(
+            daemon, "_build_loopback_opener", lambda: cast(urllib.request.OpenerDirector, cast(object, Opener()))
+        )
+    
+        def unexpected_fallback(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError("permission handoff unexpectedly left daemon route")
+    
+        monkeypatch.setattr(bridge, "run_isolated_hook_process", unexpected_fallback)
+        stdout, stderr = io.StringIO(), io.StringIO()
+        before = config_path.read_bytes()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+>           code = bridge.run_bounded_cli_hook(config, input_text=json.dumps(payload))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_copilot_permission_availability_delivery.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_bridge.py:341: in run_bounded_cli_hook
+    daemon_result = try_daemon_hook(
+src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py:448: in try_daemon_hook
+    with opener.open(request, timeout=timeout) as response:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tests.test_copilot_permission_availability_delivery.test_real_registered_permission_entry_preserves_actual_producer.<locals>.Opener object at 0x7f86bd589700>
+request = <urllib.request.Request object at 0x7f86bd588ce0>
+
+    def open(self, request: urllib.request.Request, *, timeout: float) -> Response:
+        parsed = urlsplit(request.full_url)
+        assert (parsed.scheme, parsed.netloc, parsed.path) == ("http", "127.0.0.1:7777", "/v1/hooks/copilot")
+>       assert parse_qs(parsed.query) == {
+            "guard-home": [str(guard_home)],
+            "home": [str(home)],
+            "workspace": [str(workspace)],
+        }
+E       AssertionError: assert {'guard-home'...th spaces 雪']} == {'guard-home'...2/workspace']}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'workspace': ['/tmp/pytest-of-root/pytest-666/test_real_registered_permissio2/workspace']}
+E         Use -v to get more diff
+
+tests/test_copilot_permission_availability_delivery.py:138: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_copilot_permission_availability_delivery.py::test_real_registered_permission_entry_preserves_actual_producer[permissionRequest-global]
+FAILED tests/test_copilot_permission_availability_delivery.py::test_real_registered_permission_entry_preserves_actual_producer[permissionRequestV2-global]
+2 failed, 174 passed in 1.71s

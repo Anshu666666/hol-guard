@@ -1,0 +1,98 @@
+{
+  "schema_version": "guard.rust-performance-execution.v1",
+  "baseline_source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+  "status_policy": "DONE means the exact task acceptance has evidence of the required kind; specification, implementation, component measurements and tests do not establish dependent installed/platform/release qualification. OPEN includes active or implemented work with remaining acceptance. BLOCKED identifies a required dependency, artifact, review or selected implementation that is unavailable. DEFERRED is permitted for a conditional migration when scoped measurements and the original PRD decision rule justify retaining the current implementation; an unbuilt native pilot is not an automatic prerequisite for that decision. Unmeasured large workloads, predicted gains without sufficient evidence, and active comparisons remain OPEN or BLOCKED. No native activation is implied by a completed selection/profiling task. Original id, number, title, acceptance and dependency fields remain unchanged. A DONE task does not satisfy its outstanding dependencies; those are reported separately in dependency_audit.",
+  "tasks": [
+    {
+      "id": "RSP-068",
+      "number": 68,
+      "title": "Implement bounded native detector batches",
+      "acceptance": "Compile appropriate rules and parser logic, preserve Unicode/line counting/suppression, and reset overlap across logical files.",
+      "dependencies": [
+        "RSP-067"
+      ],
+      "status": "DEFERRED",
+      "evidence_or_remaining_work": "The compiled ASCII-at-most-4-MiB span extractor has bounded protocol and differential coverage with independent logical-file state. Python retains Unicode, oversized inputs, context, suppression, entropy, positions, HMAC and rich completeness. Production batch-detector activation is deferred by the measured subprocess no-go; no unsupported semantics are claimed.",
+      "evidence_refs": [
+        "scanner"
+      ],
+      "original_dependencies": "RSP-067."
+    },
+    {
+      "id": "RSP-069",
+      "number": 69,
+      "title": "Wire the real secrets CLI and exit behavior",
+      "acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+      "dependencies": [
+        "RSP-068"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Actual 9db wheels pass 28 retained-Python scanner cases per Unix host. Windows attests the exact wheel and both PE launchers, then retains 23 passes, one failed row, four unreached cases: 107/1/4 across hosts. The later fixture failure incorrectly relabeled a completed history row; original status remains unchanged. Probe-only reserved-filename/phase-accounting correction passes 54 tests but needs fresh Windows coverage. Native extraction remains inactive. 2026-09-18 update: Later exact 7a installed retained-Python scanner reports run_complete=true and 28 passing cases on every declared platform, including Windows: 112 passing cases at this source. This resolves the prior Windows fixture execution gap within that scanner scope while preserving every 9db failure/unreached record. Native extraction remains inactive, deferred native dependencies remain obligations and no whole-release/performance qualification follows. 2026-09-18 subsequent checkpoint: 590 all four installed retained-Python secret probes pass 28 cases each with exact wheel/runtime identity, retaining the prior 107/one/four and 7a histories separately. This is 112 scoped installed cases, not native detector activation, every original adversarial/CLI workflow, or full performance qualification.",
+      "evidence_refs": [
+        "scanner",
+        "installed_scanner",
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "implementation_7a387_hosted",
+        "implementation_590ce_hosted"
+      ],
+      "original_dependencies": "RSP-068."
+    },
+    {
+      "id": "RSP-070",
+      "number": 70,
+      "title": "Qualify hostile archive worker separately",
+      "acceptance": "Profile interpreter/member-loop cost; retain isolation, digest/inode binding, expansion checks and launch binding for any native worker.",
+      "dependencies": [
+        "RSP-066",
+        "RSP-024"
+      ],
+      "status": "DONE",
+      "evidence_or_remaining_work": "Actual isolated -I -S -B worker was profiled over 17 fixtures times 30 calls plus 60 diagnostic children, with read/member/startup attribution and containment/digest/inode/expansion/deadline/approval/launch witnesses. 508/510 timed outcomes matched exactly; two fail-closed timeouts and an earlier warmup failure remain recorded, and the harness exits 1. All32 new tests pass; the broader 147-test run had one deadline assertion miss with an unchanged passing retry. Retain current worker for this measured scope; no parser-only 30% gain or whole native-worker rollout is qualified.",
+      "evidence_refs": [
+        "scanner",
+        "archive"
+      ],
+      "original_dependencies": "RSP-066,RSP-024."
+    },
+    {
+      "id": "RSP-071",
+      "number": 71,
+      "title": "Run secret and scanner adversarial parity",
+      "acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+      "dependencies": [
+        "RSP-069",
+        "RSP-070"
+      ],
+      "status": "OPEN",
+      "evidence_or_remaining_work": "Source, local installed and latest 9db scanner cases preserve provider/context/HMAC, staged divergence, bounds and exits. All 28 Unix cases pass; Windows has 23 passing rows, one original failed row and four unreached later cases. Link/encoding/mutation scope there needs the corrected hosted probe. Independent archive coverage and its restrictive timeouts remain separate; no missing platform case is counted as pass or skip. 2026-09-18 update: Later exact 7a installed retained-Python scanner reports run_complete=true and 28 passing cases on every declared platform, including Windows: 112 passing cases at this source. This resolves the prior Windows fixture execution gap within that scanner scope while preserving every 9db failure/unreached record. Native extraction remains inactive, deferred native dependencies remain obligations and no whole-release/performance qualification follows. 2026-09-18 subsequent checkpoint: 590 all four installed retained-Python secret probes pass 28 cases each with exact wheel/runtime identity, retaining the prior 107/one/four and 7a histories separately. This is 112 scoped installed cases, not native detector activation, every original adversarial/CLI workflow, or full performance qualification.",
+      "evidence_refs": [
+        "scanner",
+        "archive",
+        "installed_scanner",
+        "retained_ci_abf",
+        "retained_ci_9db",
+        "implementation_7a387_hosted",
+        "implementation_590ce_hosted"
+      ],
+      "original_dependencies": "RSP-069,RSP-070."
+    }
+  ],
+  "evidence_catalog": {
+    "scanner": {
+      "path": "../rust-performance-scanner-review.md",
+      "source_commit": "37605128c;489e314a0",
+      "scope_and_limit": "Final 30-pair rich CLI confirmation preserves 680 findings; mean CPU-31.6% and p95 wall+13.5% fails selection. Keep optimized Python and all failed/confounded states. Latest 9db installed scanner retains 107 passing rows, one failed row, four unreached cases; no native detector activation."
+    },
+    "archive": {
+      "path": "archive-worker-qualification.md",
+      "source_commit": "62cf6bb63; 745a58a4d; 264fdc648; 789f6486b",
+      "scope_and_limit": "Actual fresh isolated worker, 17 fixtures times 30 operations and 60 diagnostic profiles. 508/510 exact expected outcomes; two fail-closed timeouts and an earlier warmup failure are retained. Hostile isolation/identity/launch witnesses pass. No native worker or rollout qualification."
+    },
+    "installed_scanner": {
+      "path": "../rsp-scanner-installed-qualification.md",
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d;0e2d560cc",
+      "scope_and_limit": "Actual 9db native-bundled wheels pass 28 cases per Unix host. Windows verifies wheel/modules and both PE launchers, then retains 23 passes, one failure, four unreached cases. Original catch-all/history-row labeling is preserved; reserved nul.ts is a likely portability trigger without original failing Git evidence. Probe-only filename and phase-diagnostic repair passes 54 tests; corrected Windows host run is pending. Earlier abf 84/zero-case failure stays historical."
+    }
+  }
+}

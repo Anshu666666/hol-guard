@@ -1,0 +1,5 @@
+# Corrected accepted-stream fixture, actual mixed result
+
+Run 35539478823 preserves Linux four parent passes/two owned-child passes and each Mac one positive parent/child pass, then the real wrong-peer fixture failure. Both Mac child stderr records OS22 InvalidInput at set_read_timeout. The parent reaches its observed-file wait after exact nonretryable mismatch assertions; this source-order inference is narrower than the missing zero-byte read observation. Two later deadline cases remain unoffered on each Mac.
+
+All original ZIP and binary/member hashes were rechecked. Every text member is retained byte-exact here; original ZIPs/test binaries remain in the identified GitHub artifacts and independently verified local copies. Each negative cleanup record proves reaping but reports directory_removed=false; later Drop removal is unobserved. Apple shutdown setsockopt source is a compatible explanation, not measured shutdown-state attribution. No product repair, complete wrong-peer qualification, installed or performance claim. The previous first-positive Mac failures remain separate in 89b9b13611929d07bd0f426f6d0b3a820041fa18.

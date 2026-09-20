@@ -1,0 +1,129 @@
+{
+  "schema": "hol-guard.pi-default-policy-independent-source-peer.v1",
+  "date_utc": "2026-09-20",
+  "reviewer": "partition_regression",
+  "verdict": "CLEAR within the exact fixture/source delta; installed successor and operational admission remain separate",
+  "repository": "hashgraph-online/hol-guard",
+  "base_source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "base_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+  "previous_fixture_source": "4cf6509fd6cfc357d3e46764f9f4c243d7a6a044",
+  "previous_fixture_tree": "b3c83944f67f5353ef129500a09a65f02ca3936a",
+  "reviewed_tree": "316f43a3c74c6e856a1cbbb41818e31711b4f3b4",
+  "preparation_tree": "aae2c95cf87a9ee432ec9950866fdc2ac4c1986f",
+  "source_manifest_blob": "078b8ea9fb5d812a980270e34797f3c5a259ea72",
+  "scope_blob": "7fe150743df21e877e5c1ccd5c1ce770c16a87ac",
+  "changed_files": [
+    {
+      "path": "scripts/native_slo_pi_receipts.py",
+      "blob": "be1101b2f546538f055cd7aa5a10e5faf280d9b3",
+      "bytes": 12518
+    },
+    {
+      "path": "scripts/native_slo_pi_sources.py",
+      "blob": "2080d121486e8ed51c49f42a4805a54c722726b0",
+      "bytes": 9245
+    },
+    {
+      "path": "tests/fixtures/native_pi_default_policy.json",
+      "blob": "e9587ec42e0907bf402f8206ec47ede2c372d840",
+      "bytes": 5287
+    },
+    {
+      "path": "tests/test_native_slo_pi_default_policy.py",
+      "blob": "9e34b01995234d511c3544b740b7ad8722741fb1",
+      "bytes": 4070
+    },
+    {
+      "path": "tests/test_native_slo_pi_receipts.py",
+      "blob": "618a257f32761610d353df5ba39b8fe44c1b9cc3",
+      "bytes": 14194
+    },
+    {
+      "path": "tests/test_native_slo_pi_sources.py",
+      "blob": "3b23b54b1442072f4504604c3489aa4db9d58ad3",
+      "bytes": 7351
+    }
+  ],
+  "unchanged_policy_providers": [
+    {
+      "path": "src/codex_plugin_scanner/guard/config.py",
+      "blob": "792be3d454f0b74a756c3770f503ada4cec34df4",
+      "bytes": 61385
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_policy.py",
+      "blob": "d1a07021b5ddd6a05a05f9d5a19b71a7a4114bee",
+      "bytes": 13901
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/policy_enforcement.rs",
+      "blob": "2966ea915a4366835c0a0f6d02466be5d66bf769",
+      "bytes": 16961
+    }
+  ],
+  "independent_actions": [
+    "Read all six changed/added bodies and complete delta; fetched all six full remote blob bodies and recomputed their Git identities, then compared with local exact bytes.",
+    "Read the full untruncated remote candidate tree. Compared complete local Git trees: 4809 prior leaves, 4811 candidate leaves, exactly six changed/added paths and no deletion. Recomputed all 12 fixture-manifest blob IDs, SHA-256 values and byte counts.",
+    "Read the actual default GuardConfig fields, effective_native_policy_v3 compiler and Rust policy_floor/apply_post_tool_policy join. The protected fresh configuration defaults to warn; intrinsic clean allow is retained as allow_original with exact output digest while policy action/reason become warn/native_policy_warning.",
+    "Hashed the original failed Linux pi-sources.json and compared each selected returned callback object and complete receipt to the copied fixture. Each selected label has one offered row and one returned row. The copied object is the returned row, and its native receipt equals the original committed receipt with writer_admitted true.",
+    "Parsed original before/final JUnit and type summaries only; no product imports, test execution, workload, installation, native request, network callback, ref change or source edit."
+  ],
+  "findings": [
+    "PiSourceCase now declares required exact policy_action and reason. Benign command and clean source require warn/native_policy_warning; destructive command, tail secret and changed source remain block with their exact existing reasons.",
+    "HTTP validation now requires the same exact policy action and reason for every Pre/Post case. Receipt reconciliation replaces decision-to-policy inference and optional-reason bypass with exact case values. No allow-or-warn alternative is accepted.",
+    "Command/source inputs, case order, correlation, callback status/delivery, model blocking, allow_original and reviewed-output SHA checks remain. Registered generated JavaScript, daemon setup/configuration, native and ACK/rule/request identity, ciphertext join, full SQLite equality, writer admission, deadlines, cleanup and privacy bodies are unchanged.",
+    "The previously reviewed coverage gate and entrypoint are byte-identical and still require ten original Pi/OMP callbacks, six actual encrypted posts, distinct committed receipts and the existing joins. This source peer does not establish those pending installed outcomes.",
+    "The 15 added cases comprise two captured warning positives, one real default-policy compiler control, eight exact HTTP policy/reason rejection cases and four actual SQLite receipt cases. Native calls in the SQLite cases are explicitly modeled, and they do not imply installed native execution.",
+    "The real SQLite controls preserve valid edge/ACK/request bindings and exact submitted/committed receipt equality while rejecting wrong policy or reason. The observed public originals provide data evidence separately from the modeled native controls."
+  ],
+  "original_failed_input": {
+    "run_id": 35533876624,
+    "artifact_id": 10611403687,
+    "report_sha256": "99421cc11066fda94e6d5cc7984f3ecddd20c875ae235cdb69e8d778d2ef6ebe",
+    "original_failure_packet": "a96f33f302c86b677df3c9dc451989f1156011e6",
+    "copied_labels": [
+      "pi-pre-allow",
+      "pi-source-clean"
+    ],
+    "returned_callback_objects_equal": true,
+    "native_and_committed_receipt_objects_equal": true,
+    "original_report_passed": false,
+    "original_offered_harnesses": [
+      "pi"
+    ]
+  },
+  "owner_validation_read": {
+    "before": {
+      "cases": 15,
+      "failed": 12,
+      "passed": 3,
+      "skipped": 0
+    },
+    "final": {
+      "cases": 162,
+      "passed": 162,
+      "failed": 0,
+      "skipped": 0,
+      "new_default_policy_cases": 15
+    },
+    "initial_types": {
+      "errors": 6,
+      "warnings": 1124,
+      "notes": 0,
+      "reason": "Invocation lacked the selected interpreter and could not resolve pytest; preserved by owner."
+    },
+    "final_types": {
+      "errors": 0,
+      "warnings": 1042,
+      "notes": 0
+    },
+    "peer_reexecuted_controls": false
+  },
+  "limits": [
+    "This is a narrow source and retained-control review, not an operational driver/publication receipt.",
+    "The original installed three-platform failure remains failed. Five Pi callbacks per original cell and no OMP callbacks are retained; this fixture change does not retroactively promote them.",
+    "No product/configuration/policy weakening or timeout change is introduced.",
+    "No Windows encrypted-reference support, strict four-platform artifact acceptance, external host application execution, native approval consumption, performance, release or whole RSP136 completion is claimed.",
+    "Current PR b222 is a separate fixture/security successor; this reviewed installed diagnostic source and artifacts retain their explicit product400/build37fd identities."
+  ]
+}

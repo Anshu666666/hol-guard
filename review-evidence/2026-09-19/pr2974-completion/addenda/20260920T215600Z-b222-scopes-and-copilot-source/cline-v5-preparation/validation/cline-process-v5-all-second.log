@@ -1,0 +1,24 @@
+........................................................................ [ 33%]
+........................................................................ [ 67%]
+..................................................................F.     [100%]
+=================================== FAILURES ===================================
+_____ test_actual_separate_process_has_identical_structural_stdlib_binding _____
+
+    def test_actual_separate_process_has_identical_structural_stdlib_binding() -> None:
+        helper = str(Path(probe.__file__).resolve())
+        code = "import json,runpy,sys; ns=runpy.run_path(sys.argv[1]);print(json.dumps(ns['binding']()))"
+        result = subprocess.run(
+            [sys.executable, "-I", "-c", code, helper], capture_output=True, text=True, check=True, timeout=5
+        )
+>       assert json.loads(result.stdout) == probe.binding()
+E       AssertionError: assert {'methods': {...': 88747, ...} == {'methods': {...': 88747, ...}
+E         
+E         Omitting 5 identical items, use -vv to show
+E         Differing items:
+E         {'methods': {'__exit__': 'e673b76cde77978955bb53f21e801d4ce9feaedec88799ad20b8d2b7b6941367', '_check_timeout': '81244d...0700f85b03b0b758589b9bebb073', 'communicate': '44864b1e7b720786fafd2788e2f25d5cedd4a98e6ec99b999b0f0f0245c75695', ...}} != {'methods': {'__exit__': 'e673b76cde77978955bb53f21e801d4ce9feaedec88799ad20b8d2b7b6941367', '_check_timeout': '81244d...0700f85b03b0b758589b9bebb073', 'communicate': '44864b1e7b720786fafd2788e2f25d5cedd4a98e6ec99b999b0f0f0245c75695', ...}}
+E         Use -v to get more diff
+
+tests/test_cline_process_observation.py:311: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cline_process_observation.py::test_actual_separate_process_has_identical_structural_stdlib_binding
+1 failed, 211 passed in 15.59s

@@ -1,0 +1,47 @@
+F...................................................................     [100%]
+=================================== FAILURES ===================================
+_______ test_real_normal_call_keeps_class_operations_and_private_output ________
+
+    def test_real_normal_call_keeps_class_operations_and_private_output() -> None:
+        before = probe.binding()
+        popen = subprocess.Popen
+        result, report = execute("import sys; print('private-output'); sys.exit(7)")
+        assert type(result) is subprocess.CompletedProcess and result.returncode == 7
+        assert result.stdout == "private-output\n"
+>       probe.validate(report, 1, "returned")
+
+tests/test_cline_process_observation.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+document = {'additional_process_operations': 0, 'binding_after_equal': True, 'capture_complete': False, 'continuous_liveness_proved': False, ...}
+offered = 1, outcome = 'returned'
+
+    def validate(document: object, offered: int, outcome: str) -> None:
+        fields = {
+            "schema", "offered_calls", "owned_process_observed", "rows", "maximum_rows", "output_metadata",
+            "faults", "methods_restored", "binding_after_equal", "capture_complete",
+            "additional_process_operations", "raw_output_exported", "continuous_liveness_proved",
+        }
+        if type(document) is not dict or set(document) != fields:
+            raise ValueError("process_report_schema")
+        if (
+            document["schema"] != SCHEMA
+            or type(document["offered_calls"]) is not int or document["offered_calls"] != offered
+            or type(document["owned_process_observed"]) is not bool
+            or type(document["maximum_rows"]) is not int or document["maximum_rows"] != MAX_ROWS
+            or document["faults"] != []
+            or document["methods_restored"] is not True
+            or document["binding_after_equal"] is not True
+            or document["capture_complete"] is not True
+            or type(document["additional_process_operations"]) is not int
+            or document["additional_process_operations"] != 0
+            or document["raw_output_exported"] is not False
+            or document["continuous_liveness_proved"] is not False
+        ):
+>           raise ValueError("process_report_incomplete")
+E           ValueError: process_report_incomplete
+
+scripts/ci/cline_witness/process_observation.py:258: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_cline_process_observation.py::test_real_normal_call_keeps_class_operations_and_private_output
+1 failed, 67 passed in 10.84s

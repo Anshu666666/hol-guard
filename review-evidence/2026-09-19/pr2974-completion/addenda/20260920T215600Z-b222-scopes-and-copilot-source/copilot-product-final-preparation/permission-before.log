@@ -1,0 +1,80 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_actual_permission_availability_producer_keeps_native_deny_handoff[permissionRequest] _
+
+event = 'permissionRequest'
+
+    @pytest.mark.parametrize("event", ("permissionRequest", "permissionRequestV2"))
+    def test_actual_permission_availability_producer_keeps_native_deny_handoff(event: str) -> None:
+        reason = "HOL Guard could not classify this hook event safely."
+        response = availability_harness_response(
+            {"hookName": event, "toolName": "Bash", "toolInput": {"command": "pwd"}},
+            harness="copilot",
+            event_name=event,
+            reason_code="native_hook_event_unavailable",
+            reason=reason,
+        )
+        assert response == {
+            "behavior": "deny",
+            "message": reason,
+            "interrupt": False,
+            "reason_code": "native_hook_event_unavailable",
+        }
+        before = json.dumps(response, sort_keys=True)
+        stdout, stderr, code = daemon._daemon_response_to_native(
+            response, harness="copilot", event_name=event
+        )
+>       assert json.loads(stdout) == response
+E       AssertionError: assert {'hookSpecifi...on': 'allow'}} == {'behavior': ..._unavailable'}
+E         
+E         Left contains 1 more item:
+E         {'hookSpecificOutput': {'hookEventName': 'permissionRequest',
+E                                 'permissionDecision': 'allow'}}
+E         Right contains 4 more items:
+E         {'behavior': 'deny',
+E          'interrupt': False,...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/test_copilot_permission_availability_delivery.py:33: AssertionError
+_ test_actual_permission_availability_producer_keeps_native_deny_handoff[permissionRequestV2] _
+
+event = 'permissionRequestV2'
+
+    @pytest.mark.parametrize("event", ("permissionRequest", "permissionRequestV2"))
+    def test_actual_permission_availability_producer_keeps_native_deny_handoff(event: str) -> None:
+        reason = "HOL Guard could not classify this hook event safely."
+        response = availability_harness_response(
+            {"hookName": event, "toolName": "Bash", "toolInput": {"command": "pwd"}},
+            harness="copilot",
+            event_name=event,
+            reason_code="native_hook_event_unavailable",
+            reason=reason,
+        )
+        assert response == {
+            "behavior": "deny",
+            "message": reason,
+            "interrupt": False,
+            "reason_code": "native_hook_event_unavailable",
+        }
+        before = json.dumps(response, sort_keys=True)
+        stdout, stderr, code = daemon._daemon_response_to_native(
+            response, harness="copilot", event_name=event
+        )
+>       assert json.loads(stdout) == response
+E       AssertionError: assert {'hookSpecifi...on': 'allow'}} == {'behavior': ..._unavailable'}
+E         
+E         Left contains 1 more item:
+E         {'hookSpecificOutput': {'hookEventName': 'permissionRequestV2',
+E                                 'permissionDecision': 'allow'}}
+E         Right contains 4 more items:
+E         {'behavior': 'deny',
+E          'interrupt': False,...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/test_copilot_permission_availability_delivery.py:33: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_copilot_permission_availability_delivery.py::test_actual_permission_availability_producer_keeps_native_deny_handoff[permissionRequest]
+FAILED tests/test_copilot_permission_availability_delivery.py::test_actual_permission_availability_producer_keeps_native_deny_handoff[permissionRequestV2]
+2 failed in 0.24s

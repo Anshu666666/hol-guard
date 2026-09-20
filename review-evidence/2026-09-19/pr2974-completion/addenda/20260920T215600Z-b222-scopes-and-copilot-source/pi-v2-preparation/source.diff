@@ -1,0 +1,325 @@
+--- v1/scripts/native_slo_pi_receipts.py
++++ v2/scripts/native_slo_pi_receipts.py
+@@ -237,9 +237,9 @@
+                 and receipt["harness"] == case.harness
+                 and receipt["event_name"] == ("PreToolUse" if case.event == "tool_call" else "PostToolUse")
+                 and receipt["decision"] == case.decision
+-                and receipt["policy_action"] == ("allow" if case.decision == "allow" else "block")
++                and receipt["policy_action"] == case.policy_action
+                 and receipt["observe_mode"] is False
+-                and (case.reason is None or receipt["reason_code"] == case.reason)
++                and receipt["reason_code"] == case.reason
+             )
+             complete = complete and row["receipt_checks"]
+         return {
+--- v1/scripts/native_slo_pi_sources.py
++++ v2/scripts/native_slo_pi_sources.py
+@@ -24,7 +24,8 @@
+     arguments: dict[str, str]
+     output: str
+     decision: str
+-    reason: str | None
++    policy_action: str
++    reason: str
+ 
+     @property
+     def correlation(self) -> str:
+@@ -48,11 +49,33 @@
+     # Synthetic scanner fixture, deliberately after the generated 12,000-char excerpt.
+     sensitive = clean + _SECRET_MARKER + "\n"
+     result = [
+-        PiSourceCase(harness + "-pre-allow", harness, "tool_call", "Bash", {"command": "pwd"}, "", "allow", None),
+-        PiSourceCase(harness + "-pre-block", harness, "tool_call", "Bash", {"command": "rm -rf /"}, "", "deny", None),
++        # The fresh installed daemon keeps the real default warn policy. A
++        # nonblocking warning still preserves the original command/output.
++        PiSourceCase(
++            harness + "-pre-allow",
++            harness,
++            "tool_call",
++            "Bash",
++            {"command": "pwd"},
++            "",
++            "allow",
++            "warn",
++            "native_policy_warning",
++        ),
++        PiSourceCase(
++            harness + "-pre-block",
++            harness,
++            "tool_call",
++            "Bash",
++            {"command": "rm -rf /"},
++            "",
++            "deny",
++            "block",
++            "native_destructive_command",
++        ),
+     ]
+     for label, body, returned, decision, reason in (
+-        ("source-clean", clean, clean, "allow", "source_full_scan_allow"),
++        ("source-clean", clean, clean, "allow", "native_policy_warning"),
+         ("source-tail-secret", sensitive, sensitive, "deny", "source_secret_match"),
+         ("source-changed", clean + "// changed\n", clean, "deny", "no_output_to_review"),
+     ):
+@@ -68,6 +91,7 @@
+                 {"file_path": str(path)},
+                 returned,
+                 decision,
++                "warn" if decision == "allow" else "block",
+                 reason,
+             )
+         )
+@@ -118,6 +142,8 @@
+         raise RuntimeError("installed_pi_callback_verdict")
+     if case.decision == "deny" and row.get("blocked") is not True:
+         raise RuntimeError("installed_pi_block_missing")
++    if fetch.get("policy_action") != case.policy_action or fetch.get("reason_code") != case.reason:
++        raise RuntimeError("installed_pi_policy_verdict")
+     if case.event == "tool_result":
+         digest = hashlib.sha256(case.output.encode()).hexdigest()
+         if fetch.get("encrypted_payload_ref_present") is True:
+@@ -135,8 +161,6 @@
+                 raise RuntimeError("installed_pi_source_reference_missing")
+             if fetch.get("source_ref_chars") != len(case.output) or fetch.get("excerpt_truncated") is not True:
+                 raise RuntimeError("installed_pi_source_reference_incomplete")
+-        if fetch.get("reason_code") != case.reason:
+-            raise RuntimeError("installed_pi_source_verdict")
+         if case.decision == "allow" and (
+             fetch.get("model_output_action") != "allow_original" or fetch.get("reviewed_output_sha256") != digest
+         ):
+--- v1/tests/test_native_slo_pi_receipts.py
++++ v2/tests/test_native_slo_pi_receipts.py
+@@ -26,7 +26,7 @@
+ def fixture(tmp_path):
+     case = cases(tmp_path, "pi")[2]
+     authority = snapshot()
+-    value = receipt(authority, action="allow")
++    value = receipt(authority, action=case.policy_action)
+     value.pop("command_extensions")
+     value.update(
+         harness="pi",
+--- v1/tests/test_native_slo_pi_sources.py
++++ v2/tests/test_native_slo_pi_sources.py
+@@ -58,6 +58,7 @@
+                 "pathname": "/v1/hooks/" + case.harness,
+                 "status": 200,
+                 "decision": case.decision,
++                "policy_action": case.policy_action,
+                 "source_ref_present": True,
+                 "source_ref_sha256": digest,
+                 "source_ref_chars": len(case.output),
+--- v1/tests/test_native_slo_pi_default_policy.py
++++ v2/tests/test_native_slo_pi_default_policy.py
+@@ -0,0 +1,85 @@
++"""Original failed-run records and actual default compiler; no native replay."""
++
++from __future__ import annotations
++
++import copy
++import hashlib
++import json
++from pathlib import Path
++
++import pytest
++
++from codex_plugin_scanner.guard.config import GuardConfig
++from codex_plugin_scanner.guard.native_decision_receipt import canonical_receipt_bytes, validate_native_decision_receipt
++from codex_plugin_scanner.guard.native_policy_snapshot_policy import effective_native_policy_v3
++from scripts.native_slo_pi_receipts import PiReceipts
++from scripts.native_slo_pi_sources import cases, validate_delivery
++from tests.test_native_slo_pi_receipts import exercise, fixture
++
++CAPTURE = json.loads((Path(__file__).parent / "fixtures" / "native_pi_default_policy.json").read_text())
++
++
++@pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
++def test_original_warning_delivery_and_native_receipt_match_exact_current_case(tmp_path, index):
++    case = cases(tmp_path, "pi")[index]
++    captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
++    assert validate_native_decision_receipt(captured["receipt"]) == captured["receipt"]
++    assert captured["receipt"]["policy_action"] == case.policy_action == "warn"
++    assert captured["receipt"]["reason_code"] == case.reason == "native_policy_warning"
++    validate_delivery(case, copy.deepcopy(captured["callback"]))
++
++
++def test_actual_default_compiler_preserves_warn_floor_for_declared_benign_cases(tmp_path):
++    config = GuardConfig(guard_home=tmp_path / "guard", workspace=tmp_path)
++    policy = effective_native_policy_v3(config)
++    assert policy["protection_posture"] == "protected"
++    assert policy["default_action"] == policy["subprocess_action"] == "warn"
++    assert policy["harness_actions"] == {}
++    assert [case.policy_action for case in cases(tmp_path, "pi")] == ["warn", "block", "warn", "block", "block"]
++
++
++@pytest.mark.parametrize(
++    "field,value",
++    [
++        ("policy_action", "allow"),
++        ("policy_action", "review"),
++        ("reason_code", "source_full_scan_allow"),
++        ("reason_code", "different_warning"),
++    ],
++)
++@pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
++def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
++    case = cases(tmp_path, "pi")[index]
++    captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
++    row = copy.deepcopy(captured["callback"])
++    row["fetches"][0][field] = value
++    with pytest.raises(RuntimeError, match="policy_verdict"):
++        validate_delivery(case, row)
++
++
++@pytest.mark.parametrize(
++    "action,reason,accepted",
++    [
++        ("warn", "native_policy_warning", True),
++        ("allow", "native_policy_warning", False),
++        ("warn", "source_full_scan_allow", False),
++        ("review", "native_policy_warning", False),
++    ],
++)
++def test_exact_warning_policy_is_required_in_real_committed_receipt(tmp_path, action, reason, accepted):
++    state = fixture(tmp_path)
++    captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == state.case.label)
++    value = state.edge["receipt"]
++    # Native calls remain modeled. Reuse the observed public policy projection,
++    # then recompute its identity digest as the existing SQLite fixture does.
++    value["policy_action"] = captured["receipt"]["policy_action"] if accepted else action
++    value["reason_code"] = reason
++    value["decision_id"] = hashlib.sha256(canonical_receipt_bytes(value)).hexdigest()
++    state.edge["result"]["policy_action"] = value["policy_action"]
++    state.edge["result"]["reason_code"] = reason
++    witness = PiReceipts(state.daemon, (state.case,), installed_rule_digest="c" * 64).__enter__()
++    result = exercise(state, witness)
++    row = result["rows"][state.case.label]
++    assert row["committed_receipt"] == value
++    assert row["edge_binding_valid"] and row["ack_binding_valid"] and row["request_binding_valid"]
++    assert row["receipt_checks"] is accepted and result["complete"] is accepted
+--- v1/tests/fixtures/native_pi_default_policy.json
++++ v2/tests/fixtures/native_pi_default_policy.json
+@@ -0,0 +1,124 @@
++{
++  "scope": "Exact public HTTP callback and native receipt copies from original FAILED run. Other rows and complete originals retained in evidence packet; no fixture-native replay.",
++  "run_id": 35533876624,
++  "artifact_id": 10611403687,
++  "original_report_sha256": "99421cc11066fda94e6d5cc7984f3ecddd20c875ae235cdb69e8d778d2ef6ebe",
++  "rows": [
++    {
++      "callback": {
++        "blocked": false,
++        "fetches": [
++          {
++            "decision": "allow",
++            "encrypted_payload_ref_present": false,
++            "encrypted_payload_sha256": null,
++            "excerpt_truncated": false,
++            "method": "POST",
++            "pathname": "/v1/hooks/pi",
++            "policy_action": "warn",
++            "reason_code": "native_policy_warning",
++            "source_ref_chars": null,
++            "source_ref_present": false,
++            "source_ref_sha256": null,
++            "status": 200
++          }
++        ],
++        "id": "pi-pre-allow",
++        "input_unchanged": true,
++        "offered": true,
++        "preserved": true,
++        "returned": true
++      },
++      "receipt": {
++        "authority": "rust",
++        "command_extensions": {
++          "catalog_digest": "232ff389ca607b805118a02bd9560e972453f9a406188237037138f4834faf11",
++          "control_effective_digest": "81a59bb63c7b1ea42cf6338f5bc694966405b16c898b05d7534915a997207632",
++          "control_revision": 0,
++          "managed_control_revision": 0,
++          "observation_count": 0,
++          "observations_digest": "bbaa894876351846955210b68623f35273743ce707410926f36860f85d74bcf3",
++          "program_digest": "2c2aa5f5b8ffedfcdf746c7d5b4a4c28eab15fd21550981836389cf12e9fd204",
++          "schema": "guard.native-command-receipt-binding.v1",
++          "trust_digest": "7145a94183a640b557bd453172256a86c03ed229bc74339a2ba2c0e07a67e582",
++          "uncertainty_count": 0
++        },
++        "deadline_budget_ms": 2835,
++        "decision": "allow",
++        "decision_id": "c94898aeafd23ef8f6cb41ea368de4186d72136e39bab30b0341c886a1eabed3",
++        "event_name": "PreToolUse",
++        "harness": "pi",
++        "model_output_action": "not_applicable",
++        "observe_mode": false,
++        "observed_policy_action": null,
++        "payload_kind": "inline",
++        "policy_action": "warn",
++        "policy_digest": "1e625847e409af5bea7e5a7e694984fc73c6807b1afab0a61e7c3ebc5dec07f4",
++        "policy_generation": 1,
++        "reason_code": "native_policy_warning",
++        "request_digest": "be4a31724ed4768a892a59f484808490008646a44b35d09a30e829c80c972b98",
++        "request_id": "sha256:be4a31724ed4768a892a59f484808490008646a44b35d09a30e829c80c972b98",
++        "reviewed_output_sha256": null,
++        "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
++        "runtime_identity": "5f9ca9448cd55aa7558c32e8fc65d126624b21793e15acdd4ca5bfdb00818a64",
++        "schema": "guard-native-hook-decision-receipt.v1",
++        "source_ref_external_allowed": true,
++        "version": 1,
++        "workspace_bound": true
++      }
++    },
++    {
++      "callback": {
++        "blocked": false,
++        "fetches": [
++          {
++            "decision": "allow",
++            "encrypted_payload_ref_present": true,
++            "encrypted_payload_sha256": "603021d1caa8280f1b0ee135563f0193e33a66eaaf579a14b1cda49a25fc9725",
++            "excerpt_truncated": false,
++            "method": "POST",
++            "model_output_action": "allow_original",
++            "pathname": "/v1/hooks/pi",
++            "policy_action": "warn",
++            "reason_code": "native_policy_warning",
++            "reviewed_output_sha256": "5c4c9f1b6008c49a73914d84267e50de7e18fbeba615b982967e058327d932ae",
++            "source_ref_chars": null,
++            "source_ref_present": false,
++            "source_ref_sha256": null,
++            "status": 200
++          }
++        ],
++        "id": "pi-source-clean",
++        "input_unchanged": true,
++        "offered": true,
++        "preserved": true,
++        "returned": true
++      },
++      "receipt": {
++        "authority": "rust",
++        "deadline_budget_ms": 2835,
++        "decision": "allow",
++        "decision_id": "0fe1eaeb8c374c3857e8a21feaf357cfbe77564115edaac31f6d66272f3c0b91",
++        "event_name": "PostToolUse",
++        "harness": "pi",
++        "model_output_action": "allow_original",
++        "observe_mode": false,
++        "observed_policy_action": null,
++        "payload_kind": "encrypted_payload_ref",
++        "policy_action": "warn",
++        "policy_digest": "1e625847e409af5bea7e5a7e694984fc73c6807b1afab0a61e7c3ebc5dec07f4",
++        "policy_generation": 1,
++        "reason_code": "native_policy_warning",
++        "request_digest": "71fffb6f8515d2c2de4f780517a0a9cea20447a88def361a6d63afc0005dc97f",
++        "request_id": "sha256:71fffb6f8515d2c2de4f780517a0a9cea20447a88def361a6d63afc0005dc97f",
++        "reviewed_output_sha256": "5c4c9f1b6008c49a73914d84267e50de7e18fbeba615b982967e058327d932ae",
++        "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
++        "runtime_identity": "5f9ca9448cd55aa7558c32e8fc65d126624b21793e15acdd4ca5bfdb00818a64",
++        "schema": "guard-native-hook-decision-receipt.v1",
++        "source_ref_external_allowed": true,
++        "version": 1,
++        "workspace_bound": true
++      }
++    }
++  ]
++}

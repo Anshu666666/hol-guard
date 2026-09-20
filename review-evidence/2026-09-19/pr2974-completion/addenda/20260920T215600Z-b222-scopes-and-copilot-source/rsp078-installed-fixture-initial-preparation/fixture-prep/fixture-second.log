@@ -1,0 +1,364 @@
+.......................................FFFFFF                            [100%]
+=================================== FAILURES ===================================
+___ test_invocation_forwards_exact_registration_and_contains_failures[none] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e0bad0>
+failure = 'none'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+>           assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_slo_managed_aliases.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+context = HarnessContext(home_dir=PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact0/home'), workspace_di...forwards_exact0/guard-home'), executable_overrides={}, home_override_explicit=False, workspace_override_explicit=False)
+case = ManagedCase(label='global/copilot/permissionRequest/permission_no_daemon', harness='copilot', event='permissionRequest...command': 'pwd'}, 'cwd': '/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact0/workspace'}, normal_case=None)
+row = {'artifact_sha256': {}, 'input_sha256': '9edc63d9e71d31a54c2fc5f1a721c956a8cad80e495109263bf8da536cdecf8c', 'registere...c586508ee6e0', 'registered_executable_sha256': 'fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7', ...}
+
+    def invoke(context: HarnessContext, case: ManagedCase, row: dict[str, Any]) -> dict[str, object]:
+        surface = registration(context, case)
+        encoded = json.dumps(case.payload, separators=(",", ":"), ensure_ascii=True)
+        row.update(
+            stage="registered",
+            registration_sha256=surface.registration_sha256,
+            registered_argv_sha256=hashlib.sha256(json.dumps(surface.argv).encode()).hexdigest(),
+            registered_executable_sha256=hashlib.sha256(Path(surface.argv[0]).read_bytes()).hexdigest(),
+            artifact_sha256=dict(surface.artifact_sha256),
+            input_sha256=payload_digest(case.payload),
+        )
+        environment = dict(os.environ)
+        clear_proof_environment(environment)
+        for name in ("PYTHONPATH", "PYTHONHOME", "HOL_GUARD_CLINE_CANARY"):
+            environment.pop(name, None)
+        configured = dict(surface.environment)
+        if clear_proof_environment(configured):
+>           raise RuntimeError("managed_alias_registered_override")
+E           RuntimeError: managed_alias_registered_override
+
+scripts/native_slo_managed_run.py:51: RuntimeError
+__ test_invocation_forwards_exact_registration_and_contains_failures[timeout] __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e0bc20>
+failure = 'timeout'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+            assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+            assert row["registration_unchanged"] is True
+        else:
+            with pytest.raises((RuntimeError, ValueError)):
+                runner.invoke(context, case, row)
+            assert row.get("registration_unchanged") is not True
+>       assert offered == [surface.argv]
+E       assert [] == [('/workspace...her":false}')]
+E         
+E         Right contains one more item: ('/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/workspace/s...t/pytest-700/test_invocation_forwards_exact1/home"],"harness":"copilot","timeout_seconds":25,"frozen_launcher":false}')
+E         Use -v to get more diff
+
+tests/test_native_slo_managed_aliases.py:268: AssertionError
+_ test_invocation_forwards_exact_registration_and_contains_failures[containment] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e0bf20>
+failure = 'containment'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+            assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+            assert row["registration_unchanged"] is True
+        else:
+            with pytest.raises((RuntimeError, ValueError)):
+                runner.invoke(context, case, row)
+            assert row.get("registration_unchanged") is not True
+>       assert offered == [surface.argv]
+E       assert [] == [('/workspace...her":false}')]
+E         
+E         Right contains one more item: ('/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/workspace/s...t/pytest-700/test_invocation_forwards_exact2/home"],"harness":"copilot","timeout_seconds":25,"frozen_launcher":false}')
+E         Use -v to get more diff
+
+tests/test_native_slo_managed_aliases.py:268: AssertionError
+__ test_invocation_forwards_exact_registration_and_contains_failures[output] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e0b650>
+failure = 'output'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+            assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+            assert row["registration_unchanged"] is True
+        else:
+            with pytest.raises((RuntimeError, ValueError)):
+                runner.invoke(context, case, row)
+            assert row.get("registration_unchanged") is not True
+>       assert offered == [surface.argv]
+E       assert [] == [('/workspace...her":false}')]
+E         
+E         Right contains one more item: ('/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/workspace/s...t/pytest-700/test_invocation_forwards_exact3/home"],"harness":"copilot","timeout_seconds":25,"frozen_launcher":false}')
+E         Use -v to get more diff
+
+tests/test_native_slo_managed_aliases.py:268: AssertionError
+_ test_invocation_forwards_exact_registration_and_contains_failures[invalid-json] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e09b20>
+failure = 'invalid-json'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+            assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+            assert row["registration_unchanged"] is True
+        else:
+            with pytest.raises((RuntimeError, ValueError)):
+                runner.invoke(context, case, row)
+            assert row.get("registration_unchanged") is not True
+>       assert offered == [surface.argv]
+E       assert [] == [('/workspace...her":false}')]
+E         
+E         Right contains one more item: ('/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/workspace/s...t/pytest-700/test_invocation_forwards_exact4/home"],"harness":"copilot","timeout_seconds":25,"frozen_launcher":false}')
+E         Use -v to get more diff
+
+tests/test_native_slo_managed_aliases.py:268: AssertionError
+_ test_invocation_forwards_exact_registration_and_contains_failures[changed-registration] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-700/test_invocation_forwards_exact5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5c46e0a420>
+failure = 'changed-registration'
+
+    @pytest.mark.parametrize(
+        "failure", ("none", "timeout", "containment", "output", "invalid-json", "changed-registration")
+    )
+    def test_invocation_forwards_exact_registration_and_contains_failures(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+    ) -> None:
+        home, workspace, guard_home = (tmp_path / name for name in ("home", "workspace", "guard-home"))
+        for path in (home, workspace, guard_home):
+            path.mkdir()
+        context = HarnessContext(home, workspace, guard_home)
+        install_registered_surface(context, "copilot")
+        case = permission_cases(workspace, kind="permission_no_daemon")[0]
+        surface = registration(context, case)
+        offered: list[object] = []
+    
+        def process(argv: tuple[str, ...], **kwargs: Any) -> BoundedHookProcessResult:
+            assert argv == surface.argv
+            assert kwargs["cwd"] == surface.cwd
+            assert kwargs["timeout_seconds"] == 30.0
+            assert kwargs["output_limit"] == 2 * 1024 * 1024
+            assert json.loads(kwargs["input_text"]) == dict(case.payload)
+            assert kwargs["environment"]["HOME"] == str(home)
+            assert "PYTHONPATH" not in kwargs["environment"] and "PYTHONHOME" not in kwargs["environment"]
+            offered.append(argv)
+            if failure == "changed-registration":
+                surface.config_path.write_bytes(surface.config_path.read_bytes() + b"\n")
+            return BoundedHookProcessResult(
+                0,
+                "{" if failure == "invalid-json" else json.dumps(PERMISSION_RESPONSE),
+                failure == "output",
+                failure == "timeout",
+                containment_failed=failure == "containment",
+            )
+    
+        monkeypatch.setattr(runner, "run_isolated_hook_process", process)
+        row: dict[str, Any] = {}
+        if failure == "none":
+            assert runner.invoke(context, case, row) == PERMISSION_RESPONSE
+            assert row["registration_unchanged"] is True
+        else:
+            with pytest.raises((RuntimeError, ValueError)):
+                runner.invoke(context, case, row)
+            assert row.get("registration_unchanged") is not True
+>       assert offered == [surface.argv]
+E       assert [] == [('/workspace...her":false}')]
+E         
+E         Right contains one more item: ('/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/workspace/s...t/pytest-700/test_invocation_forwards_exact5/home"],"harness":"copilot","timeout_seconds":25,"frozen_launcher":false}')
+E         Use -v to get more diff
+
+tests/test_native_slo_managed_aliases.py:268: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[none]
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[timeout]
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[containment]
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[output]
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[invalid-json]
+FAILED tests/test_native_slo_managed_aliases.py::test_invocation_forwards_exact_registration_and_contains_failures[changed-registration]
+6 failed, 39 passed in 1.57s

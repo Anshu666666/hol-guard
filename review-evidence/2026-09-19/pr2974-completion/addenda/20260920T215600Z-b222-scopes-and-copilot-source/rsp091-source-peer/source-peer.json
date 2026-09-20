@@ -1,0 +1,36 @@
+{
+  "candidate_tree": "dc716c9d26924db164c46197e81f93a927065f55",
+  "images": [
+    {
+      "bytes": 16144,
+      "git_blob": "0121df862f8999338ced7224bb7eba262757990c",
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "sha256": "1e523158d8f68f94ca8ea8afd41e8892d5d4c78c08b9aa2f91efd55e8f6100b6"
+    },
+    {
+      "bytes": 9379,
+      "git_blob": "36df9acc6ecc82e48949d499388d18beaffda119",
+      "path": "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs",
+      "sha256": "75d616c50cd372d6a826391b467b13f553b679b7db417bf3fa447587776e7e71"
+    }
+  ],
+  "limits": [
+    "No formatting, compilation or test execution by reviewer.",
+    "Linux/macOS current-package peer proof only; no Windows SYSTEM/DACL execution, full lifecycle qualification or performance credit.",
+    "General independent operational driver and actual returned format/execution remain separate gates."
+  ],
+  "review": [
+    "Production transport reverts byte-for-byte to b222 by removing only the cfg(test, Linux/macOS) module declaration. No production exposure or semantic edit.",
+    "Each parent invokes the original client exactly once. Positive identity is the separately spawned current test executable child with actual PID/start marker. Negative identity is the real validated current parent executable; actual socket peer is the child, so the expected refusal isolates peer PID mismatch rather than fabricated process metadata.",
+    "Negative asserts original native_client_peer_identity_mismatch and retryable_teardown=false, while the actual accepted child stream returns zero bytes before any authentication.",
+    "Positive traverses original authenticate_resident_stream, read_request_header, actual payload digest verification and write_bound_response with request-ID binding. Stream and child remain live until parent confirms receipt. No native policy evaluation is claimed.",
+    "The original client receives a 2-second budget. Fixture readiness/release/reap waits are separately bounded and do not extend the client deadline or create a resend.",
+    "Owned child handle is used for cleanup. Success requires successful child exit/reaping and directory removal. Failure paths preserve the original panic, attempt bounded owned-child kill/reap, and do not prove cleanup if that bounded attempt fails.",
+    "Ignored exact child helper is invoked by the two parent controls; it is not an independent passing workload or a third acceptance case. Original child logs inherit the outer retained command output."
+  ],
+  "reviewer": "native_runtime_audit",
+  "schema": "hol-guard.rsp091-unix-peer-control-source-peer.v1",
+  "source_base": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "source_packet": "bdcb113b182abb41bfca210b00e527423ebacadb",
+  "verdict": "clear"
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "pr2974.rsp091-accepted-stream-normalization.v1",
+  "source": "641bcd6fb8e7d6149832b6ce07b421655f3351e5",
+  "source_tree": "6a317d6a591f3505cec4431754761b60259c9b67",
+  "driver": "a4872bc5a1d0edfa39125b20752c90324c7f1c2a",
+  "driver_tree": "1edbc31a06cf5be412a6d92c24b4a07c42959253",
+  "source_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "prior_actual_tree": "89b9b13611929d07bd0f426f6d0b3a820041fa18",
+  "source_delta": "Only insert stream.set_nonblocking(false).unwrap(); after accepted-stream loop, before drop(listener). Production unchanged.",
+  "driver_delta": "Only bind new test SHA256 and exact successor source/tree/branch; original four selectors, deadlines, controls and matrix unchanged.",
+  "source_primary": "https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/uipc_syscalls.c",
+  "source_primary_lines": [
+    620,
+    642,
+    647,
+    650
+  ],
+  "production_reference": "rust/crates/guard-runtime/src/resident_transport_service.rs:73-79",
+  "scope": "Production normalizes each accepted stream to blocking. Fixture omission is source-established; exact old raw OS error was not captured. Linux passed original4, each Mac failed first positive and left three unoffered. No product fix, deadline increase or retry.",
+  "formatting_gate": "Pinned Rust1.88 rustfmt check before any native build; inserted single line is ordinary formatted Rust. No separate native functional credit yet.",
+  "local_driver_controls": {
+    "passed": 11,
+    "seconds": 0.003
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "pr2974.copilot-permission-availability-source-peer.v1",
+  "reviewer": "windows_persistence_audit",
+  "verdict": "clear",
+  "scope": "Independent read-only source and control review; no imports, controls, installed command or workload executed by reviewer.",
+  "base_commit": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "base_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+  "candidate_tree": "5c9ebccccf1ec0bbb2494f90cb771023e0860b9e",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+      "blob": "7e29504af47e93c5d3b005fb28193e35b8e6f8c5",
+      "bytes": 20566,
+      "sha256": "b1fe199b047731040fd46c650307672daa0013d9f183d83d0c360fa64d2b499d"
+    },
+    {
+      "path": "tests/test_copilot_permission_availability_delivery.py",
+      "blob": "2b279345395f73bd7b853ea3352af4cb670ca119",
+      "bytes": 7131,
+      "sha256": "bd7d48f7819b1d3db0516c2cbec897db51771b3c2996016dad0afeed0e482565"
+    }
+  ],
+  "verification": [
+    "Both full Git blobs equal independently read local bytes/manifest hashes.",
+    "Full candidate/base tree comparison identifies exactly these two changed leaves; product diff is one existing helper import and eight-line conditional branch.",
+    "Reviewed actual Copilot managed global/project event registration and bounded bridge alias mapping, daemon fast-path renderer, actual availability producer and original direct-CLI permission assertions."
+  ],
+  "finding": "Original Copilot PermissionRequest availability returns explicit behavior deny, message, interrupt false and native_hook_event_unavailable. The daemon bridge previously bypassed its pre/post-only Copilot handler and converted this continuation reason to warn, emitting generic hookSpecificOutput.permissionDecision allow instead of preserving the native deny handoff.",
+  "resolution": "The exact successor recognizes only canonical Copilot, an existing recognized PermissionRequest alias, and explicit behavior deny. It serializes the original response dictionary without mutation and keeps stderr empty/exit 0; this preserves native denial and the original interrupt field instead of equating session continuation with tool approval. No new allow form is admitted, no generic policy/other event branch changes, no retry or transport/deadline change.",
+  "controls_reviewed": {
+    "total_declared": 27,
+    "actual_producer_cases": 2,
+    "denial_policy_interrupt_cases": 18,
+    "other_contract_cases": 3,
+    "actual_registration_entry_with_modeled_http_cases": 4,
+    "details": "Producer cases preserve exact original dictionary and input nonmutation. Denial cases retain original interrupt true/false despite contradictory policy_action allow/warn/block. Other-contract cases retain pre/post and Claude output. Four global/project registrations run the actual bridge entry and assert query context, one HTTP offer, no fallback, exact output and unchanged registration bytes."
+  },
+  "limits": [
+    "Registered-entry HTTP responses/token lookup are modeled; these controls are not installed-daemon or native receipt evidence.",
+    "This narrow branch preserves a known explicit denial rather than introducing a general schema validator. It neither accepts nor repairs unrelated malformed or new Copilot allow response forms.",
+    "Owner reported 176 combined passing controls, types 0 errors/60 warnings and style success; this reviewer did not execute or independently verify those result artifacts.",
+    "No original requirements or unavailable-session behavior are weakened; full RSP078 acceptance remains separate."
+  ]
+}

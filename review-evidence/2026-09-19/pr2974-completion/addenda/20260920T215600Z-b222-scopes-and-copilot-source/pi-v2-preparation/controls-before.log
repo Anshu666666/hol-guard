@@ -1,0 +1,421 @@
+FFFFFFFFFFFF...                                                          [100%]
+=================================== FAILURES ===================================
+_ test_original_warning_delivery_and_native_receipt_match_exact_current_case[benign-command] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_delivery0')
+index = 0
+
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_delivery_and_native_receipt_match_exact_current_case(tmp_path, index):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        assert validate_native_decision_receipt(captured["receipt"]) == captured["receipt"]
+>       assert captured["receipt"]["policy_action"] == case.policy_action == "warn"
+                                                       ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PiSourceCase' object has no attribute 'policy_action'
+
+tests/test_native_slo_pi_default_policy.py:27: AttributeError
+_ test_original_warning_delivery_and_native_receipt_match_exact_current_case[clean-source] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_delivery1')
+index = 2
+
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_delivery_and_native_receipt_match_exact_current_case(tmp_path, index):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        assert validate_native_decision_receipt(captured["receipt"]) == captured["receipt"]
+>       assert captured["receipt"]["policy_action"] == case.policy_action == "warn"
+                                                       ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PiSourceCase' object has no attribute 'policy_action'
+
+tests/test_native_slo_pi_default_policy.py:27: AttributeError
+_ test_actual_default_compiler_preserves_warn_floor_for_declared_benign_cases __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_actual_default_compiler_p0')
+
+    def test_actual_default_compiler_preserves_warn_floor_for_declared_benign_cases(tmp_path):
+        config = GuardConfig(guard_home=tmp_path / "guard", workspace=tmp_path)
+        policy = effective_native_policy_v3(config)
+        assert policy["protection_posture"] == "protected"
+        assert policy["default_action"] == policy["subprocess_action"] == "warn"
+        assert policy["harness_actions"] == {}
+>       assert [case.policy_action for case in cases(tmp_path, "pi")] == ["warn", "block", "warn", "block", "block"]
+                ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PiSourceCase' object has no attribute 'policy_action'
+
+tests/test_native_slo_pi_default_policy.py:38: AttributeError
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-policy_action-allow] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can0')
+index = 0, field = 'policy_action', value = 'allow'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_native_slo_pi_default_policy.py:48: Failed
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-policy_action-review] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can1')
+index = 0, field = 'policy_action', value = 'review'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_native_slo_pi_default_policy.py:48: Failed
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-reason_code-source_full_scan_allow] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can2')
+index = 0, field = 'reason_code', value = 'source_full_scan_allow'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_native_slo_pi_default_policy.py:48: Failed
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-reason_code-different_warning] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can3')
+index = 0, field = 'reason_code', value = 'different_warning'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_native_slo_pi_default_policy.py:48: Failed
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-policy_action-allow] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can4')
+index = 2, field = 'policy_action', value = 'allow'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+        with pytest.raises(RuntimeError, match="policy_verdict"):
+>           validate_delivery(case, row)
+
+tests/test_native_slo_pi_default_policy.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = PiSourceCase(label='pi-source-clean', harness='pi', event='tool_result', tool='Read', arguments={'file_path': '/tmp/py...guard_value = 1;\nconst guard_value = 1;\nconst guard_value = 1;\n', decision='allow', reason='source_full_scan_allow')
+row = {'blocked': False, 'fetches': [{'decision': 'allow', 'encrypted_payload_ref_present': True, 'encrypted_payload_sha256'...6eaaf579a14b1cda49a25fc9725', 'excerpt_truncated': False, ...}], 'id': 'pi-source-clean', 'input_unchanged': True, ...}
+
+    def validate_delivery(case: PiSourceCase, row: dict[str, Any]) -> None:
+        if row.get("id") != case.label or row.get("offered") is not True or row.get("returned") is not True:
+            raise RuntimeError("installed_pi_callback_incomplete")
+        if row.get("input_unchanged") is not True:
+            raise RuntimeError("installed_pi_callback_mutated_input")
+        fetches = row.get("fetches")
+        if not isinstance(fetches, list) or len(fetches) != 1:
+            raise RuntimeError("installed_pi_fetch_count")
+        fetch = fetches[0]
+        if not isinstance(fetch, dict) or (
+            fetch.get("method"),
+            fetch.get("pathname"),
+            fetch.get("status"),
+            fetch.get("decision"),
+        ) != ("POST", "/v1/hooks/" + case.harness, 200, case.decision):
+            raise RuntimeError("installed_pi_fetch_delivery")
+        if row.get("preserved") is not (case.decision == "allow"):
+            raise RuntimeError("installed_pi_callback_verdict")
+        if case.decision == "deny" and row.get("blocked") is not True:
+            raise RuntimeError("installed_pi_block_missing")
+        if case.event == "tool_result":
+            digest = hashlib.sha256(case.output.encode()).hexdigest()
+            if fetch.get("encrypted_payload_ref_present") is True:
+                encrypted_digest = fetch.get("encrypted_payload_sha256")
+                if (
+                    not isinstance(encrypted_digest, str)
+                    or len(encrypted_digest) != 64
+                    or any(character not in "0123456789abcdef" for character in encrypted_digest)
+                ):
+                    raise RuntimeError("installed_pi_encrypted_reference_missing")
+                # The native-return observer independently hydrates the original private
+                # reference after evaluation and binds its complete inner source proof.
+            else:
+                if fetch.get("source_ref_present") is not True or fetch.get("source_ref_sha256") != digest:
+                    raise RuntimeError("installed_pi_source_reference_missing")
+                if fetch.get("source_ref_chars") != len(case.output) or fetch.get("excerpt_truncated") is not True:
+                    raise RuntimeError("installed_pi_source_reference_incomplete")
+            if fetch.get("reason_code") != case.reason:
+>               raise RuntimeError("installed_pi_source_verdict")
+E               RuntimeError: installed_pi_source_verdict
+
+scripts/native_slo_pi_sources.py:139: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can4')
+index = 2, field = 'policy_action', value = 'allow'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'policy_verdict'
+E         Actual message: 'installed_pi_source_verdict'
+
+tests/test_native_slo_pi_default_policy.py:48: AssertionError
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-policy_action-review] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can5')
+index = 2, field = 'policy_action', value = 'review'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+        with pytest.raises(RuntimeError, match="policy_verdict"):
+>           validate_delivery(case, row)
+
+tests/test_native_slo_pi_default_policy.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = PiSourceCase(label='pi-source-clean', harness='pi', event='tool_result', tool='Read', arguments={'file_path': '/tmp/py...guard_value = 1;\nconst guard_value = 1;\nconst guard_value = 1;\n', decision='allow', reason='source_full_scan_allow')
+row = {'blocked': False, 'fetches': [{'decision': 'allow', 'encrypted_payload_ref_present': True, 'encrypted_payload_sha256'...6eaaf579a14b1cda49a25fc9725', 'excerpt_truncated': False, ...}], 'id': 'pi-source-clean', 'input_unchanged': True, ...}
+
+    def validate_delivery(case: PiSourceCase, row: dict[str, Any]) -> None:
+        if row.get("id") != case.label or row.get("offered") is not True or row.get("returned") is not True:
+            raise RuntimeError("installed_pi_callback_incomplete")
+        if row.get("input_unchanged") is not True:
+            raise RuntimeError("installed_pi_callback_mutated_input")
+        fetches = row.get("fetches")
+        if not isinstance(fetches, list) or len(fetches) != 1:
+            raise RuntimeError("installed_pi_fetch_count")
+        fetch = fetches[0]
+        if not isinstance(fetch, dict) or (
+            fetch.get("method"),
+            fetch.get("pathname"),
+            fetch.get("status"),
+            fetch.get("decision"),
+        ) != ("POST", "/v1/hooks/" + case.harness, 200, case.decision):
+            raise RuntimeError("installed_pi_fetch_delivery")
+        if row.get("preserved") is not (case.decision == "allow"):
+            raise RuntimeError("installed_pi_callback_verdict")
+        if case.decision == "deny" and row.get("blocked") is not True:
+            raise RuntimeError("installed_pi_block_missing")
+        if case.event == "tool_result":
+            digest = hashlib.sha256(case.output.encode()).hexdigest()
+            if fetch.get("encrypted_payload_ref_present") is True:
+                encrypted_digest = fetch.get("encrypted_payload_sha256")
+                if (
+                    not isinstance(encrypted_digest, str)
+                    or len(encrypted_digest) != 64
+                    or any(character not in "0123456789abcdef" for character in encrypted_digest)
+                ):
+                    raise RuntimeError("installed_pi_encrypted_reference_missing")
+                # The native-return observer independently hydrates the original private
+                # reference after evaluation and binds its complete inner source proof.
+            else:
+                if fetch.get("source_ref_present") is not True or fetch.get("source_ref_sha256") != digest:
+                    raise RuntimeError("installed_pi_source_reference_missing")
+                if fetch.get("source_ref_chars") != len(case.output) or fetch.get("excerpt_truncated") is not True:
+                    raise RuntimeError("installed_pi_source_reference_incomplete")
+            if fetch.get("reason_code") != case.reason:
+>               raise RuntimeError("installed_pi_source_verdict")
+E               RuntimeError: installed_pi_source_verdict
+
+scripts/native_slo_pi_sources.py:139: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can5')
+index = 2, field = 'policy_action', value = 'review'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'policy_verdict'
+E         Actual message: 'installed_pi_source_verdict'
+
+tests/test_native_slo_pi_default_policy.py:48: AssertionError
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-reason_code-source_full_scan_allow] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can6')
+index = 2, field = 'reason_code', value = 'source_full_scan_allow'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_native_slo_pi_default_policy.py:48: Failed
+_ test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-reason_code-different_warning] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can7')
+index = 2, field = 'reason_code', value = 'different_warning'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+        with pytest.raises(RuntimeError, match="policy_verdict"):
+>           validate_delivery(case, row)
+
+tests/test_native_slo_pi_default_policy.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+case = PiSourceCase(label='pi-source-clean', harness='pi', event='tool_result', tool='Read', arguments={'file_path': '/tmp/py...guard_value = 1;\nconst guard_value = 1;\nconst guard_value = 1;\n', decision='allow', reason='source_full_scan_allow')
+row = {'blocked': False, 'fetches': [{'decision': 'allow', 'encrypted_payload_ref_present': True, 'encrypted_payload_sha256'...6eaaf579a14b1cda49a25fc9725', 'excerpt_truncated': False, ...}], 'id': 'pi-source-clean', 'input_unchanged': True, ...}
+
+    def validate_delivery(case: PiSourceCase, row: dict[str, Any]) -> None:
+        if row.get("id") != case.label or row.get("offered") is not True or row.get("returned") is not True:
+            raise RuntimeError("installed_pi_callback_incomplete")
+        if row.get("input_unchanged") is not True:
+            raise RuntimeError("installed_pi_callback_mutated_input")
+        fetches = row.get("fetches")
+        if not isinstance(fetches, list) or len(fetches) != 1:
+            raise RuntimeError("installed_pi_fetch_count")
+        fetch = fetches[0]
+        if not isinstance(fetch, dict) or (
+            fetch.get("method"),
+            fetch.get("pathname"),
+            fetch.get("status"),
+            fetch.get("decision"),
+        ) != ("POST", "/v1/hooks/" + case.harness, 200, case.decision):
+            raise RuntimeError("installed_pi_fetch_delivery")
+        if row.get("preserved") is not (case.decision == "allow"):
+            raise RuntimeError("installed_pi_callback_verdict")
+        if case.decision == "deny" and row.get("blocked") is not True:
+            raise RuntimeError("installed_pi_block_missing")
+        if case.event == "tool_result":
+            digest = hashlib.sha256(case.output.encode()).hexdigest()
+            if fetch.get("encrypted_payload_ref_present") is True:
+                encrypted_digest = fetch.get("encrypted_payload_sha256")
+                if (
+                    not isinstance(encrypted_digest, str)
+                    or len(encrypted_digest) != 64
+                    or any(character not in "0123456789abcdef" for character in encrypted_digest)
+                ):
+                    raise RuntimeError("installed_pi_encrypted_reference_missing")
+                # The native-return observer independently hydrates the original private
+                # reference after evaluation and binds its complete inner source proof.
+            else:
+                if fetch.get("source_ref_present") is not True or fetch.get("source_ref_sha256") != digest:
+                    raise RuntimeError("installed_pi_source_reference_missing")
+                if fetch.get("source_ref_chars") != len(case.output) or fetch.get("excerpt_truncated") is not True:
+                    raise RuntimeError("installed_pi_source_reference_incomplete")
+            if fetch.get("reason_code") != case.reason:
+>               raise RuntimeError("installed_pi_source_verdict")
+E               RuntimeError: installed_pi_source_verdict
+
+scripts/native_slo_pi_sources.py:139: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_original_warning_http_can7')
+index = 2, field = 'reason_code', value = 'different_warning'
+
+    @pytest.mark.parametrize("field,value", [("policy_action", "allow"), ("policy_action", "review"), ("reason_code", "source_full_scan_allow"), ("reason_code", "different_warning")])
+    @pytest.mark.parametrize("index", [0, 2], ids=["benign-command", "clean-source"])
+    def test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason(tmp_path, index, field, value):
+        case = cases(tmp_path, "pi")[index]
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == case.label)
+        row = copy.deepcopy(captured["callback"])
+        row["fetches"][0][field] = value
+>       with pytest.raises(RuntimeError, match="policy_verdict"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'policy_verdict'
+E         Actual message: 'installed_pi_source_verdict'
+
+tests/test_native_slo_pi_default_policy.py:48: AssertionError
+_ test_exact_warning_policy_is_required_in_real_committed_receipt[warn-native_policy_warning-True] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-565/test_exact_warning_policy_is_r0')
+action = 'warn', reason = 'native_policy_warning', accepted = True
+
+    @pytest.mark.parametrize("action,reason,accepted", [("warn", "native_policy_warning", True), ("allow", "native_policy_warning", False), ("warn", "source_full_scan_allow", False), ("review", "native_policy_warning", False)])
+    def test_exact_warning_policy_is_required_in_real_committed_receipt(tmp_path, action, reason, accepted):
+        state = fixture(tmp_path)
+        captured = next(row for row in CAPTURE["rows"] if row["callback"]["id"] == state.case.label)
+        value = state.edge["receipt"]
+        # Native calls remain modeled. Reuse the observed public policy projection,
+        # then sign the test receipt's identity exactly as the existing SQLite fixture.
+        value["policy_action"] = captured["receipt"]["policy_action"] if accepted else action
+        value["reason_code"] = reason
+        value["decision_id"] = hashlib.sha256(canonical_receipt_bytes(value)).hexdigest()
+        state.edge["result"]["policy_action"] = value["policy_action"]
+        state.edge["result"]["reason_code"] = reason
+        witness = PiReceipts(state.daemon, (state.case,), installed_rule_digest="c" * 64).__enter__()
+        result = exercise(state, witness)
+        row = result["rows"][state.case.label]
+        assert row["committed_receipt"] == value
+        assert row["edge_binding_valid"] and row["ack_binding_valid"] and row["request_binding_valid"]
+>       assert row["receipt_checks"] is accepted and result["complete"] is accepted
+E       assert (False is True)
+
+tests/test_native_slo_pi_default_policy.py:69: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_delivery_and_native_receipt_match_exact_current_case[benign-command]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_delivery_and_native_receipt_match_exact_current_case[clean-source]
+FAILED tests/test_native_slo_pi_default_policy.py::test_actual_default_compiler_preserves_warn_floor_for_declared_benign_cases
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-policy_action-allow]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-policy_action-review]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-reason_code-source_full_scan_allow]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[benign-command-reason_code-different_warning]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-policy_action-allow]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-policy_action-review]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-reason_code-source_full_scan_allow]
+FAILED tests/test_native_slo_pi_default_policy.py::test_original_warning_http_cannot_be_replaced_by_different_policy_or_reason[clean-source-reason_code-different_warning]
+FAILED tests/test_native_slo_pi_default_policy.py::test_exact_warning_policy_is_required_in_real_committed_receipt[warn-native_policy_warning-True]
+12 failed, 3 passed in 0.44s

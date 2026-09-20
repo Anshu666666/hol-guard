@@ -1,0 +1,79 @@
+{
+  "schema": "hol-guard.rsp091-accepted-stream-peer.v1",
+  "verdict": "clear",
+  "scope": "Read-only single-line fixture correspondence plus source/driver hash rebind, no build/control execution.",
+  "source": {
+    "commit": "641bcd6fb8e7d6149832b6ce07b421655f3351e5",
+    "tree": "6a317d6a591f3505cec4431754761b60259c9b67",
+    "sole_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f"
+  },
+  "driver": {
+    "commit": "a4872bc5a1d0edfa39125b20752c90324c7f1c2a",
+    "tree": "1edbc31a06cf5be412a6d92c24b4a07c42959253",
+    "sole_parent": "641bcd6fb8e7d6149832b6ce07b421655f3351e5"
+  },
+  "changes": {
+    "sd": {
+      "a": 4801,
+      "b": 4801,
+      "changes": [
+        [
+          "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs",
+          "100644 96de6a7efd517a5380d6adfad4792a658304f9ed"
+        ]
+      ],
+      "removed": []
+    },
+    "dd": {
+      "a": 4801,
+      "b": 4804,
+      "changes": [
+        [
+          ".github/workflows/pr2974-rsp091-unix-peer-validation.yml",
+          "100644 8bf6d210326d5bb6b8401e508a9bd720a8a19d21"
+        ],
+        [
+          "rsp091-validation/run.py",
+          "100644 2edfd6ee17ddec7184b93d421e8f64ef85828966"
+        ],
+        [
+          "rsp091-validation/test_driver.py",
+          "100644 c4f33a9ca0aed5517962940bf51b3ab358a5bb83"
+        ]
+      ],
+      "removed": []
+    }
+  },
+  "verified": [
+    "Exact published normalized test 6b619737 -> 96de6a7e is only insertion of stream.set_nonblocking(false).unwrap() after accept and before listener drop.",
+    "The source test beforeimage was fetched by Git blob; the earlier local unformatted source path was not used as the final comparison authority.",
+    "Exact b222 resident_transport_service.rs serve() normalizes every accepted Unix stream to blocking before admitting it.",
+    "The owner-retained Apple XNU uipc_syscalls.c at f6217f891ac0bb64f3d375211650a4c1ff8ca1ea copies listener flags into the accepted descriptor and applies FNONBLOCK to SS_NBIO; relevant retained source was read independently.",
+    "Actual failure evidence alone did not retain a raw OS error. This is a proven fixture setup discrepancy, not retrospective proof of a specific error leaf or product defect.",
+    "Runner API afterbody reverses exactly by one source SHA256 literal; driver tests unchanged; bound workflow reverses by source SHA twice, tree once and unique v3 branch only.",
+    "Both commit sole parents and full 4801-to-4801 and 4801-to-4804 leaf diffs read independently; no removals or production source changes.",
+    "Four exact parent cases, original 2 s request/250 ms authentication/finite fixture waits, collection/result/cleanup gates and Linux/both-Mac lanes remain unchanged.",
+    "Pinned rustfmt check precedes build; formatting, compilation and new native controls are not claimed by this source peer."
+  ],
+  "identities": {
+    "test_before": "6b619737f2d5e1dd3e2607d9504dc1a77b2c0383",
+    "test_after": "96de6a7efd517a5380d6adfad4792a658304f9ed",
+    "runner": "2edfd6ee17ddec7184b93d421e8f64ef85828966",
+    "tests": "c4f33a9ca0aed5517962940bf51b3ab358a5bb83",
+    "workflow": "8bf6d210326d5bb6b8401e508a9bd720a8a19d21"
+  },
+  "history": {
+    "prior_mixed_result": "89b9b13611929d07bd0f426f6d0b3a820041fa18",
+    "scope": "Owner retains original Linux four passes and each Mac first-positive failure plus three unoffered tests. This peer did not redownload or independently recount that original artifact."
+  },
+  "previous_peers": [
+    "7dd5ce68d10f275cf94fed46398e9e85001338fa",
+    "44a088751a3cc0bad305a1461b0c45bee56b6162"
+  ],
+  "execution": {
+    "builds": 0,
+    "tests": 0,
+    "workload_runs": 0,
+    "ref_changes": 0
+  }
+}

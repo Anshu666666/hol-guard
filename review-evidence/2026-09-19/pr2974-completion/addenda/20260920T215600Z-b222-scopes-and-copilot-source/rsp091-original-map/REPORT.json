@@ -1,0 +1,193 @@
+{
+  "schema": "pr2974.rsp091-original-requirements-source-and-retained-control-map.v1",
+  "status": "partial_coverage_mapped_no_new_product_defect_or_execution",
+  "source": {
+    "sha": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97"
+  },
+  "latest_selected_source_equivalence": {
+    "sha": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+    "selected_file_count": 38,
+    "changed_selected_files": [],
+    "scope": "Byte equivalence of the mapped leaves only; execution remains attached to each original run."
+  },
+  "originals": {
+    "evidence_commit": "aba7420f54eaa658d0422f09b08767a030317de8",
+    "prd_blob": "39d27bfa693117f8df3816d44b106921ca8efc94",
+    "todo_blob": "6f464adb27477ebaaceaf7ecb25083d6cfe37d06",
+    "private_chat_available": false
+  },
+  "original_requirement": {
+    "id": "RSP-091",
+    "title": "Preserve Windows and Unix transport guarantees",
+    "acceptance": "Test DACL/owner/SYSTEM rules, loopback authentication, exact package process, Unix private paths, permissions and peer identity.",
+    "dependencies": [
+      "RSP-089",
+      "RSP-090"
+    ],
+    "original_status": "OPEN",
+    "section_priority": "P2 conditional",
+    "section_gate": "Begin only if post-optimization profiles justify added protocol complexity."
+  },
+  "dependency_contracts": [
+    {
+      "id": "RSP-089",
+      "depends_on": [
+        "RSP-088",
+        "RSP-021"
+      ],
+      "acceptance": "Test restart, stale discovery, peer replacement, failed auth, reconnect, concurrent requests, cancellation and ambiguous commit.",
+      "map_limit": "Existing conservative no-retry, stale-start-marker and recovery controls cover parts; this record does not close all races or ambiguous-commit qualification."
+    },
+    {
+      "id": "RSP-090",
+      "depends_on": [
+        "RSP-086",
+        "RSP-024"
+      ],
+      "acceptance": "Preserve auth, context binding, scheduler/admission, response and evidence contracts while keeping product/admin APIs on their current owner.",
+      "map_limit": "Conditional prototype selection and preceding profile/ADR decision are not established here. Current ordinary transport preservation is mapped without assuming a named-pipe migration or new ingress is required."
+    }
+  ],
+  "clauses": [
+    {
+      "clause": "Windows DACL and owner",
+      "source": [
+        "native_policy_snapshot_windows_acl.py:_verify_protected_control/_verify_acl_entries/_verify_acl_entry",
+        "native_policy_snapshot_windows_state.py:directory binding",
+        "guard-runtime-windows-process/private_files.rs:279-366"
+      ],
+      "guarantees": "Protected/noninherited allow ACEs, exact full-access mask and current SID+SYSTEM trustees; same opened handle verification. Applied owner may be current/SYSTEM/Administrators; this does not grant an Administrators ACE.",
+      "existing_controls": [
+        "test_real_authority_lease_and_acl_repair_allow_config_capture[shared,repair]",
+        "test_windows_commit_rejects_foreign_owner_before_acl_or_rename",
+        "windows_owner_allowlist_rejects_unrelated_principals",
+        "windows_state_scope_and_token_state_are_owner_private"
+      ],
+      "execution": "Current400 Windows log executes all12 config-directory controls, including four real lease/ACL cells and two real atomic-barrier cells; named Rust owner/private-state tests pass. Foreign-owner Python control is modeled source coverage; no new execution credit.",
+      "limits": "Real additional Everyone read ACE is rejected then repaired through production owner-first path; not an actual unrelated-user access campaign or every DACL parser branch."
+    },
+    {
+      "clause": "SYSTEM rules",
+      "source": [
+        "native_policy_snapshot_windows_support.py:_windows_private_descriptor",
+        "native_policy_snapshot_windows_acl.py:_verify_acl_entries",
+        "resident_state_windows.rs:owner allowlist"
+      ],
+      "existing_controls": [
+        "test_windows_private_descriptor_deduplicates_system_owner_ace",
+        "windows_owner_allowlist_rejects_unrelated_principals"
+      ],
+      "execution": "Python test source explicitly expects one SYSTEM ACE when current owner is SYSTEM and covers owner classification via mocks. Actual Windows Rust owner-allowlist row passes; actual private-state positive uses runner identity.",
+      "limits": "No actual SYSTEM-launched process certificate. The original text requires testing SYSTEM rules; it does not by itself require privileged service execution. No privilege escalation or new requirement is inferred."
+    },
+    {
+      "clause": "Loopback authentication",
+      "source": [
+        "resident_client.rs:122-142",
+        "resident_transport.rs:193-246"
+      ],
+      "guarantees": "Only IPv4 127.0.0.1/nonzero port; process identity checked around connection; role-bound nonce/HMAC and request correlation/digest checks.",
+      "existing_controls": [
+        "rejects_non_loopback_tcp_endpoint",
+        "timely_authentication_rejection_keeps_its_fatal_error",
+        "fragmented_server_proof_cannot_renew_authentication_budget",
+        "rejects_response_bound_to_another_request",
+        "rejects_response_digest_mismatch",
+        "test_invalid_loopback_server_proof_receives_no_authenticated_payload"
+      ],
+      "execution": "Windows native control rows prove loopback refusal, fixed auth failure and deadline/no-retry controls. Linux adds actual Unix pair response-ID/digest mismatch. The malicious-loopback Python test also passes in Windows five-test suite but targets compatibility resident._authenticated_loopback_client, not the Rust implementation.",
+      "limits": "Do not use that legacy Python server fixture as sole proof of the current Rust HMAC boundary."
+    },
+    {
+      "clause": "Exact package process",
+      "source": [
+        "resident_process_identity.rs:80-117",
+        "native_runtime.py:_validate_binary",
+        "native_runtime_identity.py",
+        "native_resident_stream.py"
+      ],
+      "guarantees": "Current package executable path or explicitly selected digest is combined with actual process start marker; bundled auto manifest version/protocol/rule/source/runtime identities remain checked, no PATH lookup.",
+      "existing_controls": [
+        "process_identity_rejects_a_reused_same_binary_pid_marker",
+        "test_live_image_reuses_only_a_verified_running_inode",
+        "test_package_version_and_process_exit_revoke_the_proof",
+        "test_affirmative_pid_mismatch_quarantines_the_actual_child_before_any_frame"
+      ],
+      "execution": "Same-binary stale-marker Rust case passes on retained Windows and Linux. Broader Python Linux live-image controls exist; exact individual current shard evidence is not newly admitted by this map. New b222 installed17 identity cases are separately verified in b458 packet.",
+      "limits": "Retained Rust selector map does not establish a dedicated owned foreign-executable process rejection test. No binary digest is inferred for the separate resident source build."
+    },
+    {
+      "clause": "Unix private paths and permissions",
+      "source": [
+        "resident_state_files.rs:155-170,212-249,318-336",
+        "resident_state.rs:socket_directory",
+        "private_file_io.py (separate token reader scope)"
+      ],
+      "guarantees": "Private create0600/O_NOFOLLOW, lock regular/path-handle device+inode/single-link/no group-other permissions, private directories0700; socket directory owner joins selected state scope.",
+      "existing_controls": [
+        "test_private_regular_file_read_rejects_public_file_or_parent",
+        "test_private_regular_file_read_rejects_symlink",
+        "test_private_regular_file_read_rejects_parent_mode_change_during_read",
+        "test_native_policy_snapshot_write_safety.py",
+        "startup_lock_*",
+        "unix_socket_setup_retains_in_budget_connection"
+      ],
+      "execution": "Retained Linux Rust socket and lock positives pass; Python tests and ordinary source workflow wiring are mapped by exact bytes. Windows's three POSIX reader skips are explicit and cannot supply Unix execution.",
+      "limits": "Token-reader tests are not automatically full native transport or every ancestor-race coverage."
+    },
+    {
+      "clause": "Unix peer identity",
+      "source": [
+        "resident_client.rs:203-222",
+        "resident_process_identity.rs"
+      ],
+      "guarantees": "Linux PeerCredentials PID or macOS LocalPeerPid must match selected process, then original runtime-owner/start-marker validation.",
+      "existing_controls": [
+        "unix_socket_setup_retains_in_budget_connection",
+        "unix_socket_setup_cannot_admit_after_original_deadline",
+        "process_identity_rejects_a_reused_same_binary_pid_marker"
+      ],
+      "execution": "Real same-process Unix listener positive and late-admission rejection pass in selected Linux log. Current request identity is not synthesized from a fixture directory.",
+      "limits": "A dedicated different-process Unix peer-PID rejection was not located in the reviewed selected controls. This is a coverage gap, not a demonstrated bypass."
+    }
+  ],
+  "retained_evidence": [
+    {
+      "packet": "85f4a71d995fbe7a22c3ffbeea3470e50b222c6b",
+      "data_peer": "90fd85b867b51a011d2ec6b031fe3286d5ddd1c1",
+      "windows_resident_job": 106131977141,
+      "runtime_tests_passed": 201,
+      "runtime_tests_ignored": 2,
+      "windows_resident_tests_passed": 5,
+      "config_directory_tests_passed": 12,
+      "first_python_cohort": {
+        "collected": 88,
+        "passed": 67,
+        "skipped": 21
+      },
+      "limits": "The separate normal installed default-auto failed20/21; selected source suite passes do not erase it."
+    },
+    {
+      "rust_source_map": "143661732418039fde4ee62d3d484157a84ce30e",
+      "blob": "9cf5c738f6d86be573fe62db53f3c3361e482fd8",
+      "windows_selected_passing_rows": 35,
+      "linux_selected_passing_rows": 33,
+      "correction": "resident_state_identity.rs is retained as a historical file only. Current compiled process checks are in resident_process_identity.rs; current state MAC is in resident_state.rs."
+    },
+    {
+      "fresh_windows_packet": "b458f43f42cfdfdb38ae7f56c6fbc4fa97ad0c19",
+      "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+      "scope": "Separately verified current Windows original152/149/3 source controls,53Windows/90frames/18WTEXT,21 installed native/receipts/maps{},resident5pass; not full091 acceptance."
+    }
+  ],
+  "smallest_next_step": {
+    "goal": "Close a concrete missing negative identity control, not repeat an already nonreproducing corpus.",
+    "proposal": "Prepare a test-only real Unix socket peer-replacement control using owned bounded child processes and the existing connector, with valid selected package/start-marker metadata but a different actual listening peer. Require the exact peer_identity_mismatch before authentication/request bytes, plus a positive same-peer control and bounded cleanup. Peer source/ownership first; run only the targeted original connector controls on required Unix platforms if selected.",
+    "companion": "For exact package process, inspect whether an existing owned foreign-executable negative already supplies this path; add a narrow process-identity control only if the search remains negative. Keep SYSTEM descriptor/owner rule controls and actual current-user DACL controls separate; do not demand privileged SYSTEM execution without a source-supported need.",
+    "product_change": "None justified by this map.",
+    "no_new_execution": true,
+    "prerequisites": "Keep original H/profile/ADR and089/090 dependencies explicit; tests alone do not activate an unselected ingress design or claim whole RSP091 completion."
+  }
+}

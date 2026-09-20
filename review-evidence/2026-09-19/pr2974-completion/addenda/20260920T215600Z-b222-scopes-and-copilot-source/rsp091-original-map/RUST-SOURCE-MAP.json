@@ -1,0 +1,191 @@
+{
+  "schema": "pr2974.rsp091-rust-source-and-retained-log-map.v1",
+  "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "scope": "Read-only source/selector map for the Windows owner's RSP091 acceptance review. No new tests/build/workload, no full RSP091 or prerequisite completion.",
+  "source_bindings": [
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "bytes": 15405,
+      "git_blob": "3335e81202562e3ec767543175b1bdd270366c3a",
+      "sha256": "4414256ab075c91357f11380c54cbc3b4ba9cd9485296f9eeb063d2c48a59a99"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_tests.rs",
+      "bytes": 9934,
+      "git_blob": "8fbd07df7c7a002d85b29c7444100a615e1af9b8",
+      "sha256": "bbda899308a129eb102a5145a170e01d37a482e97a1139e8a34e69a0fa92bf94"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs",
+      "bytes": 4521,
+      "git_blob": "aeefcd362da3f2316c681c8c84629154223ef8f1",
+      "sha256": "588ba3f5ab537b3da4b831048c1b76c42246442fe67508ded80287d23f6c00f2"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_process_identity.rs",
+      "bytes": 6379,
+      "git_blob": "1f3acbd8bb84a0b0cad1f95f100b680230912007",
+      "sha256": "30a7d8e88872f40945c0a2a4c7f90c85181c9c184f93097323eae02a4af24841"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state.rs",
+      "bytes": 15685,
+      "git_blob": "c0169a949dd2acff5a96de27555fce1cdbdc7fd9",
+      "sha256": "e979fd1cf9a75e8045822a594ec79f41eb37556152d7ea4de08c2605d1f05875"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_files.rs",
+      "bytes": 12821,
+      "git_blob": "ef1f27e84ad660d701a6f696f395d3e2d5c796f9",
+      "sha256": "2fb3d089ed1693ecbfad2830efb8307926949374b9ea94759c8ba19d938deb78"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_windows.rs",
+      "bytes": 17453,
+      "git_blob": "737b5f32b627007a88a1f919a45790578fb31425",
+      "sha256": "5566da986e275352754330b494a3f59164fc3e8c350601b5ad72cb11d7192e78"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_tests.rs",
+      "bytes": 13479,
+      "git_blob": "5eba30d9010420ffc204d4d1b6155053c8126617",
+      "sha256": "d1a0a72fbd8777e38af479192e20cc779d2012dccedfa989864cf412ad0b78b9"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "bytes": 15999,
+      "git_blob": "ab7f91d6bb56aba346d2cf5c5c392727b32b9352",
+      "sha256": "fbf2e0146a59bcbdf5d481901028ad4afda3dd3e451a2903f582be4f3dfb13a2"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_identity.rs",
+      "bytes": 4533,
+      "git_blob": "6e87e77d9d9dba1534d60346e2b5e41119bd2d96",
+      "sha256": "e7a0085b10beb4ee2b76349444a2c40613c3a060707fc77004b277c560a37771"
+    },
+    {
+      "path": "rust/crates/guard-runtime-windows-process/src/private_files.rs",
+      "bytes": 17995,
+      "git_blob": "3f6a95599d2768f0bb59c457ec674bae9c415dcd",
+      "sha256": "d94686300429439d0ddecaeec65f07c0254cf36a3f3bafef5bb9c0776308a6aa"
+    }
+  ],
+  "retained_log_evidence": [
+    {
+      "path": "windows-normal-4001185/logs/job-106131977141.log",
+      "bytes": 113524,
+      "sha256": "a1d4b14b5318f40502a8c2f85156ba9290bdeb17441bf8e8242fe0017ad82298",
+      "selected_passing_nodes": [
+        "resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read",
+        "resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget",
+        "resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged",
+        "resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error",
+        "resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading",
+        "resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access",
+        "resident_client::tests::partial_or_flush_request_write_is_never_retryable",
+        "resident_client::tests::rejects_non_loopback_tcp_endpoint",
+        "resident_client::tests::response_eof_and_reset_are_never_retryable",
+        "resident_client::tests::response_teardown_after_flushed_request_is_never_retryable",
+        "resident_state::resident_state_files::tests::windows_lock_violations_are_contention",
+        "resident_state::resident_state_files::tests::would_block_is_lock_contention",
+        "resident_state::resident_state_files::windows_security::tests::windows_owner_allowlist_rejects_unrelated_principals",
+        "resident_state::tests::already_private_directory_allows_overlapping_binds",
+        "resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads",
+        "resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget",
+        "resident_state::tests::home_state_discovery_rejects_seventeenth_matching_scope",
+        "resident_state::tests::newly_created_directory_binding_denies_rename_until_drop",
+        "resident_state::tests::home_state_discovery_allows_nonmatching_entries_within_bound",
+        "resident_state::tests::private_lock_file_rejects_a_private_root_outside_the_target_scope",
+        "resident_state::tests::process_identity_rejects_a_reused_same_binary_pid_marker",
+        "resident_state::tests::home_state_discovery_fails_closed_on_total_entry_overflow",
+        "resident_state::tests::preferred_runtime_scope_is_found_after_the_fallback_scope_bound",
+        "resident_state::tests::stale_startup_lock_recovery_preserves_lockfile_for_reuse",
+        "resident_state::tests::startup_lock_allows_overlapping_private_directory_binds",
+        "resident_state::tests::startup_lock_drop_preserves_stable_private_lockfile",
+        "resident_state::tests::startup_lock_holds_advisory_lock_until_drop",
+        "resident_state::tests::startup_lock_repeated_acquisition_rewrites_without_growth",
+        "resident_state::tests::state_mac_rejects_endpoint_mutation",
+        "resident_state::tests::verify_windows_private_directory_accepts_the_configured_root",
+        "resident_state::tests::windows_create_new_rejects_existing_file_without_mutating_it",
+        "resident_state::tests::windows_state_scope_and_token_state_are_owner_private",
+        "resident_state::tests::home_state_discovery_fails_closed_on_many_state_entries",
+        "resident_state::tests::publishing_fails_closed_when_scope_entry_bound_is_exceeded",
+        "resident_state::tests::publishing_generations_retires_superseded_state"
+      ]
+    },
+    {
+      "path": "rsp047-current400-review/originals/job-106131977139.log",
+      "bytes": 114643,
+      "sha256": "67a77a20d44cbe88e30dca3d40f00833d1df83cc2aba540a592cb1838764c7d0",
+      "selected_passing_nodes": [
+        "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection",
+        "resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read",
+        "resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget",
+        "resident_client::deadline_tests::progressing_backpressured_request_write_remains_bounded_and_nonretryable",
+        "resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged",
+        "resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error",
+        "resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading",
+        "resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access",
+        "resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence",
+        "resident_client::tests::partial_or_flush_request_write_is_never_retryable",
+        "resident_client::tests::rejects_non_loopback_tcp_endpoint",
+        "resident_client::tests::rejects_response_bound_to_another_request",
+        "resident_client::tests::rejects_response_digest_mismatch",
+        "resident_client::tests::response_eof_and_reset_are_never_retryable",
+        "resident_client::tests::response_teardown_after_flushed_request_is_never_retryable",
+        "resident_client::tests::truncated_server_proof_is_never_retryable",
+        "resident_state::resident_state_files::tests::would_block_is_lock_contention",
+        "resident_state::tests::home_state_discovery_allows_nonmatching_entries_within_bound",
+        "resident_state::tests::home_state_discovery_fails_closed_on_many_state_entries",
+        "resident_state::tests::home_state_discovery_fails_closed_on_total_entry_overflow",
+        "resident_state::tests::home_state_discovery_rejects_seventeenth_matching_scope",
+        "resident_state::tests::preferred_runtime_scope_is_found_after_the_fallback_scope_bound",
+        "resident_state::tests::process_identity_rejects_a_reused_same_binary_pid_marker",
+        "resident_state::tests::publishing_fails_closed_when_scope_entry_bound_is_exceeded",
+        "resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget",
+        "resident_state::tests::stale_startup_lock_recovery_preserves_lockfile_for_reuse",
+        "resident_state::tests::startup_lock_drop_preserves_stable_private_lockfile",
+        "resident_state::tests::startup_lock_holds_advisory_lock_until_drop",
+        "resident_state::tests::startup_lock_repeated_acquisition_rewrites_without_growth",
+        "resident_state::tests::state_mac_rejects_endpoint_mutation",
+        "resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads",
+        "resident_state::tests::publishing_generations_retires_superseded_state",
+        "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline"
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "subject": "Loopback and authenticated response binding",
+      "source": "resident_client.rs:122-142; resident_transport.rs:193-246",
+      "finding": "Only IPv4 127.0.0.1 and nonzero port admitted; runtime identity checked before/after TCP connect. Existing nonce/HMAC exchange and request-ID/digest-bound response remain. Windows log has nonloopback refusal and conservative committed-response/no-retry cases. Linux additionally records request-ID/digest mismatch and truncated server-proof controls."
+    },
+    {
+      "subject": "Unix peer and runtime identity",
+      "source": "resident_client.rs:203-222; resident_process_identity.rs:80-117",
+      "finding": "Mac LocalPeerPid or Linux PeerCredentials PID must equal selected state PID, followed by runtime-owner validation. Package path or runtime digest, according to selected identity mode, is combined with the process start marker. Linux in-budget real Unix listener test passes and traverses the positive peer check; same-binary stale-marker control passes on both selected platform logs."
+    },
+    {
+      "subject": "Windows private file boundary",
+      "source": "guard-runtime-windows-process/private_files.rs:279-366; resident_state_windows.rs; resident_state_files.rs",
+      "finding": "Current SID, SYSTEM or Administrators can be the applied owner. Protected noninherited allowed full-access DACL trustees are restricted to current SID and SYSTEM; Administrators ownership does not admit an Administrators access ACE. Validation is on the opened handle, with retained directory binding where required. Windows log has windows_owner_allowlist_rejects_unrelated_principals and windows_state_scope_and_token_state_are_owner_private, plus directory-binding and create-new nonmutation controls."
+    },
+    {
+      "subject": "POSIX private metadata",
+      "source": "resident_state_files.rs:155-170,212-249, and directory validation",
+      "finding": "Private writes use mode0600 and O_NOFOLLOW. Lock file opens add O_CLOEXEC, check regular type, path/handle device+inode, single link and no group/other permission bits. Private directory validation rejects symlink/non-directory and verifies repaired0700 permissions. This map does not certify every arbitrary path race or ownership case."
+    },
+    {
+      "subject": "State authentication",
+      "source": "resident_state_tests.rs:40-59; resident_state_identity.rs",
+      "finding": "state_mac_rejects_endpoint_mutation passes on both retained logs. Its direct assertion compares the state MAC after an endpoint mutation; it is not an independent full malicious-server or replay-corpus test."
+    }
+  ],
+  "limits": [
+    "The owner supplied original log paths and will retain their wider run/source/workflow admission. This peer independently reads and hashes those exact log bodies and maps named passing rows; it does not repeat artifact admission or infer that the entire job passed.",
+    "Windows original runtime summary is201 passed/2 ignored. Named selected rows are execution evidence, while other job failures remain separate.",
+    "The selected Rust tests do not establish an actual SYSTEM-launched context, an unrelated user principal performing every access, or a dedicated wrong Unix peer-PID rejection case. These are execution coverage limits, not source-proven security defects.",
+    "Positive Unix socket control includes a real same-process listener and original PID/start-marker check. It cannot be represented as an adversarial different-process identity test.",
+    "No legacy Python service authentication test is substituted for the current Rust transport boundary. No resource/performance or full installed lifecycle qualification follows."
+  ]
+}

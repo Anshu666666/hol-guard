@@ -1,0 +1,39 @@
+name: RSP091 verified Rust formatting copies
+on:
+  push:
+    branches: ["__BRANCH__"]
+permissions:
+  contents: read
+jobs:
+  format-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "__SOURCE_SHA__"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - name: Install exact formatter toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+      - name: Format only the verified copied Rust sources
+        env:
+          SOURCE_SHA: "__SOURCE_SHA__"
+          SOURCE_TREE: "__SOURCE_TREE__"
+        run: python driver/rsp091-validation/format.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: rsp091-rust-format-copies
+          retention-days: 30
+          if-no-files-found: error
+          path: ${{ runner.temp }}/rsp091-format/

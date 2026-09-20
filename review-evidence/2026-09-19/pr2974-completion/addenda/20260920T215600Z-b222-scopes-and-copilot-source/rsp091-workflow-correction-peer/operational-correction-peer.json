@@ -1,0 +1,60 @@
+{
+  "schema": "rsp091-operational-correction-peer-v2",
+  "verdict": "clear",
+  "scope": "Read-only exact workflow correction and source/driver lineage, no build or control execution.",
+  "previous_peer": {
+    "tree": "7dd5ce68d10f275cf94fed46398e9e85001338fa",
+    "receipt": "561bc310532245ae1c0545b5dfaba691ac0858e5"
+  },
+  "source": {
+    "commit": "7d3c5d84d4b535a46f8aabb9d99cd6d844510a1f",
+    "tree": "2092145b3d56bb6a96a49a2b9c7963d5b1d9aff5"
+  },
+  "driver": {
+    "commit": "20cf6566d11043b20065ddce4c3a108082ffaf2d",
+    "tree": "f6c087b0c4e506d5e7a00a0702ae85d18b02c479",
+    "sole_parent": "7d3c5d84d4b535a46f8aabb9d99cd6d844510a1f"
+  },
+  "workflow": {
+    "before": "36a5befcd0c975d43b9d0e43cb073e3882f05b88",
+    "after": "92eb48a93727eccba4fd697442ec4bdcd0ee5829",
+    "exact_transform_verified": true,
+    "changes": [
+      "Unique v2 branch name",
+      "Move unchanged CARGO_TARGET_DIR from job env to the build/run step env"
+    ],
+    "effect": "The runner receives the same target path on its one execution step. Toolchain installation and Python admission controls do not need CARGO_TARGET_DIR. Source, runner, test roster, budgets, cleanup/result gates and artifact retention remain unchanged."
+  },
+  "delta": [
+    {
+      "path": ".github/workflows/pr2974-rsp091-unix-peer-validation.yml",
+      "sha": "92eb48a93727eccba4fd697442ec4bdcd0ee5829",
+      "mode": "100644"
+    },
+    {
+      "path": "rsp091-validation/run.py",
+      "sha": "5a467cddedb6685d91c32970f7b6c13fc58385b0",
+      "mode": "100644"
+    },
+    {
+      "path": "rsp091-validation/test_driver.py",
+      "sha": "c4f33a9ca0aed5517962940bf51b3ab358a5bb83",
+      "mode": "100644"
+    }
+  ],
+  "removals": [],
+  "unchanged_source_blobs": 4801,
+  "first_failure": {
+    "run": 35538263044,
+    "jobs": 0,
+    "owner_retained_annotation": "(Line: 26, Col: 25): Unrecognized named-value: 'runner'. Located at position 1 within expression: runner.temp",
+    "independent_annotation_fetch": false,
+    "limits": "The initial source/operational peer missed this workflow-context restriction. That attempt provides no compilation, collection or control result."
+  },
+  "execution": {
+    "tests_repeated": false,
+    "workload_repeated": false,
+    "branch_created": false
+  },
+  "publication_gate": "Owner must recheck intended branch and source-bound run absence before its already-authorized first actual control execution."
+}

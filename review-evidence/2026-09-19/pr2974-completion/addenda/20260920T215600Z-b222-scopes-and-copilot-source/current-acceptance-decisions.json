@@ -1,0 +1,1546 @@
+{
+  "schema": "pr2974.current-b222-acceptance-decisions.v1",
+  "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "source_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+  "original_task_objects_mutated": false,
+  "archived_statuses_mutated": false,
+  "new_current_acceptances": [
+    "RSP-001",
+    "RSP-007",
+    "RSP-015",
+    "RSP-047",
+    "RSP-069",
+    "RSP-071",
+    "RSP-079",
+    "RSP-100",
+    "RSP-120"
+  ],
+  "archived_done_current_functional_revalidations": [
+    "RSP-006",
+    "RSP-013",
+    "RSP-014",
+    "RSP-022",
+    "RSP-099",
+    "RSP-133"
+  ],
+  "decisions": [
+    {
+      "task": "RSP-001",
+      "archived_status": "OPEN",
+      "current_scope": "accepted",
+      "acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
+      "evidence_tree": "bfcb9cbdd06b07d6abf385a907a17d5f18152f80",
+      "root_peer": "rsp001-source-census-peer.json",
+      "current_refs": "rsp001-current-source-refs.json",
+      "basis": [
+        "Fresh current main/base/head/branch records.",
+        "Complete baseline/current Git tree Merkle hashes and every1531 path status/preimage/afterimage independently checked.",
+        "Original four-platform artifact manifests, original toolchain/OS/architecture logs and exact package/runtime/rule digests.",
+        "Selected f8/753850 artifact provenance and e440 scanner-only difference explicit."
+      ],
+      "limits": [
+        "Current source pin and preserved earlier publication records; no invented earlier edit timestamps.",
+        "No signing or full release/performance qualification."
+      ],
+      "current_successor": {
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "source_publication": "2026-09-20T19:06:09Z; exact eight-path successor of a5fd, all4800 leaves independently verified by root",
+        "baseline_delta": {
+          "modified": 425,
+          "added": 1085,
+          "removed": 35,
+          "total": 1545
+        },
+        "source_census_record": {
+          "path": "root-checkpoint/current400-baseline-source-census.json",
+          "bytes": 589910,
+          "sha256": "8fd0a6718c66b02e1b7384aeb1166f5d103e5b5d1d7c9b2eb2c3433739b0f4a4",
+          "git_blob": "d38a95e17bfc8661ccde9df3032752db106655eb"
+        },
+        "current_normal_census_tree": "7b7bfbf850bc9078db5ec5bee3d0d9fab400bb23",
+        "observed_utc": "2026-09-20T19:52:00Z",
+        "base": {
+          "ref": "release/3.2",
+          "sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9"
+        },
+        "main_readback": {
+          "sha": "f674f69665cfbcb79ab9e82d671e99f7674905ae",
+          "tree": "22dd1de34c7fd32d3adc756b5225dcd6c0095125",
+          "message": "fix(ci): open Release Please pull requests with a repo token (#3011)\n\n* fix(ci): open Release Please pull requests with a repo token\n\nThe default Actions token cannot open pull requests, so Release Please\nleft the release branch without a PR. Use RELEASE_PLEASE_TOKEN, allow\nmanual dispatch, and keep retrying the open-or-tag job.\n\nSigned-off-by: ZCF <291624129+zerocodefast@users.noreply.github.com>\n\n* fix(ci): keep Release Please publish on retry without branch dispatch\n\nDrop manual dispatch so the release token stays on main-branch workflow\ncode. Let a retried open-or-tag job still dispatch stable publish when\nRelease Please reports a new release, and update the workflow contracts.\n\nSigned-off-by: ZCF <291624129+zerocodefast@users.noreply.github.com>\n\n---------\n\nSigned-off-by: ZCF <291624129+zerocodefast@users.noreply.github.com>\nCo-authored-by: ZCF <291624129+zerocodefast@users.noreply.github.com>",
+          "separate_from_PR_base": true,
+          "main_changes_not_imported_or_credited": true
+        },
+        "artifact_state": "All three authentic POSIX wheel archives belong to build37fd and the assessed400 tree. The original Windows default-auto gate failed20/21 before wheel upload; no Windows wheel was retained, and the strict aggregate was skipped with no report. Earlier four-platform artifacts and unsigned release rehearsal retain their own identities.",
+        "prior_edit_checkout_records_retained": true
+      },
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "prior_current_successors": [
+        {
+          "source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+          "tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+          "source_pin_tree": "cd0b797ed03e962d41e9d2ec2f12f3fbeefb8628",
+          "baseline_delta": {
+            "added": 1080,
+            "modified": 424,
+            "removed": 35,
+            "total": 1539
+          },
+          "actual_edit_checkout": "detached e440 HEAD in completion-fixes-e440 at2026-09-20T17:20:41.183661+00:00",
+          "source_publication": "17:39:16 UTC; exact10path/4795leaf readback",
+          "artifact_state": "Normal native run35526539085 and strict four-platform aggregate completed. Actual buildd7f30 has the a5fd tree. Original POSIX and Windows archives, wheel members/RECORD/source identities and collector rows are admitted in their retained packets. Earlier artifacts are not relabeled."
+        }
+      ]
+    },
+    {
+      "task": "RSP-006",
+      "archived_status": "DONE",
+      "original_acceptance": "Document warm ≤20 ms OR ≥1.15x and cold ≤150 ms AND ≥5x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
+      "original_dependencies": "RSP-003,RSP-005.",
+      "current_scope": "source_documentary_acceptance",
+      "basis": "Warm native-client p95 <=20ms OR >=1.15x, cold <=150ms AND >=5x, ordinary adapter1000ms and direct c16 not_measured are reconciled in exact executable predicates/output/docs. The only stale comment is now integrated correctly. Original installed50/100/200 ceilings remain distinct.",
+      "remaining_own_scope_gap": null,
+      "root_receipt": "rsp006022133-root-acceptance.json",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-007",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "current_scope": "installed_launcher_measurement_implementation",
+      "original_object_sha256": "5ccf5c7c134a711dbc62e5906463e1ce2f5844998100ef1adeaa8488fb24ae11",
+      "original_acceptance": "Start the registered executable/argv from the installed artifact; include interpreter/native startup, stdout and exit status. Keep normalized HTTP probes separately labeled.",
+      "original_dependencies": [
+        "RSP-003"
+      ],
+      "root_acceptance": {
+        "path": "root-checkpoint/rsp007-root-current-acceptance.json",
+        "bytes": 10209,
+        "sha256": "4429663f48b664ad0bbc64bc3daa3043732bd750fee323469f29d0163c4cbd72",
+        "git_blob": "f27acca04c1bd79d70ec4e985017522de5865cbc",
+        "record": {
+          "schema": "pr2974.rsp007-root-current-acceptance.v1",
+          "recorded_at": "2026-09-20T19:30:53.760059+00:00",
+          "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+          "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+          "task": "RSP-007",
+          "original_task_object_sha256": "5ccf5c7c134a711dbc62e5906463e1ce2f5844998100ef1adeaa8488fb24ae11",
+          "original_acceptance": "Start the registered executable/argv from the installed artifact; include interpreter/native startup, stdout and exit status. Keep normalized HTTP probes separately labeled.",
+          "original_dependencies": [
+            "RSP-003"
+          ],
+          "archived_status": "OPEN",
+          "archived_objects_mutated": false,
+          "decision": "DONE",
+          "scope": "installed_launcher_measurement_implementation",
+          "remaining_own_scope_clause": null,
+          "independent_assessment": {
+            "tree": "9f6cd72414d5078bb48492f80df1c44042da2497",
+            "blob": "247427cf35e1df8acfd32462ea2f50f91ed6f198"
+          },
+          "dependency_acceptance": {
+            "RSP-003": "Current source/output timing labels and timer callers explicitly supported in root a5fd acceptance, unchanged on400 for this provider set",
+            "current_source_verification": "13 exact providers, all equal a5fd; 12 equal observed be612, one AST-identical comment-only update. Full broader product equality is not claimed.",
+            "root_record": {
+              "bytes": 5433,
+              "git_blob": "6a4d2c9aaace69b72ef2844d3589ba76231c5a05",
+              "sha256": "4fc275d8fdd0a65dd3691cf759330180b3df60aeb27182967bd3bf95dca914c0"
+            }
+          },
+          "root_source_checks": [
+            "All13 provider byte counts, SHA256 and Git blobs matched exact400 and a5fd API trees;12 matched historical be612 bytes and the sole contract-comment change has identical AST.",
+            "Read installed adapter installation and independent config argv/env reconstruction; managed registration must be unique, active and lossless.",
+            "Read observe_priority_launcher original perf_counter before actual registered-argv invocation through return, including spawn, IO, wait/reap, containment and stdout/exit semantic validation.",
+            "Read AdapterSession.observe timer around HTTP _request and reporting/qualification callers: normalized DAEMON_INGRESS and actual INSTALLED_LAUNCHER remain separately named series."
+          ],
+          "providers": [
+            {
+              "path": "scripts/native_slo_priority_launchers.py",
+              "bytes": 21549,
+              "sha256": "db0bf254c06376569ce794451634058202338fe704a21bd1070b3c13464c91f5",
+              "git_blob": "a77b2b5d30c949c06ab8ebf24b5cee09bda0e82d",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_launcher.py",
+              "bytes": 7311,
+              "sha256": "0065e17574b0833f3a7161a0b05a8b6981e2efdc23a89483ea818dfb9f081f16",
+              "git_blob": "59a02c231e8ef096f74476b42f25ba254bfd592e",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_reporting.py",
+              "bytes": 17476,
+              "sha256": "de6a5691d006da0954d6fadd3eb5b218f60602c350fb5703c6a09fbc7f77bbbc",
+              "git_blob": "2f11072b62c483fe9b0719c6a2bc19a8bfacb952",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_adapter.py",
+              "bytes": 9026,
+              "sha256": "e76d4e5ee20009a4469911ce398d823cd892f8788e879b4e464cbc5d2a118554",
+              "git_blob": "b8a4146b2ea4859db27b8f3d5e1a967b1a05cd44",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_contract.py",
+              "bytes": 12279,
+              "sha256": "1d49fb3e23a794eab1d2afff02ec39b2b106847ab338836567dea9d560bb473e",
+              "git_blob": "93d5e4d5e44b02096e326cc9fd30d0d48fee258a",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": false,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_session.py",
+              "bytes": 21955,
+              "sha256": "fc74befc8b9ac1344a8189f7558705e2a81cb614b0e4689214a7984c0d916a72",
+              "git_blob": "a0361155e660c790dca693772639247cca173ea9",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_daemon_fixture.py",
+              "bytes": 21519,
+              "sha256": "c1d055190f0c139d6d455db91e1c7edd44e66ac68b6f0f3fdfa2005f5479f26c",
+              "git_blob": "f00d95a8601ab9681ddd8eba701baf33c11cb396",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "scripts/native_slo_qualification_run.py",
+              "bytes": 12619,
+              "sha256": "46bb20708bd524dc640530759d8b49af205bfaac952363f6f87a23c47b1651f1",
+              "git_blob": "5e3a0173060389f50009557e82e12e8490af40cd",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "src/codex_plugin_scanner/guard/adapters/claude_code.py",
+              "bytes": 23413,
+              "sha256": "9ebefc0fa78abaa9cb07238b277813357d5770c9560e306a53389caed1afd6d1",
+              "git_blob": "b5b0c33c0e66f14fc1ed349318eb0af2dab59f47",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "src/codex_plugin_scanner/guard/adapters/claude_hook_config.py",
+              "bytes": 9036,
+              "sha256": "a452508d7650662709fba99632befdea0a019b66957dc1ffdf67e24c6d4c2f61",
+              "git_blob": "874d8c124241aab5ae4157e9435d64d83883effc",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "src/codex_plugin_scanner/guard/adapters/codex.py",
+              "bytes": 17012,
+              "sha256": "60da52cc19c9fe98f03375bf805ad57418a75b4d198255e3efa40cf665d1158d",
+              "git_blob": "8128205cdcbdbc5638e5598da9d4b99ab367d16a",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py",
+              "bytes": 15199,
+              "sha256": "aaf93c593704f40f159f0ccb05fb52d064b501e1643f024a833ef8ea4c63505f",
+              "git_blob": "5383a35ee8ad3c0af60a6f6df3936ef57706d7af",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            },
+            {
+              "path": "src/codex_plugin_scanner/guard/codex_hook_process_runtime.py",
+              "bytes": 7328,
+              "sha256": "8704ac1e324fcd5157a58a4b12aa1ba3b56fcea67c4e125150a136bd9c3ee2fc",
+              "git_blob": "a3158091a6d67db112477ad1778f2592d8715838",
+              "current_and_a5fd_exact": true,
+              "historical_bytes_exact": true,
+              "historical_AST_exact": true
+            }
+          ],
+          "retained_actual_evidence": {
+            "actual_build_source": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+            "actual_build_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+            "allow": 84,
+            "archive_sha256": "ec76bb6bce80bb1f7718e7003f25c6f349cb820e933e3fbbda6e0733d79c0a35",
+            "artifact": 10607511644,
+            "complete_strict_joins": 88,
+            "deny": 4,
+            "driver": "e612bc6effafd9989bda6053b46483d4b283c188",
+            "independent_result_peer_tree": "7e24e94734cb1d60a673879d1309326c305d5d7b",
+            "input_contract": {
+              "bytes": 10689,
+              "git_blob": "5da695df95c43fb47a30178b589a83c4017e7e62",
+              "sha256": "fb00be8ffe8de3c2a60cf0c17e30bf15d9a7eb72eddaaecfa6d77cbd9aa58cd5"
+            },
+            "job": 106097055770,
+            "original_calls": 88,
+            "original_observation": {
+              "bytes": 734317,
+              "git_blob": "022bfd86d363d8488101a931d0b7aa479b7dff3b",
+              "sha256": "a31f82c635977709369006be4d9ac2c341a123057a7030aa2ad6c2742470efd9"
+            },
+            "packet_tree": "bd63025378a0cfe65a6fee2d3783498e0b85bf32",
+            "platform": "macos-arm64",
+            "producer_invocations": 1,
+            "product_source": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+            "raw_result": {
+              "bytes": 61577,
+              "git_blob": "624e09fd3b1f36b7a54bb43422b1d287ca2b1cb5",
+              "sha256": "074982d5155a1522c60e5508cbe731911eb64f4f4303b493380cc3132d4b6109"
+            },
+            "resident_state": "prepared; fresh executable each call",
+            "routes": 4,
+            "run": 35517987547,
+            "then_current_tests_only_successor": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+            "zero_exit_and_nonempty_stdout": 88
+          },
+          "root_data_checks": {
+            "original_producer_invocations": 1,
+            "parent_rows": 88,
+            "unique_coordinates": 88,
+            "one_process_call_each": true,
+            "zero_exit_nonempty_stdout": 88,
+            "original_allow": 84,
+            "original_deny": 4,
+            "nested_stage_geometry": "all88",
+            "complete_strict_joins": 88,
+            "registration_digests": {
+              "98232dd4def7b8eec48fa8997b4add04753f3d5e79b149ff8a46fdf91182a406": 22,
+              "7bd4fe683cdcbc4f92bdfb2c651af6a8eff60bb520ca6b9ae1955fd268eeb8ce": 22,
+              "042f7e28751ae4928a5574cf82e5af09ea5c59d08dbdf5842e1890ed68ec7efa": 22,
+              "37c0f4298e2b8bf2ecc846a9accc3212cfd709165908dfb35b15815e083c7c27": 22
+            },
+            "source_installed_driver_before_after_unchanged": true,
+            "existing_independent_full_join_recomputation_reused": true,
+            "workload_rerun": false
+          },
+          "limitations": [
+            "All original50/100/200 latency ceilings remain missed; sample minima unmet and instrumented observer costs explicit",
+            "No current400 artifact/timing result is inferred from historical be612 product execution",
+            "No all-platform/full-route/resource/signing/release/RSP137 or final approval acceptance",
+            "RSP007 has only original003 dependency; RSP011/RSP137 populations or full-descendant accounting are not invented prerequisites to its own measurement implementation clause",
+            "Historical176 and600 experiments remain separately bound evidence and are not repeated or combined as fresh samples",
+            "Original record measures instrumented inclusive launcher time; separate internal interpreter/import or Rust CPU phases are unmeasured. Actual startup is included in the outer clock.",
+            "RSP007 acceptance does not promote incomplete original latency populations, fresh400 installed results, full descendants/resources, signing or release."
+          ]
+        }
+      },
+      "remaining_own_scope_gap": null,
+      "limits": [
+        "All original50/100/200 latency ceilings remain missed; sample minima unmet and instrumented observer costs explicit",
+        "No current400 artifact/timing result is inferred from historical be612 product execution",
+        "No all-platform/full-route/resource/signing/release/RSP137 or final approval acceptance",
+        "RSP007 has only original003 dependency; RSP011/RSP137 populations or full-descendant accounting are not invented prerequisites to its own measurement implementation clause",
+        "Historical176 and600 experiments remain separately bound evidence and are not repeated or combined as fresh samples",
+        "Original record measures instrumented inclusive launcher time; separate internal interpreter/import or Rust CPU phases are unmeasured. Actual startup is included in the outer clock.",
+        "RSP007 acceptance does not promote incomplete original latency populations, fresh400 installed results, full descendants/resources, signing or release."
+      ]
+    },
+    {
+      "task": "RSP-013",
+      "archived_status": "DONE",
+      "current_scope": "accepted",
+      "original_acceptance": "Document direct in-daemon HookWorker dispatch and persistent helper reuse. Keep guardian/evaluator IPC only on verified compatibility/approval paths.",
+      "dependency": "RSP-001 source and artifact pinning is retained with the explicit current-source successor identity; fresh native artifact results are recorded separately.",
+      "basis": [
+        "Current ten-file call graph is rebound to the published tree. Nine source providers are byte-identical; the reviewed five-line Codex resume delta consumes the same two root transport hints as ingress without changing dispatch, process ownership, IPC routing or native authority checks.",
+        "Root combined 65 Codex regression cases pass with exact source imports, zero skip and unchanged complete source before/after. Actual installed corrected continuation remains pending fresh artifact verification.",
+        "All other direct native dispatch, persistent stream pooling and explicit compatibility/approval route conclusions from the preceding root source review remain applicable."
+      ],
+      "limits": [
+        "Own source graph acceptance; no new installed continuation, process-count, latency or full descendant resource acceptance."
+      ],
+      "evidence_tree": "df14a1bde5e299690f19b95f506efd1cc88f411a",
+      "root_receipt_blob": "a545f8da4234004fb3a0367715c92a0d0a4d0ff1",
+      "subsequent_installed_observation": {
+        "run": 35528764054,
+        "result_tree": "70eb3241e0d1513275939bc3b3d290dd12252f08",
+        "scope": "One original corrected Codex continuation passes per current POSIX artifact. Earlier pending statement in the source decision reflects its original time; no general installed qualification."
+      },
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-014",
+      "archived_status": "DONE",
+      "current_scope": "accepted",
+      "original_acceptance": "Map actual generated launcher, aliases, pre/post support and observation-only routes. Preflight detection must not count as installed enforcement.",
+      "dependency": "RSP-013 accepted in this document.",
+      "basis": [
+        "All 93 inventory providers are rebound. The only changed inventory body is the independently reviewed Kimi test assertion: it now inspects exact parsed registrations, bridge argv/configuration and timeout instead of an incidental checkout-path substring.",
+        "All 16 canonical harness/alias, generated launcher, event and observation/delegation boundaries remain as documented in the original current-source inventory. No product generator changed.",
+        "Registration and preflight coverage remain distinct from actual installed native enforcement."
+      ],
+      "limits": [
+        "Own source inventory acceptance. Cross-platform installed proof belongs to RSP-136."
+      ],
+      "evidence_tree": "df14a1bde5e299690f19b95f506efd1cc88f411a",
+      "root_receipt_blob": "a545f8da4234004fb3a0367715c92a0d0a4d0ff1",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-015",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "current_scope": "fixture_capture_acceptance",
+      "original_acceptance": "Capture harness JSON and exit behavior for current mode/posture, native misses, integrity/size failures, permission requests and lifecycle events.",
+      "dependency": "RSP-014 accepted in this document.",
+      "source_peer": {
+        "tree": "aa8200189bc25dcccc89b00d542db17b8ce84ab3",
+        "receipt": "acd80fa4103ce49b3965fa7b8cb1100a59f019c9"
+      },
+      "original_result": {
+        "tree": "7364f722f7184bcfd17210c20e3e90653185bf9e",
+        "analysis": "54b22516b3b7bab8438f77264376a1f6ba3e309b",
+        "xml": "e027cda0e8e80190743fe99014674d89f8759a69",
+        "total": 862,
+        "passed": 861,
+        "skipped": [
+          {
+            "classname": "tests.test_native_slo_registered_surfaces",
+            "name": "test_real_windows_command_line_abi_roundtrip",
+            "reason": "real Win32 CommandLineToArgvW qualification"
+          }
+        ],
+        "new_cases": {
+          "test_cline_nonblocking_response_fixtures": 62,
+          "test_registered_auxiliary_response_fixtures": 81,
+          "test_hook_registration_response_roster": 9
+        },
+        "existing_passes": 709,
+        "xml_sha256": "3577fe08f67db94017bea3ce65cc50b35762d8d7207294c9ebea94e7ed62fdf8",
+        "original_before_after_equal": true
+      },
+      "basis": [
+        "All seven reviewed fixture/test leaves are now integrated in the published PR source and read back exactly; the conditional integration prerequisite is complete.",
+        "Root read the complete source peer and analysis, inspected current fixture tests and the Kimi delta, verified every one of the 32 actual cohort source/fixture paths against the published Git tree, and independently parsed all 862 unique XML cases.",
+        "The corrected finite cohort passed 861 cases in451.30s with no failure/error/timeout and one existing Linux-unavailable Win32 CommandLineToArgvW case. The 152 new passes consist of62 current Cline nonblocking,81 registered auxiliary and9 registration-roster cases;709 existing cases pass.",
+        "Full generated JSON/stdout/stderr/exit contracts cover current mode/posture, native miss, integrity/size, permission and lifecycle interfaces. Tests state modeled child/native edges explicitly; no product policy was changed by this fixture addition.",
+        "The earlier unguarded multiprocessing-wrapper attempt remains845pass/16fail/1skip and invalid as acceptance. The guarded correction and Kimi assertion change have their exact original evidence and source peer."
+      ],
+      "limits": [
+        "Fixture-capture own scope, with the declared modeled child/native edges. This is not installed all-harness/all-platform native qualification.",
+        "The one Win32 ABI skip remains explicit; it is not counted as a Linux pass.",
+        "Root did not repeat the 862-case cohort after composition. All32 cohort input bodies are unchanged, and the separate reviewed Codex product delta has65 combined-source regression passes.",
+        "No RSP-136 approval continuation, full performance, full descendant retirement, signing or release acceptance is inferred."
+      ],
+      "evidence_tree": "df14a1bde5e299690f19b95f506efd1cc88f411a",
+      "root_receipt_blob": "a545f8da4234004fb3a0367715c92a0d0a4d0ff1",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-022",
+      "archived_status": "DONE",
+      "original_acceptance": "Follow the current recording-mode caller and proposed new routes; prevent synchronous configuration reads being mislabeled as background work.",
+      "original_dependencies": "RSP-013,RSP-015.",
+      "current_scope": "source_documentary_acceptance",
+      "basis": "Current synchronous hook_review_is_recording_only caller and injected HookConfigReadScope roots are explicitly walked. Reachable asynchronous_policy I/O is promoted to synchronous_posture_config; closed lexical-function/primitive grants leave new operations failing. The source/fixture dependencies are now bound to integrated bytes.",
+      "remaining_own_scope_gap": null,
+      "root_receipt": "rsp006022133-root-acceptance.json",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-047",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "current_scope": "applicable_core_parity_and_adversarial_suites",
+      "original_object_sha256": "4f179118d050151f0a926b0edf50bc5e7842fe2a463becf29eea719e82976269",
+      "original_acceptance": "Run command, rule-contract, source mutation, snapshot/approval and scanner suites applicable to the changed modules; investigate every difference.",
+      "original_dependencies": [
+        "RSP-038",
+        "RSP-039",
+        "RSP-041",
+        "RSP-043",
+        "RSP-046"
+      ],
+      "root_acceptance": {
+        "path": "root-checkpoint/rsp047-root-current-acceptance.json",
+        "bytes": 12371,
+        "sha256": "b99f9ec5dd07d10e950c49f228c6d93da2de1e25cbcea97ac4eadbda30b4974b",
+        "git_blob": "e0df446b2714a8afdef0aae89d8c403ee7fe18e7",
+        "record": {
+          "schema": "pr2974.rsp047-root-current-acceptance.v1",
+          "recorded_at": "2026-09-20T19:51:34.154859+00:00",
+          "source": {
+            "head": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+            "tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+            "actual_test_checkout": "37fd05b37685d0f4b37f836608820cf577a06602",
+            "checkout_tree_equal": true
+          },
+          "task": "RSP-047",
+          "original_task_object_sha256": "4f179118d050151f0a926b0edf50bc5e7842fe2a463becf29eea719e82976269",
+          "original_acceptance": "Run command, rule-contract, source mutation, snapshot/approval and scanner suites applicable to the changed modules; investigate every difference.",
+          "original_dependencies": [
+            "RSP-038",
+            "RSP-039",
+            "RSP-041",
+            "RSP-043",
+            "RSP-046"
+          ],
+          "archived_status": "OPEN",
+          "archived_objects_mutated": false,
+          "decision": "DONE",
+          "scope": "applicable_core_parity_and_adversarial_suites",
+          "remaining_own_scope_clause": null,
+          "assessment_tree": "aa560e14fc0e9dba5d5fde0cd941e0f9eaf6d68f",
+          "assessment_blob": "d04b642211dc9402345a3f7979b6b24c6131a7e9",
+          "root_checks": [
+            "Read complete assessment and exact original task plus all five direct dependency clauses. Reviewed source-supported typed lifecycle, strict timeout projection, typed PreTool receipt, shared immutable snapshot/approval fence and original-deadline/scanner boundaries.",
+            "All42 selected provider Git blobs and sizes match complete current400 API tree. Same-tree actual merge37fd is distinguished from product head400. Only six Rust files changed since prior reviewed124 source.",
+            "Independently decoded exact original native-workspace log, verified length/SHA256/Git identity, joined all347 unique binary/node rows to original line text and all18 suite totals.341 pass and6 explicit diagnostics ignored; checked13 named direct dependency/deadline/scanner control results. No new execution.",
+            "Read command/rule/source-mutation/approval/scanner and Pre adversarial original job conclusions retained by independent assessment. Counts across workflows overlap and are not added. Existing mutation oracle is security-floor/selected-public-signature parity, not blanket output-field equality.",
+            "Previously read original encrypted source fixture failure and independent final43/43 three-POSIX result. Source.txt remains a required negative; recognized.rs preserves clean/tail-secret/changed-source parity to actual unencrypted edge. Production classifier and prior assertions were not relaxed."
+          ],
+          "current_provider_count": 42,
+          "workspace_original": {
+            "run": 35531198870,
+            "job": 106131977317,
+            "passed": 341,
+            "ignored": 6,
+            "unique_nodes": 347,
+            "original_log": {
+              "bytes": 82728,
+              "encoded": "encoded/job-106131977317.log.gz.b64",
+              "encoded_identity": {
+                "bytes": 26065,
+                "git_blob": "d2247533fa2ad47af735dcca3c327d49a72858b6",
+                "sha256": "81c4fb36952353da75af1cfafbce72bf43ca58c4f9035fca3c50a0af10c96f68"
+              },
+              "encoding": "gzip+base64",
+              "git_blob": "cf58b9faa3d61d20be2a08dfb883d55321257063",
+              "original": "originals/job-106131977317.log",
+              "provenance": "GitHub decoded job-log text retained losslessly as UTF-8, including initial BOM; not original HTTP compressed bytes",
+              "sha256": "c2ae1494d9a0bbe0652d419e2152863b91d408e37299a4b1af8d95289deb24a1"
+            },
+            "root_line_joins": 347
+          },
+          "direct_dependency_scope_findings": [
+            {
+              "id": "RSP-038",
+              "finding": "Current source-supported and exercised.",
+              "providers": [
+                "resident_protocol.rs:40–49,116–225: typed ResidentEvaluation/LifecycleDisposition produced only after strict parsing/evaluation",
+                "resident_transport.rs:193–223,309–348: authenticated transport consumes typed disposition; no post-evaluation JSON parse"
+              ],
+              "controls": [
+                "resident_protocol::tests::lifecycle_disposition_follows_strictly_validated_operation",
+                "resident real-binary authenticated lifecycle/stop controls in current resident-integration16"
+              ],
+              "scope": "Preserves authentication, successful shutdown status, malformed/duplicate/trailing input rejection and response-before-exit signaling."
+            },
+            {
+              "id": "RSP-039",
+              "finding": "Current source-supported and exercised; precise optimization is elimination of the second complete Value tree, not elimination of a full validation scan.",
+              "providers": [
+                "strict_json.rs:182–201: DeadlineBudget projection with full duplicate/depth/width/string/trailing checks",
+                "managed_resident.rs:478: client_timeout consumes projected root budget",
+                "managed_resident_client_stream.rs:53–57: one start/deadline around timeout projection and request"
+              ],
+              "controls": [
+                "strict_json::tests::timeout_projection_obeys_the_full_strict_json_contract",
+                "resident_client deadline/fragmented-response tests"
+              ],
+              "scope": "Projection still traverses all JSON to preserve strict validation. The resident retains semantic parsing; invalid timeout metadata cannot authorize semantic execution."
+            },
+            {
+              "id": "RSP-041",
+              "finding": "Current source-supported and exercised.",
+              "providers": [
+                "edge.rs:220–286: typed PreToolResultV1 through policy/result-matrix validation and receipt; sole to_value after receipt",
+                "native_hook_receipt.rs:128–174: borrows typed PreToolResultV1",
+                "policy_enforcement.rs:161: result-matrix validation"
+              ],
+              "controls": [
+                "policy_enforcement::tests::action_floor_matrix_rejects_inconsistent_decision_fields",
+                "edge::tests::validated_identity_retains_cross_language_golden_digest",
+                "edge generic/sensitive/unknown payload tests",
+                "current PreToolUse real-binary authority and adversarial suites"
+              ],
+              "scope": "Does not claim removal of serialized protocol decoding in distinct approval_context boundary; this task concerns in-evaluation PreTool result/receipt conversions."
+            },
+            {
+              "id": "RSP-043",
+              "finding": "Current source-supported and exercised.",
+              "providers": [
+                "policy_enforcement_admission.rs:9–41: immutable snapshot and compiled maps, no mutable dereference",
+                "policy_store.rs:125,299–375: Mutex-protected state, compile/admit before publication and Arc-owned generation",
+                "policy_store_request.rs:6–84: current authority/expiry/generation/scope checks then Arc::clone",
+                "policy_store_approval.rs:17–40,137 onward: state lock held through challenge/claim/consume authority fences"
+              ],
+              "controls": [
+                "policy_store::tests::compiled_generations_share_one_immutable_snapshot_and_reject_conflicts_before_publish",
+                "policy_store::tests::generation_rollback_and_same_generation_mutation_are_rejected",
+                "approval::tests::lifecycle_tests::policy_push_after_claim_before_consume_cannot_authorize_execution",
+                "approval::approval_replay_memory::tests::expiry_and_double_consume_are_atomic"
+              ],
+              "scope": "Maps are shared across ordinary request evaluation; control-plane current_snapshot cloning is not represented as absent."
+            },
+            {
+              "id": "RSP-046",
+              "finding": "Current changed resident-v3/scanner/source path is source-supported and exercised.",
+              "providers": [
+                "resident_transport.rs:319–327 passes original accepted_at into semantic parse/evaluation",
+                "edge.rs:175–218 derives one upstream Instant and carries it through identity/policy/hydration",
+                "guard-hook-core/src/lib.rs:298–324 keeps min(upstream,local) and passes same deadline into source/extraction/scanner",
+                "guard-scanner/src/lib.rs:297–405 fresh overlap per logical invocation, UTF-8 safe byte bound and before/after scan deadline checks",
+                "edge_encrypted.rs and edge_encrypted_file.rs preserve original deadline before/after bounded held-descriptor I/O"
+              ],
+              "controls": [
+                "tests::detects_split_token_across_chunks",
+                "tests::unicode_overlap_and_document_boundaries_are_isolated",
+                "tests::upstream_deadline_is_not_restarted_before_scanning",
+                "edge::tests::ingress_time_consumes_the_original_edge_deadline",
+                "edge::encrypted::tests::original_expired_deadline_wins_before_reference_access",
+                "edge::encrypted::private_file::tests::original_deadline_is_not_restarted_after_open"
+              ],
+              "scope": "No claim that synchronous filesystem syscalls become interruptible, or that stdin frame acquisition before the managed request Instant is newly included. Legacy standalone entrypoints retain their own declared boundary; this review does not convert RSP046 into an all-entrypoint end-to-end latency certification."
+            }
+          ],
+          "suite_scope_findings": [
+            {
+              "family": "command",
+              "run": 35531198738,
+              "job": 106131977091,
+              "result": "18 exact Python/Rust command fixtures +29 uncertain forms; status ok. Current workspace guard-command55+7 compatibility+6 generic cases passed. Counts overlap other workflows."
+            },
+            {
+              "family": "rule-contract",
+              "run": 35531198870,
+              "job": 106131977317,
+              "result": "guard-rule-contract stable/complete and guard-rules digest-shape tests passed; current command job emitted full rule-contract and same digest1a1c577e…."
+            },
+            {
+              "family": "source mutation and content parity",
+              "run": 35531198829,
+              "job": 106131977139,
+              "result": "22 current compiled binary/differential/mutation pytest nodes passed; source read clean/secret/path/symlink and 3x64 inline mutation cases. Current guard-secure-fs10+2 decision cases and encrypted replacement/same-handle/source-tail cases also passed.",
+              "oracle_limit": "Existing Python/Rust oracle requires native security floors and selected public signatures; stricter native denials may pass. This is not literal equality of every output field or a log of every stronger denial."
+            },
+            {
+              "family": "snapshot and approval",
+              "run": 35531198870,
+              "job": 106131977317,
+              "result": "Snapshot MAC/runtime/rule/expiry/generation/conflicts; state immutability/Arc replacement; authority replacement; replay/concurrent claim/single consume/policy-push fences all passed in current Rust workspace."
+            },
+            {
+              "family": "scanner",
+              "run": 35531198870,
+              "job": 106131977317,
+              "result": "7 scanner tests passed,1 explicit benchmark ignored; split token, multibyte boundary/document isolation, match suppression/order and expired deadline controls passed."
+            },
+            {
+              "family": "additional adversarial/bridge",
+              "run": 35531198816,
+              "job": 106131976783,
+              "result": "Original real-process PreToolUse adversarial script reported passed. Current Pre authority job106131977146 includes real-binary report plus32 pytest passes; resident-shadow10613197710812 passes; runtime resident10613197715716passes."
+            }
+          ],
+          "limitations": [
+            "No new tests/build/native workload executed by this review.",
+            "RSP048 installed/native-client benefit, RSP136 installed route correctness, resource/soak, release/signing and global CI remain separate.",
+            "Current400 Windows default-auto20/21/no wheel and Mac/constructor installed diagnostic failures are preserved; no RSP047 source-suite pass clears them.",
+            "Six ignored tests are named diagnostic/microbenchmark/component scopes in retained log, not silently converted to passes. Feature-gated allocation diagnostic is not part of default workspace run.",
+            "This assesses original direct dependency clauses and named suites, not a new full transitive audit of018/019/037/040/042/044/045 and not final human approval.",
+            "The permanent workflow runs cargo fmt --all before compiler/test gates. These logs bind the exact checkout and declared normalization, not a retained byte-for-byte post-format source tree. Existing isolated encrypted six-file normalization and43/43 three-POSIX packet separately bind those changed bytes.",
+            "This completion records the original core suite clause. Current Windows20/21, Mac supervisor recovery, first-admission readiness, installed matrices, performance, signing and final review remain open."
+          ],
+          "new_workload": false,
+          "full_prd_complete": false
+        }
+      },
+      "remaining_own_scope_gap": null,
+      "limits": [
+        "No new tests/build/native workload executed by this review.",
+        "RSP048 installed/native-client benefit, RSP136 installed route correctness, resource/soak, release/signing and global CI remain separate.",
+        "Current400 Windows default-auto20/21/no wheel and Mac/constructor installed diagnostic failures are preserved; no RSP047 source-suite pass clears them.",
+        "Six ignored tests are named diagnostic/microbenchmark/component scopes in retained log, not silently converted to passes. Feature-gated allocation diagnostic is not part of default workspace run.",
+        "This assesses original direct dependency clauses and named suites, not a new full transitive audit of018/019/037/040/042/044/045 and not final human approval.",
+        "The permanent workflow runs cargo fmt --all before compiler/test gates. These logs bind the exact checkout and declared normalization, not a retained byte-for-byte post-format source tree. Existing isolated encrypted six-file normalization and43/43 three-POSIX packet separately bind those changed bytes.",
+        "This completion records the original core suite clause. Current Windows20/21, Mac supervisor recovery, first-admission readiness, installed matrices, performance, signing and final review remain open."
+      ]
+    },
+    {
+      "task": "RSP-099",
+      "archived_status": "DONE",
+      "current_scope": "functional_dependency_revalidated",
+      "acceptance": "Reuse canonical digest per validated catalog generation; preserve full-catalog binding and invalidation during pending approvals.",
+      "evidence_tree": "5b6878c4ecce75c57a1c4f03da1fa124fe44d6c2",
+      "basis": [
+        "Ten existing current-byte-bound generation/pending-inline invalidation tests pass.",
+        "Root read both test modules: nested ownership/detachment, whole-catalog sibling/metadata/lifecycle invalidation, nonfinite rejection, and catalog/current-block/request changes deny before remember/forward."
+      ],
+      "limits": [
+        "Source functional revalidation of the direct RSP100 prerequisite, not a new performance campaign or whole-project acceptance."
+      ],
+      "current_source_reuse": "All accepted providers are unchanged at current400 and are included in the149-provider rebind. Actual earlier e440 and a5fd executions retain their original source/build identities; this adds no new execution or performance claim.",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      },
+      "prior_source_reuse_note": "All previously accepted product providers remain unchanged in the ten-path a5fd successor. The actual eight-lane/ten-case executions retain their original e440 identity; no new execution is claimed."
+    },
+    {
+      "task": "RSP-100",
+      "archived_status": "OPEN",
+      "current_scope": "functional_acceptance",
+      "acceptance": "Compute categories/signals once for unchanged exact inputs; recompute after any authority/catalog/input change.",
+      "original_dependencies": "RSP-099.",
+      "evidence_tree": "5b6878c4ecce75c57a1c4f03da1fa124fe44d6c2",
+      "assessment_blob": "09df03ab6c43941f4bff6e6a5ba22b69f5db1a9b",
+      "actual_run": 35519707612,
+      "actual_test_merge": "07ae77b50b6c98e844403c2ee3f4447f7958ebe4",
+      "basis": [
+        "Reviewed six-file production implementation and exact current source bindings preserved.",
+        "Eight actual declared interpreter/platform lanes pass all13 mandatory positive nodes and all49 approval cases each.",
+        "Six lanes336passed/11explicit producer-absence skips; Python3.13/3.14 lanes347passed/0skips.",
+        "Both source registries and import/pytest/Ruff/format/type stages pass; RSP099 direct functional controls pass."
+      ],
+      "limits": [
+        "No full platform/interpreter cross product is claimed.",
+        "No performance-benefit, native installed approval continuation, release, signing, mixed-load or RSP137 acceptance is implied."
+      ],
+      "current_source_reuse": "All accepted providers are unchanged at current400 and are included in the149-provider rebind. Actual earlier e440 and a5fd executions retain their original source/build identities; this adds no new execution or performance claim.",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      },
+      "prior_source_reuse_note": "All previously accepted product providers remain unchanged in the ten-path a5fd successor. The actual eight-lane/ten-case executions retain their original e440 identity; no new execution is claimed."
+    },
+    {
+      "task": "RSP-120",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "original_object_sha256": "3225892d40a9a1ea8789e607dbc839b4db30ae10f85cabaa36590bf78808d945",
+      "original_acceptance": "Declare translated and unsupported matcher families, exact artifact/catalog versions and production route proof; do not call compatibility gain a measured speedup.",
+      "original_dependencies": [
+        "RSP-119"
+      ],
+      "current_scope": "documentary_source_evidence_acceptance",
+      "assessment_tree": "7d48cc935a237588bd5829c05a1d58e03f8d1b2a",
+      "assessment_blob": "e3e8674df8b9abd35893dc0eeae69433081e66e5",
+      "dependency_resolution": "RSP119 original historical component clause is substantively supported as above. Its original118/010 edges and unresolved lifecycle state remain; no extra direct120 prerequisite or transitive release assertion is introduced.",
+      "basis": [
+        "Root read the full assessment, exact ADR0013, compatibility admission and native control binding documents, complete coverage mapping and three-platform installed evidence inventory.",
+        "Root independently matches all180provider records to the current API tree and verifies every local Git body byte length, SHA256 and Git object hash.179are unchanged from actual historicalbe612; edge.rs adds encrypted Post handling and preserves ordinary Pre extension evaluation.",
+        "Root recomputes the1,942,336-byte program domain-separated digest, counts86extensions/291rules/2242nodes,249declarative/42compatibility coverage and all42compatibility IDs. Every coverage row still requires runtime admission.",
+        "Published declarations name29reviewed compiler types,26instantiated families,3uninstantiated types,42compatibility identities across7explicit unsupported-boundary families and4separate permission-only IDs. Exact schema/compiler/program/catalog/trust/semantics/artifact and catalog rule versions remain declared.",
+        "Actual retained Ollama run35523481186 passes22native reviews and22distinct durable receipts on each of Linux x64, Mac ARM and Mac Intel. Owner rehashed all3authenticZIPs/everymember. Root read the complete per-platform identities, phase counts and declared production HTTP/native/receipt route limits; root did not replay the workload or repeat that ZIP audit."
+      ],
+      "limits": [
+        "Actual installed binaries are historicalbe612, not current400; retained source continuity is labeled separately.",
+        "The program file SHA256 differs from its domain-separated program digest; both exact identities are retained.",
+        "Translation/compatibility coverage is not full Python parity, all-harness/all-platform rollout or measured speedup.",
+        "Ollama commands are synthetic policy-review inputs, not actual tool execution. Settings update/rollback is not package downgrade. Native approval consumption, Windows installed execution, full lifecycle, performance and release qualification remain independent."
+      ],
+      "root_acceptance_record": {
+        "path": "root-checkpoint/rsp119120-root-current-acceptance.json",
+        "bytes": 5977,
+        "sha256": "dba14d748de8db9cf81665d1fa1f240594729ef951c8949818a76d077c871dca",
+        "git_blob": "5aa425fbe5cd977a17036ee06aeb932706664f8d"
+      }
+    },
+    {
+      "task": "RSP-133",
+      "archived_status": "DONE",
+      "original_acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+      "original_dependencies": "RSP-006,RSP-022.",
+      "current_scope": "source_documentary_acceptance",
+      "basis": "Combined unfiltered decision-critical-IO/rust-authority/native-wheel workflows and expanded performance/recovery/risk path selection cover native crates, wrappers, publishers, evidence/benchmark helpers and their required check dependencies. All six prior workflow providers remain byte-identical on current a5fdde.",
+      "remaining_own_scope_gap": null,
+      "root_receipt": "rsp006022133-root-acceptance.json",
+      "prior_decision_source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+      "prior_decision_basis_preserved": true,
+      "current_source_rebind": {
+        "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+        "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+        "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+        "provider_bytes_unchanged": true,
+        "new_execution_claimed": false,
+        "scope": "The original decision and actual run identities remain preserved. Exact provider continuity supports the same accepted clause at current400; later failures or successes do not broaden it."
+      }
+    },
+    {
+      "task": "RSP-079",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "original_object_sha256": "0ce4fefc341221c16d22017a50d79f40c2fe4e93a31ff41a411c0bd303a16dc9",
+      "original_acceptance": "Preserve reference identity, external-source permission, plaintext bounds, output equivalence and response schemas.",
+      "original_dependencies": [
+        "RSP-077"
+      ],
+      "current_scope": "selected_POSIX_Pi_OMP_source_reference_component",
+      "root_acceptance": {
+        "record": {
+          "schema": "pr2974.rsp079-root-current-acceptance.v1",
+          "recorded_at": "2026-09-20T20:50:00Z",
+          "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+          "source_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+          "task": "RSP-079",
+          "original_task_object_sha256": "0ce4fefc341221c16d22017a50d79f40c2fe4e93a31ff41a411c0bd303a16dc9",
+          "original_acceptance": "Preserve reference identity, external-source permission, plaintext bounds, output equivalence and response schemas.",
+          "original_dependencies": [
+            "RSP-077"
+          ],
+          "archived_status": "OPEN",
+          "archived_objects_mutated": false,
+          "decision": "DONE",
+          "scope": "selected_POSIX_Pi_OMP_source_reference_component",
+          "remaining_own_scope_clause": null,
+          "source_continuity_revalidated": true,
+          "current_head_runtime_execution": false,
+          "actual_runtime_source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+          "actual_runtime_build": "37fd05b37685d0f4b37f836608820cf577a06602",
+          "actual_runtime_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+          "original_staging_basis": "Original PRD Workstream E2 explicitly stages a canonical harness, an alias-heavy harness, then Pi/OMP source references with remaining routes declared. E4 preserves private-reference, environment, framing and deadline behavior. RSP079 has no additional direct performance or whole-RSP136 acceptance prerequisite.",
+          "dependency_scope": {
+            "RSP-077": {
+              "selected_Pi_OMP_clause_supported": true,
+              "whole_task_closed": false,
+              "original_dependency": "RSP-076",
+              "original_dependency_status": "BLOCKED",
+              "basis": "Actual installed interpreter -I with development overrides and PYTHONHOME/PYTHONPATH cleared, installed package/import/native origin and RECORD joins before/after, managed settings containing the exact extension once, execution of that registered generated extension by owned Node callbacks against the authentic installed daemon/native runtime.",
+              "limits": "This directly supports selection for the Pi/OMP component. A single install does not establish whole-route reinstall/uninstall/repair, and unrelated Cline/alias/lifecycle selection remains separate."
+            },
+            "transitive_dependencies_closed": false
+          },
+          "assessment": {
+            "tree": "029e0470893da0a3fa152d3cddae54c6c2011a3f",
+            "blob": "d58bfc9e43bc4a0a052da2ac186ec21ee51c8c07"
+          },
+          "installed_result": {
+            "run": 35535394779,
+            "tree": "909db5239bc0a773b36745e0cf3b4e73c7b988a8",
+            "blob": "f950b7d699e0214919812f0a8698940fdf354d00",
+            "reader_blob": "4596ba00e09c2608c7279d5aed18bdd7bd835e83",
+            "independent_peer_tree": "f2c74ab80194df835dd644fffd453d227519f586",
+            "independent_peer_blob": "f5936935221e1063c8f89cabcdcefde143151f3b",
+            "cells": [
+              {
+                "cell": "mac-arm64",
+                "artifact": 10613475137,
+                "archive_bytes": 26561,
+                "archive_sha256": "07c8819e48ee84f5b1cde99d56cd7d0b069b0dad61c8ef806e0559bab6530006",
+                "source_controls": {
+                  "passed": 162,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "offered": 10,
+                "returned": 10,
+                "native_routes": 10,
+                "encrypted_posts": 6,
+                "distinct_complete_committed_receipts": 10,
+                "identity": {
+                  "build_sha": "37fd05b37685d0f4b37f836608820cf577a06602",
+                  "installed_package_sha256": "15b757a35508253143ce37dffdb9d295ec3b3bebf2b6dba9749ac5d906df3407",
+                  "mode": "auto",
+                  "package_version": "3.0.1",
+                  "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
+                  "runtime_sha256": "9ad9597fc4fa20ac24daa8c6bca8da09d73cca5b9bfb698a9bf374189a6429d8",
+                  "runtime_version": "3.0.1",
+                  "target": "aarch64-macos",
+                  "wheel_sha256": "e8cc545c935c41498fb9ec98eb20df5e28ef79a854a7ca0470174e85147a7786"
+                },
+                "contained_cleanup": true,
+                "passed": true
+              },
+              {
+                "cell": "mac-x64",
+                "artifact": 10613300338,
+                "archive_bytes": 26610,
+                "archive_sha256": "64d5d818590ebc8f1304db1cb0f914a305c72d4d5037d3d3c057f8390385a176",
+                "source_controls": {
+                  "passed": 162,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "offered": 10,
+                "returned": 10,
+                "native_routes": 10,
+                "encrypted_posts": 6,
+                "distinct_complete_committed_receipts": 10,
+                "identity": {
+                  "build_sha": "37fd05b37685d0f4b37f836608820cf577a06602",
+                  "installed_package_sha256": "28b0d4fbf5f7ac25ca30c25321c88baa2bbd287627100e2e4222af01656c1f0d",
+                  "mode": "auto",
+                  "package_version": "3.0.1",
+                  "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
+                  "runtime_sha256": "d98af9c2eb9ca21946a79679472a350967ea0f1700fa48772329760a6de5cb1b",
+                  "runtime_version": "3.0.1",
+                  "target": "x86_64-macos",
+                  "wheel_sha256": "79243f5e69305aa3a7ab6f19e390373dee20c60501fb82d62cf792fbd7bd7edc"
+                },
+                "contained_cleanup": true,
+                "passed": true
+              },
+              {
+                "cell": "linux-x64",
+                "artifact": 10612541204,
+                "archive_bytes": 26698,
+                "archive_sha256": "e84b5d5cd6fd1e2081efc673ae25d1cf34c8e1eb86a14d56103b0d780a894fa7",
+                "source_controls": {
+                  "passed": 162,
+                  "failed": 0,
+                  "skipped": 0
+                },
+                "offered": 10,
+                "returned": 10,
+                "native_routes": 10,
+                "encrypted_posts": 6,
+                "distinct_complete_committed_receipts": 10,
+                "identity": {
+                  "build_sha": "37fd05b37685d0f4b37f836608820cf577a06602",
+                  "installed_package_sha256": "f52b2b5b86bdb7c7afea9740a4b7d541ff89239dd379b3726c1824b682fae29a",
+                  "mode": "auto",
+                  "package_version": "3.0.1",
+                  "rule_digest": "1a1c577ee76936bc00477c650e35e3c394562b025c41d6ae68ac6d7b1f45c73d",
+                  "runtime_sha256": "5f9ca9448cd55aa7558c32e8fc65d126624b21793e15acdd4ca5bfdb00818a64",
+                  "runtime_version": "3.0.1",
+                  "target": "x86_64-linux",
+                  "wheel_sha256": "ab8243485d106d6112f8141584a273a926e3bb49c063d5518e975af47cabafa3"
+                },
+                "contained_cleanup": true,
+                "passed": true
+              }
+            ]
+          },
+          "source_controls": {
+            "run": 35530113949,
+            "tree": "86a98c31a0f21dc1f7011c4b96fde002aa63c8e1",
+            "independent_peer_tree": "550443bfb0bc1bb7adb00fb69fe86e1c529227b1",
+            "per_POSIX_cell": {
+              "passed": 43,
+              "failed": 0,
+              "functional_ignored": 0,
+              "new_encrypted_controls": 23
+            },
+            "source_core_windows": {
+              "run": 35531198780,
+              "job": 106131977141,
+              "log_blob": "6eddf25f9b2bbacd86823adf08432b8d62dbf128",
+              "bytes": 113524,
+              "sha256": "a1d4b14b5318f40502a8c2f85156ba9290bdeb17441bf8e8242fe0017ad82298",
+              "root_independently_matched_exact_pass_rows": [
+                "external_sensitive_names_and_non_checkout_sources_stay_denied",
+                "pi_and_omp_preserve_plaintext_byte_and_deadline_bounds",
+                "external_source_requires_pi_or_omp_and_explicit_permission",
+                "pi_and_omp_preserve_unicode_newline_equivalence_and_response_schema"
+              ]
+            }
+          },
+          "clause_findings": [
+            {
+              "clause": "reference identity",
+              "basis": "All18 actual encrypted requests across three cells join exact HTTP ciphertext digest to native-entry reference, request/edge identity, compact ACK, separately installed rule and committed receipt. Native source controls separately reject invalid crypto, metadata, copies and identity."
+            },
+            {
+              "clause": "external-source permission",
+              "basis": "Root reads unchanged edge forwarding of source_ref_external_allowed, core Pi/OMP-only explicit permission, and secure-fs sibling Git checkout/home/source-shape/sensitive-name constraints. Four exact Windows source-core success rows include positive/negative external permission and plaintext/schema cases.",
+              "limit": "Source-core execution is distinct from the installed owned-workspace population. No actual installed positive external-sibling callback is claimed."
+            },
+            {
+              "clause": "plaintext bounds",
+              "basis": "The exact three-POSIX source cohort exercises bounded held-descriptor read, private owner/modes, hard/symbolic links/FIFO, file change, original deadline, AES-GCM authentication, Unicode/UTF16 and metadata limits; original Windows core cases exercise plaintext and deadline bounds."
+            },
+            {
+              "clause": "output equivalence",
+              "basis": "Each registered Pi/OMP clean callback preserves SHA256 5c4c9f1b6008c49a73914d84267e50de7e18fbeba615b982967e058327d932ae and allow_original delivery under unchanged warn/native_policy_warning. Actual tail-secret and changed-source callbacks deny with exact source_secret_match/no_output_to_review."
+            },
+            {
+              "clause": "response schemas",
+              "basis": "Each cell has ten returned callbacks, two owned Node processes with return0, exact expected decision/policy/reason/output fields and ten full native objects equal to committed receipts. Owner and independent peer validate original ordering, identity and cleanup."
+            }
+          ],
+          "root_checks": [
+            "Read full assessment, original task clauses, source identities, original result and independent actual-data peer. Matched all five included original task objects to the unchanged archived overlay.",
+            "Fetched all eleven source provider bodies through GitHub, independently recomputed byte counts/SHA256/Git blob identities and joined the full untruncated current 4,800-file source tree. Ten are identical on b222; only the known-answer test changes to the independently validated public sequential key construction.",
+            "Read exact Rust edge permission forwarding, core explicit Pi/OMP permission and secure-fs external path constraints; read positive and negative source tests and joined four unique exact pass rows to the full original113,524-byte Windows log with independently recomputed SHA256.",
+            "Read actual managed-registration extraction, installed origin and identity admission, Node callback import/execution, strict output/receipt validation and before/after installed checks. Read exact driver override clearing and installed -I invocation. These are functional source/data reads, not new executions.",
+            "Independent peer reproduces frozen result under192MiB, verifies all3 original ZIPs/all48 members/all60 packet blobs, unchanged69 local files and all30 canonical decision/request/ACK/rule/receipt joins without rerun. Root relies on that original-data audit and does not claim a second archive audit."
+          ],
+          "limitations": [
+            "Selected POSIX source-reference component only. Windows encrypted envelopes remain unsupported and no full RSP136 or all-platform lifecycle acceptance follows.",
+            "Actual runtime packages are400/build37fd; currentb222 source continuity is separate. No b222 rebuild is substituted into the original result.",
+            "Owned Node fixtures execute actual registered generated extension callbacks; external Pi/OMP host applications or actual tool commands are not launched.",
+            "The original35533876624 fixture run remains failed in a96f33f302c86b677df3c9dc451989f1156011e6. Its exact-default expectation successor changes no product policy, deadline, original output or population.",
+            "RSP077 broader route selection and RSP076 registration/repair remain explicit. Native approval consumption/RSP080, all Watch/availability modes, signing, release, updater and rollback remain separate.",
+            "Privacy supports declared marker checks. No maximum-size workload, whole exporter qualification, latency, CPU, RSS, confidence or measured speedup is credited."
+          ],
+          "new_workload": false,
+          "full_prd_complete": false,
+          "release_ready": false
+        },
+        "path": "rsp079-root-current-acceptance.json",
+        "bytes": 11724,
+        "sha256": "9abad14c58e12d1759d28f294a206dd3c0c4854a4d7d26476e44c224bd77db30",
+        "git_blob": "522bd66ef28c8de960876073af1b7485cbb66614"
+      },
+      "limits": [
+        "Selected POSIX source-reference component only. Windows encrypted envelopes remain unsupported and no full RSP136 or all-platform lifecycle acceptance follows.",
+        "Actual runtime packages are400/build37fd; currentb222 source continuity is separate. No b222 rebuild is substituted into the original result.",
+        "Owned Node fixtures execute actual registered generated extension callbacks; external Pi/OMP host applications or actual tool commands are not launched.",
+        "The original35533876624 fixture run remains failed in a96f33f302c86b677df3c9dc451989f1156011e6. Its exact-default expectation successor changes no product policy, deadline, original output or population.",
+        "RSP077 broader route selection and RSP076 registration/repair remain explicit. Native approval consumption/RSP080, all Watch/availability modes, signing, release, updater and rollback remain separate.",
+        "Privacy supports declared marker checks. No maximum-size workload, whole exporter qualification, latency, CPU, RSS, confidence or measured speedup is credited."
+      ]
+    },
+    {
+      "task": "RSP-069",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "original_object_sha256": "e2962cdc7fa19052d82229885783bfadcf8162ee5c25c383a4ad3177f089e70d",
+      "original_acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+      "original_dependencies": [
+        "RSP-068"
+      ],
+      "current_scope": "retained_Python_installed_Secrets_CLI_and_staged_functional_contract",
+      "root_acceptance": {
+        "record": {
+          "schema": "pr2974.rsp069-rsp071-root-functional-acceptance.v1",
+          "recorded_at": "2026-09-20T21:34:00Z",
+          "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+          "source_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+          "decision": "DONE within each original functional clause",
+          "original_task_objects_mutated": false,
+          "archived_statuses_mutated": false,
+          "assessment": {
+            "tree": "485a2558ceeb0c2ad48bec123b2b48110bb0a6ac",
+            "blob": "bfc4afb8b1b2c04ca455eb8c12c46e0e26b758c6",
+            "additive_erratum_tree": "fd17372532586d83d79f5f875f595236a92f6eeb",
+            "additive_erratum_blob": "4afb78ab3252dd0908d1752c3d45c2fbf62c16fd"
+          },
+          "root_validation": {
+            "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+            "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+            "root_verified_api_bodies": 66,
+            "source_provider_bodies": 49,
+            "source_changed_from_historical": [
+              ".github/workflows/native-wheel-ci.yml",
+              "src/codex_plugin_scanner/__init__.py"
+            ],
+            "complete_trees_verified": 4,
+            "historical_installed_reports": [
+              {
+                "platform": "linux",
+                "report_blob": "848f6e7f3a5b29c9017a17d3fd28324ecb6fb152",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "3b811b6b5f60826721b4568f71b1d3e68dbddab8a6cc0f6b7414c457ebc31482"
+              },
+              {
+                "platform": "mac-arm",
+                "report_blob": "e28866e4eaca61cc769114081524a7828fbbf2c8",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "a0c3bd4f3f9a6ebe23be849481b55608c0ac0f9124989736cf87073b6ee15d8c"
+              },
+              {
+                "platform": "mac-intel",
+                "report_blob": "52ed8504261948b595e9b3abf3a7418e1f11911b",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "5e08307b78c8a7be033d4a121d3ebe69e8aa8f62f5e01667af19f05db02cc63f"
+              },
+              {
+                "platform": "windows",
+                "report_blob": "c9e7a95a2f5f941ad475d4a99d7903c77403f452",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "306c710dddf22129742247c091582cb347df334219b3bb10fa04189eb6c53c74"
+              }
+            ],
+            "current_archive_controls": 72,
+            "current_cli_staged_controls": 15,
+            "all87_selected_nodes_unique": true,
+            "actual_current_build": "6aa63accf753de56aef380bdf59710a031973bfa",
+            "copilot_candidate_tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+            "copilot_candidate_exact_changes": [
+              "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+              "tests/test_copilot_permission_availability_delivery.py"
+            ],
+            "candidate_leaves": 4801,
+            "root_inputs_sha256": "cfb73cabf7591597f1a40194f1f241c6591c138c68d7f152a4871ceeef761432",
+            "original_task_fields_unchanged": true
+          },
+          "root_review_method": "Root read the complete assessment and exact original D2/D4/D6/D7/D8/D9/D11 clauses, real CLI dispatch/exit/limit code, changed lazy initializer and current CLI/staged tests. It reverse-fetched and hashed all49 selected current provider bodies, all4 original installed reports and4 actual current shard logs, joined49 providers against complete old/current trees, independently recomputed48 installed provider/probe hashes including exact Windows LF-to-CRLF, and verified87 distinct mapped current source nodes. The owner independently verified the original uploaded shard-plan archive. No new workload, artifact reconstruction or historical stdout recovery is claimed.",
+          "source_continuity": "All Secrets semantic providers and12 recorded provider/probe leaves match historical2433a8. Of49 selected files, only native-wheel-ci.yml and package __init__.py differ. The latter uses a lazy scan_plugin export;15 actual current CLI/staged source controls pass. Historical installed execution is not relabeled as b222 installed execution.",
+          "execution_populations": {
+            "historical_installed_source": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+            "historical_installed_platforms": 4,
+            "historical_cases_per_platform": 28,
+            "current_source_build": "6aa63accf753de56aef380bdf59710a031973bfa",
+            "current_main_ci_run": 35534837377,
+            "current_archive_worker_source_cases": 72,
+            "current_cli_staged_source_cases": 15,
+            "populations_pooled": false
+          },
+          "tasks": [
+            {
+              "id": "RSP-069",
+              "original_task_object_sha256": "e2962cdc7fa19052d82229885783bfadcf8162ee5c25c383a4ad3177f089e70d",
+              "original_acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+              "original_dependencies": [
+                "RSP-068"
+              ],
+              "scope": "retained_Python_installed_Secrets_CLI_and_staged_functional_contract",
+              "remaining_own_functional_clause": null
+            },
+            {
+              "id": "RSP-071",
+              "original_task_object_sha256": "b107146f648ead78c8d6737fbb91dd05b1138b5b2de73a1a9b284277b13e6b5d",
+              "original_acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+              "original_dependencies": [
+                "RSP-069",
+                "RSP-070"
+              ],
+              "scope": "named_Secrets_and_scanner_adversarial_functional_families",
+              "remaining_own_functional_clause": null
+            }
+          ],
+          "dependency_limits": {
+            "RSP-068": "Original native detector activation remains DEFERRED. Retained Python functional acceptance does not implement or activate it.",
+            "RSP-070": "Archived DONE retained. Its historical17x30 timing is not newly recovered or revalidated; actual current archive source/isolated-worker correctness does not close its066/024 dependencies.",
+            "transitive_dependencies_closed": false
+          },
+          "excluded_claims": [
+            "Fresh installed b222 Secrets execution",
+            "Native detector activation or Rust detector parity",
+            "Full Secrets CLI performance or throughput qualification",
+            "All-platform installed hostile-archive campaign",
+            "Recovery of all original stdout or historical archive timing bytes",
+            "Actual installed pre-commit hook execution during git commit",
+            "Signing, release readiness, full PRD completion or final approval"
+          ],
+          "scope_interpretation": "The explicit staged-workflow acceptance is satisfied by actual staged-index scans while working-tree bytes differ, both real entrypoints, exits0/2/3 and default/explicit limit controls. Original D2/D6/D7 do not add a real git-commit hook lifecycle prerequisite. Current source install/chain/restore tests are retained but not represented as such a lifecycle. Full CLI performance remains its original separate task.",
+          "historical_capture_limit": "Reports preserve output hashes, counts and full-public-contract oracle outcomes. They used temporary output files and a post-exit2MiB parser/buffer limit, without an active child-output disk bound; no active-bound claim is made.",
+          "root_reader_correction": "Initial source-path enumeration mistakenly included13 directories in blob GETs; these read-only requests returned404. The selector was restricted to blobs. One transient source-blob disconnect was refetched; all49 final source bodies and four complete trees validated. No source or original evidence changed."
+        },
+        "record_identity": {
+          "path": "rsp069-rsp071-root-functional-acceptance.json",
+          "bytes": 7200,
+          "sha256": "9d87c0df9cc02bb4c046ab34892bfc2ab128a41b21860d5fd215cfbd556f2c7a",
+          "git_blob": "9abfe6eb90de2a2015d75cfd34937dcf92004dac"
+        }
+      },
+      "remaining_own_scope_clause": null,
+      "transitive_dependencies_closed": false
+    },
+    {
+      "task": "RSP-071",
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "DONE",
+      "original_object_sha256": "b107146f648ead78c8d6737fbb91dd05b1138b5b2de73a1a9b284277b13e6b5d",
+      "original_acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+      "original_dependencies": [
+        "RSP-069",
+        "RSP-070"
+      ],
+      "current_scope": "named_Secrets_and_scanner_adversarial_functional_families",
+      "root_acceptance": {
+        "record": {
+          "schema": "pr2974.rsp069-rsp071-root-functional-acceptance.v1",
+          "recorded_at": "2026-09-20T21:34:00Z",
+          "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+          "source_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+          "decision": "DONE within each original functional clause",
+          "original_task_objects_mutated": false,
+          "archived_statuses_mutated": false,
+          "assessment": {
+            "tree": "485a2558ceeb0c2ad48bec123b2b48110bb0a6ac",
+            "blob": "bfc4afb8b1b2c04ca455eb8c12c46e0e26b758c6",
+            "additive_erratum_tree": "fd17372532586d83d79f5f875f595236a92f6eeb",
+            "additive_erratum_blob": "4afb78ab3252dd0908d1752c3d45c2fbf62c16fd"
+          },
+          "root_validation": {
+            "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+            "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+            "root_verified_api_bodies": 66,
+            "source_provider_bodies": 49,
+            "source_changed_from_historical": [
+              ".github/workflows/native-wheel-ci.yml",
+              "src/codex_plugin_scanner/__init__.py"
+            ],
+            "complete_trees_verified": 4,
+            "historical_installed_reports": [
+              {
+                "platform": "linux",
+                "report_blob": "848f6e7f3a5b29c9017a17d3fd28324ecb6fb152",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "3b811b6b5f60826721b4568f71b1d3e68dbddab8a6cc0f6b7414c457ebc31482"
+              },
+              {
+                "platform": "mac-arm",
+                "report_blob": "e28866e4eaca61cc769114081524a7828fbbf2c8",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "a0c3bd4f3f9a6ebe23be849481b55608c0ac0f9124989736cf87073b6ee15d8c"
+              },
+              {
+                "platform": "mac-intel",
+                "report_blob": "52ed8504261948b595e9b3abf3a7418e1f11911b",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "5e08307b78c8a7be033d4a121d3ebe69e8aa8f62f5e01667af19f05db02cc63f"
+              },
+              {
+                "platform": "windows",
+                "report_blob": "c9e7a95a2f5f941ad475d4a99d7903c77403f452",
+                "cases": 28,
+                "current_provider_joins": 12,
+                "wheel_sha256": "306c710dddf22129742247c091582cb347df334219b3bb10fa04189eb6c53c74"
+              }
+            ],
+            "current_archive_controls": 72,
+            "current_cli_staged_controls": 15,
+            "all87_selected_nodes_unique": true,
+            "actual_current_build": "6aa63accf753de56aef380bdf59710a031973bfa",
+            "copilot_candidate_tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+            "copilot_candidate_exact_changes": [
+              "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+              "tests/test_copilot_permission_availability_delivery.py"
+            ],
+            "candidate_leaves": 4801,
+            "root_inputs_sha256": "cfb73cabf7591597f1a40194f1f241c6591c138c68d7f152a4871ceeef761432",
+            "original_task_fields_unchanged": true
+          },
+          "root_review_method": "Root read the complete assessment and exact original D2/D4/D6/D7/D8/D9/D11 clauses, real CLI dispatch/exit/limit code, changed lazy initializer and current CLI/staged tests. It reverse-fetched and hashed all49 selected current provider bodies, all4 original installed reports and4 actual current shard logs, joined49 providers against complete old/current trees, independently recomputed48 installed provider/probe hashes including exact Windows LF-to-CRLF, and verified87 distinct mapped current source nodes. The owner independently verified the original uploaded shard-plan archive. No new workload, artifact reconstruction or historical stdout recovery is claimed.",
+          "source_continuity": "All Secrets semantic providers and12 recorded provider/probe leaves match historical2433a8. Of49 selected files, only native-wheel-ci.yml and package __init__.py differ. The latter uses a lazy scan_plugin export;15 actual current CLI/staged source controls pass. Historical installed execution is not relabeled as b222 installed execution.",
+          "execution_populations": {
+            "historical_installed_source": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+            "historical_installed_platforms": 4,
+            "historical_cases_per_platform": 28,
+            "current_source_build": "6aa63accf753de56aef380bdf59710a031973bfa",
+            "current_main_ci_run": 35534837377,
+            "current_archive_worker_source_cases": 72,
+            "current_cli_staged_source_cases": 15,
+            "populations_pooled": false
+          },
+          "tasks": [
+            {
+              "id": "RSP-069",
+              "original_task_object_sha256": "e2962cdc7fa19052d82229885783bfadcf8162ee5c25c383a4ad3177f089e70d",
+              "original_acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+              "original_dependencies": [
+                "RSP-068"
+              ],
+              "scope": "retained_Python_installed_Secrets_CLI_and_staged_functional_contract",
+              "remaining_own_functional_clause": null
+            },
+            {
+              "id": "RSP-071",
+              "original_task_object_sha256": "b107146f648ead78c8d6737fbb91dd05b1138b5b2de73a1a9b284277b13e6b5d",
+              "original_acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+              "original_dependencies": [
+                "RSP-069",
+                "RSP-070"
+              ],
+              "scope": "named_Secrets_and_scanner_adversarial_functional_families",
+              "remaining_own_functional_clause": null
+            }
+          ],
+          "dependency_limits": {
+            "RSP-068": "Original native detector activation remains DEFERRED. Retained Python functional acceptance does not implement or activate it.",
+            "RSP-070": "Archived DONE retained. Its historical17x30 timing is not newly recovered or revalidated; actual current archive source/isolated-worker correctness does not close its066/024 dependencies.",
+            "transitive_dependencies_closed": false
+          },
+          "excluded_claims": [
+            "Fresh installed b222 Secrets execution",
+            "Native detector activation or Rust detector parity",
+            "Full Secrets CLI performance or throughput qualification",
+            "All-platform installed hostile-archive campaign",
+            "Recovery of all original stdout or historical archive timing bytes",
+            "Actual installed pre-commit hook execution during git commit",
+            "Signing, release readiness, full PRD completion or final approval"
+          ],
+          "scope_interpretation": "The explicit staged-workflow acceptance is satisfied by actual staged-index scans while working-tree bytes differ, both real entrypoints, exits0/2/3 and default/explicit limit controls. Original D2/D6/D7 do not add a real git-commit hook lifecycle prerequisite. Current source install/chain/restore tests are retained but not represented as such a lifecycle. Full CLI performance remains its original separate task.",
+          "historical_capture_limit": "Reports preserve output hashes, counts and full-public-contract oracle outcomes. They used temporary output files and a post-exit2MiB parser/buffer limit, without an active child-output disk bound; no active-bound claim is made.",
+          "root_reader_correction": "Initial source-path enumeration mistakenly included13 directories in blob GETs; these read-only requests returned404. The selector was restricted to blobs. One transient source-blob disconnect was refetched; all49 final source bodies and four complete trees validated. No source or original evidence changed."
+        },
+        "record_identity": {
+          "path": "rsp069-rsp071-root-functional-acceptance.json",
+          "bytes": 7200,
+          "sha256": "9d87c0df9cc02bb4c046ab34892bfc2ab128a41b21860d5fd215cfbd556f2c7a",
+          "git_blob": "9abfe6eb90de2a2015d75cfd34937dcf92004dac"
+        }
+      },
+      "remaining_own_scope_clause": null,
+      "transitive_dependencies_closed": false
+    }
+  ],
+  "qualification_complete": false,
+  "release_ready": false,
+  "historical_own_clause_support": [
+    {
+      "task": "RSP-119",
+      "archived_status": "DONE",
+      "original_object_sha256": "01e0c145d4c99b7fc38827dc9eb68bbd9e14af773a5d322519e37145f4582b9e",
+      "original_acceptance": "Separate cold compile/load from warm evaluation; vary catalog/candidates/controls within valid combined limits and include false-review counts.",
+      "original_dependencies": [
+        "RSP-118",
+        "RSP-010"
+      ],
+      "current_scope": "historical_component_clause_supported",
+      "current_source_execution": false,
+      "transitive_dependencies_closed": false,
+      "assessment_tree": "8c4c6e92faedadf04b5dc7976654418094110ee1",
+      "assessment_blob": "878f489400c2ed24dabe408323d2a5c2c2cab11a",
+      "independent_peer_tree": "998a129b169887dc7296d1a3a6ce6653347a8e46",
+      "independent_peer_blob": "48a88df1c9edb63c871659f8d376c27bfd0f5236",
+      "basis": [
+        "Root read the complete owner assessment and independent peer. The exact retained original matrix contains673 records:3cold catalog admissions,29control admissions,638 catalog/state/command combinations,3outcome summaries.",
+        "Owner and independent peer separately reconcile all638 combinations,29states, sample counts, valid combined binding limits and all8outcome categories. All4named benchmark/input/compiler/test bodies are unchanged between integrated81ef and current400.",
+        "The original source producer separates compile/admit timing from warm native/Python evaluation. It varies catalogs7/48/86extensions, rules89/200/291, candidates/controls and retains false-review counts; the clause is supported without adding global installed/release thresholds."
+      ],
+      "limits": [
+        "Historical recorded source d980 is currently inaccessible; integrated81ef retained the report. Actual binary/stdout/reference bodies and individual timing vectors are absent. Their recorded hashes are not recovered bytes.",
+        "The ordinary control subset still restricts30of39 benign cases per catalog. Zero newly restricted intrinsic allows does not mean zero false review.",
+        "Native generic-pretool and Python observation scopes differ; no speedup ratio. Ten-sample cold p95 equals the maximum and is not qualified startup p95.",
+        "Broader runtime source changed. Historical timing is not revalidated at current400.",
+        "The original118/010 dependency edges retain independent states;118 installed lifecycle remains unresolved. Supporting119's historical own clause does not certify transitive lifecycle completion."
+      ],
+      "root_acceptance_record": {
+        "path": "root-checkpoint/rsp119120-root-current-acceptance.json",
+        "bytes": 5977,
+        "sha256": "dba14d748de8db9cf81665d1fa1f240594729ef951c8949818a76d077c871dca",
+        "git_blob": "5aa425fbe5cd977a17036ee06aeb932706664f8d"
+      }
+    }
+  ],
+  "current_scope_revalidated_task_ids": [
+    "RSP-001",
+    "RSP-006",
+    "RSP-007",
+    "RSP-013",
+    "RSP-014",
+    "RSP-015",
+    "RSP-022",
+    "RSP-047",
+    "RSP-069",
+    "RSP-071",
+    "RSP-079",
+    "RSP-099",
+    "RSP-100",
+    "RSP-120",
+    "RSP-133"
+  ],
+  "archived_status_counts": {
+    "DONE": 74,
+    "OPEN": 31,
+    "BLOCKED": 29,
+    "DEFERRED": 10
+  },
+  "derived_status_counts": {
+    "DONE": 83,
+    "OPEN": 22,
+    "BLOCKED": 29,
+    "DEFERRED": 10
+  },
+  "prior_acceptance_document": {
+    "commit": "9b7f26d1e1465261bb248a3b66de39ef4a3ddd8a",
+    "blob": "366ffddf17821ca35c7f2cc52254405fa1641571"
+  },
+  "current_source_context": {
+    "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+    "actual_build": "6aa63accf753de56aef380bdf59710a031973bfa",
+    "normal_workflows": "32 success",
+    "check_counts": {
+      "success": 176,
+      "skipped": 19,
+      "failure": 1
+    },
+    "failure_scope": "Kilo review rate limit",
+    "source_runtime_unchanged_from400": true,
+    "scope": "Assessed b222 source and completed normal artifact context; latest a1d successor is separately named and not assigned these results."
+  },
+  "prior_scoped_acceptance_rebind": {
+    "tree": "ef133ea77287ea1f6ea57ea6b01a6f20ef64336d",
+    "record": {
+      "path": "root-checkpoint/current400-prior-scoped-acceptance-rebind.json",
+      "bytes": 54120,
+      "sha256": "0ecbc5441cd879c42157ce7cb9458493305a83d0fb7ee8e79a070e6d1b7d768c",
+      "git_blob": "0e201cb60c54e5c9aba77da8ab83e590a5e75c34"
+    },
+    "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "source_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+    "unique_providers": 149,
+    "accepted_scopes_rebound": [
+      "RSP-006",
+      "RSP-013",
+      "RSP-014",
+      "RSP-015",
+      "RSP-022",
+      "RSP-099",
+      "RSP-100",
+      "RSP-133"
+    ],
+    "cohorts": [
+      {
+        "name": "rsp013014_roster",
+        "providers": 93,
+        "all_exact_unchanged": true
+      },
+      {
+        "name": "rsp013014_callgraph",
+        "providers": 10,
+        "all_exact_unchanged": true
+      },
+      {
+        "name": "rsp015_cohort_paths",
+        "providers": 32,
+        "all_exact_unchanged": true
+      },
+      {
+        "name": "rsp006022133",
+        "providers": 30,
+        "all_exact_unchanged": true
+      },
+      {
+        "name": "rsp099",
+        "providers": 5,
+        "all_exact_unchanged": true
+      },
+      {
+        "name": "rsp100",
+        "providers": 18,
+        "all_exact_unchanged": true
+      }
+    ],
+    "method": "Compare each previously byte-verified provider Git blob, file mode and size to complete current400 and a5fd API trees. SHA256 values are retained from the original validated bodies; no new source execution or installed qualification is inferred.",
+    "source_delta_review": "The new POSIX encrypted post hydration stays wholly inside the native edge with the outer receipt commitment preserved; no Python fallback/dispatcher/registration/capture provider changed. Seven lazy manager exports retain the same real function identity and initialization before use, separately validated393pass3skip. Root reviewed both exact source changes and seven unchanged source gates. These changes do not change the accepted Python callgraph, generated surface inventory, fixture capture, SLO descriptions, synchronous configuration caller classification or workflow selection clauses.",
+    "original_results_reused_with_original_identities": true,
+    "new_workload": false,
+    "scope": "Eight prior source/functional clauses are rebound by provider identity. The ninth prior acceptance, RSP001, has the separate complete current source/ref/artifact census. This is not a new execution, timing, signing or release qualification."
+  },
+  "latest_source_successor": {
+    "source": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+    "tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+    "sole_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "published_at": "2026-09-20T21:45:22Z",
+    "changed_paths": [
+      "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+      "tests/test_copilot_permission_availability_delivery.py"
+    ],
+    "publication_record": "copilot-source-publication.json",
+    "new_normal_run": 35539716189,
+    "new_normal_status": "in_progress",
+    "assessment_source_preserved": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "prior_installed_results_relabelled": false
+  },
+  "scope_semantics": "Nine explicit original own-clause promotions yield83 DONE/22 OPEN/29 BLOCKED/10 DEFERRED;15 selected scopes are currently supported. Other archived DONE labels are not new acceptance. Original task objects/dependencies/archived statuses remain unchanged. Historical installed execution plus current provider continuity is separate from fresh current installed execution. RSP069/071 preserve deferred068 and archived-only070 timing; RSP079 preserves whole077/076 limits;119 closes neither118/010 nor current performance.",
+  "source_continuity_from_prior": {
+    "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+    "sole_parent": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "changed_paths": [
+      ".gitleaksignore",
+      "rust/crates/guard-runtime/src/edge_encrypted_tests.rs"
+    ],
+    "product_runtime_and_workflows_unchanged": true,
+    "root_publication_receipt": "aes-final-root-publication.json",
+    "prior_evidence_commit": "9b7f26d1e1465261bb248a3b66de39ef4a3ddd8a",
+    "earlier_execution_identities_preserved": true
+  },
+  "latest_pr_source_successor": {
+    "source": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+    "tree": "e60dfd218cd7cc9f29c9f2cd66223c866ea86c80",
+    "sole_parent": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "published_at": "2026-09-20T21:45:22Z",
+    "changed_paths": [
+      "src/codex_plugin_scanner/guard/adapters/bounded_cli_hook_daemon.py",
+      "tests/test_copilot_permission_availability_delivery.py"
+    ],
+    "publication_record": "copilot-source-publication.json",
+    "new_normal_run": 35539716189,
+    "new_normal_status": "in_progress",
+    "assessment_source_preserved": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "prior_installed_results_relabelled": false
+  },
+  "current_scope_source_note": "The15 accepted scopes and83/22/29/10 accounting are the b222 assessment retained in this document. Copilot successor a1d is separately published with185source passes/36new cases/two existing Python gates. Its normal CI and corrected installed artifact qualification are still pending. Earlier source/build identities and acceptance records are not relabeled.",
+  "assessed_source_successor_of400": {
+    "source": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+    "tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+    "sole_parent": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "changed_paths": [
+      ".gitleaksignore",
+      "rust/crates/guard-runtime/src/edge_encrypted_tests.rs"
+    ],
+    "product_runtime_and_workflows_unchanged": true,
+    "root_publication_receipt": "aes-final-root-publication.json",
+    "prior_evidence_commit": "9b7f26d1e1465261bb248a3b66de39ef4a3ddd8a",
+    "earlier_execution_identities_preserved": true
+  }
+}

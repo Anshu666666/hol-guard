@@ -1,0 +1,36 @@
+{
+  "schema": "pr2974.rsp091-v4-root-narrow-peer.v1",
+  "decision": "CLEAR for exactly one isolated corrected validation after fresh branch/run guards",
+  "source": "a63cfdf9c5f49d7bd3199e65ae48f393297a391b",
+  "source_tree": "9c472594937f085864e2cb0ff60227c6a9e0f713",
+  "driver": "178109c220a4f39744ef2b37abc177c32aa87918",
+  "driver_tree": "70a713c8f1b0e1fa4f373abd98c41e1368fc7adb",
+  "base": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "latest_pr_source_separate": "a1d509404b0803a91031cb51f4b0c919408bfeba",
+  "preparation": "393f54de33a1702034e0f332282495f5a70a43e1",
+  "prior_failed_result": "96945acdc477dbd11c7a5a321dc05b1d46a1b14d",
+  "complete_trees_verified": 6,
+  "api_bodies_verified": 12,
+  "unchanged_driver_functions": 10,
+  "source_delta": [
+    "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs"
+  ],
+  "driver_delta": [
+    ".github/workflows/pr2974-rsp091-unix-peer-validation.yml",
+    "rsp091-validation/run.py",
+    "rust/crates/guard-runtime/src/resident_transport_peer_identity_tests.rs"
+  ],
+  "source_review": "Root read complete v3 fixture and exact v4 diff. The negative receiver alone changes from timeout setsockopt/blocking read to nonblocking mode and an absolute same2s loop. Every read is preceded by deadline check; only WouldBlock sleeps2ms. EOF0 is the only passing byte-count result; any byte, other error or expiry still fails. Parent still requires exact native_client_peer_identity_mismatch, nonretryable teardown, authentic live parent metadata with different actual child peer, and zero auth bytes. Positive production protocol and250ms authentication unchanged. Owned-child cleanup/error preservation unchanged.",
+  "operational_review": "All driver functions are AST-identical; only final test-body SHA256 changes. Workflow substitutions are exactly uniquev4 branch, source commit in checkout/env, and source tree env. Same3POSIX lanes,4parent selectors,11finite admission controls, pinned1.88 formatter then one default-feature compile, same bounded commands/30min jobs and always-retained originals. No PR ref mutation or additional workload.",
+  "test_execution_scope": "Owner reports11 unchanged driver controls/Ruff pass; root verifies exact control/runner bodies and unchanged function AST, without rerunning. Hosted format/build/4actual parents remain unexecuted in this peer.",
+  "causality_limit": "Prior Mac OS22 at the negative fixture timeout setter is actual. Shutdown-state bits were not observed; compatibility with pinned Apple source is not unique historical-cause proof. A passing successor cannot revise the prior failure.",
+  "product_or_deadline_change": false,
+  "new_workload_by_root": false,
+  "required_fresh_guards": [
+    "Intended v4 branch absent",
+    "Zero prior runs for exact driver",
+    "Exact source/driver ref readback"
+  ],
+  "allowed_original_runs": 1,
+  "input_sha256": "413898fe0a1946c999ae75444eb385c203bda2375d86e6e4f6f2cd2a14154a5b"
+}

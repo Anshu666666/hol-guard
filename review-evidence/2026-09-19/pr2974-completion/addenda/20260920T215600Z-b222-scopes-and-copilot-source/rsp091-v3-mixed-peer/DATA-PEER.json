@@ -1,0 +1,120 @@
+{
+  "schema": "pr2974.rsp091.accepted-stream-mixed-data-peer.v1",
+  "verdict": "CLEAR faithful mixed failure record; no whole-matrix pass",
+  "date_utc": "2026-09-20T21:54:46.146215+00:00",
+  "owner_packet": "96945acdc477dbd11c7a5a321dc05b1d46a1b14d",
+  "run": 35539478823,
+  "source": "641bcd6fb8e7d6149832b6ce07b421655f3351e5",
+  "source_tree": "6a317d6a591f3505cec4431754761b60259c9b67",
+  "driver": "a4872bc5a1d0edfa39125b20752c90324c7f1c2a",
+  "driver_tree": "1edbc31a06cf5be412a6d92c24b4a07c42959253",
+  "method": [
+    "Read complete verify_mixed.py and verify_result.py. Invoked only read-only verify(cell) under 256 MiB address-space limit with bytecode writing disabled; neither writing main was invoked.",
+    "Independently rehashed all three archives and compared every extracted member, uploaded test binary, source/driver before-after record and command stream to retained metadata and frozen result. All 94 existing local result files unchanged.",
+    "Read the actual Mac negative stdout/stderr and exact retained fixture lines 227-238; the panic location precedes stream.read and emitted observation. No workload or product-source execution."
+  ],
+  "git_text_binding": {
+    "matched_local_leaves": 90,
+    "not_locally_reconciled_supplemental_leaves": [
+      "MANIFEST.json",
+      "README.md",
+      "api/arm-job.log",
+      "api/artifacts.json",
+      "api/jobs.json"
+    ]
+  },
+  "archives": [
+    {
+      "artifact": 10614252013,
+      "bytes": 7020216,
+      "sha256": "8a0d437d9fce7d6e11bda52a18f49ad89169e765645ade20ed6405ac45209f5e"
+    },
+    {
+      "artifact": 10614057424,
+      "bytes": 6799257,
+      "sha256": "7a669a5de838379a2f18ddfa3d952170051ef67705c5091b5fe44d17d42a9a2b"
+    },
+    {
+      "artifact": 10613768420,
+      "bytes": 6665983,
+      "sha256": "c67016924c73152a56f7c0f35b88b6e567a25bf4de0b1aae4fc697e8de835565"
+    }
+  ],
+  "data_check": {
+    "result_matches": true,
+    "unchanged_files": 94,
+    "cells": [
+      {
+        "lane": "linux-x64",
+        "parent_pass": 4,
+        "parent_fail": 0,
+        "child_pass": 2,
+        "child_fail": 0,
+        "driver_controls": 11,
+        "members": 32,
+        "test_binary": {
+          "bytes": 24895624,
+          "sha256": "f2b0e4c8d91f037b65e5350c1fb24c2a75d3b83eea9d15dbde6b11816fff7a74"
+        },
+        "child_error": null,
+        "parent_error": null,
+        "cleanup": null
+      },
+      {
+        "lane": "macos-arm64",
+        "parent_pass": 1,
+        "parent_fail": 1,
+        "child_pass": 1,
+        "child_fail": 1,
+        "driver_controls": 11,
+        "members": 26,
+        "test_binary": {
+          "bytes": 22805536,
+          "sha256": "c300ea927fb49e604897cc7ba884548f0ee62f5e7355e34662115cbf8f8b9537"
+        },
+        "child_error": "set_read_timeout: OS22 InvalidInput",
+        "parent_error": "fixture_file_deadline",
+        "cleanup": [
+          {
+            "negative": true,
+            "reaped": true,
+            "directory_removed": false
+          }
+        ]
+      },
+      {
+        "lane": "macos-x64",
+        "parent_pass": 1,
+        "parent_fail": 1,
+        "child_pass": 1,
+        "child_fail": 1,
+        "driver_controls": 11,
+        "members": 26,
+        "test_binary": {
+          "bytes": 22946236,
+          "sha256": "39e4fe316fcdea01f89ad2d981398e5235da825de93e500257a8c9c74adda01a"
+        },
+        "child_error": "set_read_timeout: OS22 InvalidInput",
+        "parent_error": "fixture_file_deadline",
+        "cleanup": [
+          {
+            "negative": true,
+            "reaped": true,
+            "directory_removed": false
+          }
+        ]
+      }
+    ]
+  },
+  "scope_findings": [
+    "Linux again retains all four parent passes and two owned-child passes, including zero received bytes for wrong-process peer and both original deadline controls.",
+    "Each Mac now retains a passing positive original exchange: one parent and one owned child, authenticated/request_digest_valid/response_written true with 32 payload bytes, and reaped/directory_removed true. This actual success is separate from the first matrix positive failures.",
+    "Each Mac subsequently fails its negative child at stream.set_read_timeout(Some(REQUEST_BUDGET)).unwrap(), exact retained line230 with OS22 InvalidInput. The one-byte stream.read at232 and zero-byte observation were not reached. Parent then fails fixture_file_deadline; no inference of accepted or rejected application data follows.",
+    "Both later deadline parents are unoffered on each Mac. Negative cleanup records reaped=true/directory_removed=false; subsequent Drop removal remains unobserved.",
+    "Eleven driver controls pass per lane; source/binary before-after identities unchanged. Overall false remains correct."
+  ],
+  "limits": [
+    "No download, build, controls, test, native invocation or workload rerun by peer.",
+    "No validation of a separately proposed observer correction, no cause inference for the older collapsed-authentication failures, no installed/performance/full-descendant-cleanup claim."
+  ]
+}

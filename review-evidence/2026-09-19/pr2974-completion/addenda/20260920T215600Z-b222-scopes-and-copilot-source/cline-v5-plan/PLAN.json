@@ -1,0 +1,144 @@
+{
+  "schema": "pr2974.cline-intel-normal-delivery-plan.v1",
+  "scope": "Source-supported next diagnostic preparation only. No implementation or workload is authorized by this plan alone; concrete source and operational peers precede any unique original-selector execution.",
+  "historical_source": {
+    "observer": "14ac7d491b14af267c933f9b1de668ec8135ba35",
+    "observer_tree": "5fef707b44f63edf7fca574c6c993b6fe8406f6a",
+    "driver": "edb75675005bf3a221250f51f81e68f59632be2c",
+    "driver_tree": "985dbfc90514db95a46ebd179257d06dc131a205",
+    "product": "e44008445630aad28ccc291ec234f55a14892e6d",
+    "actual_wheel_build": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+    "actual_wheel_artifact": 10606991867
+  },
+  "original_result": {
+    "run": 35531647232,
+    "packet_tree": "1eb34b38c8b9d781ffeaf29361f53d95f2008422",
+    "peer_tree": "cbdeeaf4cd7f6a108baf9d3e64154b70f248f93f",
+    "peer_blob": "8e63ffc71cb54f989812e00ff2d76f207b11ac9d",
+    "facts": [
+      "All four child native, receipt, payload, policy and no-workspace context oracles pass.",
+      "Both original Pre calls raise TimeoutExpired at the unchanged9-second nested timeout; both Post calls return0.",
+      "The unchanged generated worker catches TimeoutExpired before parse_output and may take availability fallback. Outer exit0 does not prove normal delivery of the child native result.",
+      "All four counters saturate at2,000,000, but the profile continues receiving callbacks. No exact total callback count or cost is retained.",
+      "Child reports are written at diagnostic atexit after successful selected return pairs. That alone cannot establish when the process exited or why parent pipe communication remained incomplete."
+    ]
+  },
+  "source_bindings": [
+    {
+      "path": "scripts/ci/cline_witness/profile_runtime.py",
+      "bytes": 12340,
+      "sha256": "a9c95d7149f73a676d221c3b4c8c65fac13cfb81850b4a9a8905c8bbd51973b2",
+      "git_blob": "8ca2ef08affdbb0b96d3fbec5656135723052fdd"
+    },
+    {
+      "path": "scripts/ci/cline_witness/nested_run.py",
+      "bytes": 9201,
+      "sha256": "3ddb7f155a3e1de18fdeef207624becc73b5e17fe7c2bee3e698e343a84c6661",
+      "git_blob": "472c27a3a878dc8124cc215223edd65abaef72fb"
+    },
+    {
+      "path": "scripts/ci/cline_witness/run.py",
+      "bytes": 15981,
+      "sha256": "e82480e16f1e108a3a8168b96b33bf9c5f1974afcb11927b9390a581cc62fe82",
+      "git_blob": "e166f51cd667fd832d08ce099aaf44d5cabbece9"
+    },
+    {
+      "path": "scripts/ci/cline_witness/installation.py",
+      "bytes": 8262,
+      "sha256": "6a17ec3109e3f3aeed8cc3d5cd58c0253d222d44a91113e86b38c71b1d32669f",
+      "git_blob": "379741f8167624e94bb5f3f34c75713e75f01647"
+    },
+    {
+      "path": "scripts/ci/cline_witness/validation.py",
+      "bytes": 6901,
+      "sha256": "def00ef78b0ee09056f92010a1b51abec1e5a9bf8c059bbe7e0fa5034e3fe850",
+      "git_blob": "9da380109551df5681614e003a0e81c529a31d8b"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/adapters/cline_hooks.py",
+      "bytes": 21979,
+      "sha256": "05678c229de7496f1c0daa60de0fc513b1adf96a88690057e9b6544cc27a72fb",
+      "git_blob": "05e1af6a2a346e2397415157c44eba87a825a359"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/cli/commands_hook_native_authority.py",
+      "bytes": 8202,
+      "sha256": "be4f45d56bc831ae219bdaf8f5f24c2900bbe6ece172904cb2cfedd1246a3114",
+      "git_blob": "b285b050cd853dc5b1a172c661871e0a5ae23875"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+      "bytes": 19320,
+      "sha256": "cc68db1ab6d11d40f9c0c08781aa61592451997c5c4e8805029450ecee66f786",
+      "git_blob": "8f8fa18249101ab0edd0cb2b472b4458528967e9"
+    }
+  ],
+  "primary_stdlib_source": {
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Lib/subprocess.py",
+    "retained_path": "cpython-3.12.10-subprocess.py",
+    "bytes": 88747,
+    "sha256": "85d29b2bf0249f5436838298c9a60ee93508b1102e9ac43b001f8a7e7ae8f375",
+    "git_blob": "881a9ce800ae998793ad752c1593e6e9fed9e57f",
+    "read_regions": {
+      "run": [
+        506,
+        573
+      ],
+      "check_timeout": [
+        1247,
+        1256
+      ],
+      "posix_internal_poll": [
+        1973,
+        2005
+      ],
+      "posix_wait": [
+        2021,
+        2059
+      ],
+      "posix_communicate": [
+        2062,
+        2161
+      ],
+      "posix_send_signal": [
+        2176,
+        2206
+      ]
+    },
+    "finding": "POSIX run preserves TimeoutExpired after its original kill and wait. send_signal first calls poll and avoids signalling an already-reaped child. _communicate has a pipe-selector timeout before its final process wait. An outer timeout therefore does not, by itself, identify live-child execution versus pipe completion."
+  },
+  "next_observation": {
+    "population": "Only the same four original Intel Cline cases, in original order and with the existing stop-on-failed-admission behavior. No Linux/ARM replay, extra policy request, native probe or workload warmup.",
+    "fixed_budgets": {
+      "nested_subprocess_seconds": 9,
+      "outer_delivery_seconds": 10,
+      "existing_workload_process_seconds": 180
+    },
+    "worker_scope": "Extend only the already admitted generated-worker diagnostic wrapper. Generated worker and installed product bytes stay unchanged; original subprocess.run positional/keyword objects, returned object and raised object must be forwarded identically.",
+    "original_operation_seams": [
+      "Observe only the selected original Popen instance reached during the already selected subprocess.run call. Preserve Popen class identity.",
+      "Wrap original _communicate, _check_timeout, poll and wait methods with fixed code/caller admission. Observe calls that the original subprocess implementation already makes; never add poll, wait, kill, communicate, pipe read, retry or clock-driven control.",
+      "Record a finite ordered role/outcome sequence with exact-int signed32 return codes or null. Distinguish the original send_signal pre-signal poll from normal run completion and final cleanup waits. A null poll is not a continuous liveness proof; a later status is not an earlier exit timestamp.",
+      "Classify timeout origin from the actual wrapped exception boundary, preserving the identical exception. Record only type/bounded byte length/SHA256 for exact bytes or string stdout/stderr already present on TimeoutExpired or CompletedProcess. Reject unknown/unbounded metadata from diagnostic admission while still forwarding the original outcome.",
+      "Do not claim descendant pipe inheritance merely because the original pre-signal poll observes a terminated child; that outcome only narrows the remaining communication path."
+    ],
+    "limits": "At most32 retained original-operation rows for one selected child; overflow, mismatched object/caller, unknown source, export or restoration failure makes capture incomplete. Zero-offer remains truthful and grants no route credit. Setup must unwind partial patches before original execution continues.",
+    "normal_delivery_gate": "Retain diagnostic completeness and strict child/native oracle as separate fields. The next installed-correctness verdict additionally requires selected_calls1, nested outcome returned and returncode0 for every offered case. A timeout remains failed normal delivery even if child native checks and outer fallback output pass. Original V4 is never reclassified.",
+    "callback_cost_correction_for_separate_peer": "A possible diagnostic-only successor replaces all-event profiling with Python-call admission and per-selected-frame return tracing, with line/opcode tracing disabled and no C-event callback. Preserve both selected function identities, full multiplicity until process exit, entry/return object snapshots and original validator. A hard callback budget must mark incomplete if exhausted; never silently stop after the first complete pair. This change needs actual real-child equivalence, exception, duplicate-late-call and restoration controls before use. It is not an established timeout fix or a baseline performance measurement."
+  },
+  "required_untimed_controls": [
+    "Original result and exception identity through success, TimeoutExpired, OSError and diagnostic/export/restoration failures.",
+    "Exact9-second argument and original kwargs objects, one subprocess offer, no additional polls/waits/reads/kills; unselected calls are unaffected.",
+    "Real bounded child that exits normally while a separately owned descendant temporarily retains a pipe, proving the observer does not equate communication timeout with continuous child liveness; retire that synthetic fixture completely.",
+    "Real bounded still-live child timeout and normal child completion distinguish the original poll/wait outcomes without altering the original call.",
+    "Zero-offer and impossible/multiple-owner/caller records are rejected for native-route credit. Signed-int, output-byte-size, privacy and row-cap controls are explicit.",
+    "If tracing mechanism changes, preserve original selected call/return captures and detect a later duplicate even after an initially complete pair. Exception unwind never counts as successful semantic return; original strict validator remains required."
+  ],
+  "non_claims": [
+    "No current400/b222 wheel or performance claim from historicalbe612.",
+    "No product defect, historicalV3 missing-sidecar cause, V4 profiler causal attribution or uninstrumented timing improvement is established.",
+    "No enlarged deadline, replay-safe repair, source-reference workspace grant, relaxed native oracle or global normal-PR rerun."
+  ],
+  "implementation_started": false,
+  "new_workload_executed": false
+}

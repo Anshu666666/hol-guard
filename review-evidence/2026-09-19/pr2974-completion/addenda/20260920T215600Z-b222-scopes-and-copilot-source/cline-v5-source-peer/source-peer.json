@@ -1,0 +1,127 @@
+{
+  "schema": "pr2974.cline-intel-v5-worker-source-peer.v1",
+  "reviewer": "windows_persistence_audit",
+  "verdict": "clear",
+  "source_commit": "3a79e324ae2f39949e542d1427583f20d7eb58cb",
+  "source_tree": "3cb3ea353526e27894d527870c3660b0ce6c1c7a",
+  "sole_parent": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "files": [
+    {
+      "path": "scripts/ci/cline_witness/identity.py",
+      "bytes": 2075,
+      "lines": 48,
+      "sha256": "049d8679ef2ed3a78706f4736ac9497239aa416b9220aa06d63bd9a3018fa3b7",
+      "git_blob": "90cbb0af0a45019ae81cfa6ea2c75ae04bb1019b"
+    },
+    {
+      "path": "scripts/ci/cline_witness/installation.py",
+      "bytes": 8804,
+      "lines": 205,
+      "sha256": "985432a234b41006e8a17ad7d771d384468d47ff2ecd34573b085f263c51f652",
+      "git_blob": "c1ff470faf479b0aa513e111fe35c40c412ecbf2"
+    },
+    {
+      "path": "scripts/ci/cline_witness/invocation.py",
+      "bytes": 4727,
+      "lines": 111,
+      "sha256": "8356fc316a679ded012c2dd76746d9ee0fa09c6ff1a1136e9b4000c92e246488",
+      "git_blob": "716855d225d222e2f2333c6ab78b1d243cacf092"
+    },
+    {
+      "path": "scripts/ci/cline_witness/nested_run.py",
+      "bytes": 9825,
+      "lines": 268,
+      "sha256": "d5ddc4641b04fd2eb7e71c64f2b881a2fd3a9cc57b0b816696e50c687fe44b8a",
+      "git_blob": "d54e843351cdb30a988a7f168f1f287ba98d0be7"
+    },
+    {
+      "path": "scripts/ci/cline_witness/process_observation.py",
+      "bytes": 18487,
+      "lines": 447,
+      "sha256": "4a4a933ae7c135c8effbb64997a324d4d894a4dfdbc9216a0ec5162536549fde",
+      "git_blob": "f9bac27a8296c5f477e28160d5787ca74972e57a"
+    },
+    {
+      "path": "scripts/ci/cline_witness/profile_runtime.py",
+      "bytes": 12844,
+      "lines": 318,
+      "sha256": "9337d7e536acc7a911cd725e7e98df3270029b8aed95553082d82cd25910fb9d",
+      "git_blob": "8f3f0bd4069f79e287c42dcaf04c10dc70726db4"
+    },
+    {
+      "path": "scripts/ci/cline_witness/run.py",
+      "bytes": 16913,
+      "lines": 333,
+      "sha256": "e69525c054277c740bbc135562bac080fdab9ca5226fdb5fa7a06497162a9eef",
+      "git_blob": "80f4c663d1024f158405b51a12a5f75d76b6e460"
+    },
+    {
+      "path": "scripts/ci/cline_witness/validation.py",
+      "bytes": 6901,
+      "lines": 155,
+      "sha256": "def00ef78b0ee09056f92010a1b51abec1e5a9bf8c059bbe7e0fa5034e3fe850",
+      "git_blob": "9da380109551df5681614e003a0e81c529a31d8b"
+    },
+    {
+      "path": "tests/test_cline_child_witness.py",
+      "bytes": 29899,
+      "lines": 726,
+      "sha256": "7a1a662f63e9f8bf46185fad0fbf04706d96c8edd2ccd0c22e716ddb8b359841",
+      "git_blob": "fcb85b040cf38b7541ea963a2fd80c8c0bcbac49"
+    },
+    {
+      "path": "tests/test_cline_invocation.py",
+      "bytes": 3599,
+      "lines": 96,
+      "sha256": "3f8d0be9218bcaa1fd4f7f7038623831395143bea4042969999c4ef4488d8f45",
+      "git_blob": "3688b4d1edc183ea729844bb226d0ca9287c4c67"
+    },
+    {
+      "path": "tests/test_cline_nested_run.py",
+      "bytes": 15828,
+      "lines": 424,
+      "sha256": "28b1b6f896e4ecb7b998fdfb2693bb8119c73c7c61be66c1fbacbc02a1386676",
+      "git_blob": "eec368c25d858fc10bd13d9cb9c542c38bdadc3e"
+    },
+    {
+      "path": "tests/test_cline_process_observation.py",
+      "bytes": 12844,
+      "lines": 346,
+      "sha256": "5e44c5ed14665fcb3013f95155443317ccb36dcde81e3e5cecf5caa0608872a8",
+      "git_blob": "e638a3184fc5ffeaff86114387a619963e1530ce"
+    }
+  ],
+  "verification": [
+    "Independently recomputed all twelve local bytes/SHA256/Git identities and fetched all twelve complete remote blobs equal.",
+    "Verified source commit/tree and sole e440 parent through Git API.",
+    "Read complete new process_observation.py and its tests, the complete changed integration hunks in nested_run/profile_runtime/installation/run, and surrounding call/restore/report code.",
+    "Independently parsed exact V4/V5 Profile classes and compared ast.dump equal; no callback-cost change claimed."
+  ],
+  "findings_addressed": [
+    {
+      "finding": "Default marshal serialization may encode process-dependent reference/intern representation.",
+      "resolution": "Final binding hashes a closed recursive typed code image covering bytecode/constants/arguments/names/closures/filename/line and exception tables; unknown constants refuse without attacker-defined equality/hash. A real separate-interpreter equality control and hostile-constant refusal are present."
+    },
+    {
+      "finding": "The earlier pipe-retention fixture spawned an unowned sleeping descendant.",
+      "resolution": "Final fixture passes the selected original stdout descriptor to a separate direct fixture-owned holder through SCM_RIGHTS. Finally closes its control stdin and performs bounded wait/kill/reap, separately from the original observed subprocess."
+    }
+  ],
+  "source_contract": [
+    "Popen class identity is unchanged. Only four original methods are temporarily wrapped; each original receives the same instance, args and kwargs once, with exact result/BaseException forwarding despite capture faults.",
+    "Selection binds the actual NestedRun.call activation frame, original subprocess.run code, original Popen.communicate code and exact Popen instance/PID. Unrelated calls during active scope do not acquire ownership.",
+    "Methods record only calls that original subprocess already made; no extra poll/wait/kill/read or liveness probe is introduced by observer. Finite fixed role rows and bounded output length/hash omit raw output/arguments.",
+    "Partial installation attempts unwind; restoration does not overwrite a later owner and failure remains sticky. Missing/failed reports remain incomplete rather than changing generated-worker outcome.",
+    "The strict report reader checks closed schema, role/order/multiplicity/status consistency and joins original Popen.pid to actual child sidecar pid.",
+    "Normal nested return zero is a separate strict gate after existing child semantic oracle and context/receipt joins. Timeout/fallback may retain a child verdict but cannot qualify as normal delivery.",
+    "Original registered argv, generated worker/product code, four Intel cases and 9-second nested/10-second outer budgets remain unchanged by these source additions."
+  ],
+  "controls_read": "Real normal/nonzero call, both original timeout phases, exited process with held output pipe, zero/unrelated offer, exact argument/result/exception forwarding on capture error, duplicate offer, partial install, sticky restore, status/output/row bounds, malformed report, unchanged Profile AST, separate-process code identity, hostile constants, and actual generated worker integration.",
+  "execution": "No imports, tests, compilation or workload executed by this reviewer. Owner reports 216 passing controls/no skips, types 0 errors/1126 warnings and Ruff success on local Python3.12.14. Pinned hosted Python3.12.10 and actual Intel four-case result remain pending.",
+  "limits": [
+    "The original broad profile callback still inspects events and its two-million counter saturates; no reduced-overhead or uninstrumented performance claim.",
+    "Finite operation observations do not establish continuous process liveness, an unobserved descendant census, or historical V3 missing-sidecar/V4 timeout cause.",
+    "Source binding covers recorded current interpreter source and selected live method images, not every transitive stdlib operation or arbitrary runtime rebinding after admission.",
+    "Operational driver/source/artifact validation and one-run launch binding require separate review."
+  ]
+}

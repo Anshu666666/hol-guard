@@ -1,0 +1,3851 @@
+diff --git a/.gitleaksignore b/.gitleaksignore
+index 0bf217dfa..8c0d72d2b 100644
+--- a/.gitleaksignore
++++ b/.gitleaksignore
+@@ -159,3 +159,15 @@ ae33987d0c8675c36a77375e03419aee920825f6:docs/guard/evidence/rsp-scanner-native-
+ ae33987d0c8675c36a77375e03419aee920825f6:docs/guard/evidence/rsp-scanner-native-regex-tests-linux.json:generic-api-key:30
+ ae33987d0c8675c36a77375e03419aee920825f6:docs/guard/evidence/rsp-scanner-native-regex-tests-linux.json:generic-api-key:31
+ 08621ad4a84bfa21c9c1602640886d37fb1e6bc4:tests/fixtures/claude-launcher-current-conformance.json:generic-api-key:21
++
++# Public source SHA-256 only: the 9,539-byte auth module in f8f190a2.
++# Exact source: src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py
++# SHA-256: f989759d4c231a8a4800e4505dce48e7eea4bdefab821817cd7260516da21876
++# Retain detection for every other commit, path, rule and line.
++f8f190a286159b46bf14a624a62ba52b5d2371a3:tests/fixtures/claude-launcher-current-conformance-v2.json:generic-api-key:21
++
++# Immutable AES-GCM known-answer fixture, not a credential.
++# Original encoded key decodes to sequential test bytes 0..31; Node vector and
++# unchanged ciphertext bind this public synthetic input. Current source constructs
++# the same bytes and checks the base64url roundtrip; retain this historical-only finding.
++4001185e4f39cad51fd5eab314bf02b86b8a1674:rust/crates/guard-runtime/src/edge_encrypted_tests.rs:generic-api-key:95
+diff --git a/rust/crates/guard-runtime/src/edge.rs b/rust/crates/guard-runtime/src/edge.rs
+index 8ed8e9e51..f6625901e 100644
+--- a/rust/crates/guard-runtime/src/edge.rs
++++ b/rust/crates/guard-runtime/src/edge.rs
+@@ -16,6 +16,8 @@ const MAX_HARNESS_BYTES: usize = 64;
+ const MAX_EVENT_BYTES: usize = 64;
+ const MAX_PATH_BYTES: usize = 32 * 1024;
+ 
++#[path = "edge_encrypted.rs"]
++mod encrypted;
+ #[path = "edge_identity.rs"]
+ mod identity;
+ #[path = "edge_serialization.rs"]
+@@ -235,9 +237,14 @@ fn evaluate_validated_envelope(
+         deadline,
+     } = validated;
+     let kind = payload_kind(&envelope.raw_payload)?;
+-    if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {
+-        return Err("native_hook_encrypted_payload_unsupported".to_owned());
+-    }
++    let inner_payload = if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {
++        if event_name != "PostToolUse" || !matches!(harness.as_str(), "pi" | "omp") {
++            return Err("native_hook_encrypted_payload_unsupported".to_owned());
++        }
++        Some(encrypted::hydrate(&envelope.raw_payload, deadline)?)
++    } else {
++        None
++    };
+     if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+         return Err("native_request_deadline_exceeded".to_owned());
+     }
+@@ -275,7 +282,12 @@ fn evaluate_validated_envelope(
+             (value, receipt)
+         }
+         "PostToolUse" => {
+-            let payload_kind = kind.clone();
++            // Classify authenticated inner content for the existing policy join;
++            // the public receipt still commits to the original outer reference.
++            let payload_kind = match inner_payload.as_ref() {
++                Some(payload) => payload_kind(payload)?,
++                None => kind.clone(),
++            };
+             let request = NativeHookRequestV1 {
+                 protocol_version: NATIVE_PROTOCOL_VERSION,
+                 request_id: envelope.request_id.clone(),
+@@ -283,7 +295,7 @@ fn evaluate_validated_envelope(
+                 event_name: event_name.clone(),
+                 // Transfer the already-bound payload into the typed hook
+                 // request, then restore ownership before building its receipt.
+-                payload: std::mem::take(&mut envelope.raw_payload),
++                payload: inner_payload.unwrap_or_else(|| std::mem::take(&mut envelope.raw_payload)),
+                 cwd: envelope.source.cwd.clone(),
+                 home_dir: envelope.source.home_dir.clone(),
+                 guard_home: envelope.source.guard_home.clone(),
+@@ -306,7 +318,9 @@ fn evaluate_validated_envelope(
+             } else {
+                 native
+             };
+-            envelope.raw_payload = request.payload;
++            if kind != GuardHookPayloadKindV2::EncryptedPayloadRef {
++                envelope.raw_payload = request.payload;
++            }
+             let receipt = receipt_from_post_tool(
+                 &envelope,
+                 policy_snapshot.map(AdmittedPolicySnapshot::snapshot),
+diff --git a/rust/crates/guard-runtime/src/edge_encrypted.rs b/rust/crates/guard-runtime/src/edge_encrypted.rs
+new file mode 100644
+index 000000000..8b740bd6b
+--- /dev/null
++++ b/rust/crates/guard-runtime/src/edge_encrypted.rs
+@@ -0,0 +1,168 @@
++//! Authenticate the existing generated post-hook reference without changing its commitment.
++#[cfg(unix)]
++use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, AES_256_GCM};
++use serde_json::Value;
++#[cfg(unix)]
++use sha2::{Digest, Sha256};
++#[cfg(unix)]
++use std::path::Path;
++use std::time::Instant;
++
++#[cfg(unix)]
++#[path = "edge_encrypted_file.rs"]
++mod private_file;
++
++#[cfg(unix)]
++const MAX_BYTES: usize = 5 * 1024 * 1024;
++#[cfg(unix)]
++const KEYS: &[&str] = &[
++    "version",
++    "path",
++    "sha256",
++    "encoding",
++    "encryption",
++    "key",
++    "nonce",
++    "serialized_chars",
++];
++
++#[cfg(unix)]
++fn error(code: &str) -> String {
++    format!("native_hook_encrypted_payload_{code}")
++}
++
++pub(super) fn deadline_check(deadline: Option<Instant>) -> Result<(), String> {
++    if deadline.is_some_and(|value| Instant::now() >= value) {
++        return Err("native_request_deadline_exceeded".to_owned());
++    }
++    Ok(())
++}
++
++#[cfg(unix)]
++fn text<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
++    value
++        .get(name)
++        .and_then(Value::as_str)
++        .ok_or_else(|| error("metadata_invalid"))
++}
++
++/// The generated Node producer uses canonical unpadded base64url for fixed-size keys.
++#[cfg(unix)]
++fn fixed_base64url<const N: usize>(input: &str) -> Result<[u8; N], String> {
++    if input.len() != (N * 8).div_ceil(6) {
++        return Err(error("key_or_nonce_invalid"));
++    }
++    let mut output = [0; N];
++    let (mut buffer, mut bits, mut written) = (0u32, 0usize, 0usize);
++    for character in input.bytes() {
++        let value = match character {
++            b'A'..=b'Z' => character - b'A',
++            b'a'..=b'z' => character - b'a' + 26,
++            b'0'..=b'9' => character - b'0' + 52,
++            b'-' => 62,
++            b'_' => 63,
++            _ => return Err(error("key_or_nonce_invalid")),
++        };
++        buffer = (buffer << 6) | u32::from(value);
++        bits += 6;
++        if bits >= 8 {
++            bits -= 8;
++            let target = output
++                .get_mut(written)
++                .ok_or_else(|| error("key_or_nonce_invalid"))?;
++            *target = (buffer >> bits) as u8;
++            written += 1;
++        }
++        buffer &= (1 << bits) - 1;
++    }
++    if written != N || buffer != 0 {
++        return Err(error("key_or_nonce_invalid"));
++    }
++    Ok(output)
++}
++
++/// Only the actual generated POSIX PostToolUse producer is admitted here.
++/// Other platforms keep the pre-existing explicit unsupported outcome until
++/// their generated private-file handle/ACL contract is independently qualified.
++pub(super) fn hydrate(payload: &Value, deadline: Option<Instant>) -> Result<Value, String> {
++    deadline_check(deadline)?;
++    #[cfg(not(unix))]
++    {
++        let _ = payload;
++        Err("native_hook_encrypted_payload_unsupported".to_owned())
++    }
++    #[cfg(unix)]
++    {
++        let reference = payload
++            .get("guard_payload_ref")
++            .ok_or_else(|| error("metadata_invalid"))?;
++        let record = reference
++            .as_object()
++            .ok_or_else(|| error("metadata_invalid"))?;
++        if record.len() != KEYS.len()
++            || !KEYS.iter().all(|key| record.contains_key(*key))
++            || reference.get("version").and_then(Value::as_u64) != Some(1)
++            || text(reference, "encoding")? != "json"
++            || text(reference, "encryption")? != "aes-256-gcm"
++        {
++            return Err(error("metadata_invalid"));
++        }
++        let path = text(reference, "path")?;
++        if path.is_empty() || path.len() > super::MAX_PATH_BYTES || path.contains('\0') {
++            return Err(error("path_invalid"));
++        }
++        let expected = text(reference, "sha256")?;
++        if expected.len() != 64
++            || !expected
++                .bytes()
++                .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
++        {
++            return Err(error("digest_invalid"));
++        }
++        let chars = reference
++            .get("serialized_chars")
++            .and_then(Value::as_u64)
++            .filter(|value| *value > 0 && *value <= MAX_BYTES as u64)
++            .ok_or_else(|| error("size_invalid"))?;
++        let key = fixed_base64url::<32>(text(reference, "key")?)?;
++        let nonce = fixed_base64url::<12>(text(reference, "nonce")?)?;
++        let mut ciphertext = private_file::read(Path::new(path), MAX_BYTES, deadline)?;
++        if hex::encode(Sha256::digest(&ciphertext)) != expected {
++            return Err(error("digest_mismatch"));
++        }
++        deadline_check(deadline)?;
++        let key = LessSafeKey::new(
++            UnboundKey::new(&AES_256_GCM, &key).map_err(|_| error("key_or_nonce_invalid"))?,
++        );
++        let plaintext = key
++            .open_in_place(
++                Nonce::assume_unique_for_key(nonce),
++                Aad::empty(),
++                &mut ciphertext,
++            )
++            .map_err(|_| error("authentication_failed"))?;
++        deadline_check(deadline)?;
++        let plaintext = std::str::from_utf8(plaintext).map_err(|_| error("json_invalid"))?;
++        if plaintext.encode_utf16().count() as u64 != chars {
++            return Err(error("size_mismatch"));
++        }
++        let inner: Value = serde_json::from_str(plaintext).map_err(|_| error("json_invalid"))?;
++        if !inner.is_object() || inner.get("guard_payload_ref").is_some() {
++            return Err(error("inner_invalid"));
++        }
++        if super::payload_event(&inner)?.as_deref() != Some("PostToolUse") {
++            return Err(error("event_mismatch"));
++        }
++        for key in ["tool_name", "config_path", "is_error"] {
++            if inner.get(key) != payload.get(key) {
++                return Err(error("metadata_mismatch"));
++            }
++        }
++        deadline_check(deadline)?;
++        Ok(inner)
++    }
++}
++
++#[cfg(all(test, unix))]
++#[path = "edge_encrypted_tests.rs"]
++mod tests;
+diff --git a/rust/crates/guard-runtime/src/edge_encrypted_file.rs b/rust/crates/guard-runtime/src/edge_encrypted_file.rs
+new file mode 100644
+index 000000000..f619c00a2
+--- /dev/null
++++ b/rust/crates/guard-runtime/src/edge_encrypted_file.rs
+@@ -0,0 +1,194 @@
++//! Read the generated owner-private temporary file through held directory/file descriptors.
++use nix::fcntl::{open, openat, AtFlags, OFlag};
++use nix::sys::stat::{fstat, fstatat, FileStat, Mode};
++use std::fs::{File, Metadata};
++use std::io::Read;
++use std::os::unix::fs::MetadataExt;
++use std::path::{Component, Path, PathBuf};
++use std::time::Instant;
++
++use super::{deadline_check, error};
++
++const PREFIX: &str = "hol-guard-hook-payload-";
++
++fn directory_identity(metadata: &Metadata) -> (u64, u64, u32, u32) {
++    (
++        metadata.dev(),
++        metadata.ino(),
++        metadata.uid(),
++        metadata.mode(),
++    )
++}
++
++#[derive(Debug, PartialEq, Eq)]
++struct FileIdentity {
++    directory: (u64, u64, u32, u32),
++    links: u64,
++    bytes: u64,
++    modified: (i64, i64),
++    changed: (i64, i64),
++}
++
++fn file_identity(metadata: &Metadata) -> FileIdentity {
++    FileIdentity {
++        directory: directory_identity(metadata),
++        links: metadata.nlink(),
++        bytes: metadata.len(),
++        modified: (metadata.mtime(), metadata.mtime_nsec()),
++        changed: (metadata.ctime(), metadata.ctime_nsec()),
++    }
++}
++
++// Compare native stat fields directly, retaining each platform's dev/mode widths.
++fn same_node(left: &FileStat, right: &FileStat) -> bool {
++    left.st_dev == right.st_dev
++        && left.st_ino == right.st_ino
++        && left.st_mode == right.st_mode
++        && left.st_uid == right.st_uid
++        && left.st_nlink == right.st_nlink
++}
++
++#[cfg(target_os = "macos")]
++fn darwin_temporary_root(root: &Path) -> bool {
++    let parts: Vec<_> = root.iter().collect();
++    [Path::new("/var/folders"), Path::new("/private/var/folders")]
++        .iter()
++        .any(|prefix| {
++            let base: Vec<_> = prefix.iter().collect();
++            parts.starts_with(&base)
++                && parts.len() == base.len() + 3
++                && parts[base.len()].len() == 2
++                && !parts[base.len() + 1].is_empty()
++                && parts[base.len() + 2] == "T"
++        })
++}
++
++fn trusted_root(parent: &Path) -> Result<PathBuf, String> {
++    let root = parent.parent().ok_or_else(|| error("path_invalid"))?;
++    let roots = [
++        std::env::temp_dir(),
++        PathBuf::from("/tmp"),
++        PathBuf::from("/var/tmp"),
++    ];
++    let lexical = roots.iter().any(|value| value == root);
++    #[cfg(target_os = "macos")]
++    let lexical = lexical
++        || matches!(root.to_str(), Some("/private/tmp" | "/private/var/tmp"))
++        || darwin_temporary_root(root);
++    // Match the existing producer reader's lexical temporary-path gate before
++    // resolving the permitted platform temporary-root aliases.
++    if !lexical {
++        return Err(error("path_invalid"));
++    }
++    let resolved = root.canonicalize().map_err(|_| error("path_invalid"))?;
++    if roots
++        .iter()
++        .filter_map(|value| value.canonicalize().ok())
++        .any(|value| value == resolved)
++    {
++        return Ok(resolved);
++    }
++    #[cfg(target_os = "macos")]
++    if darwin_temporary_root(&resolved) {
++        let metadata = std::fs::symlink_metadata(&resolved).map_err(|_| error("path_invalid"))?;
++        if metadata.is_dir() && metadata.uid() == nix::unistd::getuid().as_raw() {
++            return Ok(resolved);
++        }
++    }
++    Err(error("path_invalid"))
++}
++
++pub(super) fn read(
++    path: &Path,
++    maximum: usize,
++    deadline: Option<Instant>,
++) -> Result<Vec<u8>, String> {
++    read_checked(path, maximum, deadline, || {})
++}
++
++fn read_checked(
++    path: &Path,
++    maximum: usize,
++    deadline: Option<Instant>,
++    after_open: impl FnOnce(),
++) -> Result<Vec<u8>, String> {
++    deadline_check(deadline)?;
++    if !path.is_absolute()
++        || path
++            .components()
++            .any(|part| matches!(part, Component::ParentDir | Component::CurDir))
++    {
++        return Err(error("path_invalid"));
++    }
++    let parent = path.parent().ok_or_else(|| error("path_invalid"))?;
++    let directory_name = parent.file_name().ok_or_else(|| error("path_invalid"))?;
++    let directory_text = directory_name
++        .to_str()
++        .ok_or_else(|| error("path_invalid"))?;
++    if !directory_text.starts_with(PREFIX) || directory_text.len() <= PREFIX.len() {
++        return Err(error("path_invalid"));
++    }
++    let filename = path.file_name().ok_or_else(|| error("path_invalid"))?;
++    let root = trusted_root(parent)?;
++    let directory_flags =
++        OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC;
++    let root =
++        File::from(open(&root, directory_flags, Mode::empty()).map_err(|_| error("read_failed"))?);
++    let parent = File::from(
++        openat(&root, directory_name, directory_flags, Mode::empty())
++            .map_err(|_| error("read_failed"))?,
++    );
++    let parent_before = parent.metadata().map_err(|_| error("read_failed"))?;
++    let uid = nix::unistd::getuid().as_raw();
++    if !parent_before.is_dir() || parent_before.uid() != uid || parent_before.mode() & 0o077 != 0 {
++        return Err(error("not_private"));
++    }
++    let flags = OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC | OFlag::O_NONBLOCK;
++    let mut file = File::from(
++        openat(&parent, filename, flags, Mode::empty()).map_err(|_| error("read_failed"))?,
++    );
++    let before = file.metadata().map_err(|_| error("read_failed"))?;
++    if !before.is_file() || before.uid() != uid || before.mode() & 0o077 != 0 || before.nlink() != 1
++    {
++        return Err(error("not_private"));
++    }
++    if before.len() > maximum as u64 {
++        return Err(error("size_invalid"));
++    }
++    after_open();
++    let mut output = Vec::with_capacity(before.len() as usize);
++    let mut buffer = [0u8; 64 * 1024];
++    loop {
++        deadline_check(deadline)?;
++        let count = file.read(&mut buffer).map_err(|_| error("read_failed"))?;
++        if count == 0 {
++            break;
++        }
++        if output.len() + count > maximum {
++            return Err(error("size_invalid"));
++        }
++        output.extend_from_slice(&buffer[..count]);
++    }
++    deadline_check(deadline)?;
++    let after = file.metadata().map_err(|_| error("read_failed"))?;
++    let parent_after = parent.metadata().map_err(|_| error("read_failed"))?;
++    let descriptor = fstat(&file).map_err(|_| error("read_failed"))?;
++    let parent_descriptor = fstat(&parent).map_err(|_| error("read_failed"))?;
++    let named = fstatat(&parent, filename, AtFlags::AT_SYMLINK_NOFOLLOW)
++        .map_err(|_| error("path_changed"))?;
++    let named_parent = fstatat(&root, directory_name, AtFlags::AT_SYMLINK_NOFOLLOW)
++        .map_err(|_| error("path_changed"))?;
++    if file_identity(&before) != file_identity(&after)
++        || before.len() != output.len() as u64
++        || !same_node(&named, &descriptor)
++        || directory_identity(&parent_before) != directory_identity(&parent_after)
++        || !same_node(&named_parent, &parent_descriptor)
++    {
++        return Err(error("path_changed"));
++    }
++    Ok(output)
++}
++
++#[cfg(test)]
++#[path = "edge_encrypted_file_tests.rs"]
++mod tests;
+diff --git a/rust/crates/guard-runtime/src/edge_encrypted_file_tests.rs b/rust/crates/guard-runtime/src/edge_encrypted_file_tests.rs
+new file mode 100644
+index 000000000..fbd91a781
+--- /dev/null
++++ b/rust/crates/guard-runtime/src/edge_encrypted_file_tests.rs
+@@ -0,0 +1,208 @@
++use super::super::tests::Fixture;
++use super::*;
++use std::fs;
++use std::os::unix::fs::{symlink, DirBuilderExt, PermissionsExt};
++use std::time::Duration;
++
++#[test]
++fn actual_private_regular_file_is_read_without_mutation() {
++    let fixture = Fixture::new(b"private ciphertext");
++    let before = fs::metadata(&fixture.path).unwrap();
++    assert_eq!(
++        read(&fixture.path, 100, None).unwrap(),
++        b"private ciphertext"
++    );
++    assert_eq!(
++        file_identity(&before),
++        file_identity(&fs::metadata(&fixture.path).unwrap())
++    );
++}
++
++#[test]
++fn file_and_directory_permissions_are_checked_on_owned_handles() {
++    for directory in [false, true] {
++        let fixture = Fixture::new(b"private ciphertext");
++        let target = if directory {
++            &fixture.root
++        } else {
++            &fixture.path
++        };
++        fs::set_permissions(
++            target,
++            fs::Permissions::from_mode(if directory { 0o755 } else { 0o644 }),
++        )
++        .unwrap();
++        assert_eq!(
++            read(&fixture.path, 100, None).unwrap_err(),
++            error("not_private")
++        );
++    }
++}
++
++#[test]
++fn symlink_file_and_parent_are_refused_without_following() {
++    let fixture = Fixture::new(b"private ciphertext");
++    let link = fixture.root.join("link.json");
++    symlink(&fixture.path, &link).unwrap();
++    assert_eq!(read(&link, 100, None).unwrap_err(), error("read_failed"));
++    let alias = fixture.root.with_extension("alias");
++    symlink(&fixture.root, &alias).unwrap();
++    let result = read(&alias.join("payload.json"), 100, None);
++    fs::remove_file(alias).unwrap();
++    assert_eq!(result.unwrap_err(), error("read_failed"));
++}
++
++#[test]
++fn multiply_linked_file_and_non_regular_objects_are_refused() {
++    let fixture = Fixture::new(b"private ciphertext");
++    let other = fixture.root.join("second.json");
++    fs::hard_link(&fixture.path, &other).unwrap();
++    assert_eq!(
++        read(&fixture.path, 100, None).unwrap_err(),
++        error("not_private")
++    );
++    fs::remove_file(other).unwrap();
++    fs::remove_file(&fixture.path).unwrap();
++    fs::DirBuilder::new()
++        .mode(0o700)
++        .create(&fixture.path)
++        .unwrap();
++    assert_eq!(
++        read(&fixture.path, 100, None).unwrap_err(),
++        error("not_private")
++    );
++}
++
++#[test]
++fn fifo_is_opened_nonblocking_then_refused() {
++    let fixture = Fixture::new(b"private ciphertext");
++    fs::remove_file(&fixture.path).unwrap();
++    nix::unistd::mkfifo(&fixture.path, Mode::from_bits_truncate(0o600)).unwrap();
++    assert_eq!(
++        read(
++            &fixture.path,
++            100,
++            Some(Instant::now() + Duration::from_secs(1))
++        )
++        .unwrap_err(),
++        error("not_private")
++    );
++}
++
++#[test]
++fn relative_traversal_unowned_prefix_and_nested_directory_are_refused() {
++    let fixture = Fixture::new(b"private ciphertext");
++    let nested = fixture.root.join("hol-guard-hook-payload-nested");
++    fs::DirBuilder::new().mode(0o700).create(&nested).unwrap();
++    for path in [
++        PathBuf::from("payload.json"),
++        fixture.root.join("../payload.json"),
++        fixture
++            .root
++            .parent()
++            .unwrap()
++            .join("not-guard-owned/payload.json"),
++        nested.join("payload.json"),
++    ] {
++        assert_eq!(read(&path, 100, None).unwrap_err(), error("path_invalid"));
++    }
++}
++
++#[test]
++fn size_limit_is_enforced_before_and_during_bounded_read() {
++    let fixture = Fixture::new(b"abcdef");
++    assert_eq!(
++        read(&fixture.path, 5, None).unwrap_err(),
++        error("size_invalid")
++    );
++    let result = read_checked(&fixture.path, 6, None, || {
++        fs::write(&fixture.path, b"abcdefg").unwrap();
++    });
++    assert_eq!(result.unwrap_err(), error("size_invalid"));
++}
++
++#[test]
++fn file_replacement_after_open_is_refused() {
++    let fixture = Fixture::new(b"abcdef");
++    let result = read_checked(&fixture.path, 100, None, || {
++        fs::rename(&fixture.path, fixture.root.join("old.json")).unwrap();
++        fs::write(&fixture.path, b"abcdef").unwrap();
++        fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o600)).unwrap();
++    });
++    assert_eq!(result.unwrap_err(), error("path_changed"));
++}
++
++#[test]
++fn private_parent_replacement_after_open_is_refused() {
++    let fixture = Fixture::new(b"abcdef");
++    let moved = fixture.root.with_extension("moved");
++    let result = read_checked(&fixture.path, 100, None, || {
++        fs::rename(&fixture.root, &moved).unwrap();
++        fs::DirBuilder::new()
++            .mode(0o700)
++            .create(&fixture.root)
++            .unwrap();
++    });
++    fs::remove_dir(&fixture.root).unwrap();
++    fs::rename(moved, &fixture.root).unwrap();
++    assert_eq!(result.unwrap_err(), error("path_changed"));
++}
++
++#[test]
++fn same_descriptor_growth_and_permission_changes_are_refused() {
++    for directory in [false, true] {
++        let fixture = Fixture::new(b"abcdef");
++        let result = read_checked(&fixture.path, 100, None, || {
++            let target = if directory {
++                &fixture.root
++            } else {
++                &fixture.path
++            };
++            fs::set_permissions(target, fs::Permissions::from_mode(0o755)).unwrap();
++        });
++        assert_eq!(result.unwrap_err(), error("path_changed"));
++    }
++    let fixture = Fixture::new(b"abcdef");
++    let result = read_checked(&fixture.path, 100, None, || {
++        fs::write(&fixture.path, b"abcdefg").unwrap();
++    });
++    assert_eq!(result.unwrap_err(), error("path_changed"));
++}
++
++#[test]
++fn original_deadline_is_not_restarted_after_open() {
++    let fixture = Fixture::new(b"abcdef");
++    // Give actual hosted filesystem admission a bounded window before consuming
++    // that same Instant in the after-open barrier; no production budget changes.
++    let deadline = Instant::now() + Duration::from_secs(5);
++    let mut opened = false;
++    let result = read_checked(&fixture.path, 100, Some(deadline), || {
++        opened = true;
++        std::thread::sleep(
++            deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(1),
++        );
++    });
++    assert!(opened);
++    assert_eq!(result.unwrap_err(), "native_request_deadline_exceeded");
++}
++
++#[test]
++fn arbitrary_lexical_alias_to_temporary_root_is_refused() {
++    let fixture = Fixture::new(b"private ciphertext");
++    let alias_owner = Fixture::new(b"alias owner");
++    let alias = alias_owner.root.join("temporary-alias");
++    symlink(fixture.root.parent().unwrap(), &alias).unwrap();
++    let alternate = alias
++        .join(fixture.root.file_name().unwrap())
++        .join("payload.json");
++    // The same actual bytes are reachable, but this is not a generated temp-root path.
++    assert_eq!(fs::read(&alternate).unwrap(), b"private ciphertext");
++    assert_eq!(
++        read(&alternate, 100, None).unwrap_err(),
++        error("path_invalid")
++    );
++    assert_eq!(
++        read(&fixture.path, 100, None).unwrap(),
++        b"private ciphertext"
++    );
++}
+diff --git a/rust/crates/guard-runtime/src/edge_encrypted_tests.rs b/rust/crates/guard-runtime/src/edge_encrypted_tests.rs
+new file mode 100644
+index 000000000..a7a374eb0
+--- /dev/null
++++ b/rust/crates/guard-runtime/src/edge_encrypted_tests.rs
+@@ -0,0 +1,437 @@
++use super::*;
++use crate::edge::tests::{envelope, evaluate_isolated};
++use guard_contracts::{GuardHookEdgeResultV2, GuardHookPayloadKindV2};
++use serde_json::json;
++use std::fs::{self, DirBuilder, OpenOptions};
++use std::io::Write;
++use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
++use std::path::PathBuf;
++use std::sync::atomic::{AtomicU64, Ordering};
++use std::time::Duration;
++
++static FIXTURE_ID: AtomicU64 = AtomicU64::new(0);
++const KEY: [u8; 32] = [0; 32];
++const NONCE: [u8; 12] = [0; 12];
++
++pub(super) struct Fixture {
++    pub(super) root: PathBuf,
++    pub(super) path: PathBuf,
++}
++
++impl Fixture {
++    pub(super) fn new(bytes: &[u8]) -> Self {
++        let root = std::env::temp_dir().join(format!(
++            "hol-guard-hook-payload-test-{}-{}",
++            std::process::id(),
++            FIXTURE_ID.fetch_add(1, Ordering::Relaxed)
++        ));
++        DirBuilder::new().mode(0o700).create(&root).unwrap();
++        let path = root.join("payload.json");
++        OpenOptions::new()
++            .write(true)
++            .create_new(true)
++            .mode(0o600)
++            .open(&path)
++            .unwrap()
++            .write_all(bytes)
++            .unwrap();
++        Self { root, path }
++    }
++
++    fn encrypted(inner: &Value) -> (Self, Value) {
++        let encoded = serde_json::to_string(inner).unwrap();
++        Self::encoded(encoded.as_bytes(), encoded.encode_utf16().count(), inner)
++    }
++
++    fn encoded(bytes: &[u8], chars: usize, outer: &Value) -> (Self, Value) {
++        let mut ciphertext = bytes.to_vec();
++        let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &KEY).unwrap());
++        key.seal_in_place_append_tag(
++            Nonce::assume_unique_for_key(NONCE),
++            Aad::empty(),
++            &mut ciphertext,
++        )
++        .unwrap();
++        let fixture = Self::new(&ciphertext);
++        let mut payload = json!({"hook_event_name":"PostToolUse", "guard_payload_ref": {
++            "version":1, "path": fixture.path, "sha256":hex::encode(Sha256::digest(&ciphertext)),
++            "encoding":"json", "encryption":"aes-256-gcm", "key":"A".repeat(43),
++            "nonce":"A".repeat(16), "serialized_chars":chars
++        }});
++        for name in ["tool_name", "config_path", "is_error"] {
++            if let Some(value) = outer.get(name) {
++                payload[name] = value.clone();
++            }
++        }
++        (fixture, payload)
++    }
++}
++
++impl Drop for Fixture {
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.root).unwrap();
++    }
++}
++
++fn inner() -> Value {
++    json!({"hook_event_name":"PostToolUse", "tool_name":"Read", "is_error":false,
++        "tool_response":"ordinary café 😀"})
++}
++
++#[test]
++fn decrypts_actual_node_aes_gcm_known_answer_and_js_utf16_length() {
++    // Produced by Node createCipheriv('aes-256-gcm'), key 0..31, nonce 32..43,
++    // append getAuthTag(), then Buffer.toString('base64url'), matching the generator.
++    let key: Vec<u8> = (0..32).collect();
++    let encoded_key = crate::approval::approval_v4_crypto::encode_base64url(&key);
++    assert_eq!(
++        fixed_base64url::<32>(&encoded_key).unwrap().as_slice(),
++        key.as_slice()
++    );
++    let ciphertext = hex::decode(concat!(
++        "a918ce1f03f3456b6c192cba9e769594b56bd6bed7ef109a3899037e1cf93b2b59ac916be1496ab475900bb0622b4dad",
++        "834ecea2b8555e3eab100d723e9030bbb94abe6ebab591f9e406b655de2e490ebbe456268dd9ed70a038ac0a797df81f",
++        "ab74dec950c4bc8e71db8e027160bd89940ddbfaf63850bd"
++    )).unwrap();
++    let fixture = Fixture::new(&ciphertext);
++    let payload = json!({"hook_event_name":"PostToolUse", "tool_name":"Read", "is_error":false,
++        "guard_payload_ref":{"version":1,"path":fixture.path,
++        "sha256":"23a0a2b48b4dd72e25358802a70db63d6a595e3cd252046b4c768cc5ba5809a9",
++        "encoding":"json","encryption":"aes-256-gcm",
++        "key":encoded_key,
++        "nonce":"ICEiIyQlJicoKSor","serialized_chars":101}});
++    let value = hydrate(&payload, None).unwrap();
++    assert_eq!(value["tool_response"], "known café 😀");
++    assert_eq!(value["hook_event_name"], "PostToolUse");
++    assert_eq!(fs::read(&fixture.path).unwrap(), ciphertext);
++}
++
++#[test]
++fn canonical_fixed_base64url_rejects_aliases_and_wrong_lengths() {
++    assert_eq!(fixed_base64url::<32>(&"A".repeat(43)).unwrap(), KEY);
++    assert_eq!(fixed_base64url::<12>(&"A".repeat(16)).unwrap(), NONCE);
++    for value in [
++        "A".repeat(42),
++        "A".repeat(44),
++        format!("{}=", "A".repeat(43)),
++        format!("{}B", "A".repeat(42)),
++        format!("{}+", "A".repeat(42)),
++    ] {
++        assert_eq!(
++            fixed_base64url::<32>(&value).unwrap_err(),
++            error("key_or_nonce_invalid")
++        );
++    }
++}
++
++#[test]
++fn ciphertext_hash_and_authentication_are_independent_gates() {
++    let (fixture, payload) = Fixture::encrypted(&inner());
++    let mut changed = fs::read(&fixture.path).unwrap();
++    changed[0] ^= 1;
++    fs::write(&fixture.path, &changed).unwrap();
++    assert_eq!(
++        hydrate(&payload, None).unwrap_err(),
++        error("digest_mismatch")
++    );
++    let mut rebound = payload;
++    rebound["guard_payload_ref"]["sha256"] = json!(hex::encode(Sha256::digest(&changed)));
++    assert_eq!(
++        hydrate(&rebound, None).unwrap_err(),
++        error("authentication_failed")
++    );
++}
++
++#[test]
++fn wrong_key_nonce_and_tag_never_produce_plaintext() {
++    for name in ["key", "nonce"] {
++        let (_fixture, mut payload) = Fixture::encrypted(&inner());
++        let old = payload["guard_payload_ref"][name].as_str().unwrap();
++        payload["guard_payload_ref"][name] = json!(format!("B{}", &old[1..]));
++        assert_eq!(
++            hydrate(&payload, None).unwrap_err(),
++            error("authentication_failed")
++        );
++    }
++    let (fixture, mut payload) = Fixture::encrypted(&inner());
++    let mut bytes = fs::read(&fixture.path).unwrap();
++    *bytes.last_mut().unwrap() ^= 1;
++    fs::write(&fixture.path, &bytes).unwrap();
++    payload["guard_payload_ref"]["sha256"] = json!(hex::encode(Sha256::digest(bytes)));
++    assert_eq!(
++        hydrate(&payload, None).unwrap_err(),
++        error("authentication_failed")
++    );
++}
++
++#[test]
++fn reference_schema_types_and_closed_fields_are_checked() {
++    let (_fixture, payload) = Fixture::encrypted(&inner());
++    for (name, value) in [
++        ("version", json!(2)),
++        ("version", json!(true)),
++        ("encoding", json!("raw")),
++        ("encryption", json!("none")),
++        ("unexpected", json!(1)),
++        ("path", json!(null)),
++    ] {
++        let mut changed = payload.clone();
++        changed["guard_payload_ref"][name] = value;
++        assert_eq!(
++            hydrate(&changed, None).unwrap_err(),
++            error("metadata_invalid")
++        );
++    }
++    for value in [json!(0), json!(-1), json!(MAX_BYTES + 1), json!(1.5)] {
++        let mut changed = payload.clone();
++        changed["guard_payload_ref"]["serialized_chars"] = value;
++        assert_eq!(hydrate(&changed, None).unwrap_err(), error("size_invalid"));
++    }
++}
++
++#[test]
++fn authenticated_json_event_length_and_outer_copies_remain_bound() {
++    let (_fixture, payload) = Fixture::encrypted(&inner());
++    for name in ["tool_name", "config_path", "is_error"] {
++        let mut changed = payload.clone();
++        changed[name] = json!("changed");
++        assert_eq!(
++            hydrate(&changed, None).unwrap_err(),
++            error("metadata_mismatch")
++        );
++    }
++    let mut wrong_length = payload;
++    wrong_length["guard_payload_ref"]["serialized_chars"] = json!(1);
++    assert_eq!(
++        hydrate(&wrong_length, None).unwrap_err(),
++        error("size_mismatch")
++    );
++    for (value, expected) in [
++        (json!([]), "inner_invalid"),
++        (json!({"hook_event_name":"PreToolUse"}), "event_mismatch"),
++        (
++            json!({"hook_event_name":"PostToolUse","guard_payload_ref":{}}),
++            "inner_invalid",
++        ),
++    ] {
++        let (_fixture, wrapped) = Fixture::encrypted(&value);
++        assert_eq!(hydrate(&wrapped, None).unwrap_err(), error(expected));
++    }
++    let (_fixture, invalid) = Fixture::encoded(&[0xff], 1, &json!({}));
++    assert_eq!(hydrate(&invalid, None).unwrap_err(), error("json_invalid"));
++    let (_fixture, invalid) = Fixture::encoded(b"{", 1, &json!({}));
++    assert_eq!(hydrate(&invalid, None).unwrap_err(), error("json_invalid"));
++}
++
++#[test]
++fn original_expired_deadline_wins_before_reference_access() {
++    assert_eq!(
++        hydrate(&json!({}), Some(Instant::now() - Duration::from_millis(1))).unwrap_err(),
++        "native_request_deadline_exceeded"
++    );
++}
++
++fn edge_result(
++    payload: Value,
++    harness: &str,
++    cwd: Option<&Path>,
++) -> (GuardHookEdgeResultV2, String) {
++    let mut request = envelope("PostToolUse", payload);
++    request.harness = harness.to_owned();
++    request.deadline_budget_ms = Some(1000);
++    if let Some(root) = cwd {
++        request.source.cwd = Some(root.to_string_lossy().into_owned());
++        request.source.home_dir = root.to_string_lossy().into_owned();
++    }
++    let digest = crate::edge::request_identity(&request).unwrap().1;
++    let bytes = evaluate_isolated(request).unwrap();
++    (serde_json::from_slice(&bytes).unwrap(), digest)
++}
++
++#[test]
++fn both_producer_harnesses_scan_inner_output_but_receipt_commits_outer() {
++    for harness in ["pi", "omp"] {
++        let original = inner();
++        let (_fixture, payload) = Fixture::encrypted(&original);
++        let (result, digest) = edge_result(payload.clone(), harness, None);
++        assert_eq!(result.result["reason_code"], "output_scan_allow");
++        assert_eq!(result.receipt.request_digest, digest);
++        assert_eq!(
++            result.receipt.payload_kind,
++            GuardHookPayloadKindV2::EncryptedPayloadRef
++        );
++        assert_eq!(
++            result.receipt.reviewed_output_sha256,
++            Some(hex::encode(Sha256::digest(
++                original["tool_response"].as_str().unwrap().as_bytes()
++            )))
++        );
++        let serialized = serde_json::to_string(&result).unwrap();
++        assert!(!serialized.contains(payload["guard_payload_ref"]["key"].as_str().unwrap()));
++        assert!(!serialized.contains("ordinary café"));
++        assert!(!serialized.contains(payload["guard_payload_ref"]["path"].as_str().unwrap()));
++    }
++}
++
++#[test]
++fn source_full_read_tail_secret_and_changed_source_oracles_remain_active() {
++    for (filename, contents, replacement, reason) in [
++        (
++            "source.txt",
++            "clean content\n".to_owned(),
++            None,
++            "no_output_to_review",
++        ),
++        (
++            "source.rs",
++            "clean content\n".to_owned(),
++            None,
++            "source_full_scan_allow",
++        ),
++        (
++            "source.rs",
++            format!(
++                "{}\n{}{}",
++                "ordinary\n".repeat(10_000),
++                ["gh", "p_"].concat(),
++                "b".repeat(30)
++            ),
++            None,
++            "source_secret_match",
++        ),
++        (
++            "source.rs",
++            "clean content\n".to_owned(),
++            Some("changed"),
++            "no_output_to_review",
++        ),
++    ] {
++        let workspace = Fixture::new(b"placeholder");
++        fs::write(
++            workspace.root.join(filename),
++            replacement.unwrap_or(&contents),
++        )
++        .unwrap();
++        let classified = guard_secure_fs::classify_source_path(
++            filename,
++            &workspace.root,
++            Some(&workspace.root),
++            false,
++        );
++        assert_eq!(classified.allowed, filename == "source.rs");
++        assert_eq!(
++            classified.reason_code,
++            if filename == "source.rs" {
++                "source_extension"
++            } else {
++                "not_source_like"
++            }
++        );
++        let value = json!({"hook_event_name":"PostToolUse","tool_name":"Read","is_error":false,
++            "tool_input":{"file_path":filename},"guard_source_ref":{"version":1,"path":filename,
++                "output_sha256":hex::encode(Sha256::digest(contents.as_bytes())),"output_chars":contents.chars().count()}});
++        let (plain, _) = edge_result(value.clone(), "pi", Some(&workspace.root));
++        assert_eq!(plain.result["reason_code"], reason);
++        let (_cipher, payload) = Fixture::encrypted(&value);
++        let (result, digest) = edge_result(payload, "pi", Some(&workspace.root));
++        assert_eq!(result.result, plain.result);
++        assert_eq!(result.result["reason_code"], reason);
++        assert_eq!(result.receipt.request_digest, digest);
++        assert_eq!(
++            result.receipt.decision,
++            if reason == "source_full_scan_allow" {
++                "allow"
++            } else {
++                "deny"
++            }
++        );
++        assert_eq!(
++            result.receipt.payload_kind,
++            GuardHookPayloadKindV2::EncryptedPayloadRef
++        );
++    }
++}
++
++#[test]
++fn pretool_and_other_harness_references_remain_unsupported() {
++    let (_fixture, payload) = Fixture::encrypted(&inner());
++    let mut pre = envelope("PreToolUse", payload.clone());
++    pre.harness = "pi".to_owned();
++    pre.raw_payload["hook_event_name"] = json!("PreToolUse");
++    assert_eq!(
++        evaluate_isolated(pre).unwrap_err(),
++        "native_hook_encrypted_payload_unsupported"
++    );
++    assert_eq!(
++        evaluate_isolated(envelope("PostToolUse", payload)).unwrap_err(),
++        "native_hook_encrypted_payload_unsupported"
++    );
++}
++
++#[test]
++fn authenticated_inner_uses_unchanged_policy_join_and_intrinsic_floor() {
++    use crate::policy_enforcement::AdmittedPolicySnapshot;
++    use guard_policy_snapshot::{
++        PolicySnapshotV3, POLICY_SNAPSHOT_INTEGRITY_ALGORITHM, POLICY_SNAPSHOT_SCHEMA,
++    };
++    for mode in ["enforce", "observe"] {
++        for secret in [false, true] {
++            let mut value = inner();
++            if secret {
++                value["tool_response"] =
++                    json!(format!("{}{}", ["gh", "p_"].concat(), "b".repeat(30)));
++            }
++            let (_fixture, wrapped) = Fixture::encrypted(&value);
++            let snapshot:PolicySnapshotV3=serde_json::from_value(json!({
++                "schema":POLICY_SNAPSHOT_SCHEMA,"version":3,"generation":1,
++                "policy_digest":"a".repeat(64),"config_digest":"b".repeat(64),
++                "rule_digest":guard_rule_contract::rule_digest(),"runtime_identity":"d".repeat(64),
++                "protocol_version":1,"mode":mode,
++                "scope_contract":{"schema":"guard-native-scope.v1","kind":"guard-home",
++                    "scope_digest":"e".repeat(64),"workspace_binding":"request-source"},
++                "effective_policy":{"protection_posture":"protected","security_level":"balanced",
++                    "default_action":"block","unknown_publisher_action":"review",
++                    "changed_hash_action":"require-reapproval","new_network_domain_action":"allow",
++                    "subprocess_action":"allow","risk_actions":{},"harness_risk_actions":{},
++                    "harness_actions":{},"publisher_actions":{},"artifact_actions":{},
++                    "sandbox_analysis":"off","receipt_redaction_level":"full"},
++                "command_extensions":null,"issued_at_ms":1,"expires_at_ms":2,
++                "integrity":{"algorithm":POLICY_SNAPSHOT_INTEGRITY_ALGORITHM,"key_id":"f".repeat(64),"mac":"0".repeat(64)}
++            })).unwrap();
++            // This existing constructor compiles an already-admitted test snapshot;
++            // this control does not claim a signed publisher/install exchange.
++            let admitted = AdmittedPolicySnapshot::new(snapshot).unwrap();
++            let evaluate = |payload| {
++                let mut request = envelope("PostToolUse", payload);
++                request.harness = "pi".to_owned();
++                request.deadline_budget_ms = Some(1000);
++                let home = request.source.guard_home.clone();
++                let digest = crate::edge::request_identity(&request).unwrap().1;
++                let validated =
++                    crate::edge::validate_envelope_shape(request, Instant::now()).unwrap();
++                let result = crate::edge::evaluate_validated_envelope(validated, Some(&admitted));
++                fs::remove_dir_all(home).unwrap();
++                let result: GuardHookEdgeResultV2 =
++                    serde_json::from_slice(&result.unwrap()).unwrap();
++                assert_eq!(result.receipt.request_digest, digest);
++                result
++            };
++            let plain = evaluate(value);
++            let encrypted = evaluate(wrapped);
++            assert_eq!(encrypted.result, plain.result);
++            assert_eq!(encrypted.receipt.policy_action, plain.receipt.policy_action);
++            assert_eq!(
++                encrypted.receipt.payload_kind,
++                GuardHookPayloadKindV2::EncryptedPayloadRef
++            );
++            assert_eq!(
++                encrypted.receipt.decision,
++                if secret || mode == "enforce" {
++                    "deny"
++                } else {
++                    "allow"
++                }
++            );
++        }
++    }
++}
+diff --git a/rust/crates/guard-runtime/src/edge_tests.rs b/rust/crates/guard-runtime/src/edge_tests.rs
+index 89c9df4d2..f4e0adecd 100644
+--- a/rust/crates/guard-runtime/src/edge_tests.rs
++++ b/rust/crates/guard-runtime/src/edge_tests.rs
+@@ -14,7 +14,7 @@ fn write_fixture_file(path: &std::path::Path, bytes: &[u8]) {
+     std::fs::write(path, bytes).unwrap();
+ }
+ 
+-fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
++pub(super) fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
+     let digest = "a".repeat(64);
+     let guard_home = std::env::temp_dir().join(format!(
+         "hol-guard-native-edge-generation-test-{}-{}",
+@@ -61,7 +61,7 @@ fn envelope(event: &str, payload: Value) -> GuardHookEnvelopeV2 {
+     }
+ }
+ 
+-fn evaluate_isolated(envelope: GuardHookEnvelopeV2) -> Result<Vec<u8>, String> {
++pub(super) fn evaluate_isolated(envelope: GuardHookEnvelopeV2) -> Result<Vec<u8>, String> {
+     let guard_home = std::path::PathBuf::from(&envelope.source.guard_home);
+     let result = validate_envelope_shape(envelope, Instant::now())
+         .and_then(|validated| evaluate_validated_envelope(validated, None));
+diff --git a/scripts/native_slo_contract.py b/scripts/native_slo_contract.py
+index b39fa7332..93d5e4d5e 100644
+--- a/scripts/native_slo_contract.py
++++ b/scripts/native_slo_contract.py
+@@ -273,9 +273,10 @@ def gate_results(
+     return {
+         "resident_share": resident_share >= MIN_RESIDENT_SHARE,
+         "safe_corpus": safe_fail_rate <= MAX_SAFE_FAIL_RATE,
+-        # These samples cross the installed adapter boundary.  The direct
+-        # native 20/50/120/350 ms ceilings belong to the release gate that
+-        # calls Rust directly and must not be applied to this path.
++        # These samples measure normalized DAEMON_INGRESS, including Python
++        # transport. The release benchmark measures NATIVE_CLIENT through its
++        # Python adapter; it does not measure the declared native size ceilings.
++        # Keep those separate targets out of these adapter smoke predicates.
+         "warm_latency": warm_p95_ms <= MAX_INSTALLED_ADAPTER_P95_MS,
+         "250k_latency": size_p95_ms.get("250k", float("inf")) <= MAX_INSTALLED_ADAPTER_P95_MS,
+         "1m_latency": size_p95_ms.get("1m", float("inf")) <= MAX_INSTALLED_ADAPTER_P95_MS,
+diff --git a/src/codex_plugin_scanner/guard/daemon/__init__.py b/src/codex_plugin_scanner/guard/daemon/__init__.py
+index 6366343c5..85884649e 100644
+--- a/src/codex_plugin_scanner/guard/daemon/__init__.py
++++ b/src/codex_plugin_scanner/guard/daemon/__init__.py
+@@ -4,19 +4,35 @@ from __future__ import annotations
+ 
+ from typing import TYPE_CHECKING
+ 
+-from .manager import (
+-    ensure_guard_daemon,
+-    guard_daemon_url_for_home,
+-    load_guard_daemon_auth_token,
+-    load_guard_daemon_url,
+-    recover_guard_daemon_after_hook_failure,
+-    repair_approval_center_locator,
+-    schedule_guard_daemon_recovery,
+-)
+-
+ if TYPE_CHECKING:
++    from .manager import (
++        ensure_guard_daemon,
++        guard_daemon_url_for_home,
++        load_guard_daemon_auth_token,
++        load_guard_daemon_url,
++        recover_guard_daemon_after_hook_failure,
++        repair_approval_center_locator,
++        schedule_guard_daemon_recovery,
++    )
+     from .runtime_repair import repair_guard_daemon_runtime
+ 
++_MANAGER_EXPORTS = frozenset(
++    {
++        "ensure_guard_daemon",
++        "guard_daemon_url_for_home",
++        "load_guard_daemon_auth_token",
++        "load_guard_daemon_url",
++        "recover_guard_daemon_after_hook_failure",
++        "repair_approval_center_locator",
++        "schedule_guard_daemon_recovery",
++    }
++)
++
++# Reload used to rebind these eager imports, including any patched export.
++for _name in _MANAGER_EXPORTS:
++    globals().pop(_name, None)
++globals().pop("_name", None)
++
+ __all__ = [
+     "GuardDaemonServer",
+     "GuardSurfaceDaemonClient",
+@@ -33,6 +49,12 @@ __all__ = [
+ 
+ 
+ def __getattr__(name: str):
++    if name in _MANAGER_EXPORTS:
++        from . import manager
++
++        value = getattr(manager, name)
++        globals()[name] = value
++        return value
+     if name == "repair_guard_daemon_runtime":
+         from .runtime_repair import repair_guard_daemon_runtime
+ 
+@@ -50,3 +72,7 @@ def __getattr__(name: str):
+             "load_guard_surface_daemon_client": load_guard_surface_daemon_client,
+         }[name]
+     raise AttributeError(name)
++
++
++def __dir__() -> list[str]:
++    return sorted(set(globals()) | set(__all__))
+diff --git a/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py b/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py
+index 9c466fa3e..29163ff9a 100644
+--- a/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py
++++ b/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py
+@@ -47,6 +47,11 @@ def _decode_hook_input(payload: Mapping[str, object]) -> dict[str, object] | Non
+     decoded = json.loads(raw)
+     if not isinstance(decoded, dict) or decoded.get("hook_event_name") != "PreToolUse":
+         return None
++    # Initial daemon ingress consumes these root transport hints before native
++    # review. Resume owns its existing deadline and must forward that same
++    # semantic input; nested tool arguments remain part of Rust's commitment.
++    decoded.pop("guard_remaining_seconds", None)
++    decoded.pop("guard_remaining_ms", None)
+     return decoded
+ 
+ 
+diff --git a/tests/claude_launcher_conformance.py b/tests/claude_launcher_conformance.py
+index a38b5b074..37a54fd7c 100644
+--- a/tests/claude_launcher_conformance.py
++++ b/tests/claude_launcher_conformance.py
+@@ -12,9 +12,9 @@ from typing import Any
+ ROOT = Path(__file__).resolve().parents[1]
+ HISTORICAL_FIXTURE = "tests/fixtures/claude-launcher-pilot-auth.json"
+ HISTORICAL_GENERATOR = "scripts/generate_claude_launcher_auth_vectors.py"
+-CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance.json"
+-CURRENT_REVISION = "1cd7842c1da4f327b568065dd159c67e7bd0c92b"
+-CURRENT_TREE = "5250218ff36acbb35a2fba0fde483db02a724f63"
++CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance-v2.json"
++CURRENT_REVISION = "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d"
++CURRENT_TREE = "19977465d6e419f1276d75fb6bd1b3477f5c9720"
+ CURRENT_MARKER_SHA256 = "a452508d7650662709fba99632befdea0a019b66957dc1ffdf67e24c6d4c2f61"
+ HISTORICAL_FIXTURE_SHA256 = "ebf41a37cfe9e6e05bcd9f5161874a3e1329015bb990f779e238d3c8f4b3571a"
+ HISTORICAL_GENERATOR_SHA256 = "03fa95cd2b9366c8913ac5b703f153c64f2b917e1d1ba953825486ca0debeeb5"
+@@ -31,6 +31,16 @@ MODULES = frozenset(
+ OLD_IMPORT = b"from .claude_code import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
+ NEW_IMPORT = b"from .claude_hook_config import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
+ IMPORT_ANCHOR = b"from .claude_daemon_hook_transport import authenticated_claude_hook_response\n"
++AUTH = "adapters/codex_daemon_hook_auth.py"
++READER_PROVIDERS = {
++    "windows_replaceable_file.py": "ccc6b88c70dac5bc80c340b0bc4712e0ae588a123623b4bc3e34616d9b684fb9",
++    "windows_paths.py": "b93ca4e5361c9dbda0ea273be903b4ed7225dc21ec5bfaf3a7da5ddb892cf79d",
++}
++READER_ADDITION = (
++    b'        if os.name == "nt":\n'
++    b"            from ..windows_replaceable_file import read_replaceable_text\n\n"
++    b"            return read_replaceable_text(path).strip()\n"
++)
+ 
+ 
+ def _require(condition: object, reason: str) -> None:
+@@ -68,11 +78,12 @@ def validate_current_conformance(
+             "bridge_modules",
+             "marker_source",
+             "reviewed_import_delta",
++            "reviewed_windows_reader_delta",
+         },
+         "current_conformance_shape_invalid",
+     )
+     _require(
+-        binding["schema"] == "guard-claude-current-source-conformance.v1"
++        binding["schema"] == "guard-claude-current-source-conformance.v2"
+         and binding["python_execution"] == "current_adapter_registered_python_argv"
+         and binding["installed_artifact"] is False
+         and binding["qualification_complete"] is False,
+@@ -115,16 +126,41 @@ def validate_current_conformance(
+     modules = _object(binding["bridge_modules"], MODULES, "current_module_set_invalid")
+     old_modules = _object(historical.get("bridge_modules"), MODULES, "historical_module_set_invalid")
+     marker = _object(binding["marker_source"], {"module", "sha256"}, "marker_source_shape_invalid")
+-    _require(marker["module"] == MARKER and set(sources) == MODULES | {MARKER}, "current_module_set_invalid")
++    _require(
++        marker["module"] == MARKER and set(sources) == MODULES | {MARKER} | READER_PROVIDERS.keys(),
++        "current_module_set_invalid",
++    )
+     _require(marker["sha256"] == CURRENT_MARKER_SHA256, "current_marker_binding_changed")
+     for name, expected in {**modules, MARKER: marker["sha256"]}.items():
+         _require(isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected), "current_module_digest_invalid")
+         _require(_digest(sources[name]) == expected, "current_module_source_drift")
+     _require(
+-        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE}), "historical_transport_source_drift"
++        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE, AUTH}),
++        "historical_transport_source_drift",
++    )
++    _require(history["module_sha256"] == old_modules[AUTH], "historical_auth_module_changed")
++    reader = _object(
++        binding["reviewed_windows_reader_delta"],
++        {"module", "historical_sha256", "current_sha256", "added", "providers", "scope"},
++        "reviewed_windows_reader_delta_invalid",
++    )
++    _require(
++        reader["module"] == AUTH
++        and reader["historical_sha256"] == old_modules[AUTH]
++        and reader["current_sha256"] == modules[AUTH]
++        and reader["added"] == READER_ADDITION.decode(),
++        "reviewed_windows_reader_delta_invalid",
+     )
++    providers = _object(reader["providers"], set(READER_PROVIDERS), "current_reader_provider_set_invalid")
++    _require(providers == READER_PROVIDERS, "current_reader_provider_binding_changed")
++    for name, expected in providers.items():
++        _require(_digest(sources[name]) == expected, "current_reader_provider_source_drift")
++    auth = sources[AUTH]
+     _require(
+-        history["module_sha256"] == modules["adapters/codex_daemon_hook_auth.py"], "historical_auth_module_changed"
++        auth.count(READER_ADDITION) == 1
++        and auth.count(READER_ADDITION + b'        return path.read_text(encoding="utf-8").strip()\n') == 1
++        and _digest(auth.replace(READER_ADDITION, b"", 1)) == old_modules[AUTH],
++        "reviewed_windows_reader_delta_mismatch",
+     )
+     delta = _object(
+         binding["reviewed_import_delta"],
+@@ -154,5 +190,5 @@ def verify_current_conformance(guard: Path) -> dict[str, Any]:
+         json.loads((ROOT / CURRENT_FIXTURE).read_bytes()),
+         historical_vectors=(ROOT / HISTORICAL_FIXTURE).read_bytes(),
+         historical_generator=(ROOT / HISTORICAL_GENERATOR).read_bytes(),
+-        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER}},
++        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER} | READER_PROVIDERS.keys()},
+     )
+diff --git a/tests/fixtures/claude-launcher-current-conformance-v2.json b/tests/fixtures/claude-launcher-current-conformance-v2.json
+new file mode 100644
+index 000000000..0d29b9b8b
+--- /dev/null
++++ b/tests/fixtures/claude-launcher-current-conformance-v2.json
+@@ -0,0 +1,47 @@
++{
++  "schema": "guard-claude-current-source-conformance.v2",
++  "source_revision": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
++  "source_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
++  "python_execution": "current_adapter_registered_python_argv",
++  "installed_artifact": false,
++  "qualification_complete": false,
++  "historical_auth_provenance": {
++    "fixture": "tests/fixtures/claude-launcher-pilot-auth.json",
++    "fixture_sha256": "ebf41a37cfe9e6e05bcd9f5161874a3e1329015bb990f779e238d3c8f4b3571a",
++    "revision": "ae33987d0c8675c36a77375e03419aee920825f6",
++    "generator": "scripts/generate_claude_launcher_auth_vectors.py",
++    "generator_sha256": "03fa95cd2b9366c8913ac5b703f153c64f2b917e1d1ba953825486ca0debeeb5",
++    "module": "src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py",
++    "module_sha256": "97efff612c70b1e02f3bd1bf21b600c1095daee5a35cf57114802b693f50ed6b",
++    "historical_bridge_executed": false
++  },
++  "bridge_modules": {
++    "adapters/claude_daemon_hook_bridge.py": "596e5b982813fb5400c8dc900259b5dd302641b84251bb44df32cf1cad665b0b",
++    "adapters/claude_daemon_hook_transport.py": "9a01c09bd0f1ce2f8b0352154a3253fbc070395be18d4f0365406aca4c12253e",
++    "adapters/codex_daemon_hook_auth.py": "f989759d4c231a8a4800e4505dce48e7eea4bdefab821817cd7260516da21876",
++    "adapters/claude_daemon_state.py": "14859cac506d29ced21ea2b6a1609d10279e0d988ef88a54592203cfd719cc7e"
++  },
++  "marker_source": {
++    "module": "adapters/claude_hook_config.py",
++    "sha256": "a452508d7650662709fba99632befdea0a019b66957dc1ffdf67e24c6d4c2f61"
++  },
++  "reviewed_import_delta": {
++    "module": "adapters/claude_daemon_hook_bridge.py",
++    "historical_sha256": "4a57d7ac27bbd57695e5696b61fcabe5ec07f61af4a148e61aa3483cc70397f5",
++    "current_sha256": "596e5b982813fb5400c8dc900259b5dd302641b84251bb44df32cf1cad665b0b",
++    "removed": "from .claude_code import CLAUDE_GUARD_DAEMON_HOOK_MARKER",
++    "added": "from .claude_hook_config import CLAUDE_GUARD_DAEMON_HOOK_MARKER",
++    "scope": "Only the marker import changes; inverse edit must reproduce the exact historical bridge bytes."
++  },
++  "reviewed_windows_reader_delta": {
++    "module": "adapters/codex_daemon_hook_auth.py",
++    "historical_sha256": "97efff612c70b1e02f3bd1bf21b600c1095daee5a35cf57114802b693f50ed6b",
++    "current_sha256": "f989759d4c231a8a4800e4505dce48e7eea4bdefab821817cd7260516da21876",
++    "added": "        if os.name == \"nt\":\n            from ..windows_replaceable_file import read_replaceable_text\n\n            return read_replaceable_text(path).strip()\n",
++    "providers": {
++      "windows_replaceable_file.py": "ccc6b88c70dac5bc80c340b0bc4712e0ae588a123623b4bc3e34616d9b684fb9",
++      "windows_paths.py": "b93ca4e5361c9dbda0ea273be903b4ed7225dc21ec5bfaf3a7da5ddb892cf79d"
++    },
++    "scope": "Exact Windows-only private-file read branch; inverse deletion reproduces historical auth bytes. Current reader providers are separately pinned; historical vectors do not certify Windows replacement behavior."
++  }
++}
+diff --git a/tests/fixtures/guard-hook-responses/auxiliary-events.v1.json b/tests/fixtures/guard-hook-responses/auxiliary-events.v1.json
+new file mode 100644
+index 000000000..b6e8d20f0
+--- /dev/null
++++ b/tests/fixtures/guard-hook-responses/auxiliary-events.v1.json
+@@ -0,0 +1,1028 @@
++{
++  "schema": "hol-guard.auxiliary-response-captures.v1",
++  "source_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
++  "native_policy_boundary": "modeled_results_not_native_execution",
++  "input_bytes_limit": 1000000,
++  "cases": [
++    {
++      "id": "copilot.userPromptSubmitted.protected_default.timeout",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.protected_default.malformed_child",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.protected_default.input_limit",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.protected_default.output_limit",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.watch.timeout",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.watch.malformed_child",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.watch.input_limit",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.userPromptSubmitted.watch.output_limit",
++      "harness": "copilot",
++      "event": "userPromptSubmitted",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.protected_default.timeout",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.protected_default.malformed_child",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.protected_default.input_limit",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.protected_default.output_limit",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.watch.timeout",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.watch.malformed_child",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.watch.input_limit",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequest.watch.output_limit",
++      "harness": "copilot",
++      "event": "permissionRequest",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.protected_default.timeout",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.protected_default.malformed_child",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.protected_default.input_limit",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.protected_default.output_limit",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "behavior": "deny",
++        "message": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "interrupt": false
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.watch.timeout",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.watch.malformed_child",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.watch.input_limit",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "copilot.permissionRequestV2.watch.output_limit",
++      "harness": "copilot",
++      "event": "permissionRequestV2",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "permissionDecision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.protected_default.timeout",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.protected_default.malformed_child",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.protected_default.input_limit",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.protected_default.output_limit",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.watch.timeout",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.watch.malformed_child",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.watch.input_limit",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.UserPromptSubmit.watch.output_limit",
++      "harness": "kimi",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.protected_default.timeout",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.protected_default.malformed_child",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.protected_default.input_limit",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.protected_default.output_limit",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.watch.timeout",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.watch.malformed_child",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.watch.input_limit",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.SessionStart.watch.output_limit",
++      "harness": "kimi",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "SessionStart",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.protected_default.timeout",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "Stop"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.protected_default.malformed_child",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "Stop"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.protected_default.input_limit",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "Stop"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.protected_default.output_limit",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "Stop"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.watch.timeout",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "Stop",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.watch.malformed_child",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "Stop",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.watch.input_limit",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "Stop",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "kimi.Stop.watch.output_limit",
++      "harness": "kimi",
++      "event": "Stop",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "Stop",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.protected_default.timeout",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.protected_default.malformed_child",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.protected_default.input_limit",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook input exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.protected_default.output_limit",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook output exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.watch.timeout",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.watch.malformed_child",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.watch.input_limit",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.UserPromptSubmit.watch.output_limit",
++      "harness": "grok",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.protected_default.timeout",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.protected_default.malformed_child",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.protected_default.input_limit",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook input exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.protected_default.output_limit",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook output exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.watch.timeout",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.watch.malformed_child",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.watch.input_limit",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SubagentStart.watch.output_limit",
++      "harness": "grok",
++      "event": "SubagentStart",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.protected_default.timeout",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.protected_default.malformed_child",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard could not complete this review before the hook deadline. Retry the action."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.protected_default.input_limit",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook input exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.protected_default.output_limit",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow",
++        "reason": "HOL Guard blocked this action because hook output exceeded the safe size limit."
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.watch.timeout",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.watch.malformed_child",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.watch.input_limit",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "grok.SessionStart.watch.output_limit",
++      "harness": "grok",
++      "event": "SessionStart",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "decision": "allow"
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.protected_default.timeout",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "timeout",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.protected_default.malformed_child",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "malformed_child",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard could not complete this review before the hook deadline. Retry the action.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.protected_default.input_limit",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "input_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook input exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.protected_default.output_limit",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "protected_default",
++      "condition": "output_limit",
++      "response": {
++        "continue": true,
++        "systemMessage": "HOL Guard blocked this action because hook output exceeded the safe size limit.",
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.watch.timeout",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "timeout",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.watch.malformed_child",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "malformed_child",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.watch.input_limit",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "input_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    },
++    {
++      "id": "zcode.UserPromptSubmit.watch.output_limit",
++      "harness": "zcode",
++      "event": "UserPromptSubmit",
++      "posture": "watch",
++      "condition": "output_limit",
++      "response": {
++        "hookSpecificOutput": {
++          "hookEventName": "UserPromptSubmit",
++          "permissionDecision": "allow"
++        }
++      },
++      "exit_code": 0
++    }
++  ]
++}
+diff --git a/tests/fixtures/guard-hook-responses/current-cline-native.v1.json b/tests/fixtures/guard-hook-responses/current-cline-native.v1.json
+new file mode 100644
+index 000000000..1128bef6c
+--- /dev/null
++++ b/tests/fixtures/guard-hook-responses/current-cline-native.v1.json
+@@ -0,0 +1,164 @@
++{
++  "schema": "hol-guard.current-cline-native-responses.v1",
++  "captured_source": "e44008445630aad28ccc291ec234f55a14892e6d",
++  "source_role": "Current supplemental response/exit fixture; original2e corpus unchanged",
++  "native_policy_boundary": "modeled_child_not_native_execution",
++  "events": [
++    "PreToolUse",
++    "PostToolUse",
++    "UserPromptSubmit",
++    "TaskStart",
++    "TaskError",
++    "SessionShutdown"
++  ],
++  "nonblocking_events": [
++    "PostToolUse",
++    "UserPromptSubmit",
++    "TaskStart",
++    "TaskError",
++    "SessionShutdown"
++  ],
++  "input_bytes_limit": 262144,
++  "input_depth_limit": 48,
++  "exit_code": 0,
++  "conditions": {
++    "completed_allow": {
++      "blocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": ""
++      },
++      "nonblocking": {
++        "cancel": false,
++        "contextModification": ""
++      },
++      "child_invoked": true,
++      "completion_proof": true
++    },
++    "completed_deny": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "Synthetic completed refusal.",
++        "contextModification": "Synthetic completed refusal."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "contextModification": "Synthetic completed refusal."
++      },
++      "child_invoked": true,
++      "completion_proof": true
++    },
++    "child_unavailable": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard evaluation was unavailable; this Cline action was not allowed to proceed.",
++        "contextModification": "HOL Guard evaluation was unavailable; this Cline action was not allowed to proceed."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard evaluation was unavailable; this Cline action was not allowed to proceed."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "child_invalid_json": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard returned an invalid decision; this Cline action was not allowed to proceed.",
++        "contextModification": "HOL Guard returned an invalid decision; this Cline action was not allowed to proceed."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard returned an invalid decision; this Cline action was not allowed to proceed."
++      },
++      "child_invoked": true,
++      "completion_proof": false
++    },
++    "malformed_input": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard could not parse the Cline hook request safely.",
++        "contextModification": "HOL Guard could not parse the Cline hook request safely."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard could not parse the Cline hook request safely."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "nonobject_input": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard rejected an invalid Cline hook request.",
++        "contextModification": "HOL Guard rejected an invalid Cline hook request."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard rejected an invalid Cline hook request."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "overdepth_input": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard rejected an invalid Cline hook request.",
++        "contextModification": "HOL Guard rejected an invalid Cline hook request."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard rejected an invalid Cline hook request."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "oversize_input": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard rejected an oversized Cline hook request.",
++        "contextModification": "HOL Guard rejected an oversized Cline hook request."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard rejected an oversized Cline hook request."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "missing_transport": {
++      "blocking": {
++        "cancel": true,
++        "errorMessage": "HOL Guard Cline transport state is unavailable; this action was not allowed to proceed safely.",
++        "contextModification": "HOL Guard Cline transport state is unavailable; this action was not allowed to proceed safely."
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": "HOL Guard Cline transport state is unavailable; this action was not allowed to proceed safely."
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    },
++    "inactive_transport": {
++      "blocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": ""
++      },
++      "nonblocking": {
++        "cancel": false,
++        "errorMessage": "",
++        "contextModification": ""
++      },
++      "child_invoked": false,
++      "completion_proof": false
++    }
++  }
++}
+diff --git a/tests/fixtures/guard-hook-responses/registration-roster.v1.json b/tests/fixtures/guard-hook-responses/registration-roster.v1.json
+new file mode 100644
+index 000000000..f10dbae7a
+--- /dev/null
++++ b/tests/fixtures/guard-hook-responses/registration-roster.v1.json
+@@ -0,0 +1,407 @@
++{
++  "schema": "hol-guard.current-hook-response-roster.v1",
++  "source_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
++  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
++  "execution_performed": false,
++  "surfaces": [
++    {
++      "harness": "claude-code",
++      "aliases": [
++        "claude-code",
++        "claude"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/claude_code.py",
++        "src/codex_plugin_scanner/guard/adapters/claude_hook_config.py",
++        "src/codex_plugin_scanner/guard/adapters/claude_hook_argv.py"
++      ],
++      "generated_launcher": "~/.claude/settings.json; shell-free command/args; daemon bridge, separate SessionStart argv",
++      "managed_events": [
++        "PreToolUse",
++        "PermissionRequest",
++        "PostToolUse",
++        "Notification",
++        "Stop",
++        "SessionStart"
++      ],
++      "registration_detail": "PreToolUse matched Bash/Read/Write/Edit/MultiEdit/WebFetch/WebSearch/mcp__.*; PostToolUse also AskUserQuestion; Notification permission_prompt; SessionStart startup/resume/clear/compact",
++      "claim_limits": "Native pre/post registration; SessionStart is a separate generated session handler. Current installer removes managed UserPromptSubmit and PermissionDenied; normalizer support is not installation.",
++      "response_fixture_paths": [
++        "tests/test_guard_claude_hook_argv.py",
++        "tests/test_claude_hook_exit_paths.py",
++        "tests/test_claude_daemon_hook_bridge.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "codex",
++      "aliases": [
++        "codex"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/codex.py",
++        "src/codex_plugin_scanner/guard/adapters/codex_adapter_commands.py",
++        "src/codex_plugin_scanner/guard/adapters/codex_adapter_installation.py",
++        "src/codex_plugin_scanner/guard/adapters/codex_adapter_hook_writes.py"
++      ],
++      "generated_launcher": "Canonical global Codex TOML plus authenticated managed-hook manifest; daemon bridge argv; old hooks.json migrated/removed",
++      "managed_events": [
++        "PreToolUse",
++        "PermissionRequest",
++        "UserPromptSubmit",
++        "PostToolUse"
++      ],
++      "registration_detail": "_managed_hook_groups emits exactly four events; original foreign hooks inventoried and preserved",
++      "claim_limits": "Pre/post and prompt/permission are separate interfaces; registration does not prove approval continuation.",
++      "response_fixture_paths": [
++        "tests/test_codex_hook_inventory.py",
++        "tests/test_codex_daemon_hook_bridge.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "cursor",
++      "aliases": [
++        "cursor"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/cursor.py",
++        "src/codex_plugin_scanner/guard/adapters/cursor_hooks.py",
++        "src/codex_plugin_scanner/guard/adapters/cursor_hook_config.py",
++        "src/codex_plugin_scanner/guard/adapters/cursor_cli.py"
++      ],
++      "generated_launcher": "~/.cursor/hooks.json and .cursor/hooks/hol-guard-cursor-hook.py; event baked into command; editor/CLI/all surfaces",
++      "managed_events": [
++        "beforeShellExecution",
++        "beforeMCPExecution",
++        "beforeReadFile",
++        "beforeWriteFile",
++        "afterShellExecution",
++        "afterMCPExecution"
++      ],
++      "registration_detail": "Four before events failClosed=true; two after events failClosed=false",
++      "claim_limits": "After hooks are observation-only, never proof of output withholding. CLI shim is a distinct launch surface; do not infer editor registration from CLI detection.",
++      "response_fixture_paths": [
++        "tests/test_cursor_watch_hook_script.py",
++        "tests/test_native_slo_registered_surfaces.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "copilot",
++      "aliases": [
++        "copilot"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/copilot.py",
++        "src/codex_plugin_scanner/guard/adapters/copilot_state_paths.py"
++      ],
++      "generated_launcher": "Global and project .github/hooks/hol-guard-copilot.json; bounded Python bridge; bash/powershell commands",
++      "managed_events": [
++        "userPromptSubmitted",
++        "preToolUse",
++        "postToolUse",
++        "permissionRequest",
++        "permissionRequestV2"
++      ],
++      "registration_detail": "sessionStart/sessionEnd/errorOccurred are detectable external events, not in the five managed events",
++      "claim_limits": "Actual native stdout uses Copilot's top-level binary permissionDecision for pre/post; permission-request behavior shape is separate. Host post-result enforcement must not be inferred solely from a deny JSON.",
++      "response_fixture_paths": [
++        "tests/test_bounded_cli_hook_copilot_delivery.py",
++        "tests/test_daemon_session_continuity_edges.py",
++        "tests/test_registered_auxiliary_response_fixtures.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "cline",
++      "aliases": [
++        "cline",
++        "cline-cli",
++        "cline-vscode"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/cline.py",
++        "src/codex_plugin_scanner/guard/adapters/cline_hooks.py",
++        "src/codex_plugin_scanner/guard/adapters/cline_state_paths.py",
++        "src/codex_plugin_scanner/guard/adapters/cline_plugin.py",
++        "src/codex_plugin_scanner/guard/adapters/cline_bridge.py"
++      ],
++      "generated_launcher": "Canonical native hook root (Documents/Cline/Hooks, legacy .cline/hooks, or saved supported custom root); private state pins worker+wrapper hashes; alternate plugin selected explicitly",
++      "managed_events": [
++        "PreToolUse",
++        "PostToolUse",
++        "UserPromptSubmit",
++        "TaskStart",
++        "TaskError",
++        "SessionShutdown"
++      ],
++      "registration_detail": "POSIX isolated Python wrapper or Windows PowerShell wrapper; hooks/plugin transports mutually selected in adapter-state",
++      "claim_limits": "Native PreToolUse can cancel; native PostToolUse and lifecycle are nonblocking. Alternate plugin can replace model-visible post-tool output; native hook evidence must not claim plugin mediation.",
++      "response_fixture_paths": [
++        "tests/test_cline_nonblocking_response_fixtures.py",
++        "tests/test_cline_hook_transports.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "kimi",
++      "aliases": [
++        "kimi",
++        "kimi-code",
++        "kimi-cli"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/kimi.py",
++        "src/codex_plugin_scanner/guard/adapters/kimi_hooks.py"
++      ],
++      "generated_launcher": "Kimi TOML managed block with bounded CLI bridge",
++      "managed_events": [
++        "PreToolUse",
++        "UserPromptSubmit",
++        "PostToolUse",
++        "SessionStart",
++        "Stop"
++      ],
++      "registration_detail": "All five literal event registrations in _build_managed_block",
++      "claim_limits": "Restrictive pre/prompt outcomes use exit 2; lifecycle does not. Post-result JSON and actual host withholding are distinct claims.",
++      "response_fixture_paths": [
++        "tests/test_kimi_adapter.py",
++        "tests/test_bounded_cli_hook_native_consistency.py",
++        "tests/test_registered_auxiliary_response_fixtures.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "grok",
++      "aliases": [
++        "grok",
++        "grok-build",
++        "grok-build-cli",
++        "xai-grok"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/grok.py",
++        "src/codex_plugin_scanner/guard/adapters/grok_config.py",
++        "src/codex_plugin_scanner/guard/adapters/grok_hooks.py"
++      ],
++      "generated_launcher": "~/.grok/hooks/hol-guard-pretooluse.json plus observe-hook JSON and managed_config.toml compatibility hooks; bounded CLI bridge",
++      "managed_events": [
++        "PreToolUse",
++        "UserPromptSubmit",
++        "SubagentStart",
++        "SessionStart"
++      ],
++      "registration_detail": "PreToolUse catch-all deliberately omits matcher; OBSERVE_HOOK_EVENTS contains the other three",
++      "claim_limits": "Observe events are not enforcement. Additional normalized PostToolUse/SessionEnd/SubagentStop/PermissionDenied support is not an installed managed post hook.",
++      "response_fixture_paths": [
++        "tests/test_grok_adapter.py",
++        "tests/test_bounded_cli_hook_daemon.py",
++        "tests/test_registered_auxiliary_response_fixtures.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "hermes",
++      "aliases": [
++        "hermes"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/hermes.py",
++        "src/codex_plugin_scanner/guard/adapters/hermes_runtime_hooks.py"
++      ],
++      "generated_launcher": "Managed pretool-hook.json and MCP overlay plus Hermes config.yaml hooks.pre_tool_call; bounded CLI bridge and launch shim",
++      "managed_events": [
++        "pre_tool_call"
++      ],
++      "registration_detail": "Runtime YAML hook registration and approval command checked separately from generated managed descriptor",
++      "claim_limits": "Pre-tool only in this native inventory; absent runtime hook is explicitly launch-review-only. No managed post-hook claim.",
++      "response_fixture_paths": [
++        "tests/test_native_runtime_delivery_contract.py",
++        "tests/test_bounded_cli_hook_native_consistency.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "openclaw",
++      "aliases": [
++        "openclaw"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/openclaw.py",
++        "src/codex_plugin_scanner/guard/adapters/openclaw_config.py",
++        "src/codex_plugin_scanner/guard/adapters/openclaw_support.py"
++      ],
++      "generated_launcher": "Managed OpenClaw overlay.json, pretool-hook.json, manifest and Guard launch shim",
++      "managed_events": [
++        "pre-tool descriptor"
++      ],
++      "registration_detail": "Descriptor + launch overlay are generated; actual gateway activation is a separate witness",
++      "claim_limits": "Do not equate generated manifest or detection with a successfully activated host callback; no managed post hook.",
++      "response_fixture_paths": [
++        "tests/test_bounded_cli_hook_native_consistency.py",
++        "tests/test_guard_native_qualification_corpus.py"
++      ],
++      "event_class": "generated_pretool_descriptor"
++    },
++    {
++      "harness": "opencode",
++      "aliases": [
++        "opencode"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/opencode.py",
++        "src/codex_plugin_scanner/guard/adapters/opencode_pretool.py"
++      ],
++      "generated_launcher": "Managed and global ~/.config/opencode/plugins TypeScript pretool plugin; managed config/MCP proxy and shim",
++      "managed_events": [
++        "tool.execute.before"
++      ],
++      "registration_detail": "Plugin executes exact generated Guard argv through bounded CLI; runtime may be Bun or Node",
++      "claim_limits": "Native pre-tool plugin path; no managed PostToolUse output-mediation registration in this source.",
++      "response_fixture_paths": [
++        "tests/test_guard_phase04_harness_contracts.py",
++        "tests/test_guard_native_qualification_corpus.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "pi",
++      "aliases": [
++        "pi",
++        "pi-agent",
++        "pi-coding-agent"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/pi.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_cli_runtime_source.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_content_source.py"
++      ],
++      "generated_launcher": "Managed extension TypeScript enabled in Pi settings plus launch shim",
++      "managed_events": [
++        "input",
++        "tool_call",
++        "tool_result",
++        "message_end"
++      ],
++      "registration_detail": "input->UserPromptSubmit; tool_call->PreToolUse; tool_result->PostToolUse; message_end applies retained blocked-tool-result replacement",
++      "claim_limits": "Extension callbacks are not standalone native hook stdout/exit. Post-result replacement requires exact tool identity/source reference and actual extension witness.",
++      "response_fixture_paths": [
++        "tests/test_pi_extension_response_contract.py"
++      ],
++      "event_class": "extension_callback"
++    },
++    {
++      "harness": "omp",
++      "aliases": [
++        "omp",
++        "oh-my-pi"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/pi.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_cli_runtime_source.py",
++        "src/codex_plugin_scanner/guard/adapters/pi_extension_content_source.py"
++      ],
++      "generated_launcher": "OMP settings and managed extension generated by shared Pi-family adapter",
++      "managed_events": [
++        "input",
++        "tool_call",
++        "tool_result",
++        "message_end"
++      ],
++      "registration_detail": "Same callback family as Pi with distinct harness/settings ownership",
++      "claim_limits": "Shared generator does not make a Pi execution an OMP installed execution; carry separate harness identity.",
++      "response_fixture_paths": [
++        "tests/test_pi_extension_response_contract.py"
++      ],
++      "event_class": "extension_callback"
++    },
++    {
++      "harness": "zcode",
++      "aliases": [
++        "zcode",
++        "zai",
++        "z-code",
++        "zai-zcode"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/zcode.py",
++        "src/codex_plugin_scanner/guard/adapters/zcode_config.py",
++        "src/codex_plugin_scanner/guard/adapters/zcode_hooks.py"
++      ],
++      "generated_launcher": "ZCode config hooks.events; bounded CLI command with managed shell marker; launch shim",
++      "managed_events": [
++        "PreToolUse",
++        "UserPromptSubmit"
++      ],
++      "registration_detail": "18 PreToolUse matchers plus catch-all UserPromptSubmit; normalizer has extra events not installed",
++      "claim_limits": "No managed PostToolUse. Existing registered runner explicitly refuses Windows shell-comment command semantics; that limitation is not silently waived.",
++      "response_fixture_paths": [
++        "tests/test_native_slo_registered_surfaces.py",
++        "tests/test_bounded_cli_hook_native_consistency.py",
++        "tests/test_registered_auxiliary_response_fixtures.py"
++      ],
++      "event_class": "generated_hook"
++    },
++    {
++      "harness": "paseo",
++      "aliases": [
++        "paseo"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/paseo.py",
++        "src/codex_plugin_scanner/guard/adapters/paseo_install.py",
++        "src/codex_plugin_scanner/guard/adapters/paseo_config.py"
++      ],
++      "generated_launcher": "Delegated supported native-provider installation and proof receipt plus launch shim",
++      "managed_events": [
++        "provider-owned events"
++      ],
++      "registration_detail": "preflight_native then install_native for detected supported providers",
++      "claim_limits": "No direct Paseo hook identity in frozen native corpus. Current provider installation is real source behavior, but receipt labels runtime verification not performed; inherited provider events must retain provider identity.",
++      "response_fixture_paths": [
++        "tests/test_guard_harness_contracts.py"
++      ],
++      "event_class": "delegated_provider_not_direct_native_hook"
++    },
++    {
++      "harness": "gemini",
++      "aliases": [
++        "gemini"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/gemini.py",
++        "src/codex_plugin_scanner/guard/adapters/base.py"
++      ],
++      "generated_launcher": "Detect Gemini settings/extensions/hooks/skills/MCP; base launch/preflight behavior",
++      "managed_events": [],
++      "registration_detail": "External hooks may be discovered but adapter does not install a native Guard hook",
++      "claim_limits": "Discovery/preflight only for this native-hook inventory; no managed enforcement claim.",
++      "response_fixture_paths": [
++        "tests/test_guard_phase04_harness_contracts.py"
++      ],
++      "event_class": "discovery_preflight_only"
++    },
++    {
++      "harness": "antigravity",
++      "aliases": [
++        "antigravity"
++      ],
++      "source_paths": [
++        "src/codex_plugin_scanner/guard/adapters/antigravity.py",
++        "src/codex_plugin_scanner/guard/adapters/base.py"
++      ],
++      "generated_launcher": "Discovery/preflight and base adapter launch behavior",
++      "managed_events": [],
++      "registration_detail": "No Guard native hook installer in this adapter",
++      "claim_limits": "Preflight only; do not infer installed native enforcement.",
++      "response_fixture_paths": [
++        "tests/test_guard_harness_contracts.py"
++      ],
++      "event_class": "discovery_preflight_only"
++    }
++  ],
++  "scope": "Registration/event and existing response-fixture map; source controls do not establish actual host activation or installed native evaluation."
++}
+diff --git a/tests/test_claude_launcher_conformance_binding.py b/tests/test_claude_launcher_conformance_binding.py
+index 9f675b57f..5a1bf0322 100644
+--- a/tests/test_claude_launcher_conformance_binding.py
++++ b/tests/test_claude_launcher_conformance_binding.py
+@@ -22,7 +22,7 @@ def evidence() -> Evidence:
+         "historical_generator": (root / conformance.HISTORICAL_GENERATOR).read_bytes(),
+         "sources": {
+             name: (root / "src/codex_plugin_scanner/guard" / name).read_bytes()
+-            for name in conformance.MODULES | {conformance.MARKER}
++            for name in conformance.MODULES | {conformance.MARKER} | conformance.READER_PROVIDERS.keys()
+         },
+     }
+     return binding, inputs
+@@ -36,6 +36,9 @@ def test_current_bridge_binding_preserves_historical_auth_authority(evidence: Ev
+     assert result["bridge_modules"][conformance.BRIDGE] != history["bridge_modules"][conformance.BRIDGE]
+     assert result["historical_auth_provenance"]["historical_bridge_executed"] is False
+     assert result["installed_artifact"] is result["qualification_complete"] is False
++    assert result["bridge_modules"][conformance.AUTH] != history["bridge_modules"][conformance.AUTH]
++    assert result["historical_auth_provenance"]["module_sha256"] == history["bridge_modules"][conformance.AUTH]
++    assert result["reviewed_windows_reader_delta"]["providers"] == conformance.READER_PROVIDERS
+ 
+ 
+ @pytest.mark.parametrize(
+@@ -123,3 +126,53 @@ def test_repinning_marker_source_cannot_retain_the_original_current_source_ident
+     binding["marker_source"]["sha256"] = hashlib.sha256(inputs["sources"][name]).hexdigest()
+     with pytest.raises(ValueError, match="current_marker_binding_changed"):
+         conformance.validate_current_conformance(binding, **inputs)
++
++
++@pytest.mark.parametrize("name", sorted(conformance.READER_PROVIDERS))
++@pytest.mark.parametrize("repin", [False, True])
++def test_windows_reader_provider_drift_cannot_be_relabelled(evidence: Evidence, name: str, repin: bool) -> None:
++    binding, inputs = evidence
++    inputs["sources"][name] += b"\n# unreviewed reader edit\n"
++    if repin:
++        binding["reviewed_windows_reader_delta"]["providers"][name] = hashlib.sha256(
++            inputs["sources"][name]
++        ).hexdigest()
++    reason = "current_reader_provider_binding_changed" if repin else "current_reader_provider_source_drift"
++    with pytest.raises(ValueError, match=reason):
++        conformance.validate_current_conformance(binding, **inputs)
++
++
++@pytest.mark.parametrize(
++    "case", ["missing", "unexpected", "wrong_insertion", "extra_auth_edit", "changed_branch", "relocated_branch"]
++)
++def test_reader_delta_admits_only_the_reviewed_insertion(evidence: Evidence, case: str) -> None:
++    binding, inputs = evidence
++    reader = binding["reviewed_windows_reader_delta"]
++    if case == "missing":
++        del reader["providers"]["windows_paths.py"]
++        reason = "current_reader_provider_set_invalid"
++    elif case == "unexpected":
++        reader["providers"]["unreviewed.py"] = "0" * 64
++        reason = "current_reader_provider_set_invalid"
++    elif case == "wrong_insertion":
++        reader["added"] += "# extra edit\n"
++        reason = "reviewed_windows_reader_delta_invalid"
++    else:
++        auth = inputs["sources"][conformance.AUTH]
++        if case == "extra_auth_edit":
++            auth = auth.replace(b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 5", b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 6")
++        elif case == "relocated_branch":
++            anchor = b'        return path.read_text(encoding="utf-8").strip()\n'
++            auth = auth.replace(conformance.READER_ADDITION + anchor, anchor + conformance.READER_ADDITION)
++            assert (
++                hashlib.sha256(auth.replace(conformance.READER_ADDITION, b"", 1)).hexdigest()
++                == reader["historical_sha256"]
++            )
++        else:
++            auth = auth.replace(b'if os.name == "nt":', b'if os.name != "nt":')
++        assert auth != inputs["sources"][conformance.AUTH]
++        inputs["sources"][conformance.AUTH] = auth
++        reader["current_sha256"] = binding["bridge_modules"][conformance.AUTH] = hashlib.sha256(auth).hexdigest()
++        reason = "reviewed_windows_reader_delta_mismatch"
++    with pytest.raises(ValueError, match=reason):
++        conformance.validate_current_conformance(binding, **inputs)
+diff --git a/tests/test_cline_nonblocking_response_fixtures.py b/tests/test_cline_nonblocking_response_fixtures.py
+new file mode 100644
+index 000000000..489b468b3
+--- /dev/null
++++ b/tests/test_cline_nonblocking_response_fixtures.py
+@@ -0,0 +1,120 @@
++"""Current generated native-hook JSON/exit fixtures; the child policy is modeled."""
++
++from __future__ import annotations
++
++import json
++import subprocess
++import sys
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from codex_plugin_scanner.guard.adapters import cline_hooks
++from codex_plugin_scanner.guard.adapters.base import HarnessContext
++
++_FIXTURE = Path(__file__).parent / "fixtures/guard-hook-responses/current-cline-native.v1.json"
++_CONTRACT: dict[str, Any] = json.loads(_FIXTURE.read_text(encoding="utf-8"))
++_EVENTS = tuple(_CONTRACT["events"])
++_CONDITIONS = tuple(_CONTRACT["conditions"])
++
++
++def _context(tmp_path: Path, condition: str) -> HarnessContext:
++    home = tmp_path / "private home"
++    workspace = home / "workspace"
++    guard_home = home / ".hol-guard"
++    workspace.mkdir(parents=True)
++    state = guard_home / "managed/cline/adapter-state.json"
++    state.parent.mkdir(parents=True)
++    if condition != "missing_transport":
++        state.write_text(
++            json.dumps({"active_transport": "plugin" if condition == "inactive_transport" else "hooks"}),
++            encoding="utf-8",
++        )
++    return HarnessContext(home_dir=home, workspace_dir=workspace, guard_home=guard_home)
++
++
++def _input(event: str, condition: str) -> bytes:
++    if condition == "malformed_input":
++        return b"{unclosed"
++    if condition == "nonobject_input":
++        return b"[]"
++    if condition == "overdepth_input":
++        return b'{"nested":' * 50 + b"0" + b"}" * 50
++    if condition == "oversize_input":
++        return b" " * (256 * 1024 + 1)
++    payload = {
++        "hookName": event,
++        "hook_event_name": event,
++        "tool_call": {"name": "run_command", "input": {"command": "rm -rf /"}},
++    }
++    return json.dumps(payload).encode("utf-8")
++
++
++def _guard(tmp_path: Path, condition: str) -> tuple[list[str], Path]:
++    marker = tmp_path / "modeled-child-input.json"
++    if condition == "child_unavailable":
++        return [str(tmp_path / "missing-executable")], marker
++    child = tmp_path / "modeled_guard.py"
++    output = {
++        "completed_allow": '{"decision":"allow"}',
++        "child_invalid_json": "not JSON",
++    }.get(condition, '{"decision":"deny","reason":"Synthetic completed refusal."}')
++    child.write_text(
++        "import pathlib, sys\n"
++        f"pathlib.Path({str(marker)!r}).write_bytes(sys.stdin.buffer.read())\n"
++        f"sys.stdout.write({output!r})\n",
++        encoding="utf-8",
++    )
++    return [sys.executable, "-I", "-s", str(child)], marker
++
++
++@pytest.mark.parametrize("event", _EVENTS)
++@pytest.mark.parametrize("condition", _CONDITIONS)
++def test_generated_native_cline_json_and_exit_are_frozen(tmp_path: Path, event: str, condition: str) -> None:
++    context = _context(tmp_path, condition)
++    guard, marker = _guard(tmp_path, condition)
++    worker = tmp_path / "generated-worker.py"
++    worker.write_text(cline_hooks._hook_source(context, event_name=event, guard_cli=guard), encoding="utf-8")
++    raw = _input(event, condition)
++    result = subprocess.run(
++        [sys.executable, "-I", "-s", str(worker)],
++        input=raw,
++        capture_output=True,
++        timeout=15,
++        check=False,
++    )
++    row = _CONTRACT["conditions"][condition]
++    expected = row["blocking" if event == "PreToolUse" else "nonblocking"]
++    # Full response shape matters: absent errorMessage and an empty errorMessage
++    # are different current outputs. Compare stdout bytes as well as its JSON.
++    assert json.loads(result.stdout) == expected
++    assert result.stdout == (json.dumps(expected, separators=(",", ":")) + "\n").encode()
++    assert result.stderr == b""
++    assert result.returncode == _CONTRACT["exit_code"] == 0
++    assert marker.exists() is row["child_invoked"]
++    if marker.exists():
++        assert json.loads(marker.read_bytes()) == json.loads(raw)
++    proof = context.guard_home / "managed/cline/proofs" / f"native-{event.lower()}.json"
++    assert proof.exists() is row["completion_proof"]
++    if proof.exists():
++        captured = json.loads(proof.read_text())
++        assert captured["event"] == event
++        assert captured["source"] == "cline"
++        assert captured["outcome"] == (
++            "observed" if event != "PreToolUse" else "allowed" if condition == "completed_allow" else "blocked"
++        )
++
++
++def test_cline_registered_events_cannot_escape_response_fixture_roster() -> None:
++    # The source generator and actual installer iterate the same closed set.
++    # A new event needs an explicit response/exit fixture, including observation
++    # events; it must not inherit PreToolUse cancellation by assumption.
++    assert _EVENTS == cline_hooks._EVENTS
++    assert _CONTRACT["nonblocking_events"] == list(_EVENTS[1:])
++    assert _CONTRACT["native_policy_boundary"] == "modeled_child_not_native_execution"
++
++
++def test_size_constants_cannot_silently_change_frozen_input_boundaries() -> None:
++    assert cline_hooks._MAX_BYTES == _CONTRACT["input_bytes_limit"] == 256 * 1024
++    assert cline_hooks._MAX_DEPTH == _CONTRACT["input_depth_limit"] == 48
+diff --git a/tests/test_guard_daemon_lazy_exports.py b/tests/test_guard_daemon_lazy_exports.py
+new file mode 100644
+index 000000000..68c51b7f5
+--- /dev/null
++++ b/tests/test_guard_daemon_lazy_exports.py
+@@ -0,0 +1,208 @@
++"""Fresh-process controls for the public daemon import boundary."""
++
++from __future__ import annotations
++
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++
++SOURCE = Path(__file__).resolve().parents[1] / "src"
++
++
++def run_fresh(code: str) -> None:
++    result = subprocess.run(
++        [sys.executable, "-I", "-B", "-c", "import sys; sys.path.insert(0, sys.argv[1]); " + code, str(SOURCE)],
++        capture_output=True,
++        text=True,
++        timeout=30,
++        check=False,
++    )
++    assert result.returncode == 0, result.stdout + result.stderr
++
++
++@pytest.mark.parametrize(
++    "module",
++    [
++        "codex_plugin_scanner.guard.daemon",
++        "codex_plugin_scanner.guard.daemon.discovery",
++        "codex_plugin_scanner.guard.adapters.claude_daemon_state",
++        "codex_plugin_scanner.guard.adapters.claude_daemon_hook_bridge",
++    ],
++)
++def test_lightweight_import_does_not_attempt_manager_or_mdm(module: str) -> None:
++    run_fresh(
++        f"""
++import importlib
++class RefuseHeavyImports:
++    def find_spec(self, fullname, path=None, target=None):
++        if (fullname == 'codex_plugin_scanner.guard.daemon.manager'
++                or fullname.startswith('codex_plugin_scanner.guard.mdm')):
++            raise AssertionError('unneeded manager or MDM import: ' + fullname)
++sys.meta_path.insert(0, RefuseHeavyImports())
++importlib.import_module({module!r})
++assert 'codex_plugin_scanner.guard.daemon.manager' not in sys.modules
++assert 'codex_plugin_scanner.guard.mdm' not in sys.modules
++"""
++    )
++
++
++def test_all_public_exports_keep_real_identities_and_discoverability() -> None:
++    run_fresh(
++        """
++import importlib, pickle
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++names = (
++    'ensure_guard_daemon', 'guard_daemon_url_for_home', 'load_guard_daemon_auth_token',
++    'load_guard_daemon_url', 'recover_guard_daemon_after_hook_failure',
++    'repair_approval_center_locator', 'schedule_guard_daemon_recovery',
++)
++assert len(package.__all__) == 11 and set(names) <= set(package.__all__) <= set(dir(package))
++assert all(name not in vars(package) for name in names)
++from codex_plugin_scanner.guard.daemon import ensure_guard_daemon
++manager = importlib.import_module('codex_plugin_scanner.guard.daemon.manager')
++assert ensure_guard_daemon is manager.ensure_guard_daemon
++for name in names:
++    value = getattr(package, name)
++    assert value is getattr(manager, name) is vars(package)[name]
++    assert pickle.loads(pickle.dumps(value)) is value
++namespace = {}
++exec('from codex_plugin_scanner.guard.daemon import *', namespace)
++assert set(namespace) - {'__builtins__'} == set(package.__all__)
++for name in package.__all__:
++    assert namespace[name] is getattr(package, name)
++try:
++    package.unknown_export
++except AttributeError as error:
++    assert error.args == ('unknown_export',)
++else:
++    raise AssertionError('unknown name accepted')
++"""
++    )
++
++
++def test_reload_rebinds_current_manager_function_and_clears_only_eager_exports() -> None:
++    run_fresh(
++        """
++import importlib, pickle
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++original = package.ensure_guard_daemon
++manager = importlib.import_module('codex_plugin_scanner.guard.daemon.manager')
++lifecycle = importlib.import_module('codex_plugin_scanner.guard.daemon.manager_lifecycle')
++importlib.reload(lifecycle)
++importlib.reload(manager)
++assert manager.ensure_guard_daemon is not original
++assert package.ensure_guard_daemon is original
++sentinel = object()
++package.custom_attribute = sentinel
++importlib.reload(package)
++assert package.custom_attribute is sentinel
++assert 'ensure_guard_daemon' not in vars(package)
++assert package.ensure_guard_daemon is manager.ensure_guard_daemon
++assert pickle.loads(pickle.dumps(package.ensure_guard_daemon)) is manager.ensure_guard_daemon
++"""
++    )
++
++
++def test_explicit_package_monkeypatch_survives_lookup_until_reload() -> None:
++    run_fresh(
++        """
++import importlib
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++sentinel = lambda: None
++package.ensure_guard_daemon = sentinel
++from codex_plugin_scanner.guard.daemon import ensure_guard_daemon
++assert ensure_guard_daemon is sentinel
++assert 'codex_plugin_scanner.guard.daemon.manager' not in sys.modules
++importlib.reload(package)
++manager = importlib.import_module('codex_plugin_scanner.guard.daemon.manager')
++assert package.ensure_guard_daemon is manager.ensure_guard_daemon
++package.ensure_guard_daemon = sentinel
++assert package.ensure_guard_daemon is sentinel
++importlib.reload(package)
++assert package.ensure_guard_daemon is manager.ensure_guard_daemon
++"""
++    )
++
++
++def test_manager_state_exists_before_implementation_import_and_is_shared() -> None:
++    run_fresh(
++        """
++import importlib
++seen = []
++class CheckManagerOwnership:
++    def find_spec(self, fullname, path=None, target=None):
++        if fullname.startswith('codex_plugin_scanner.guard.daemon.manager_'):
++            manager = sys.modules['codex_plugin_scanner.guard.daemon.manager']
++            assert isinstance(manager._RECOVERY_LOCKS, dict)
++            assert isinstance(manager._STATE_WRITE_LOCKS, dict)
++            names = ('_RECOVERY_LOCKS_GUARD', '_STATE_WRITE_LOCKS_GUARD',
++                     '_EPHEMERAL_REAP_SCHEDULE_LOCK', '_DUPLICATE_RETIRE_SCHEDULE_LOCK')
++            for name in names:
++                lock = getattr(manager, name)
++                assert lock.acquire(blocking=False)
++                lock.release()
++            seen.append(fullname)
++sys.meta_path.insert(0, CheckManagerOwnership())
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++function = package.ensure_guard_daemon
++manager = sys.modules['codex_plugin_scanner.guard.daemon.manager']
++assert len(set(seen)) == 13
++for name in seen:
++    assert sys.modules[name]._manager is manager
++assert function is manager.ensure_guard_daemon
++"""
++    )
++
++
++def test_concurrent_first_access_uses_one_manager_function() -> None:
++    run_fresh(
++        """
++import importlib, threading
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++barrier = threading.Barrier(8)
++values, errors = [], []
++def read():
++    try:
++        barrier.wait(timeout=5)
++        values.append(package.ensure_guard_daemon)
++    except BaseException as error:
++        errors.append(error)
++threads = [threading.Thread(target=read) for _ in range(8)]
++for thread in threads:
++    thread.start()
++for thread in threads:
++    thread.join(timeout=10)
++assert not errors and len(values) == 8 and all(not thread.is_alive() for thread in threads)
++assert all(value is values[0] for value in values)
++assert values[0] is sys.modules['codex_plugin_scanner.guard.daemon.manager'].ensure_guard_daemon
++"""
++    )
++
++
++def test_manager_import_failure_is_delayed_unchanged_and_retryable() -> None:
++    run_fresh(
++        """
++import importlib
++error = ImportError('controlled manager dependency failure')
++class RefuseManager:
++    def find_spec(self, fullname, path=None, target=None):
++        if fullname == 'codex_plugin_scanner.guard.daemon.manager':
++            raise error
++refusal = RefuseManager()
++sys.meta_path.insert(0, refusal)
++package = importlib.import_module('codex_plugin_scanner.guard.daemon')
++try:
++    package.ensure_guard_daemon
++except ImportError as caught:
++    assert caught is error
++else:
++    raise AssertionError('manager failure hidden')
++assert 'ensure_guard_daemon' not in vars(package)
++assert 'codex_plugin_scanner.guard.daemon.manager' not in sys.modules
++sys.meta_path.remove(refusal)
++manager = importlib.import_module('codex_plugin_scanner.guard.daemon.manager')
++assert package.ensure_guard_daemon is manager.ensure_guard_daemon
++"""
++    )
+diff --git a/tests/test_hook_registration_response_roster.py b/tests/test_hook_registration_response_roster.py
+new file mode 100644
+index 000000000..2de3b1e1b
+--- /dev/null
++++ b/tests/test_hook_registration_response_roster.py
+@@ -0,0 +1,131 @@
++"""Keep current generated event sets connected to their response fixtures."""
++
++from __future__ import annotations
++
++import ast
++import json
++import re
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from codex_plugin_scanner.guard.adapters import cline_hooks, cursor_hook_config, grok_config
++from codex_plugin_scanner.guard.adapters.base import HarnessContext
++from codex_plugin_scanner.guard.adapters.claude_code import ClaudeCodeHarnessAdapter
++from codex_plugin_scanner.guard.adapters.codex import CodexHarnessAdapter
++from codex_plugin_scanner.guard.adapters.contracts import HARNESS_CONTRACTS
++from codex_plugin_scanner.guard.adapters.copilot import CopilotHarnessAdapter
++from codex_plugin_scanner.guard.adapters.kimi import KimiHarnessAdapter
++from codex_plugin_scanner.guard.adapters.pi_extension_source import managed_extension_source
++from codex_plugin_scanner.guard.adapters.zcode import ZCodeHarnessAdapter
++from codex_plugin_scanner.guard.config import tomllib
++
++_ROOT = Path(__file__).resolve().parents[1]
++_ROSTER: dict[str, Any] = json.loads(
++    (_ROOT / "tests/fixtures/guard-hook-responses/registration-roster.v1.json").read_text(encoding="utf-8")
++)
++_ROWS = {row["harness"]: row for row in _ROSTER["surfaces"]}
++
++
++def _context(tmp_path: Path) -> HarnessContext:
++    home = tmp_path / "home"
++    workspace = home / "workspace"
++    workspace.mkdir(parents=True)
++    return HarnessContext(home_dir=home, workspace_dir=workspace, guard_home=home / ".hol-guard")
++
++
++def _expected(harness: str) -> set[str]:
++    return set(_ROWS[harness]["managed_events"])
++
++
++def _keys(value: object) -> set[str]:
++    assert isinstance(value, dict)
++    assert all(isinstance(key, str) for key in value)
++    return set(value)
++
++
++def test_every_canonical_harness_and_alias_has_an_explicit_surface_classification() -> None:
++    assert set(_ROWS) == {contract.harness for contract in HARNESS_CONTRACTS}
++    for contract in HARNESS_CONTRACTS:
++        row = _ROWS[contract.harness]
++        assert row["aliases"] == list(contract.install_aliases)
++        assert row["claim_limits"]
++        assert row["response_fixture_paths"]
++        for path in row["response_fixture_paths"]:
++            body = (_ROOT / path).read_text(encoding="utf-8")
++            assert any(
++                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
++                for node in ast.walk(ast.parse(body))
++            ), path
++    assert _ROWS["gemini"]["managed_events"] == _ROWS["antigravity"]["managed_events"] == []
++    assert _ROWS["paseo"]["event_class"] == "delegated_provider_not_direct_native_hook"
++
++
++@pytest.mark.parametrize("harness", ("claude-code", "codex", "copilot"))
++def test_actual_priority_and_permission_installers_match_closed_event_roster(tmp_path: Path, harness: str) -> None:
++    context = _context(tmp_path)
++    if harness == "claude-code":
++        ClaudeCodeHarnessAdapter().install(context)
++        payload = json.loads((context.home_dir / ".claude/settings.json").read_text(encoding="utf-8"))
++    elif harness == "codex":
++        manifest = CodexHarnessAdapter().install(context)
++        payload = tomllib.loads(Path(str(manifest["managed_hook_config_path"])).read_text(encoding="utf-8"))
++    else:
++        CopilotHarnessAdapter().install(context)
++        assert context.workspace_dir is not None
++        payload = json.loads(
++            (context.workspace_dir / ".github/hooks/hol-guard-copilot.json").read_text(encoding="utf-8")
++        )
++    assert set(payload["hooks"]) == _expected(harness)
++
++
++def test_bounded_hook_builders_match_closed_event_roster() -> None:
++    kimi = tomllib.loads(KimiHarnessAdapter._build_managed_block("fixed fixture command"))
++    assert {entry["event"] for entry in kimi["hooks"]} == _expected("kimi")
++    grok = grok_config.build_pretool_hook_json("fixed fixture command")
++    observed = grok_config.build_observe_hook_json("fixed fixture command")
++    assert _keys(grok["hooks"]) | _keys(observed["hooks"]) == _expected("grok")
++    hooks: dict[str, object] = {}
++    ZCodeHarnessAdapter()._sync_managed_hook_groups(hooks, "fixed fixture command")
++    assert _keys(hooks["events"]) == _expected("zcode")
++    assert set(cline_hooks._EVENTS) == _expected("cline")
++    assert set(cursor_hook_config._MANAGED_HOOK_EVENTS) == _expected("cursor")
++    assert set(cursor_hook_config._OBSERVER_MANAGED_HOOK_EVENTS) == {"afterShellExecution", "afterMCPExecution"}
++
++
++@pytest.mark.parametrize("harness", ("pi", "omp"))
++def test_actual_extension_generator_matches_callback_roster(tmp_path: Path, harness: str) -> None:
++    source = managed_extension_source(
++        guard_home=tmp_path / "guard-home",
++        home_dir=tmp_path / "home",
++        settings_path=tmp_path / "settings.json",
++        harness=harness,
++        display_name=harness,
++    )
++    callbacks = re.findall(r'pi\.on\("([^"\n]+)"', source)
++    assert len(callbacks) == len(set(callbacks))
++    assert set(callbacks) == _expected(harness)
++
++
++def test_every_cline_generated_event_has_complete_response_and_exit_capture() -> None:
++    contract = json.loads(
++        (_ROOT / "tests/fixtures/guard-hook-responses/current-cline-native.v1.json").read_text(encoding="utf-8")
++    )
++    assert set(contract["events"]) == _expected("cline")
++    assert contract["exit_code"] == 0
++    for condition in contract["conditions"].values():
++        assert condition["nonblocking"]["cancel"] is False
++        assert type(condition["blocking"]["cancel"]) is bool
++
++
++def test_every_bounded_auxiliary_registration_has_response_and_exit_capture() -> None:
++    contract = json.loads(
++        (_ROOT / "tests/fixtures/guard-hook-responses/auxiliary-events.v1.json").read_text(encoding="utf-8")
++    )
++    for harness in ("copilot", "kimi", "grok", "zcode"):
++        captured = {case["event"] for case in contract["cases"] if case["harness"] == harness}
++        # Pre/post tools already have their own native delivery fixtures. The
++        # auxiliary events must not disappear behind that pre/post coverage.
++        existing_tools = {"PreToolUse", "PostToolUse", "preToolUse", "postToolUse"}
++        assert captured == _expected(harness) - existing_tools
+diff --git a/tests/test_kimi_adapter.py b/tests/test_kimi_adapter.py
+index 45307c71a..6651226d0 100644
+--- a/tests/test_kimi_adapter.py
++++ b/tests/test_kimi_adapter.py
+@@ -183,7 +183,34 @@ class TestKimiInstallUninstall:
+         assert "# END HOL GUARD MANAGED HOOKS" in text
+         assert 'event = "PreToolUse"' in text
+         assert 'event = "UserPromptSubmit"' in text
+-        assert "hol-guard" in text or "codex_plugin_scanner.cli" in text
++        # The checkout/interpreter path need not contain the project name.
++        # Check the current bounded launcher and its actual installed arguments.
++        parts = KimiHarnessAdapter._hook_command_parts(ctx)
++        assert parts[1:3] == ("-I", "-c")
++        assert "from codex_plugin_scanner.guard.adapters.bounded_cli_hook_bridge import main_from_argv" in parts[3]
++        command_config = json.loads(parts[4])
++        assert command_config["harness"] == "kimi"
++        assert command_config["guard_home"] == str(ctx.guard_home.resolve())
++        assert command_config["cli_args"] == [
++            "guard",
++            "hook",
++            "--guard-home",
++            str(ctx.guard_home),
++            "--harness",
++            "kimi",
++            "--home",
++            str(ctx.home_dir),
++        ]
++        hooks = tomllib.loads(text)["hooks"]
++        assert [hook["event"] for hook in hooks] == [
++            "PreToolUse",
++            "UserPromptSubmit",
++            "PostToolUse",
++            "SessionStart",
++            "Stop",
++        ]
++        assert {hook["command"] for hook in hooks} == {_shell_command(parts)}
++        assert {hook["timeout"] for hook in hooks} == {30}
+ 
+     def test_uninstall_removes_managed_hooks(self, tmp_path: Path) -> None:
+         ctx = _ctx(tmp_path)
+diff --git a/tests/test_native_codex_transport_identity.py b/tests/test_native_codex_transport_identity.py
+new file mode 100644
+index 000000000..782ddf35a
+--- /dev/null
++++ b/tests/test_native_codex_transport_identity.py
+@@ -0,0 +1,140 @@
++"""Original ingress and resume must forward the same semantic native input."""
++
++from __future__ import annotations
++
++import json
++import time
++from copy import deepcopy
++from pathlib import Path
++
++import pytest
++
++from codex_plugin_scanner.guard.adapters.codex_daemon_hook_bridge import _with_browser_wait_process
++from codex_plugin_scanner.guard.adapters.codex_daemon_hook_transport import _with_remaining_hint
++from codex_plugin_scanner.guard.daemon.codex_native_live_decision import _decode_hook_input
++from codex_plugin_scanner.guard.daemon.server_helpers_values import _runtime_hook_remaining_hint
++from codex_plugin_scanner.guard.native_hook_edge import _encode_hook_envelope
++
++from .test_native_codex_live_continuation import _complete, _fixture, _resolve, _Worker
++from .test_native_review_policy_binding import _bind_receipt
++
++
++def _envelope(payload: dict[str, object], root: Path) -> dict[str, object]:
++    encoded = _encode_hook_envelope(
++        payload=payload,
++        harness="codex",
++        event="PreToolUse",
++        guard_home=root / "guard",
++        home_dir=root,
++        cwd=root / "workspace",
++        source_ref_external_allowed=False,
++        deadline_budget_ms=2000,
++        snapshot={"generation": 1, "policy_digest": "a" * 64, "runtime_identity": "b" * 64},
++    )
++    assert encoded is not None
++    return json.loads(encoded)
++
++
++def _paths(hints: dict[str, object]) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
++    original: dict[str, object] = {
++        "hook_event_name": "PreToolUse",
++        "tool_name": "Bash",
++        "tool_input": {"command": "cat .env", "guard_remaining_ms": 17},
++        "tool_use_id": "installed-corpus-fixed-native-identity",
++        **hints,
++    }
++    bound = _with_browser_wait_process(json.dumps(original), wait_timeout_seconds=8)
++    retained = json.loads(bound)
++    transport = json.loads(_with_remaining_hint(bound, time.monotonic() + 2))
++    assert 1 <= transport["guard_remaining_ms"] <= 2000
++    assert retained == json.loads(bound) and original["tool_input"] == retained["tool_input"]
++    _runtime_hook_remaining_hint(transport)
++    assert "guard_remaining_ms" not in transport and "guard_remaining_seconds" not in transport
++    resumed = _decode_hook_input({"hook_input": bound})
++    assert resumed is not None
++    return retained, transport, resumed
++
++
++@pytest.mark.parametrize(
++    "hints",
++    (
++        {},
++        {"guard_remaining_ms": 4000},
++        {"guard_remaining_seconds": 4},
++        {"guard_remaining_ms": 4000, "guard_remaining_seconds": 4},
++    ),
++    ids=("no-original-hint", "original-ms", "original-seconds", "both-original-hints"),
++)
++def test_resume_preserves_original_ingress_native_input(tmp_path: Path, hints: dict[str, object]) -> None:
++    retained, ingress, resumed = _paths(hints)
++    # The original retained hint is distinct from the HTTP transport's new
++    # hint. Ingress already consumes both root aliases before native review.
++    assert all(retained[key] == value for key, value in hints.items())
++    assert (
++        ingress["tool_input"]
++        == resumed["tool_input"]
++        == {
++            "command": "cat .env",
++            "guard_remaining_ms": 17,
++        }
++    )
++    assert _envelope(resumed, tmp_path) == _envelope(ingress, tmp_path)
++
++
++def test_resume_does_not_discard_nested_or_other_native_identity_inputs(tmp_path: Path) -> None:
++    _, ingress, resumed = _paths({})
++    baseline = _envelope(ingress, tmp_path)
++    assert _envelope(resumed, tmp_path) == baseline
++    for name, value in (("guard_remaining_ms", 18), ("command", "cat other.env")):
++        changed = deepcopy(resumed)
++        arguments = changed["tool_input"]
++        assert isinstance(arguments, dict)
++        arguments[name] = value
++        assert _envelope(changed, tmp_path) != baseline
++    changed = deepcopy(resumed)
++    changed["tool_use_id"] = "different-original-correlation"
++    assert _envelope(changed, tmp_path) != baseline
++    assert _envelope(resumed, tmp_path / "different-home") != baseline
++
++
++@pytest.mark.parametrize("hint", ("guard_remaining_ms", "guard_remaining_seconds"))
++@pytest.mark.parametrize("changed", (False, True))
++def test_real_store_continuation_requires_same_ingress_input_after_transport_consumption(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, hint: str, changed: bool
++) -> None:
++    monkeypatch.setenv("HOL_GUARD_NATIVE", "auto")
++    retained, ingress, _ = _paths({hint: 4000 if hint.endswith("ms") else 4})
++    store, workspace, edge, _hook, row = _fixture(tmp_path, payload=ingress, proof=False)
++    _resolve(store, row)
++    worker = _Worker(store, edge)
++    original_native_call = worker._review_raw_hook_native
++    observed = []
++
++    def input_bound_native(**kwargs):
++        observed.append(deepcopy(kwargs["payload"]))
++        if kwargs["payload"] != ingress:
++            # Modeled native result, as in the existing continuation controls:
++            # changed committed raw input must not consume the real approval.
++            edge["receipt"]["request_digest"] = "e" * 64
++            _bind_receipt(edge)
++        return original_native_call(**kwargs)
++
++    monkeypatch.setattr(worker, "_review_raw_hook_native", input_bound_native)
++    if changed:
++        arguments = retained["tool_input"]
++        assert isinstance(arguments, dict)
++        arguments["guard_remaining_ms"] = 18
++    result = _complete(store, workspace, edge, retained, row, worker=worker)
++    assert result["completed"] is (not changed)
++    assert worker.calls == 1 and len(observed) == 1
++    assert hint not in observed[0]
++    assert observed[0]["tool_input"]["guard_remaining_ms"] == (18 if changed else 17)
++    request_id = row["request_id"]
++    assert isinstance(request_id, str)
++    resume = store.get_request_resume(request_id)
++    assert resume is not None
++    if changed:
++        assert resume["status"] != "sent"
++    else:
++        assert result["action"] == "allow" and result["replayed"] is False
++        assert resume["status"] == "sent"
+diff --git a/tests/test_registered_auxiliary_response_fixtures.py b/tests/test_registered_auxiliary_response_fixtures.py
+new file mode 100644
+index 000000000..bbc1a9a06
+--- /dev/null
++++ b/tests/test_registered_auxiliary_response_fixtures.py
+@@ -0,0 +1,92 @@
++"""Freeze current auxiliary event responses, with daemon/process results modeled."""
++
++from __future__ import annotations
++
++import io
++import json
++from contextlib import redirect_stdout
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from codex_plugin_scanner.guard.adapters import bounded_cli_hook_bridge as bridge
++from codex_plugin_scanner.guard.adapters import bounded_cli_hook_daemon as daemon
++from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
++
++from .bounded_cli_hook_test_support import config as bridge_config
++
++_FIXTURE = Path(__file__).parent / "fixtures/guard-hook-responses/auxiliary-events.v1.json"
++_CONTRACT: dict[str, Any] = json.loads(_FIXTURE.read_text(encoding="utf-8"))
++_CASES = tuple(_CONTRACT["cases"])
++
++
++@pytest.mark.parametrize("case", _CASES, ids=lambda case: str(case["id"]))
++def test_current_auxiliary_event_response_and_exit_are_frozen(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: dict[str, Any]
++) -> None:
++    config = bridge_config(tmp_path, harness=case["harness"])
++    guard_home = Path(str(config["guard_home"]))
++    if case["posture"] == "watch":
++        (guard_home / "config.toml").write_text('protection_posture = "watch"\nmode = "observe"\n', encoding="utf-8")
++    raw = json.dumps(
++        {
++            "hook_event_name": case["event"],
++            "tool_name": "Bash",
++            "tool_input": {"command": "rm -rf /"},
++        },
++        separators=(",", ":"),
++    )
++    # This is never executed. An unsafe command keeps emergency-safe fallback
++    # out of the permission/lifecycle response oracle.
++    calls: list[str] = []
++
++    def no_daemon(**kwargs: object) -> None:
++        del kwargs
++        calls.append("daemon")
++
++    def modeled_child(*args: object, **kwargs: object) -> BoundedHookProcessResult:
++        del args
++        assert kwargs["input_text"] == raw
++        calls.append("child")
++        if case["condition"] == "timeout":
++            return BoundedHookProcessResult(None, "", False, True)
++        if case["condition"] == "malformed_child":
++            return BoundedHookProcessResult(0, "not-json\n", False, False)
++        assert case["condition"] == "output_limit"
++        return BoundedHookProcessResult(0, "", True, False)
++
++    monkeypatch.setattr(daemon, "try_daemon_hook", no_daemon)
++    monkeypatch.setattr(bridge, "run_isolated_hook_process", modeled_child)
++    if case["condition"] == "input_limit":
++        # Exercise the real bounded reader and event recovery from its prefix.
++        raw += " " * (1_000_001 - len(raw))
++    monkeypatch.setattr(bridge.sys, "stdin", io.TextIOWrapper(io.BytesIO(raw.encode("utf-8"))))
++    output = io.StringIO()
++    with redirect_stdout(output):
++        returncode = bridge.main_from_argv([json.dumps(config)])
++    expected = case["response"]
++    assert json.loads(output.getvalue()) == expected
++    assert output.getvalue() == json.dumps(expected, separators=(",", ":")) + "\n"
++    assert returncode == case["exit_code"] == 0
++    assert calls == ([] if case["condition"] == "input_limit" else ["daemon", "child"])
++
++
++def test_auxiliary_capture_matrix_is_closed_over_current_registered_events() -> None:
++    expected = {
++        "copilot": {"userPromptSubmitted", "permissionRequest", "permissionRequestV2"},
++        "kimi": {"UserPromptSubmit", "SessionStart", "Stop"},
++        "grok": {"UserPromptSubmit", "SubagentStart", "SessionStart"},
++        "zcode": {"UserPromptSubmit"},
++    }
++    observed = {(case["harness"], case["event"], case["posture"], case["condition"]) for case in _CASES}
++    assert len(observed) == len(_CASES)
++    assert observed == {
++        (harness, event, posture, condition)
++        for harness, events in expected.items()
++        for event in events
++        for posture in ("protected_default", "watch")
++        for condition in ("timeout", "malformed_child", "input_limit", "output_limit")
++    }
++    assert bridge._MAX_HOOK_INPUT_BYTES == _CONTRACT["input_bytes_limit"] == 1_000_000
++    assert _CONTRACT["native_policy_boundary"] == "modeled_results_not_native_execution"

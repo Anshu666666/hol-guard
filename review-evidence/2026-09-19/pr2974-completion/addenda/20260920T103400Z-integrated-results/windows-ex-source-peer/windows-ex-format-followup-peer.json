@@ -1,0 +1,102 @@
+{
+  "schema": "windows-ex-format-followup-peer.v1",
+  "semantic_peer_tree": "6dcc0d3d63274de66f91e4c51eea3430a0bfd0f8",
+  "formatter_tree": "4c8397aa37232faf568009df7e1af3558f226772",
+  "result": {
+    "bytes": 6359,
+    "sha256": "14b33839a408f9e8305ca5d93a464884f0a319e31cdf2389b751a9a5184df404",
+    "git_blob": "f10b6989963491fe6ecfac7ecbb15182b41f8b1c"
+  },
+  "final_test": {
+    "path": "tests/test_windows_atomic_rename_probe.py",
+    "bytes": 11714,
+    "sha256": "519b8f250204e39e77180b1a837737cdf788a63904766763a56ea39fb4b396d0",
+    "git_blob": "fe52a6ee1b6131f4bde504f923698cf58aa3bef3"
+  },
+  "verdict": "Clear formatting-only follow-up to the earlier semantic peer.",
+  "observed": [
+    "Read the complete formatter result, diff and final test body. The helper, child and two-line typing correction retain their reviewed blobs.",
+    "The final test diff only lays out existing expressions, dictionaries, function arguments and parameter declarations. All 16 declared control cases and original assertions remain.",
+    "The driver diff removes one blank line. Its operational behavior is outside this source-only peer; no driver acceptance is added here.",
+    "The retained producer reports all five before/after ASTs equal under Python 3.13.13, Ruff 0.15.17 format and lint exit zero, no semantic auto-fix and a 128 MiB address-space limit.",
+    "The producer explicitly reports source_imported=false, tests_run=false and types_run=false. These distinctions are preserved."
+  ],
+  "limits": [
+    "I did not execute AST, formatting, imports, types, controls or Windows native calls; my independent work was read-only source/diff/hash review.",
+    "Real Ex API, filesystem, error, audit and held-reader controls remain required.",
+    "The separate WTEXT parity and preservation scope remains outside this Ex formatting packet.",
+    "No product source, ref, task acceptance or qualification is changed."
+  ],
+  "files": [
+    {
+      "path": "ci/native_runtime/windows_atomic_rename_probe.py",
+      "before": {
+        "blob": "8849a7acc9e0178d5d1578570d47c5f57927d555",
+        "bytes": 6827,
+        "sha256": "a8c12b9b0d58e3ec5b82a41b2d10f5bc9511297723035d2effac18d23af41fd3"
+      },
+      "after": {
+        "blob": "8849a7acc9e0178d5d1578570d47c5f57927d555",
+        "bytes": 6827,
+        "sha256": "a8c12b9b0d58e3ec5b82a41b2d10f5bc9511297723035d2effac18d23af41fd3"
+      },
+      "producer_ast_equal": true
+    },
+    {
+      "path": "ci/native_runtime/windows_atomic_rename_probe_child.py",
+      "before": {
+        "blob": "d7db236e8d3f98d6c3037798ccfc0605c5deec87",
+        "bytes": 7500,
+        "sha256": "f4a1f476e630f20d3b92a9e8886b0da7726ab256d3f45d196c218d8d70a0a390"
+      },
+      "after": {
+        "blob": "d7db236e8d3f98d6c3037798ccfc0605c5deec87",
+        "bytes": 7500,
+        "sha256": "f4a1f476e630f20d3b92a9e8886b0da7726ab256d3f45d196c218d8d70a0a390"
+      },
+      "producer_ast_equal": true
+    },
+    {
+      "path": "tests/test_windows_atomic_rename_probe.py",
+      "before": {
+        "blob": "cb902c1a1ecef91fd665c9ee426bd83a797aae0b",
+        "bytes": 11503,
+        "sha256": "3c84a6d99e99d5f9173714e81d976c16ed48d4d19a00a71f3312bf9f468c06c1"
+      },
+      "after": {
+        "blob": "fe52a6ee1b6131f4bde504f923698cf58aa3bef3",
+        "bytes": 11714,
+        "sha256": "519b8f250204e39e77180b1a837737cdf788a63904766763a56ea39fb4b396d0"
+      },
+      "producer_ast_equal": true
+    },
+    {
+      "path": "tests/test_windows_replaceable_reader_process.py",
+      "before": {
+        "blob": "892db8974406e30ef818198afbb3fd2ac168d29a",
+        "bytes": 15419,
+        "sha256": "21f7400916779dba1db50a76785d6c6e02390abd615e44f909eadc7136c93597"
+      },
+      "after": {
+        "blob": "892db8974406e30ef818198afbb3fd2ac168d29a",
+        "bytes": 15419,
+        "sha256": "21f7400916779dba1db50a76785d6c6e02390abd615e44f909eadc7136c93597"
+      },
+      "producer_ast_equal": true
+    },
+    {
+      "path": "scripts/ci/validate_windows_atomic_rename_probe.py",
+      "before": {
+        "blob": "d662c3f9d068d39bc873ba341066a749a1096966",
+        "bytes": 12704,
+        "sha256": "3beebade09981071b4d27dd4bb22adeb74310f56e63947454a8c75f38f422294"
+      },
+      "after": {
+        "blob": "1f234f3ee2876315166300143c090daac6a576cd",
+        "bytes": 12703,
+        "sha256": "8fc696d0ea4981845df5139445389b68d7f9eb68649ab754ae0d91493bcf2a92"
+      },
+      "producer_ast_equal": true
+    }
+  ]
+}

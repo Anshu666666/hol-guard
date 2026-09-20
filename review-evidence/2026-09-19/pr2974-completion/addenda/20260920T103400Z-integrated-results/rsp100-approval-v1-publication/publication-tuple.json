@@ -1,0 +1,121 @@
+{
+  "classification": "source_reviewed_unexecuted_combined_RSP100_pair_and_approval_validation",
+  "product_base_commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+  "product_base_tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+  "source_tree": "b651ecbf79b6d35feed248653b57196efca678ad",
+  "source_commit_parent_rule": "exactly one parent: product_base_commit",
+  "driver_tree": "886f4e17cc9af689102babbe38ab3fb992c853be",
+  "driver_commit_parent_rule": "exactly one parent: newly created source commit",
+  "launch_branch": "codex/pr2974-rsp100-approval-validation-20260920-v1",
+  "verified": true,
+  "source_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+      "git_blob_sha": "91078a00f8aee0e08fe93648eebaae0b0824d2c3",
+      "bytes": 13006
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+      "git_blob_sha": "8ed8ff6c9a98e9f222e52205fab4f6d837da64fb",
+      "bytes": 6153
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+      "git_blob_sha": "c831bf6606b5f29565cc9c2644a17cdf63d639ae",
+      "bytes": 20462
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+      "git_blob_sha": "4adf61131ced5e9383b72066882262ddbaf831ee",
+      "bytes": 74693
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+      "git_blob_sha": "b05f1ced27d0df64bc8bee43059db942f1baf43f",
+      "bytes": 201022
+    },
+    {
+      "path": "tests/test_mcp_approval_risk_projection.py",
+      "git_blob_sha": "f9ca4639edd285d02f8b134315d153a07aaa1a87",
+      "bytes": 17109
+    },
+    {
+      "path": "tests/test_mcp_approval_risk_projection_guards.py",
+      "git_blob_sha": "7633df2d4cdfd34add25a6399f707728082bd177",
+      "bytes": 6146
+    },
+    {
+      "path": "tests/test_mcp_invocation_risk_pair.py",
+      "git_blob_sha": "fc0f7c5802dc2016350e48da44fcf99328f2f910",
+      "bytes": 18042
+    },
+    {
+      "path": "tests/test_mcp_risk_dependencies.py",
+      "git_blob_sha": "382aeaab44fee3eec2d33ffae9a2cb6be7829cc3",
+      "bytes": 15147
+    }
+  ],
+  "driver_files": [
+    {
+      "path": ".github/workflows/pr2974-rsp100-approval-validation.yml",
+      "git_blob_sha": "37a821136f908e75c2b75ba1f3287525a4b85743",
+      "bytes": 1482
+    },
+    {
+      "path": "scripts/ci/pr2974_rsp100_approval_validation.json",
+      "git_blob_sha": "9b4fd1ae4332a2e5a49ad5ee6ba6af376e969a16",
+      "bytes": 4205
+    },
+    {
+      "path": "scripts/ci/validate_pr2974_rsp100_approval.py",
+      "git_blob_sha": "712950dcf0c8690800bd9a4609f8859616da3740",
+      "bytes": 17533
+    }
+  ],
+  "source_peer": {
+    "tree": "531d6ccd299e5c6cd0bd3a25a7365cbfce0bf5d9",
+    "blob": "8d10cb42c1ec832b4b64c33415bbbccfff4e61ea",
+    "bytes": 15222,
+    "sha256": "e717c9afd1d89ba37bb656620942e99a103b7c0b6d5d30b19e2936b0db4e53b4"
+  },
+  "approval_normalization_peer": "98c8661bac851348f634cf2515d6279cc32fbf7e",
+  "normalization_evidence": [
+    "72a1760625b95cf8a993bf5b71da3d71afab99b2",
+    "99f95a235f2ff9cdb632f49cbeba66a342167859",
+    "da8428e173dbe3e853b5a1bdcbf5dd8f9a0c6997"
+  ],
+  "prior_pair_actual_evidence": "252387cecb4bb40c3cd2455d3e602e60c11d466d",
+  "prior_pair_actual": {
+    "admission": true,
+    "helper_bindings": 171,
+    "pytest_passed": 276,
+    "pytest_skipped": 1,
+    "all5shape_positives": true,
+    "ruff": true,
+    "format": true,
+    "type_errors": 1,
+    "type_warnings": 784,
+    "overall_passed": false
+  },
+  "new_source_scope": "Single cast under existing exact RegexFlag guard plus the six source-reviewed approval projection leaves; no other pair source changes.",
+  "validation_scope": {
+    "test_modules": 10,
+    "pair_positive_nodes": 5,
+    "approval_positive_nodes": 5,
+    "declared_approval_cases": 44,
+    "actual_approval_cases_executed": 0,
+    "both_registries_required": true,
+    "exact_import_paths": 5,
+    "all9source_style_types_required": true
+  },
+  "old_campaigns_authorized": false,
+  "RSP100_complete": false,
+  "qualification_complete": false,
+  "concurrent_product_head_to_preserve": "4afa20cf014ccba918bf2fa61552dafe66767930",
+  "limitations": [
+    "No new product import or pytest execution has run for the combined candidate.",
+    "Metadata44 declared cases is not a proof of collection/execution; exact current JUnit counts/positives are mandatory.",
+    "Prior v8 ZIP/JUnit has metadata and log proof only; signed download403 received before archive bytes. Original skip identity not yet byte-observed.",
+    "Large existing facades remain outside this bounded feature's partition-completion claim."
+  ]
+}

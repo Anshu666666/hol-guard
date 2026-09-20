@@ -1,0 +1,672 @@
+{
+  "schema": "pr2974.integrated-deadline-validation-summary.v1",
+  "run_id": 35503330438,
+  "run_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438",
+  "conclusion": "success",
+  "source": {
+    "head": "124472b8949805e0dd36052df6894b335d8b519d",
+    "tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+    "parent": "4afa20cf014ccba918bf2fa61552dafe66767930",
+    "status": ""
+  },
+  "driver": {
+    "head": "af1af84ea196783f86ba92d7a7f1f8e2fd24988d",
+    "tree": "ece2b961f964e7b91222de997f25c7ef1d185ccf",
+    "parent": "124472b8949805e0dd36052df6894b335d8b519d",
+    "status": ""
+  },
+  "platforms": [
+    {
+      "platform": "linux-x86_64",
+      "job_id": 106058838796,
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438/job/106058838796",
+      "conclusion": "success",
+      "artifact_id": 10603017351,
+      "archive_bytes": 43696,
+      "archive_sha256": "9a86ba39bab43c92ad61bf794697f35336477d7556128dab3a75a914296f1d9d",
+      "original_text_members": 70,
+      "original_text_bytes": 202126,
+      "original_job_log": {
+        "bytes": 58213,
+        "sha256": "1e2fb8342980b3879a9578da4f26a204314d12e6ac183e905ebb3b0e380fba4d"
+      },
+      "command_count": 32,
+      "all_command_exit_codes_zero": true,
+      "compile_succeeded_before_collection": true,
+      "controls": [
+        {
+          "phase": "after",
+          "group": "managed",
+          "passed": 7,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 7
+        },
+        {
+          "phase": "after",
+          "group": "unix",
+          "passed": 2,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 2
+        }
+      ],
+      "workspace": {
+        "passed": 318,
+        "ignored": 6,
+        "failed": 0,
+        "runtime_crate": {
+          "passed": 194,
+          "ignored": 2,
+          "failed": 0
+        },
+        "focused_controls_also_in_workspace": 9
+      },
+      "required_commands": [
+        {
+          "stage": "candidate-fmt-check",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "fmt",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--all",
+            "--",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-workspace-tests",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "test",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "--test-threads=1"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-default-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-all-features-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-release-build",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "build",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--release",
+            "-p",
+            "hol-guard-runtime"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-self-test",
+          "argv": [
+            "/home/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+            "self-test",
+            "--json"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        }
+      ],
+      "test_binary": {
+        "bytes": 74442656,
+        "path": "/home/runner/work/_temp/deadline-validation-targets/candidate/debug/deps/hol_guard_runtime-9b9bb7fda260c91c",
+        "sha256": "f857bd80d64df15c817059465f93a1af93cd7bda1e0092d96a411eed2a8f64bb"
+      },
+      "release_binary": {
+        "bytes": 12282088,
+        "path": "/home/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+        "sha256": "2773066c9460948ff95e996db012918e7bdcd52c9cd95f35802f9ace56085286"
+      },
+      "binary_bytes_uploaded_or_independently_downloaded": false
+    },
+    {
+      "platform": "macos-arm64",
+      "job_id": 106058838837,
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438/job/106058838837",
+      "conclusion": "success",
+      "artifact_id": 10603096577,
+      "archive_bytes": 46005,
+      "archive_sha256": "3fa36516d60126ca5c6ec3c324c69c74edeccaaaba4d2b7fbe0dc8d087a13aa2",
+      "original_text_members": 70,
+      "original_text_bytes": 231665,
+      "original_job_log": {
+        "bytes": 56990,
+        "sha256": "f847a5576356234088bd36b525b4008a3993ebd1aaf766bd5088f044b3114088"
+      },
+      "command_count": 32,
+      "all_command_exit_codes_zero": true,
+      "compile_succeeded_before_collection": true,
+      "controls": [
+        {
+          "phase": "after",
+          "group": "managed",
+          "passed": 7,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 7
+        },
+        {
+          "phase": "after",
+          "group": "unix",
+          "passed": 2,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 2
+        }
+      ],
+      "workspace": {
+        "passed": 311,
+        "ignored": 6,
+        "failed": 0,
+        "runtime_crate": {
+          "passed": 187,
+          "ignored": 2,
+          "failed": 0
+        },
+        "focused_controls_also_in_workspace": 9
+      },
+      "required_commands": [
+        {
+          "stage": "candidate-fmt-check",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "fmt",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--all",
+            "--",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-workspace-tests",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "test",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "--test-threads=1"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-default-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-all-features-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-release-build",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "build",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--release",
+            "-p",
+            "hol-guard-runtime"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-self-test",
+          "argv": [
+            "/Users/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+            "self-test",
+            "--json"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        }
+      ],
+      "test_binary": {
+        "bytes": 25927856,
+        "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/debug/deps/hol_guard_runtime-fde2845977722970",
+        "sha256": "bb15ac5f3a9dcc5d986831f29e377207945e1b2f00154418772b10c14c4f1978"
+      },
+      "release_binary": {
+        "bytes": 10801664,
+        "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+        "sha256": "315ca4f31bd989647e075d823b344de110a1e3098ebaf167e0a0873b880c4cf6"
+      },
+      "binary_bytes_uploaded_or_independently_downloaded": false
+    },
+    {
+      "platform": "macos-x86_64",
+      "job_id": 106058838761,
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438/job/106058838761",
+      "conclusion": "success",
+      "artifact_id": 10603176628,
+      "archive_bytes": 46037,
+      "archive_sha256": "6a01f6206dd93a7352bbb817b795f85c30e717e5862d94b9f295a41565001e28",
+      "original_text_members": 70,
+      "original_text_bytes": 231656,
+      "original_job_log": {
+        "bytes": 66481,
+        "sha256": "4002015568b14044f7b3dbc4fa76efc47f7974bd87522a83bf5e9693aac2da00"
+      },
+      "command_count": 32,
+      "all_command_exit_codes_zero": true,
+      "compile_succeeded_before_collection": true,
+      "controls": [
+        {
+          "phase": "after",
+          "group": "managed",
+          "passed": 7,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 7
+        },
+        {
+          "phase": "after",
+          "group": "unix",
+          "passed": 2,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 2
+        }
+      ],
+      "workspace": {
+        "passed": 311,
+        "ignored": 6,
+        "failed": 0,
+        "runtime_crate": {
+          "passed": 187,
+          "ignored": 2,
+          "failed": 0
+        },
+        "focused_controls_also_in_workspace": 9
+      },
+      "required_commands": [
+        {
+          "stage": "candidate-fmt-check",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "fmt",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--all",
+            "--",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-workspace-tests",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "test",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "--test-threads=1"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-default-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-all-features-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-release-build",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "build",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--release",
+            "-p",
+            "hol-guard-runtime"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-self-test",
+          "argv": [
+            "/Users/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+            "self-test",
+            "--json"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        }
+      ],
+      "test_binary": {
+        "bytes": 26366760,
+        "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/debug/deps/hol_guard_runtime-aa3dc4cff9dda5fa",
+        "sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d"
+      },
+      "release_binary": {
+        "bytes": 11311000,
+        "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+        "sha256": "db7a60fe02c6ce78ed8e151f2f38990ad840593cb030484814609476e27b1a22"
+      },
+      "binary_bytes_uploaded_or_independently_downloaded": false
+    },
+    {
+      "platform": "windows-x86_64",
+      "job_id": 106058838732,
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438/job/106058838732",
+      "conclusion": "success",
+      "artifact_id": 10603281284,
+      "archive_bytes": 43042,
+      "archive_sha256": "d359556c8d4c52f9cf15b837ef3fd6f888a53c058ab6ddf185c214aa656c398d",
+      "original_text_members": 63,
+      "original_text_bytes": 214437,
+      "original_job_log": {
+        "bytes": 57591,
+        "sha256": "4baf857e90a757cb186b2cc280e6f3702eb9b73f9f228682fe84d2cb024676fb"
+      },
+      "command_count": 29,
+      "all_command_exit_codes_zero": true,
+      "compile_succeeded_before_collection": true,
+      "controls": [
+        {
+          "phase": "after",
+          "group": "managed",
+          "passed": 7,
+          "failed": 0,
+          "exit_code": 0,
+          "exact_records_reconciled": 7
+        }
+      ],
+      "workspace": {
+        "passed": 360,
+        "ignored": 6,
+        "failed": 0,
+        "runtime_crate": {
+          "passed": 201,
+          "ignored": 2,
+          "failed": 0
+        },
+        "focused_controls_also_in_workspace": 7
+      },
+      "required_commands": [
+        {
+          "stage": "candidate-fmt-check",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "fmt",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--all",
+            "--",
+            "--check"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-workspace-tests",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "test",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "--test-threads=1"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-default-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-all-features-clippy",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "clippy",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-release-build",
+          "argv": [
+            "cargo",
+            "+1.88.0",
+            "build",
+            "--manifest-path",
+            "rust/Cargo.toml",
+            "--locked",
+            "--release",
+            "-p",
+            "hol-guard-runtime"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        },
+        {
+          "stage": "candidate-self-test",
+          "argv": [
+            "D:\\a\\_temp\\deadline-validation-targets\\candidate\\release\\hol-guard-runtime.exe",
+            "self-test",
+            "--json"
+          ],
+          "exit_code": 0,
+          "timed_out": false
+        }
+      ],
+      "test_binary": {
+        "bytes": 19486720,
+        "path": "D:\\a\\_temp\\deadline-validation-targets\\candidate\\debug\\deps\\hol_guard_runtime-ab69139199184b8c.exe",
+        "sha256": "e1c45c21673108487e35de1bb4640bc8494cde8ded73bc0e37c0b909e58f4d54"
+      },
+      "release_binary": {
+        "bytes": 11350528,
+        "path": "D:\\a\\_temp\\deadline-validation-targets\\candidate\\release\\hol-guard-runtime.exe",
+        "sha256": "6f33e3f65a2173eb71acad55317331bc38b8adcb211085168b21289f4bfa215c"
+      },
+      "binary_bytes_uploaded_or_independently_downloaded": false
+    }
+  ],
+  "source_scope": "Exact candidate 124472 is a three-path overlay on external 4afa. Both managed production files, all five original test bodies and real lease-file cleanup assertion are preserved. It adds a fresh Unix pre-connect deadline fence, two real Unix controls, and managed timely/committed-EOF/final-queue-drain/fixed-record strengthening.",
+  "execution_scope": {
+    "rust_toolchain": "1.88.0",
+    "locked_dependencies": true,
+    "mutating_formatter": false,
+    "before_source_checkout_or_controls": false,
+    "workloads_or_benchmarks": false,
+    "default_workspace_all_targets": true,
+    "default_and_all_features_workspace_all_targets_clippy": true,
+    "release_build_self_test": true,
+    "source_driver_before_after_unchanged": true,
+    "independent_binary_download": false
+  },
+  "privacy": {
+    "selected": "All original finite owned fixture records, generated-runner source/command paths, compiler outputs and complete original job logs.",
+    "excluded": "ZIP and executable bytes; temporary signed artifact download URLs and credentials are not included.",
+    "private_user_inputs_or_paths_intentionally_exported": false
+  },
+  "limits": [
+    "Focused controls overlap the full workspace population; do not add them as disjoint totals.",
+    "The controls exercise authenticated TCP/Unix transport and managed request-result deadlines, not native policy evaluation. Persistent stdout framing remains outside that Instant.",
+    "Runner binary hashes and sizes are retained, but executable bytes were not uploaded or independently downloaded.",
+    "No new before-source execution occurred; the earlier before/candidate54 matrix remains separate source evidence.",
+    "The stale-duration defect is not proven to be the cause of the earlier Ubuntu policy-push failures.",
+    "All performance qualification and stopped-campaign status remains unchanged."
+  ],
+  "prior_independent_evidence": {
+    "before_candidate_sources": [
+      "a8297fe9868322616c92084d9a2fbb712a0907d0",
+      "54fff0b48d3ce7a7becb03698f91aed63e55c1ee"
+    ],
+    "linux_packet_tree": "b15ac95711b3184706b78e1f96a22bbbc43d54d8",
+    "three_platform_packet_tree": "0ca84f726e934ff27550d8c9daf1e886b510d063",
+    "first_setup_failures_tree": "a4efd4db7d54fcee155a3c3bfb78272bf9cb4d88",
+    "integrated_formatter_return_tree": "068a1cffaaa98284eecbc894f7e30e1fd56ee9cf",
+    "integrated_source_peer_tree": "82a203280a42bcf5f22ec26a98c96710135a7a9b",
+    "format_peer_tree": "9b497f673c4d1e13dd18644623bc0c04ea4aa9a1",
+    "final_driver_peer_tree": "4a3661034c62e5cab7523f6a2f0fb5b069038323"
+  },
+  "performance_qualification": false
+}

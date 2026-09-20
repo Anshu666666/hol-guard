@@ -1,0 +1,95 @@
+{
+  "classification": "combined_approval_v1_actual_admission_refusal",
+  "run_id": 35503730488,
+  "job_id": 106059896533,
+  "source_commit": "cc3ae7bed5fe074c0246ffa397c9b13627450542",
+  "source_tree": "b651ecbf79b6d35feed248653b57196efca678ad",
+  "driver_commit": "e1be0f2b2f4070bdae621b2f6c5307c0c15df128",
+  "driver_tree": "886f4e17cc9af689102babbe38ab3fb992c853be",
+  "original_records": [
+    {
+      "name": "source-before.json",
+      "bytes": 8890,
+      "sha256": "3c82494441d094a40ad7f32058621da6a5bd11efdab716f9a88281e6dc177b42"
+    },
+    {
+      "name": "import-admission-result.json",
+      "bytes": 3873,
+      "sha256": "56f1080c37b453800e0cc822a03c762818286347fade86fb2d57dcbe95df5ea3"
+    },
+    {
+      "name": "import-admission-stdout-original.json",
+      "bytes": 4390,
+      "sha256": "b4f79a45524d53ce1cc3b05407cf7095c642d2d78730a693ad9ca56285e8b9b5"
+    },
+    {
+      "name": "import-admission-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "diagnostic-import-trace-result.json",
+      "bytes": 2167,
+      "sha256": "45e2a0225de69964556fc38c1063777f66acd9fd5d0d53a45235e5644f645f48"
+    },
+    {
+      "name": "diagnostic-import-trace-stdout-original.json",
+      "bytes": 517,
+      "sha256": "76759492003297237767c5755a294634b657aa76d3ebe0108d7036caadd62d38"
+    },
+    {
+      "name": "diagnostic-import-trace-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "source-after.json",
+      "bytes": 8890,
+      "sha256": "3c82494441d094a40ad7f32058621da6a5bd11efdab716f9a88281e6dc177b42"
+    },
+    {
+      "name": "result.json",
+      "bytes": 6569,
+      "sha256": "d42eed4a15f8aac478906ade806066494351a487fe11ec767e6d40e0fe4f689b"
+    }
+  ],
+  "inner_original_streams_independently_sha_verified": true,
+  "source_before_after_verified": true,
+  "original_source_records_identical": true,
+  "admission": {
+    "all5exact_import_paths": true,
+    "environment_verified": true,
+    "pair_available": true,
+    "pair_bindings": 174,
+    "approval_available": false
+  },
+  "diagnostic": {
+    "approval_defaults_available": false,
+    "available": true,
+    "classification": "diagnostic_only_traced_import",
+    "events": [
+      {
+        "exception_type": "GeneratorExit",
+        "function": "<genexpr>",
+        "line": 152,
+        "member_name": null,
+        "observed_value_type": "builtins.NoneType"
+      }
+    ],
+    "refusal_reason": null
+  },
+  "inference": "Approval aliases include a None namespace at the line152 early-refusal guard. A likely source mechanism is Path.__dict__['__new__'] being a staticmethod while function_namespace accepts only FunctionType; current trace does not name the None alias.",
+  "executed_pytest_cases": 0,
+  "executed_approval_cases": 0,
+  "ruff": false,
+  "format": false,
+  "types": false,
+  "archive": {
+    "artifact_id": 10603511182,
+    "reported_bytes": 14534,
+    "reported_sha256": "c8ea85b7b5d2a719cb29a8b4726405b5edaf629b6305c9958e2fe418429fc1a8",
+    "download_independently_verified": false
+  },
+  "RSP100_complete": false,
+  "qualification_complete": false
+}

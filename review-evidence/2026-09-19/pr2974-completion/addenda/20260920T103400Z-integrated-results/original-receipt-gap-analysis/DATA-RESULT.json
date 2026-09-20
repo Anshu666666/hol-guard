@@ -1,0 +1,149 @@
+{
+  "schema": "hol-guard.original-8f-receipt-gap-data.v1",
+  "data_reconciliation_passed": true,
+  "original_workload_passed": false,
+  "native_execution_performed": false,
+  "input_rows": 1981,
+  "kind_counts": {
+    "control_offer": 89,
+    "control_terminal": 81,
+    "offer": 600,
+    "terminal": 600,
+    "local_inventory_upsert": 3,
+    "policy": 4,
+    "resident_recovery": 1,
+    "receipt": 603
+  },
+  "hook_load_offered": 600,
+  "hook_load_completed": 600,
+  "actual_control_hook_probes": 5,
+  "total_fixture_hook_calls": 605,
+  "scheduler_admitted": 604,
+  "scheduler_completed": 604,
+  "receipt_rows": 603,
+  "load_receipt_joins": 598,
+  "control_receipt_joins": 5,
+  "missing_hook_joins": [
+    {
+      "attempt": "mixed-load-313",
+      "offer_line": 719,
+      "terminal_line": 721,
+      "offer": {
+        "attempt": "mixed-load-313",
+        "generator_offered_ms": 15650.099553000018,
+        "kind": "offer",
+        "offered_ms": 15650,
+        "state": "queued"
+      },
+      "terminal": {
+        "allowed": true,
+        "attempt": "mixed-load-313",
+        "capacity_rejected": false,
+        "delivered_action": "warn",
+        "delivered_decision": "allow",
+        "dispatched_ms": 15650.194738999971,
+        "event": "PreToolUse",
+        "finished_ms": 15682.050505999996,
+        "generator_offered_ms": 15650.099553000018,
+        "harness": "claude-code",
+        "kind": "terminal",
+        "latency_ms": 31.79029399996125,
+        "offered_ms": 15650,
+        "size": "1k",
+        "state": "completed"
+      }
+    },
+    {
+      "attempt": "mixed-load-321",
+      "offer_line": 733,
+      "terminal_line": 734,
+      "offer": {
+        "attempt": "mixed-load-321",
+        "generator_offered_ms": 16050.106561000008,
+        "kind": "offer",
+        "offered_ms": 16050,
+        "state": "queued"
+      },
+      "terminal": {
+        "allowed": true,
+        "attempt": "mixed-load-321",
+        "capacity_rejected": false,
+        "delivered_action": "allow",
+        "delivered_decision": "allow",
+        "dispatched_ms": 16050.25948800005,
+        "event": "PostToolUse",
+        "finished_ms": 16091.978915000027,
+        "generator_offered_ms": 16050.106561000008,
+        "harness": "claude-code",
+        "kind": "terminal",
+        "latency_ms": 41.649557000027926,
+        "offered_ms": 16050,
+        "size": "1k",
+        "state": "completed"
+      }
+    }
+  ],
+  "all_observed_receipts_writer_admitted": true,
+  "all_observed_receipts_committed_with_valid_binding": true,
+  "native_normal_returns_without_receipt": 1,
+  "committed_identity_digest": "4e90f929bb54ba6ae86a2685cda303bf4bd1acd27e28711e5580323ca118c96f",
+  "writer": {
+    "accepted": 1207,
+    "processed": 1207,
+    "native_receipt": 603,
+    "command_activity": 604,
+    "dropped": 0,
+    "failures": 0
+  },
+  "original_failed_checks": {
+    "native_receipt_integrity": false,
+    "native_receipts_committed": false,
+    "every_completed_hook_bound": false
+  },
+  "chronology": {
+    "clock_scope": "ledger write order only; receipt and generator clock origins differ",
+    "prior_first_decision_offer_line": 715,
+    "restart_offer_line": 718,
+    "missing_313_terminal_line": 721,
+    "restart_result_line": 730,
+    "missing_321_offer_line": 733,
+    "missing_321_terminal_line": 734,
+    "first_receipt_reconciliation_line": 1379
+  },
+  "original_recovery_action": {
+    "status": "completed",
+    "kind": "resident_recovery",
+    "contained": true,
+    "python_process_restarted": false,
+    "attempt": "mixed-recovery-0",
+    "first_enforcing_receipt": true,
+    "accept_to_probe_response_ms": 344.83582299992577,
+    "first_decision_attempt": "mixed-load-312",
+    "accept_to_first_decision_ms": 22.361675999945874,
+    "generation": 3,
+    "policy_digest": "4cc65cffa643a7b8c67a925505802ecea1d107495a6bb2a69ba95be3f452a28c",
+    "expected_action": "allow",
+    "probe_has_native_receipt": true,
+    "control_elapsed_ms": 346.05213400004686,
+    "operation": "mixed_restart",
+    "scheduled_ms": 15000,
+    "began_ms": 15645.204498999989,
+    "overlapped_load": true
+  },
+  "installed_runtime_identity": {
+    "mode": "auto",
+    "target": "x86_64-linux",
+    "runtime_version": "3.0.1",
+    "protocol_version": 1,
+    "package_origin": "installed",
+    "package_version": "3.0.1",
+    "package_record_sha256": "65faa9b300ac98c2d8c2a391ca3dc7138fcbdc4d0d06e732779afb51214b1edc",
+    "installed_package_sha256": "16b2c69cd4f30effb4669a456aae9402d3136a8cd1cc462b72759fc2b8931154",
+    "python_version": "3.12.14",
+    "architecture": "x86_64",
+    "system": "Linux",
+    "runtime_sha256": "2281f3e9ea651c86dd9a49a5a2f9327aee21ea0cdf91399c8e4c646a1c3c7ab4",
+    "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+    "build_sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc"
+  }
+}

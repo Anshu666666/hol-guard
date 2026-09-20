@@ -1,0 +1,798 @@
+{
+  "schema": "pr2974-windows-ex-probe-result-v1",
+  "source": {
+    "sha": "6c02a664b222b9ffb0a0a923358ad08147bffd9c",
+    "tree": "25816fdb059184e71682a5c1190129cc0ca87721",
+    "sole_parent": "60619956b77c7770c0e53c474f948be095340ffb",
+    "changed_paths": 4,
+    "scope": "CI-only Ex22 rename prototype over rejected reader candidate"
+  },
+  "driver": {
+    "sha": "8a0e5867bf99a856f1c7a1438892d0619e846057",
+    "tree": "73105765485e1cd19ab0d228db4caa212debfedf",
+    "sole_parent": "6c02a664b222b9ffb0a0a923358ad08147bffd9c",
+    "changed_paths": 2
+  },
+  "run": {
+    "id": 35504050093,
+    "job_id": 106060722575,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35504050093"
+  },
+  "artifact": {
+    "archive_bytes": 27730,
+    "archive_sha256": "03def2ae1880de694e093718afc674660b378837c6732ba99685d08d0614ccf7",
+    "artifact_id": 10603017917,
+    "driver_sha": "8a0e5867bf99a856f1c7a1438892d0619e846057",
+    "environment": {
+      "address_space_limit": 134217728,
+      "boot_id": "c6aba711-75f6-4cbb-90b1-d991ba91b54e",
+      "executable": "/usr/local/bin/python",
+      "hostname": "e2b.local",
+      "path": "/home/user/pr2974-recovery/windows/ex-probe-6c02-result",
+      "peak_rss_kib": 26012,
+      "python": "3.13.13 (main, Apr 22 2026, 06:31:27) [GCC 14.2.0]",
+      "session": "wife",
+      "suffix": "asnf"
+    },
+    "job_id": 106060722575,
+    "limits": {
+      "binary_uploaded": false,
+      "data_only": true,
+      "source_imports": false,
+      "source_tests": false,
+      "workload_replay": false
+    },
+    "member_bytes": 327660,
+    "member_count": 14,
+    "run_id": 35504050093,
+    "schema": "pr2974-ex-probe-archive-verification-v1",
+    "source_sha": "6c02a664b222b9ffb0a0a923358ad08147bffd9c"
+  },
+  "validation": {
+    "collected": 16,
+    "passed": 8,
+    "failed": 8,
+    "errors": 0,
+    "skipped": 0,
+    "pytest_stdout_seconds": 3.54,
+    "junit_suite_seconds": 3.506,
+    "controls_process_attempts": 1,
+    "controls_return_code": 1,
+    "timed_out": false,
+    "ruff_return_code": 0,
+    "format_return_code": 0,
+    "types_return_code": 0,
+    "type_errors": 0,
+    "type_warnings": 543,
+    "missing_control_gate_json": true,
+    "source_before_after_binding_equal": true,
+    "lf_and_crlf_source_closure_verified": true
+  },
+  "findings": {
+    "admitted_rename_calls": 8,
+    "successful_rename_calls": 0,
+    "all_admitted_rename_errors": {
+      "kind": "OSError",
+      "errno": 22,
+      "winerror": 87
+    },
+    "failure_operation": "rename",
+    "held_destination_success_established": false,
+    "unheld_and_missing_also_failed": true,
+    "source_crt_negative_cases": 2,
+    "source_crt_negative_error": {
+      "kind": "PermissionError",
+      "errno": 13,
+      "winerror": 32
+    },
+    "source_crt_negative_operation": "source_open",
+    "held_reader_cleanup_receipts": 4,
+    "child_capture_joins": 13,
+    "audit_refusal_same_object_passed": true,
+    "observation_audit_order_matches_but_error_result_differs": true,
+    "source_guard_cases_passed": 3,
+    "snapshot_close_control_passed": true,
+    "committed_rename_vs_close_failure_control_passed": true,
+    "all_actual_owned_native_handles_retired": true
+  },
+  "limitations": {
+    "reader_only_repair_remains_rejected": true,
+    "api_invalid_parameter_cause_not_yet_established": true,
+    "buffer_root_directory_hypothesis_only": true,
+    "unicode_default_acceptance_not_run": true,
+    "installed_qualification": false,
+    "performance_or_corpus_run": false,
+    "product_promotion": false,
+    "historical_startup_handle_attributed": false,
+    "journal_checkpoint_permission_error_explained": false,
+    "other_failed_gates_rewritten": false
+  },
+  "environment_schedule": {
+    "remote_data_only": true,
+    "exclusive_initial_archive_read_not_claimed": true,
+    "description": "Recover handed the slot to Windows while root separately assigned Native. Both small bounded archive reads may briefly have overlapped; Native paused before transfers. Windows completed its 22 fixed reads and explicitly handed back, then Native completed its transfers. No source imports, tests, builds or workload ran in either recovery read."
+  },
+  "cases": [
+    {
+      "name": "test_ex_rename_with_actual_held_reader[held_destination-bounded_manager]",
+      "result": "failed",
+      "time_seconds": 0.275,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "reader_retired": "True",
+        "reader_descriptor_closed": "True",
+        "writer_is_separate_process": "True",
+        "source_crt_negative_control": "False",
+        "writer_exit_code": "1"
+      }
+    },
+    {
+      "name": "test_ex_rename_with_actual_held_reader[held_destination-codex_text]",
+      "result": "failed",
+      "time_seconds": 0.247,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "reader_retired": "True",
+        "reader_descriptor_closed": "True",
+        "writer_is_separate_process": "True",
+        "source_crt_negative_control": "False",
+        "writer_exit_code": "1"
+      }
+    },
+    {
+      "name": "test_ex_rename_with_actual_held_reader[held_source_negative-bounded_manager]",
+      "result": "passed",
+      "time_seconds": 0.243,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 32
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 1,
+            "first_failed_operation": "source_open",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 0,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": true,
+          "source_reader_opened": true,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "reader_retired": "True",
+        "reader_descriptor_closed": "True",
+        "writer_is_separate_process": "True",
+        "source_crt_negative_control": "True",
+        "writer_exit_code": "1"
+      }
+    },
+    {
+      "name": "test_ex_rename_with_actual_held_reader[held_source_negative-codex_text]",
+      "result": "passed",
+      "time_seconds": 0.253,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 32
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 1,
+            "first_failed_operation": "source_open",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 0,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": true,
+          "source_reader_opened": true,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "reader_retired": "True",
+        "reader_descriptor_closed": "True",
+        "writer_is_separate_process": "True",
+        "source_crt_negative_control": "True",
+        "writer_exit_code": "1"
+      }
+    },
+    {
+      "name": "test_ex_writer_admission_and_destination_types[unheld]",
+      "result": "failed",
+      "time_seconds": 0.247,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "writer_exit_code": "1",
+        "temporary_siblings_removed": "True"
+      }
+    },
+    {
+      "name": "test_ex_writer_admission_and_destination_types[missing]",
+      "result": "failed",
+      "time_seconds": 0.235,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "writer_exit_code": "1",
+        "temporary_siblings_removed": "True"
+      }
+    },
+    {
+      "name": "test_ex_writer_admission_and_destination_types[crt_destination]",
+      "result": "failed",
+      "time_seconds": 0.254,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "writer_exit_code": "1",
+        "destination_crt_reader_closed": "True",
+        "temporary_siblings_removed": "True"
+      }
+    },
+    {
+      "name": "test_ex_writer_admission_and_destination_types[readonly_destination]",
+      "result": "failed",
+      "time_seconds": 0.25,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "writer_exit_code": "1",
+        "temporary_siblings_removed": "True"
+      }
+    },
+    {
+      "name": "test_ex_writer_admission_and_destination_types[directory_destination]",
+      "result": "failed",
+      "time_seconds": 0.24,
+      "reports": {
+        "writer": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false,
+            "writer_snapshot_taken": true
+          },
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      "other_properties": {
+        "writer_exit_code": "1",
+        "temporary_siblings_removed": "True"
+      }
+    },
+    {
+      "name": "test_ex_rename_preserves_original_audit_boundary[observe]",
+      "result": "failed",
+      "time_seconds": 0.225,
+      "reports": {
+        "original": {
+          "error": null,
+          "events": [
+            {
+              "destination_dir_fd": -1,
+              "destination_same": true,
+              "opens_before_event": 0,
+              "renames_before_event": 0,
+              "source_dir_fd": -1,
+              "source_same": true
+            }
+          ],
+          "operation": "rename_audit",
+          "probe": {
+            "closes": 0,
+            "first_failed_operation": null,
+            "opens": 0,
+            "owned_handles_remaining": 0,
+            "rename_calls": 0,
+            "rename_returned": false
+          },
+          "refusal_same_object": false,
+          "schema": 1
+        },
+        "candidate": {
+          "error": {
+            "errno": 22,
+            "kind": "OSError",
+            "winerror": 87
+          },
+          "events": [
+            {
+              "destination_dir_fd": -1,
+              "destination_same": true,
+              "opens_before_event": 0,
+              "renames_before_event": 0,
+              "source_dir_fd": -1,
+              "source_same": true
+            }
+          ],
+          "operation": "rename_audit",
+          "probe": {
+            "closes": 2,
+            "first_failed_operation": "rename",
+            "opens": 2,
+            "owned_handles_remaining": 0,
+            "rename_calls": 1,
+            "rename_returned": false
+          },
+          "refusal_same_object": false,
+          "schema": 1
+        }
+      },
+      "other_properties": {}
+    },
+    {
+      "name": "test_ex_rename_preserves_original_audit_boundary[refuse]",
+      "result": "passed",
+      "time_seconds": 0.232,
+      "reports": {
+        "original": {
+          "error": {
+            "errno": null,
+            "kind": "other",
+            "winerror": null
+          },
+          "events": [
+            {
+              "destination_dir_fd": -1,
+              "destination_same": true,
+              "opens_before_event": 0,
+              "renames_before_event": 0,
+              "source_dir_fd": -1,
+              "source_same": true
+            }
+          ],
+          "operation": "rename_audit",
+          "probe": {
+            "closes": 0,
+            "first_failed_operation": null,
+            "opens": 0,
+            "owned_handles_remaining": 0,
+            "rename_calls": 0,
+            "rename_returned": false
+          },
+          "refusal_same_object": true,
+          "schema": 1
+        },
+        "candidate": {
+          "error": {
+            "errno": null,
+            "kind": "other",
+            "winerror": null
+          },
+          "events": [
+            {
+              "destination_dir_fd": -1,
+              "destination_same": true,
+              "opens_before_event": 0,
+              "renames_before_event": 0,
+              "source_dir_fd": -1,
+              "source_same": true
+            }
+          ],
+          "operation": "rename_audit",
+          "probe": {
+            "closes": 0,
+            "first_failed_operation": null,
+            "opens": 0,
+            "owned_handles_remaining": 0,
+            "rename_calls": 0,
+            "rename_returned": false
+          },
+          "refusal_same_object": true,
+          "schema": 1
+        }
+      },
+      "other_properties": {}
+    },
+    {
+      "name": "test_ex_source_guards_reject_before_mutation[wrong_identity]",
+      "result": "passed",
+      "time_seconds": 0.005,
+      "reports": {},
+      "other_properties": {
+        "native_probe": "{\"closes\": 2, \"first_failed_operation\": null, \"opens\": 2, \"owned_handles_remaining\": 0, \"rename_calls\": 0, \"rename_returned\": false}"
+      }
+    },
+    {
+      "name": "test_ex_source_guards_reject_before_mutation[directory_source]",
+      "result": "passed",
+      "time_seconds": 0.005,
+      "reports": {},
+      "other_properties": {
+        "native_probe": "{\"closes\": 1, \"first_failed_operation\": \"source_open\", \"opens\": 2, \"owned_handles_remaining\": 0, \"rename_calls\": 0, \"rename_returned\": false}"
+      }
+    },
+    {
+      "name": "test_ex_source_guards_reject_before_mutation[reparse_source]",
+      "result": "passed",
+      "time_seconds": 0.005,
+      "reports": {},
+      "other_properties": {
+        "native_probe": "{\"closes\": 2, \"first_failed_operation\": null, \"opens\": 2, \"owned_handles_remaining\": 0, \"rename_calls\": 0, \"rename_returned\": false}"
+      }
+    },
+    {
+      "name": "test_snapshot_failure_preserves_original_close_then_error",
+      "result": "passed",
+      "time_seconds": 0.005,
+      "reports": {},
+      "other_properties": {}
+    },
+    {
+      "name": "test_native_report_keeps_committed_rename_separate_from_close_failure",
+      "result": "passed",
+      "time_seconds": 0.001,
+      "reports": {},
+      "other_properties": {}
+    }
+  ],
+  "child_joins": [
+    {
+      "case": "test_ex_rename_with_actual_held_reader[held_destination-bounded_manager]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_with_actual_held_reader[held_destination-codex_text]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_with_actual_held_reader[held_source_negative-bounded_manager]",
+      "label": "writer",
+      "stdout_bytes": 561,
+      "stdout_sha256": "5696f9049c97616bc6e7f0bbbbed6ba0d225c6f479de5cdf0184d8a6679b7035",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_with_actual_held_reader[held_source_negative-codex_text]",
+      "label": "writer",
+      "stdout_bytes": 561,
+      "stdout_sha256": "5696f9049c97616bc6e7f0bbbbed6ba0d225c6f479de5cdf0184d8a6679b7035",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_writer_admission_and_destination_types[unheld]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_writer_admission_and_destination_types[missing]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_writer_admission_and_destination_types[crt_destination]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_writer_admission_and_destination_types[readonly_destination]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_writer_admission_and_destination_types[directory_destination]",
+      "label": "writer",
+      "stdout_bytes": 550,
+      "stdout_sha256": "bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623",
+      "return_code": 1,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_preserves_original_audit_boundary[observe]",
+      "label": "original",
+      "stdout_bytes": 392,
+      "stdout_sha256": "2485b4000ac9afe44a7f1d7f2e76b05169c5451de9a80c0a8a6ad4e55b5e0d11",
+      "return_code": 0,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_preserves_original_audit_boundary[observe]",
+      "label": "candidate",
+      "stdout_bytes": 440,
+      "stdout_sha256": "f289e87a4d8346c098cbcf3cd554e5d0dd16bf8e60ed6d7b19cb3225b2df5313",
+      "return_code": 0,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_preserves_original_audit_boundary[refuse]",
+      "label": "original",
+      "stdout_bytes": 437,
+      "stdout_sha256": "0f6bf141b38d11de6515f7e2379da42a8f7e423aa49e307d654260054ba780ee",
+      "return_code": 0,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    },
+    {
+      "case": "test_ex_rename_preserves_original_audit_boundary[refuse]",
+      "label": "candidate",
+      "stdout_bytes": 437,
+      "stdout_sha256": "0f6bf141b38d11de6515f7e2379da42a8f7e423aa49e307d654260054ba780ee",
+      "return_code": 0,
+      "report_join": true,
+      "original_stdout_retained": true,
+      "process_retired": true,
+      "timeout": false,
+      "cleanup_error": null
+    }
+  ]
+}

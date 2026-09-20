@@ -1,0 +1,243 @@
+{
+  "candidate_packet_tree": "a7988ce119ceed05d68367e94f0589f5d7daf7ac",
+  "classification": "independent_Windows_Ex22_absolute_argument_probe_source_peer",
+  "conclusion": "No blocker found in the exact narrow CI-only probe delta. The changed argument pair is a controlled, unexecuted hypothesis; it does not establish the original invalid-parameter cause or a product repair.",
+  "driver_diff": [
+    {
+      "kind": "+",
+      "line": 47,
+      "text": "_TOTAL_CASES = 17"
+    },
+    {
+      "kind": "-",
+      "line": 47,
+      "text": "_TOTAL_CASES = 16"
+    },
+    {
+      "kind": "+",
+      "line": 241,
+      "text": "        \"absolute_buffer\": (\"test_ex_buffer_uses_absolute_name_null_root_and_sdk_layout\", 1),"
+    }
+  ],
+  "driver_findings": "Only total cases16→17 and the mandatory absolute_buffer group of1 change. Existing exact count/classname/noerror/nofailure/noskip and child report/cleanup gates remain. Source/workflow tree and source-parent commitments must be rebound by the owner before execution; packet afterimage alone is not a launched driver.",
+  "helper_diff": [
+    {
+      "kind": "+",
+      "line": 128,
+      "text": "def _rename_buffer(destination: Path, _parent: int) -> ctypes.Array[ctypes.c_char]:"
+    },
+    {
+      "kind": "+",
+      "line": 129,
+      "text": "    encoded = os.fspath(destination).encode(\"utf-16-le\", errors=\"surrogatepass\")"
+    },
+    {
+      "kind": "-",
+      "line": 128,
+      "text": "def _rename_buffer(destination: Path, parent: int) -> ctypes.Array[ctypes.c_char]:"
+    },
+    {
+      "kind": "-",
+      "line": 129,
+      "text": "    encoded = destination.name.encode(\"utf-16-le\", errors=\"surrogatepass\")"
+    },
+    {
+      "kind": "+",
+      "line": 133,
+      "text": "    information.RootDirectory = None"
+    },
+    {
+      "kind": "-",
+      "line": 133,
+      "text": "    information.RootDirectory = parent"
+    }
+  ],
+  "helper_findings": [
+    "The only runtime delta is UTF16 encoding of the full already-validated destination path instead of basename, and NULLRootDirectory instead of the held parent handle; the parameter is only renamed _parent.",
+    "The unchanged caller still validates absolute same-directory names, snapshots original writer identity before its close, audits os.rename before target opens, opens the immediate parent with share3 and the source with DELETE/readattributes/share7, checks type/reparse/volume/sourceidentity/noninherit, and makes one Ex22Flags3 call.",
+    "Parent and source handle cleanup/error retention are unchanged. No retry, legacy fallback, broader source rights, ignore-readonly flag, DACL or privilege operation was added.",
+    "The held immediate parent no longer supplies the destination namespace root to the API. Full-path ancestor resolution remains outside the proved guard scope; holding this parent is not an all-ancestor/path-redirection proof. Product integration requires separate path-authority assessment."
+  ],
+  "identities": [
+    {
+      "bytes": 6832,
+      "key": "helper",
+      "matches": true,
+      "sha256": "499ed318ca2050654e257b4896ad1b5963b0ec48aebcad6c57990b4e1cd5f8f8"
+    },
+    {
+      "bytes": 12793,
+      "key": "tests",
+      "matches": true,
+      "sha256": "04b424166f6a5f41870457ba8390289bd3ef85d18933d2f6e9c0cabe503599ac"
+    },
+    {
+      "bytes": 12797,
+      "key": "driver",
+      "matches": true,
+      "sha256": "7c123aca151d28fc5f64daf9e758d4c652aeda841b272a8e9b0715fb035484c7"
+    }
+  ],
+  "limits": {
+    "WinError87_cause_proved": false,
+    "actual_rename_success": false,
+    "format_or_lint_by_peer": false,
+    "historical_handle_attribution": false,
+    "installed_qualification": false,
+    "performance_run": false,
+    "product_promotion": false,
+    "source_execution": false,
+    "source_or_ref_mutation": false,
+    "unicode_WTEXT_acceptance": false
+  },
+  "original_failure": {
+    "driver_commit": "8a0e5867bf99a856f1c7a1438892d0619e846057",
+    "evidence_tree": "d01f5c4b6bdf0a48a556a35257e55657494eee11",
+    "job_id": 106060722575,
+    "limit": "This narrow peer did not independently redownload/hash the original archive or reparse its XML. Those remain the owning agent's retained verification.",
+    "readback": "Read preserved VERIFIED-RESULT.json:16collected,8pass/8fail,zeroerrors/skips;all8admitted rename calls returnedWinError87,including unheld/missing. Source CRT negative cases failed earlier with32; source guards, audit refusal and cleanup controls passed. Original sourcebefore/after binding is reported equal; result remainsfailed.",
+    "run_id": 35504050093,
+    "source_commit": "6c02a664b222b9ffb0a0a923358ad08147bffd9c"
+  },
+  "plan_blob": "5431b8b05e105f7d0f8c2738e2992007db05a5b6",
+  "primary_sources": [
+    {
+      "finding": "Current Microsoft documentation permits a relative name with directory root and an absolute path with a NULL root. It therefore does not establish why the earlier relative-root call returned87.",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info"
+    },
+    {
+      "finding": "Buffer size is bytes and return zero requires GetLastError; behavior of information classes can vary across OS/drivers.",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle"
+    },
+    {
+      "finding": "Flags1+2 request replace-with-POSIX semantics; existing handles can retain the replaced file.",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/4217551b-d2c0-42cb-9dc1-69a716cf6d0c"
+    },
+    {
+      "bytes": 261606,
+      "finding": "Microsoft WinSDK header defines one union holding BOOLEAN/DWORD followed by HANDLE,DWORD,WCHAR[1]. The current rendered Learn syntax duplicates a BOOLEAN, so it is not used as the ABI oracle.",
+      "sha256": "1b8913de810e25f0f6ea8d91f5b736e48888d0e6a2b1003b9ca476f3c2262379",
+      "url": "https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/WinBase.h"
+    }
+  ],
+  "reviewed_at_utc": "2026-09-20 10:29:53 UTC",
+  "reviewer": "/root/partition_regression",
+  "schema_version": 1,
+  "scope": "Review of the three changed afterimages against the packet's exact before images. This is not a fresh complete audit of the unchanged prototype, child runner or workflow, and no source/artifact is promoted.",
+  "test_diff": [
+    {
+      "kind": "+",
+      "line": 3,
+      "text": "import ctypes"
+    },
+    {
+      "kind": "+",
+      "line": 287,
+      "text": ""
+    },
+    {
+      "kind": "+",
+      "line": 288,
+      "text": "def test_ex_buffer_uses_absolute_name_null_root_and_sdk_layout():"
+    },
+    {
+      "kind": "+",
+      "line": 289,
+      "text": "    target = Path(r\"C:\\synthetic-parent\\authority\")"
+    },
+    {
+      "kind": "+",
+      "line": 290,
+      "text": "    buffer = probe._rename_buffer(target, 83)"
+    },
+    {
+      "kind": "+",
+      "line": 291,
+      "text": "    information = probe._RenameInfo.from_buffer(buffer)"
+    },
+    {
+      "kind": "+",
+      "line": 292,
+      "text": "    encoded = os.fspath(target).encode(\"utf-16-le\", errors=\"surrogatepass\")"
+    },
+    {
+      "kind": "+",
+      "line": 293,
+      "text": "    assert ctypes.sizeof(probe.wintypes.DWORD) == 4"
+    },
+    {
+      "kind": "+",
+      "line": 294,
+      "text": "    assert ctypes.sizeof(probe.wintypes.WCHAR) == 2"
+    },
+    {
+      "kind": "+",
+      "line": 295,
+      "text": "    assert ctypes.sizeof(probe.wintypes.HANDLE) == 8"
+    },
+    {
+      "kind": "+",
+      "line": 296,
+      "text": "    assert ctypes.sizeof(probe._RenameInfo) == 24"
+    },
+    {
+      "kind": "+",
+      "line": 297,
+      "text": "    assert probe._RenameInfo.Flags.offset == 0"
+    },
+    {
+      "kind": "+",
+      "line": 298,
+      "text": "    assert probe._RenameInfo.RootDirectory.offset == 8"
+    },
+    {
+      "kind": "+",
+      "line": 299,
+      "text": "    assert probe._RenameInfo.FileNameLength.offset == 16"
+    },
+    {
+      "kind": "+",
+      "line": 300,
+      "text": "    assert probe._RenameInfo.FileName.offset == 20"
+    },
+    {
+      "kind": "+",
+      "line": 301,
+      "text": "    assert information.Flags == 3 and information.RootDirectory is None"
+    },
+    {
+      "kind": "+",
+      "line": 302,
+      "text": "    assert information.FileNameLength == len(encoded)"
+    },
+    {
+      "kind": "+",
+      "line": 303,
+      "text": "    assert ctypes.sizeof(buffer) >= probe._RenameInfo.FileName.offset + len(encoded) + 2"
+    },
+    {
+      "kind": "+",
+      "line": 304,
+      "text": "    assert bytes(buffer)[20 : 20 + len(encoded)] == encoded"
+    },
+    {
+      "kind": "+",
+      "line": 305,
+      "text": "    assert bytes(buffer)[20 + len(encoded) : 22 + len(encoded)] == b\"\\0\\0\""
+    },
+    {
+      "kind": "+",
+      "line": 306,
+      "text": ""
+    }
+  ],
+  "test_findings": {
+    "actual_new_cases_executed": 0,
+    "declared_total": 17,
+    "limit": "The new case runs on Windows and inspects ctypes memory; it does not itself issue an actual SetFileInformationByHandle call. Its ASCII synthetic drive path is a buffer example, not a Unicode/UNC/longpath or supported-filesystem matrix.",
+    "new_case": "Windows-only x64 ABI and buffer assertion: DWORD4,WCHAR2,HANDLE8,structure24,offsets0/8/16/20,Flags3,NULLroot,UTF16 byte length,exact absolute name bytes and terminatingNUL.",
+    "new_cases": 1,
+    "original_16_test_bodies_preserved_exactly": true,
+    "preserved": "Original held reader and source-negative cases, writer admission/destination negatives, audit observe/refusal identity, source guards, snapshot-close and committed-rename-vs-close-error controls have no body/expectation/deadline edits."
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "pr2974-ex-absolute-argument-probe-v1",
+  "scope": "Unexecuted source-only API argument distinction, not a demonstrated repair",
+  "failed_attempt": {
+    "source": "6c02a664b222b9ffb0a0a923358ad08147bffd9c",
+    "driver": "8a0e5867bf99a856f1c7a1438892d0619e846057",
+    "run_id": 35504050093,
+    "result_tree": "d01f5c4b6bdf0a48a556a35257e55657494eee11",
+    "failed": 8,
+    "passed": 8,
+    "all_eight_admitted_rename_calls_failed_with_winerror": 87
+  },
+  "source_parent": "60619956b77c7770c0e53c474f948be095340ffb",
+  "source_parent_reason": "Prepare as an explicit sibling of the previous four-path CI-only source so the already reviewed driver contract still verifies its exact four-path delta from the rejected reader candidate.",
+  "source_afterimages": [
+    {
+      "path": "ci/native_runtime/windows_atomic_rename_probe.py",
+      "bytes": 6832,
+      "sha256": "499ed318ca2050654e257b4896ad1b5963b0ec48aebcad6c57990b4e1cd5f8f8",
+      "blob": "178943d8c192f7655633ddd267ec1d08abe0e82f",
+      "lines": 186
+    },
+    {
+      "path": "tests/test_windows_atomic_rename_probe.py",
+      "bytes": 12793,
+      "sha256": "04b424166f6a5f41870457ba8390289bd3ef85d18933d2f6e9c0cabe503599ac",
+      "blob": "ca5e0721007446c2670e6c7f11030227d50b4b00",
+      "lines": 305
+    }
+  ],
+  "unchanged_source_afterimages": [
+    {
+      "path": "ci/native_runtime/windows_atomic_rename_probe_child.py",
+      "blob": "d7db236e8d3f98d6c3037798ccfc0605c5deec87"
+    },
+    {
+      "path": "tests/test_windows_replaceable_reader_process.py",
+      "blob": "892db8974406e30ef818198afbb3fd2ac168d29a"
+    }
+  ],
+  "driver_afterimage": {
+    "path": "scripts/ci/validate_windows_atomic_rename_probe.py",
+    "bytes": 12797,
+    "sha256": "7c123aca151d28fc5f64daf9e758d4c652aeda841b272a8e9b0715fb035484c7",
+    "blob": "0b8a74b9d51b355478017a97e51a0d637070d9ee",
+    "lines": 309
+  },
+  "unchanged_workflow_template_blob": "28df46908e103a6d850e21f7c8fcfc8234decbe2",
+  "semantic_delta": [
+    "The rename buffer carries the full already-validated absolute destination path instead of its basename.",
+    "RootDirectory is NULL instead of the held immediate-parent handle; the parameter is renamed _parent because its lease remains held by the unchanged caller.",
+    "Add one mandatory actual-Windows SDK-width/offset/UTF16 byte-length/NUL/Flags3/absolute-name buffer control.",
+    "Driver gate changes from 16 to 17 cases and adds exactly that one group; all original 16 bodies, expectations and deadlines remain unchanged."
+  ],
+  "preserved": [
+    "Original same-directory writer, flush/fsync/close and mutation lock.",
+    "Original read-only readers, source snapshot, source identity/volume checks and both parent/source noninherit/type/reparse checks.",
+    "Original immediate-parent share3 and source DELETE/read-attributes/share7 access; no DACL or privilege mutation.",
+    "One Ex22/Flags3 call per admitted case, no retry/legacy fallback/ignore-readonly flag.",
+    "Original source-sharing/destination-sharing/readonly/directory negatives, audit-refusal identity and cleanup/error retention."
+  ],
+  "limits": [
+    "Current Microsoft docs permit relative RootDirectory, so original WinError87 cause is not established.",
+    "Changing the argument pair is a controlled hypothesis, not a guaranteed repair.",
+    "The destination is now resolved by its full path; the pinned immediate parent remains open, but no all-ancestor/path-redirection protection is claimed. A product integration must separately preserve the original authority path contract.",
+    "No successful replacement or supported-filesystem/OS scope is proved until actual execution.",
+    "WTEXT acceptance remains a distinct unresolved source cohort; no product promotion, historical-holder attribution, or all-persistence-error explanation."
+  ],
+  "primary_api": "https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info",
+  "validation": {
+    "source_only": true,
+    "format": false,
+    "lint": false,
+    "types": false,
+    "tests": false,
+    "windows": false,
+    "declared_actual_windows_cases": 17,
+    "old_actual_cases_unchanged": 16
+  }
+}

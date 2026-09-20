@@ -1,0 +1,87 @@
+{
+  "bytes": 83204,
+  "sha256": "89fe1e865a828b690e3a38968463966aa09bf024ca3ed5fd16bd8f1ab3f10356",
+  "report": {
+    "scope": "Ruff/AST/read-only lint only; no product imports/tests/builds",
+    "rlimit_as": 134217728,
+    "cpu_affinity": [
+      0
+    ],
+    "ruff_sha256": "ae9e6252f6021b1303a08a29ffe4e6c627352b57e03137008b1efc4dca803d23",
+    "config_sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+    "commands": [
+      {
+        "argv": [
+          "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+          "format",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "scripts/ci/validate_pr2974_rsp100_approval.py"
+        ],
+        "exit_code": 0,
+        "stdout": "2 files left unchanged\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+          "check",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "scripts/ci/validate_pr2974_rsp100_approval.py"
+        ],
+        "exit_code": 1,
+        "stdout": "E501 Line too long (122 > 120)\n   --> scripts/ci/validate_pr2974_rsp100_approval.py:270:121\n    |\n268 | events = []\n269 | def trace(frame, event, value):\n270 |     if event == \"exception\" and frame.f_code.co_filename.endswith((\"/mcp_risk_dependencies.py\", \"/mcp_approval_risk.py\")):\n    |                                                                                                                         ^^\n271 |         if len(events) < 48:\n272 |             observed = frame.f_locals.get(\"value\")\n    |\n\nFound 1 error.\n",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+          "format",
+          "--check",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "scripts/ci/validate_pr2974_rsp100_approval.py"
+        ],
+        "exit_code": 0,
+        "stdout": "2 files already formatted\n",
+        "stderr": ""
+      }
+    ],
+    "files": [
+      {
+        "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+        "ast_equal": true,
+        "identities": {
+          "before": {
+            "bytes": 20462,
+            "sha256": "41193def64e22f723f89de1f60759ec415e95304d262df83c657bba3c7bb4354",
+            "git_blob_sha": "c831bf6606b5f29565cc9c2644a17cdf63d639ae",
+            "physical_lines": 445
+          },
+          "after": {
+            "bytes": 20462,
+            "sha256": "41193def64e22f723f89de1f60759ec415e95304d262df83c657bba3c7bb4354",
+            "git_blob_sha": "c831bf6606b5f29565cc9c2644a17cdf63d639ae",
+            "physical_lines": 445
+          }
+        }
+      },
+      {
+        "path": "scripts/ci/validate_pr2974_rsp100_approval.py",
+        "ast_equal": true,
+        "identities": {
+          "before": {
+            "bytes": 17519,
+            "sha256": "4d6d48ac72c8d5bf2d4a9093a13b9d3599cd7ea9c99ac694919077a341f3f736",
+            "git_blob_sha": "fe0cb882c518ad156468646f6d297ba25abfcb32",
+            "physical_lines": 426
+          },
+          "after": {
+            "bytes": 17519,
+            "sha256": "4d6d48ac72c8d5bf2d4a9093a13b9d3599cd7ea9c99ac694919077a341f3f736",
+            "git_blob_sha": "fe0cb882c518ad156468646f6d297ba25abfcb32",
+            "physical_lines": 426
+          }
+        }
+      }
+    ]
+  }
+}

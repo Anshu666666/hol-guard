@@ -1,0 +1,105 @@
+{
+  "actual_v2": {
+    "counts_record": {
+      "errors": 0,
+      "failures": 0,
+      "positive_approval_controls": {
+        "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[browser]": true,
+        "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[multiple]": true,
+        "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[single]": true,
+        "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[zero]": true,
+        "test_path_constructor_namespace_is_available_from_exact_class_dictionary": true,
+        "test_real_stdio_review_queues_and_records_without_forwarding_or_rederiving": true
+      },
+      "positive_approval_controls_passed": true,
+      "positive_shape_controls": {
+        "browser": true,
+        "description": true,
+        "plain": true,
+        "schema": true,
+        "secret": true
+      },
+      "positive_shape_controls_passed": true,
+      "skipped": 1,
+      "tests": 326,
+      "xml_exists": true,
+      "xml_sha256": "d9e2205161f30d7887b0612a6d0dee567b21e8060d956f5c8972e9f69f308d3b"
+    },
+    "driver_commit": "60607324cb959cd5c668749b0c55ceb9fcd1995b",
+    "driver_tree": "9a835d096dbeab12e8d5923ad681e7e298c6ac52",
+    "evidence_tree": "a5348287333c8119e102832844276001020e3ef9",
+    "independent_stream_verification": [
+      {
+        "bytes": 3187,
+        "sha256": "859c3e3400a23228a683a35e43ecef812f12ecf488ecd7dd74d61cd17cdb45d7",
+        "stage": "import-admission"
+      },
+      {
+        "bytes": 442,
+        "sha256": "a857b8fdf2a0796e2acbb6b40cd40a7cd96f698717d2d4d959213760ed24d101",
+        "stage": "focused-pytest"
+      },
+      {
+        "bytes": 1732,
+        "sha256": "cffbd1562e078c5a8d5c5227dfc92a0a55824041ddebcb367381a01ad490e025",
+        "stage": "typecheck"
+      }
+    ],
+    "job_id": "106061901897",
+    "meaning": "Unlike combinedv1, this exact source has actual positive approval admission and passing required durable summary/receipt controls. The run remains overall failed because its types stage failed.",
+    "observed": "Exact virtualenv and five exact source imports passed; pair registry available174 bindings and approval registry available true. Original pytest stdout reports325 passed/1skipped. Original result records import,pytest,Ruff,format exit0; typecheck exit1 with exactly two collection-narrowing errors and891warnings. All five owned process groups retired.",
+    "overall_passed": false,
+    "run_id": "35504497691",
+    "source_before_after_verified": true,
+    "source_commit": "63e4b2fb27bb1d16aafd7ad8ff7ff467c3571184",
+    "source_tree": "aa39fb708f75e750ac383e0168c6c258b01e8cb9",
+    "subgroup_limit": "49 approval cases remain the declared source count in this receipt. It independently verifies preserved aggregate stdout and counts record, but does not reparse original JUnit or assign its single skip to a case."
+  },
+  "after_identity": {
+    "bytes": 13278,
+    "physical_lines": 296,
+    "sha256": "2e4069d3cf17dad484953b9c7f349f74f40dd60b897453dea1d0a81dbe9cc3c2"
+  },
+  "classification": "independent_RSP100_approval_collection_cast_source_peer",
+  "conclusion": "No blocking issue found in the exact one-line typing correction. It preserves the admitted source's runtime value, identity/length/element guards and exception boundary; corrected types still require actual validation.",
+  "exact_line_delta": [
+    {
+      "kind": "+",
+      "line": 227,
+      "text": "                current = cast(tuple[type, ...], ns.get(name))"
+    },
+    {
+      "kind": "-",
+      "line": 227,
+      "text": "                current = ns.get(name)"
+    }
+  ],
+  "full_tree_delta": [
+    {
+      "after": "ec4d6bd1fdcef5b7e44de98d4f26d770db47e101",
+      "before": "1ea109b2bd899668d237b797359fe1a8aeb8c2e5",
+      "bytes": 13278,
+      "path": "src/codex_plugin_scanner/guard/mcp_approval_risk.py"
+    }
+  ],
+  "limits": {
+    "RSP100_complete": false,
+    "corrected_source_execution": false,
+    "corrected_type_pass": false,
+    "driver_successor_reviewed": false,
+    "peer_execution": false,
+    "performance_campaign": false,
+    "product_ref_mutation": false,
+    "qualification_complete": false
+  },
+  "previous_descriptor_peer_tree": "887d8518caf9b32d18ccde0aed304baf2d99d604",
+  "previous_executed_source_tree": "aa39fb708f75e750ac383e0168c6c258b01e8cb9",
+  "reviewer": "/root/partition_regression",
+  "schema_version": 1,
+  "source_reasoning": [
+    "ApprovalRiskSourceDefaults.__init__ only appends _collections records after exact type(value) is tuple and every contained item has exact type type; it retains the original value object and tuple of item identities.",
+    "unchanged retrieves current value, casts it for static type inference, then rejects current is not original before evaluating len. Its following length and per-item identity checks remain unchanged.",
+    "typing.cast is already imported and returns the same value without runtime type checking or conversion. No guard was removed, reordered, broadened or wrapped by a new catch. Both object|None narrowing errors are addressed by the same existing invariant."
+  ],
+  "source_tree": "ea5849e45aeecc6e149bb8ef3886acdbde871bd9"
+}

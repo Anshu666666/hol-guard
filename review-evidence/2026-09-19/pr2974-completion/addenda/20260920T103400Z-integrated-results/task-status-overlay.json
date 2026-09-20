@@ -1,0 +1,2289 @@
+{
+  "schema": "pr2974.task-status-overlay.v2",
+  "source_sha": "124472b8949805e0dd36052df6894b335d8b519d",
+  "source_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+  "task_count": 144,
+  "evidence_catalog_count": 119,
+  "original_objects_mutated": false,
+  "promoted_task_ids": [],
+  "unavailable_prior_packets_restored": false,
+  "tasks": [
+    {
+      "id": "RSP-001",
+      "number": 1,
+      "title": "Pin the implementation source and artifact",
+      "original_object_sha256": "193cc9102d33050653bcfa91f62875cefc0e7da6bb7f574a8a86367c5120de18",
+      "original_acceptance": "Record current main SHA, package/runtime/rule digests, toolchains, OS, architecture and source changes since audited 2e672d2. State the actual branch before editing.",
+      "original_dependencies": "None.",
+      "parsed_dependency_ids": [],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Current PR source is 124472b8949805e0dd36052df6894b335d8b519d, tree a0c139c4e02535545c5b0e602c240a38affde5fe, sole parent 4afa. Its exact three-path overlay passed all four platform focused controls, full Rust workspace, both Clippy scopes, release build and self-test in run 35503330438 before non-forced PR integration. Both managed production modules and all five original tests are retained. Fresh ordinary PR CI has started separately. Bind future combined source and final installed artifacts to their actual resulting source."
+    },
+    {
+      "id": "RSP-002",
+      "number": 2,
+      "title": "Recheck active migration overlaps",
+      "original_object_sha256": "22e2431cd2611e7aeebba156bd8481060e0f9897bd0fb6eb584fa45d4d4d3a6c",
+      "original_acceptance": "Read current state and changed files for [#2807](https://github.com/hashgraph-online/hol-guard/pull/2807), [#2870](https://github.com/hashgraph-online/hol-guard/pull/2870), [#2931](https://github.com/hashgraph-online/hol-guard/pull/2931), [#2948](https://github.com/hashgraph-online/hol-guard/pull/2948), [#2911](https://github.com/hashgraph-online/hol-guard/pull/2911) and [#2797](https://github.com/hashgraph-online/hol-guard/pull/2797). Record reuse or conflict resolution; do not revive superseded branches.",
+      "original_dependencies": "RSP-001.",
+      "parsed_dependency_ids": [
+        "RSP-001"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve external 79c and e0 work and the reviewed 17-file integration. Read the actual branch before any write; do not overwrite concurrent edits or repin stopped F history."
+    },
+    {
+      "id": "RSP-003",
+      "number": 3,
+      "title": "Trace and name the four timing boundaries",
+      "original_object_sha256": "01d5c247d87f32ca6093d72dd50e321863a578cbe2c34f9bbf3d3123c4a9f9d6",
+      "original_acceptance": "Separate KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER in benchmark output and docs. Verify each timer's callers against source.",
+      "original_dependencies": "RSP-001.",
+      "parsed_dependency_ids": [
+        "RSP-001"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep kernel, Python native-client wrapper, daemon ingress and installed launcher clocks separate. Ordinary smoke uses 1000 ms c16/recovery limits; original launcher qualification remains 50/100/200 ms and authority readiness remains 400 ms."
+    },
+    {
+      "id": "RSP-004",
+      "number": 4,
+      "title": "Repair the Python semantic reference",
+      "original_object_sha256": "02a09cec8a8c7b0c48f6c2123de98a4f8b4d3c0621517164ce439b41766aa829",
+      "original_acceptance": "Construct an explicit isolated benchmark-only oracle or equivalent pinned installed version. An off-mode availability response must fail the reference validation.",
+      "original_dependencies": "RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-003"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-005",
+      "number": 5,
+      "title": "Assert semantic work on both benchmark arms",
+      "original_object_sha256": "b15120576a10279ae34e23fe4fd8637bbe6ef3ebb07101fa814bd01a96016d24",
+      "original_acceptance": "Require expected route, verdict and reason class for benign and malicious fixtures. A payload-only check cannot pass. Never expose the oracle in production.",
+      "original_dependencies": "RSP-004.",
+      "parsed_dependency_ids": [
+        "RSP-004"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-006",
+      "number": 6,
+      "title": "Correct existing SLO descriptions",
+      "original_object_sha256": "5b82a8a2266b15873357f222525f9d6d59e9403aeba234b2bcce0394939d2cf2",
+      "original_acceptance": "Document warm ≤20 ms OR ≥1.15x and cold ≤150 ms AND ≥5x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
+      "original_dependencies": "RSP-003,RSP-005.",
+      "parsed_dependency_ids": [
+        "RSP-003",
+        "RSP-005"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep kernel, Python native-client wrapper, daemon ingress and installed launcher clocks separate. Ordinary smoke uses 1000 ms c16/recovery limits; original launcher qualification remains 50/100/200 ms and authority readiness remains 400 ms."
+    },
+    {
+      "id": "RSP-007",
+      "number": 7,
+      "title": "Add actual installed launcher measurements",
+      "original_object_sha256": "5ccf5c7c134a711dbc62e5906463e1ce2f5844998100ef1adeaa8488fb24ae11",
+      "original_acceptance": "Start the registered executable/argv from the installed artifact; include interpreter/native startup, stdout and exit status. Keep normalized HTTP probes separately labeled.",
+      "original_dependencies": "RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-003"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The separate pure lazy-export comparison completed 176 original calls with correct native outcomes, but every 50/100/200 ms ceiling failed. Do not repeat that experiment as pending work or claim qualified benefit. Revalidate current installed routes with the original populations and host/source scope."
+    },
+    {
+      "id": "RSP-008",
+      "number": 8,
+      "title": "Add attributable phase measurements",
+      "original_object_sha256": "86f87b0c8709f52f32c20915cfff8365ac2b58d1ab03507b1d016722fed08427",
+      "original_acceptance": "Measure hashing, config lookup, JSON, admission, queue, native connection, evaluation, evidence submission and response. Export aggregate-only bounded fields.",
+      "original_dependencies": "RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-003"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the recovered, already reviewed phase plan and clarification; the driver-only implementation and meaningful untimed controls are in progress. Rebind all exact 88 original launcher calls, immutable input strings and frozen daemon entry projections to the selected source before one diagnostic. Preserve original argv/deadlines, one-call forwarding, same-call joins and distinct inclusive intervals. Do not infer unobserved child import/auth, internal Rust or asynchronous SQLite costs."
+    },
+    {
+      "id": "RSP-009",
+      "number": 9,
+      "title": "Create the workload and platform matrix",
+      "original_object_sha256": "48e6f26b2c4f54f1199d3e4f0ec53b1b53bd8beed12c3f3824670c9b6b9042b2",
+      "original_acceptance": "Cover sizes, events, allow/block/review/Watch/unavailable cases, source refs, c1/c4/c16/c64 and supported targets; classify missing routes explicitly.",
+      "original_dependencies": "RSP-007,RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-007",
+        "RSP-008"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-010",
+      "number": 10,
+      "title": "Add statistically meaningful qualification mode",
+      "original_object_sha256": "34a1e81101fd468cfb89ec8851d29ce5dad0309ec5d5e20ace1d8f4287fbb068",
+      "original_acceptance": "Implement the PRD's warm/cold/recovery sample minima, alternating baseline/candidate blocks and per-route confidence intervals. Keep CI smoke labeled as smoke.",
+      "original_dependencies": "RSP-009.",
+      "parsed_dependency_ids": [
+        "RSP-009"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-011",
+      "number": 11,
+      "title": "Measure the full process tree and saturation",
+      "original_object_sha256": "db486e3b7b967215bf70adc449cc05104ea62962792a7d95e95b365ab0598cfb",
+      "original_acceptance": "Sample private memory/RSS where supported, CPU/request, children, threads, handles, queueing and every attempted request. Add offered-rate load beside closed-loop waves.",
+      "original_dependencies": "RSP-009.",
+      "parsed_dependency_ids": [
+        "RSP-009"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain complete process-tree and short-lived CPU scope. Fresh observer resource coverage and 15.3487% RSS fail; missing samples remain unavailable, not inferred clean exits. Preserve original 12% mixed and 50% long-soak gates."
+    },
+    {
+      "id": "RSP-012",
+      "number": 12,
+      "title": "Freeze baseline and choose measured tranches",
+      "original_object_sha256": "3c4dd3f68fbbc839e7931327f5b0d174d37b3ea40c88377151e63e8cefac5db8",
+      "original_acceptance": "Record current production and optimized alternatives. Commit metric thresholds and go/no-go rules; exclude deferred conversions from delivery claims.",
+      "original_dependencies": "RSP-005,RSP-010,RSP-011.",
+      "parsed_dependency_ids": [
+        "RSP-005",
+        "RSP-010",
+        "RSP-011"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-013",
+      "number": 13,
+      "title": "Capture the real ordinary native call graph",
+      "original_object_sha256": "7aaf192a620dd9a1eae15451dac61bc8ccd003f7819b384fec000746964acf8c",
+      "original_acceptance": "Document direct in-daemon HookWorker dispatch and persistent helper reuse. Keep guardian/evaluator IPC only on verified compatibility/approval paths.",
+      "original_dependencies": "RSP-001.",
+      "parsed_dependency_ids": [
+        "RSP-001"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the original explicit caller/surface inventory and verify live source aliases before modifying ownership. Retain complete harness and process-pool scope; a lazy public scanner import does not remove unmeasured consumers."
+    },
+    {
+      "id": "RSP-014",
+      "number": 14,
+      "title": "Inventory every installed harness surface",
+      "original_object_sha256": "b60ab971852a6421868c6db0b4b136f6814415fe2935e972029746cd42f80e23",
+      "original_acceptance": "Map actual generated launcher, aliases, pre/post support and observation-only routes. Preflight detection must not count as installed enforcement.",
+      "original_dependencies": "RSP-013.",
+      "parsed_dependency_ids": [
+        "RSP-013"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the original explicit caller/surface inventory and verify live source aliases before modifying ownership. Retain complete harness and process-pool scope; a lazy public scanner import does not remove unmeasured consumers."
+    },
+    {
+      "id": "RSP-015",
+      "number": 15,
+      "title": "Freeze Watch and availability response fixtures",
+      "original_object_sha256": "418aca0ea61cdbfcdb8d7a5c0d3346705ea27a1b36a3736856fc665746997969",
+      "original_acceptance": "Capture harness JSON and exit behavior for current mode/posture, native misses, integrity/size failures, permission requests and lifecycle events.",
+      "original_dependencies": "RSP-014.",
+      "parsed_dependency_ids": [
+        "RSP-014"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-016",
+      "number": 16,
+      "title": "Separate native verdict from delivered response",
+      "original_object_sha256": "a808a72879ee827504d11adebeba3aed602e876ed04be23a5b229279dd49af21",
+      "original_acceptance": "Define native decision, posture transformation, availability outcome and final harness response in evidence. Preserve accurate receipt attribution.",
+      "original_dependencies": "RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-015"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-017",
+      "number": 17,
+      "title": "Specify coarse request/result contracts",
+      "original_object_sha256": "09407555e3a893eb5737435c8227f22510fe997a7e2cd16535104b2c4ba1de59",
+      "original_acceptance": "Add or extend versioned native schemas only for selected scope; declare fields, limits, unknown-field policy, capabilities and error classes.",
+      "original_dependencies": "RSP-012,RSP-016.",
+      "parsed_dependency_ids": [
+        "RSP-012",
+        "RSP-016"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-018",
+      "number": 18,
+      "title": "Define byte, Unicode and canonicalization behavior",
+      "original_object_sha256": "6db7dda66db87f92051f50ade169c3c804c99a4d445442c7b7116e69c0c8c86e",
+      "original_acceptance": "Pin duplicate JSON rejection, number/null behavior, UTF-8, string versus byte limits, field ordering and digest domains with fixtures.",
+      "original_dependencies": "RSP-017.",
+      "parsed_dependency_ids": [
+        "RSP-017"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-019",
+      "number": 19,
+      "title": "Define deadline ownership",
+      "original_object_sha256": "278417da19b1c05a096a1885aa2293305efe8183907ee41507c428f202f4d3bc",
+      "original_acceptance": "One caller deadline must cover setup, queueing, transport and evaluation. Define cancellation and late-result rejection without resetting budget.",
+      "original_dependencies": "RSP-017.",
+      "parsed_dependency_ids": [
+        "RSP-017"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-020",
+      "number": 20,
+      "title": "Define generation-bound identity rules",
+      "original_object_sha256": "fdc8b019e3a78101c0644d7ea7afcde1dfac60a331e03d26b93cbcc731cb968f",
+      "original_acceptance": "Specify executable/package/process/peer identity, policy scope and generation, expiry, and cache invalidation before accepting reuse.",
+      "original_dependencies": "RSP-017.",
+      "parsed_dependency_ids": [
+        "RSP-017"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-021",
+      "number": 21,
+      "title": "Define non-replayable request behavior",
+      "original_object_sha256": "e1a263a2acdb7597bd62b71a09802f65fb3c602afc441ee02189c1ac196b0dee",
+      "original_acceptance": "Document request commit points for approval, policy and forwarding operations. Ambiguous outcomes require explicit handling, not transparent replay.",
+      "original_dependencies": "RSP-019,RSP-020.",
+      "parsed_dependency_ids": [
+        "RSP-019",
+        "RSP-020"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-022",
+      "number": 22,
+      "title": "Expand source ownership gates",
+      "original_object_sha256": "4504245ce5bd38057d3dbc4544d8fee5c447d7e885533a4df8eabc018870237f",
+      "original_acceptance": "Follow the current recording-mode caller and proposed new routes; prevent synchronous configuration reads being mislabeled as background work.",
+      "original_dependencies": "RSP-013,RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-013",
+        "RSP-015"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-023",
+      "number": 23,
+      "title": "Build independent correctness vectors",
+      "original_object_sha256": "7dd123d479cf7604689826903fae547af1c1da888d75d5d54e3862207d760fc2",
+      "original_acceptance": "Add expected outcomes for malicious and benign cases independent of Python equivalence; label every intentional behavior correction separately.",
+      "original_dependencies": "RSP-015,RSP-018.",
+      "parsed_dependency_ids": [
+        "RSP-015",
+        "RSP-018"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-024",
+      "number": 24,
+      "title": "Approve the technical contract through review",
+      "original_object_sha256": "84847d5ef6f062b73d51475614711df7396090337b3d2b26fb7de6c3494abf3e",
+      "original_acceptance": "Resolve reviewer questions on current availability behavior, authority transfer, distributions and rollback. Do not infer safety from a passing old manifest.",
+      "original_dependencies": "RSP-016,RSP-021,RSP-022,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-016",
+        "RSP-021",
+        "RSP-022",
+        "RSP-023"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-025",
+      "number": 25,
+      "title": "Profile executable validation on the ordinary route",
+      "original_object_sha256": "7f3a91360c41c3f92e0fa427ce43550a0405d8eb9140f7fdc032d9976b585571",
+      "original_acceptance": "Count status lookups, full executable bytes hashed and latency for warm/cold hooks. Do not confuse capability-cache hits with digest-cache hits.",
+      "original_dependencies": "RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-008"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the recovered, already reviewed phase plan and clarification; the driver-only implementation and meaningful untimed controls are in progress. Rebind all exact 88 original launcher calls, immutable input strings and frozen daemon entry projections to the selected source before one diagnostic. Preserve original argv/deadlines, one-call forwarding, same-call joins and distinct inclusive intervals. Do not infer unobserved child import/auth, internal Rust or asynchronous SQLite costs."
+    },
+    {
+      "id": "RSP-026",
+      "number": 26,
+      "title": "Choose a verified runtime-lifetime design",
+      "original_object_sha256": "0d72ae0b59a9f81512ce7f1470f17a4f0a53290276aaf766b44e8e74d819f810",
+      "original_acceptance": "Compare retained attested process/session identity and safe native admission against current validation. Record platform-specific proof and limits.",
+      "original_dependencies": "RSP-020,RSP-025.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-025"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve authenticated generation-bound runtime lifetime and replacement defenses. Source/component tests remain distinct from required installed artifact, signing and update evidence."
+    },
+    {
+      "id": "RSP-027",
+      "number": 27,
+      "title": "Implement generation-bound attestation reuse",
+      "original_object_sha256": "c54f8e1f553ae9baf1bf04360c053ab079cc03d4d319c7d947aa7bb6d2200d21",
+      "original_acceptance": "Reuse only a verified generation. Bind package/version/digest/permissions/peer and invalidate on upgrades, replacements and identity failure.",
+      "original_dependencies": "RSP-024,RSP-026.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-026"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve authenticated generation-bound runtime lifetime and replacement defenses. Source/component tests remain distinct from required installed artifact, signing and update evidence."
+    },
+    {
+      "id": "RSP-028",
+      "number": 28,
+      "title": "Test executable replacement defenses",
+      "original_object_sha256": "bed930d37f355ed7dde23278869f3234c177cc2c06c2e43d00f7238ea968e6b3",
+      "original_acceptance": "Cover same-size mutation, restored timestamps, symlink/path rebinding, ownership/permission changes, stale manifests and concurrent replacement.",
+      "original_dependencies": "RSP-027.",
+      "parsed_dependency_ids": [
+        "RSP-027"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve authenticated generation-bound runtime lifetime and replacement defenses. Source/component tests remain distinct from required installed artifact, signing and update evidence."
+    },
+    {
+      "id": "RSP-029",
+      "number": 29,
+      "title": "Test signing and update transitions",
+      "original_object_sha256": "9446a76ca889d5e2809806fbb9b888d225f8eb31a64ac18ae3ef80c56dd9dbaf",
+      "original_acceptance": "Verify re-sign/freeze byte changes, manifest refresh, generation retirement, rollback and first request after update on every target.",
+      "original_dependencies": "RSP-028.",
+      "parsed_dependency_ids": [
+        "RSP-028"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-030",
+      "number": 30,
+      "title": "Measure request-time configuration loading",
+      "original_object_sha256": "6c14602d6aefe12e7166873fda892354851db9b567824c5ccbadbce4f5712b56",
+      "original_acceptance": "Count home/workspace config reads and their contribution in _review_native_edge, including Watch changes and cache-miss situations.",
+      "original_dependencies": "RSP-008,RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-008",
+        "RSP-015"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Read all 15 fresh workspace cells and actual accepted/ACK/ready/current-authority timestamps. All four prior small-scope origin defects pass; 100-scope first admission, service restart and key rotation still fail. Preserve absolute 400 ms and withdrawal fences; lost-hint 100 passing does not prove the remaining timing cause fixed."
+    },
+    {
+      "id": "RSP-031",
+      "number": 31,
+      "title": "Extend acknowledged posture binding if needed",
+      "original_object_sha256": "69a0ccffd793a950d4ee1ff2136dc3fbd5a8aeb7c85f64394085043d4158c940",
+      "original_acceptance": "Carry complete mode/posture semantics in an authenticated snapshot; define visibility only after correct resident acknowledgement.",
+      "original_dependencies": "RSP-020,RSP-030.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-030"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Read all 15 fresh workspace cells and actual accepted/ACK/ready/current-authority timestamps. All four prior small-scope origin defects pass; 100-scope first admission, service restart and key rotation still fail. Preserve absolute 400 ms and withdrawal fences; lost-hint 100 passing does not prove the remaining timing cause fixed."
+    },
+    {
+      "id": "RSP-032",
+      "number": 32,
+      "title": "Remove redundant ordinary configuration rereads",
+      "original_object_sha256": "b612bd3e602b7924e3dc2eeb47d5c34428d379ec9cef4663abe89ebc8209e33a",
+      "original_acceptance": "Use the acknowledged request binding. Preserve workspace registration, first-use behavior and mixed control changes without stale-mode results.",
+      "original_dependencies": "RSP-031.",
+      "parsed_dependency_ids": [
+        "RSP-031"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Read all 15 fresh workspace cells and actual accepted/ACK/ready/current-authority timestamps. All four prior small-scope origin defects pass; 100-scope first admission, service restart and key rotation still fail. Preserve absolute 400 ms and withdrawal fences; lost-hint 100 passing does not prove the remaining timing cause fixed."
+    },
+    {
+      "id": "RSP-033",
+      "number": 33,
+      "title": "Move the small transformation layer only if selected",
+      "original_object_sha256": "57c20faea9aa97a48c344a8ef074b797c57058a4cb3ed1c8892ed992d64a321e",
+      "original_acceptance": "Implement the captured Watch/availability contract at the appropriate native boundary, with deterministic unavailable-runtime bridge behavior.",
+      "original_dependencies": "RSP-024,RSP-032.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-032"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-034",
+      "number": 34,
+      "title": "Exercise policy and posture transitions under load",
+      "original_object_sha256": "ca8d9422c0a1f813a7307f275f70e697b8ce189b73f888b148f52b7a4ed4d64b",
+      "original_acceptance": "Test mode toggles, stricter workspace overlays, expiry, restart, failed publication and races. The adopted behavior matrix must remain intact.",
+      "original_dependencies": "RSP-032,RSP-033.",
+      "parsed_dependency_ids": [
+        "RSP-032",
+        "RSP-033"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The exact 2ac poststart repair now admits all 1/10/100 cells and nine accepted-to-ACK/receipt observations under the original 400 ms bound; six service instances and12 direct worker retirements reconcile. This diagnostic does not close original lost-hint, key-change, expiry, rollout or full-startup requirements; retain earlier 8f failures separately."
+    },
+    {
+      "id": "RSP-035",
+      "number": 35,
+      "title": "Qualify identity and posture improvements",
+      "original_object_sha256": "234a326165cd3f97c9687536e601589f5c916a4fafdc30eebc8df0e046c846fc",
+      "original_acceptance": "Run installed before/after tests and process-tree metrics. Count integrity failures and unavailable continuations separately from evaluated allows.",
+      "original_dependencies": "RSP-029,RSP-034.",
+      "parsed_dependency_ids": [
+        "RSP-029",
+        "RSP-034"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-036",
+      "number": 36,
+      "title": "Retire redundant work and document proof",
+      "original_object_sha256": "27e85d577f5328a4f5e267a7a9238cadbed0aadebf9cde751ef9c21fc4754886",
+      "original_acceptance": "Remove only proven duplicated code; retain necessary validation on platforms without equivalent binding. Mark any failed optimization deferred.",
+      "original_dependencies": "RSP-035.",
+      "parsed_dependency_ids": [
+        "RSP-035"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-037",
+      "number": 37,
+      "title": "Measure parsing, serialization and allocation counts",
+      "original_object_sha256": "e7bf066d68f74ec2c0e1ee4aeac7b1c69369578c7fdda0d5c1ea79417f1bd923",
+      "original_acceptance": "Use small and maximum-size envelopes; attribute client timeout parse, protocol parse, shutdown reparse and edge copies separately.",
+      "original_dependencies": "RSP-008,RSP-018.",
+      "parsed_dependency_ids": [
+        "RSP-008",
+        "RSP-018"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-038",
+      "number": 38,
+      "title": "Return typed lifecycle disposition",
+      "original_object_sha256": "a07a360728278af24c5f773ec5e79d478a790c7c70dfadb384a1c176355aa9ef",
+      "original_acceptance": "Eliminate the post-evaluation full request parse used only to detect shutdown, preserving shutdown authorization and response behavior.",
+      "original_dependencies": "RSP-037.",
+      "parsed_dependency_ids": [
+        "RSP-037"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-039",
+      "number": 39,
+      "title": "Reuse validated timeout metadata",
+      "original_object_sha256": "42d7dbeefa2364ead6a1744809c12d13b2f6a9ad5bb66d6cc6857be2175d9b9e",
+      "original_acceptance": "Avoid full reparsing in client timeout handling while retaining strict framing, duplicate keys, limits and semantic validation.",
+      "original_dependencies": "RSP-018,RSP-019,RSP-037.",
+      "parsed_dependency_ids": [
+        "RSP-018",
+        "RSP-019",
+        "RSP-037"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-040",
+      "number": 40,
+      "title": "Compute canonical request identity once",
+      "original_object_sha256": "98e96f3992ea90f67e57c2850de9df4ea1c0227ab4a4ba3b6cd4a05fee50582c",
+      "original_acceptance": "Carry an immutable validated identity through evaluation and receipt creation; golden digests and approval bindings must remain identical.",
+      "original_dependencies": "RSP-018,RSP-023,RSP-037.",
+      "parsed_dependency_ids": [
+        "RSP-018",
+        "RSP-023",
+        "RSP-037"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-041",
+      "number": 41,
+      "title": "Keep PreTool results typed through receipt creation",
+      "original_object_sha256": "8f10d866a3c0e4eb0dfca2732192dc4124f6c1b045dcdd97ab89228ac26d963d",
+      "original_acceptance": "Remove repeated typed→Value→typed conversions while retaining result-matrix validation and serialized output compatibility.",
+      "original_dependencies": "RSP-040.",
+      "parsed_dependency_ids": [
+        "RSP-040"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-042",
+      "number": 42,
+      "title": "Compile policy maps at snapshot admission",
+      "original_object_sha256": "bb2a46817113ada9cdfe57e644c44aa5409e9dc496c173065bb897e34d9f3ad8",
+      "original_acceptance": "Validate keys/actions and canonical harness conflicts once per immutable generation; retain per-request authority, expiry and scope fences.",
+      "original_dependencies": "RSP-020,RSP-024.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-024"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-043",
+      "number": 43,
+      "title": "Share immutable compiled policy state",
+      "original_object_sha256": "c1c5f6a3f7dfabd034f8aeb134d434270908078d46d7688f94b93e2fb91e83ad",
+      "original_acceptance": "Use appropriate shared ownership without copying maps per request; preserve atomic swaps and approval consume synchronization.",
+      "original_dependencies": "RSP-042.",
+      "parsed_dependency_ids": [
+        "RSP-042"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-044",
+      "number": 44,
+      "title": "Reduce post-tool output copying",
+      "original_object_sha256": "6b6ac8393c7accdb97788d0e9c04fe3525ba439eab056f565f2a1dc3c212a162",
+      "original_acceptance": "Optimize traversal/concatenation/hash input while preserving newlines, ordering, character counts, truncation and source equivalence.",
+      "original_dependencies": "RSP-018,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-018",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-045",
+      "number": 45,
+      "title": "Benchmark scanner prefilter alternatives",
+      "original_object_sha256": "efdcc2bfcd1225f211b97cc645e86e827aa333011ea3a8dfa1b85d8581b32554",
+      "original_acceptance": "Compare existing OnceLock regexes with bounded prefilters/RegexSet on clean and matching text. Preserve per-match suppression and ordering.",
+      "original_dependencies": "RSP-012,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-012",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-046",
+      "number": 46,
+      "title": "Preserve scanner chunk and deadline semantics",
+      "original_object_sha256": "dfa9f07bea13fb40b966aa7078cd98db87da4cce45369667ff75dbfa6d659e41",
+      "original_acceptance": "Test split tokens, multibyte boundaries and unrelated-document isolation. Ensure parsing/I/O/scanning consume the original remaining deadline.",
+      "original_dependencies": "RSP-019,RSP-044,RSP-045.",
+      "parsed_dependency_ids": [
+        "RSP-019",
+        "RSP-044",
+        "RSP-045"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-047",
+      "number": 47,
+      "title": "Run core parity and adversarial suites",
+      "original_object_sha256": "4f179118d050151f0a926b0edf50bc5e7842fe2a463becf29eea719e82976269",
+      "original_acceptance": "Run command, rule-contract, source mutation, snapshot/approval and scanner suites applicable to the changed modules; investigate every difference.",
+      "original_dependencies": "RSP-038,RSP-039,RSP-041,RSP-043,RSP-046.",
+      "parsed_dependency_ids": [
+        "RSP-038",
+        "RSP-039",
+        "RSP-041",
+        "RSP-043",
+        "RSP-046"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve original typed/parsing/canonicalization/scanner parity and deadline semantics. Use actual phase and adversarial evidence for the selected source; no original acceptance or dependency is closed by unrelated launcher or observer success."
+    },
+    {
+      "id": "RSP-048",
+      "number": 48,
+      "title": "Qualify end-to-end benefit of core changes",
+      "original_object_sha256": "5e42e7fe142bab19b2668ec62f50a2cb233f0ff352cf07265e6d6d7c9da1e2cd",
+      "original_acceptance": "Compare installed and native-client timings; a microbenchmark gain with a slower installed path does not justify adoption.",
+      "original_dependencies": "RSP-047,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-047",
+        "RSP-010"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-049",
+      "number": 49,
+      "title": "Inventory package-core production consumers",
+      "original_object_sha256": "f4da5c6532c813a21b4091fca0fd27afb131a73a58bc6297a830619831b03c7b",
+      "original_acceptance": "Trace package protect, shims, audit CLI, daemon and MCP package routes. Record local computation versus network or approval wait.",
+      "original_dependencies": "RSP-001,RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-001",
+        "RSP-008"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-050",
+      "number": 50,
+      "title": "Benchmark dependency and bundle cardinality independently",
+      "original_object_sha256": "07d698eff594acfedf226d4cc67c887f6cc8726a1a4cc55c32dfabb15c46ecfc",
+      "original_acceptance": "Cover absent/exact/unversioned/deny matches with 100/1000/10000 dependencies and independently scaled bundles; record CPU and full local evaluation.",
+      "original_dependencies": "RSP-049,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-049",
+        "RSP-010"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-051",
+      "number": 51,
+      "title": "Build verified immutable bundle indexes in Python",
+      "original_object_sha256": "ecbe93bdf25d0de3000ed30daeec87a3cbeea06187c64f9df3ed24a9e16c750a",
+      "original_acceptance": "Eliminate repeated full bundle scans; preserve canonical duplicates, unversioned risk selection, emergency denies and stale-bundle semantics.",
+      "original_dependencies": "RSP-050,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-050",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-052",
+      "number": 52,
+      "title": "Parse each lockfile input once in Python",
+      "original_object_sha256": "64b61edfdc0d61e9205cb5bdb86c2730aa49c20a9112318a57594c0eca0f49a9",
+      "original_acceptance": "Return structured entries and validation/completeness from one parse, preserving JSONC/UTF-8/duplicate handling and current budgets.",
+      "original_dependencies": "RSP-051.",
+      "parsed_dependency_ids": [
+        "RSP-051"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-053",
+      "number": 53,
+      "title": "Share one immutable input snapshot per evaluation",
+      "original_object_sha256": "c904aa9d60fa527fdf7da0631dc5c15375501969e9f836c6d653cec05ed58cc0",
+      "original_acceptance": "Bind content bytes/hash/parser identity to evaluation, context and evidence; do not reuse by filename or timestamp alone.",
+      "original_dependencies": "RSP-020,RSP-052.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-052"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-054",
+      "number": 54,
+      "title": "Rebaseline and decide whether Rust is justified",
+      "original_object_sha256": "4030f18ff87d5606c13778636cc35010e3ea2820c26281d9b09c2abe730dd7e1",
+      "original_acceptance": "Compare current Python and optimized Python in real local package routes. Record port/no-port decision against PRD benefit threshold.",
+      "original_dependencies": "RSP-053,RSP-012.",
+      "parsed_dependency_ids": [
+        "RSP-053",
+        "RSP-012"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the optimized Python package path and original independent cardinality/corpus requirements. Keep the literal unversioned-route gap explicit; do not invent a production caller or reopen an unselected Rust port without measured justification."
+    },
+    {
+      "id": "RSP-055",
+      "number": 55,
+      "title": "Define native package batch schemas",
+      "original_object_sha256": "eb78b345dae243184559d153f3c78a332d710d27237bb289d03256a42bdd77f0",
+      "original_acceptance": "Specify bounded PackageEvaluationRequestV1/ResultV1 with input, verified bundle and policy identities, findings and explicit completeness.",
+      "original_dependencies": "RSP-024,RSP-054.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-054"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-056",
+      "number": 56,
+      "title": "Implement one native parser format end to end",
+      "original_object_sha256": "0c718cb31b0dad2fc82d324efe738c69a9f2b6e5a5f166f611323e5d3fa71c05",
+      "original_acceptance": "Add proposed guard-package-core only after go decision. Validate and emit entries in one traversal under current byte/node/entry/depth limits.",
+      "original_dependencies": "RSP-055.",
+      "parsed_dependency_ids": [
+        "RSP-055"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-057",
+      "number": 57,
+      "title": "Implement native indexed bundle evaluation",
+      "original_object_sha256": "f100ae5fd3fb29e03fb041e24c8855e3d7285be285f250b88f6fb45ac2974c8b",
+      "original_acceptance": "Preserve ecosystem identity/version semantics, emergency deny precedence and trust freshness; never accept caller-supplied verified=true as proof.",
+      "original_dependencies": "RSP-056.",
+      "parsed_dependency_ids": [
+        "RSP-056"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-058",
+      "number": 58,
+      "title": "Integrate the coarse native call into a real surface",
+      "original_object_sha256": "c9830b2457d18e27b94bfd68764a81341e23f7e03ea7d3bbe0152e85054b243a",
+      "original_acceptance": "Wire package protect or audit to one native batch request, preserving final execution revalidation and all output/evidence fields.",
+      "original_dependencies": "RSP-057.",
+      "parsed_dependency_ids": [
+        "RSP-057"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-059",
+      "number": 59,
+      "title": "Expand format parity and malformed-input tests",
+      "original_object_sha256": "3aa9d7306d3b7d2b7a4b7a7ca440009a867923d0542c031d9e07b87993480e65",
+      "original_acceptance": "Cover aliases, workspaces, transitive/local/git/optional dependencies, prereleases, truncation, stale bundles and explicit bun.lockb fallback.",
+      "original_dependencies": "RSP-058.",
+      "parsed_dependency_ids": [
+        "RSP-058"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-060",
+      "number": 60,
+      "title": "Qualify and activate only supported formats",
+      "original_object_sha256": "bf817f47e841e1bf41ce5ed9709df336356134e7cfc8493be2573cce5e4b1b9b",
+      "original_acceptance": "Pass installed package-flow correctness and optimized-Python comparisons; publish native format coverage and unsupported routes accurately.",
+      "original_dependencies": "RSP-059,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-059",
+        "RSP-010"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-061",
+      "number": 61,
+      "title": "Map rich secret detector capabilities",
+      "original_object_sha256": "65d517b2b0535f069a0ec399672386ef4352eeb99d1ee4741d3db67cdb94695f",
+      "original_acceptance": "Compare provider rules, entropy, context, suppressions, positions, HMAC and evidence to guard-scanner. Record exact gaps before reuse.",
+      "original_dependencies": "RSP-001,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-001",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-062",
+      "number": 62,
+      "title": "Baseline repository, staged and history workflows",
+      "original_object_sha256": "07c2ef66b34f7b60e1914d0c8f347531cccdf120d9eca44039392201a5a78ca9",
+      "original_acceptance": "Separate process startup, Git object I/O, detector CPU, bytes and files covered. Include small/large and repeated-blob workloads.",
+      "original_dependencies": "RSP-061,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-061",
+        "RSP-010"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-063",
+      "number": 63,
+      "title": "Batch Git object reads in Python",
+      "original_object_sha256": "90c9b22ad52c23bd207aa313ce5b211a4576bab754863f2cdcbb8299ff6193e7",
+      "original_acceptance": "Replace repeated size/blob subprocesses with a bounded reader. Preserve staged bytes, object identity, timeouts and child cleanup.",
+      "original_dependencies": "RSP-062.",
+      "parsed_dependency_ids": [
+        "RSP-062"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-064",
+      "number": 64,
+      "title": "Deduplicate blob scanning without losing occurrences",
+      "original_object_sha256": "805f7fd38502e7a832b011fe38b81ebac9ca70b907159edf49d0cee65da0561e",
+      "original_acceptance": "Reuse findings by immutable blob identity plus detector/policy configuration; report each path/commit occurrence and correct counters.",
+      "original_dependencies": "RSP-063.",
+      "parsed_dependency_ids": [
+        "RSP-063"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-065",
+      "number": 65,
+      "title": "Share secure traversal for plugin checks",
+      "original_object_sha256": "5e8016c74d135fc36a35d3017b6338ce5bbdaf020d5bd1cbdb2969009c65192f",
+      "original_acceptance": "Avoid repeated root enumeration and reads where checks permit shared immutable input. Preserve containment, exclusions and incomplete coverage.",
+      "original_dependencies": "RSP-020,RSP-062.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-062"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-066",
+      "number": 66,
+      "title": "Rebaseline and approve only justified scanner ports",
+      "original_object_sha256": "1b7aa16e2809b7d311344f3ee5ccf26e38c75b779ec1ac5ce684faec523566f2",
+      "original_acceptance": "Compare optimized Python and intended native boundary, including startup and serialization; defer ports with no full-command benefit.",
+      "original_dependencies": "RSP-064,RSP-065,RSP-012.",
+      "parsed_dependency_ids": [
+        "RSP-064",
+        "RSP-065",
+        "RSP-012"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-067",
+      "number": 67,
+      "title": "Specify separate offline detector schemas",
+      "original_object_sha256": "0105d8af00f1cd0df25c65cc9ca34bae467831d7ad765452ce26c9699afcd2b7",
+      "original_acceptance": "Preserve richer findings, deterministic ordering, caller HMAC and completeness; do not substitute the hook scanner output contract.",
+      "original_dependencies": "RSP-024,RSP-061,RSP-066.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-061",
+        "RSP-066"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-068",
+      "number": 68,
+      "title": "Implement bounded native detector batches",
+      "original_object_sha256": "59d69b6e030833b8e01b848a5a08c5c932022fac1281e4619a2a58b025b55f7b",
+      "original_acceptance": "Compile appropriate rules and parser logic, preserve Unicode/line counting/suppression, and reset overlap across logical files.",
+      "original_dependencies": "RSP-067.",
+      "parsed_dependency_ids": [
+        "RSP-067"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-069",
+      "number": 69,
+      "title": "Wire the real secrets CLI and exit behavior",
+      "original_object_sha256": "e2962cdc7fa19052d82229885783bfadcf8162ee5c25c383a4ad3177f089e70d",
+      "original_acceptance": "Exercise installed hol-guard secrets and staged workflows. Preserve exits 0/2/3, default bounds and explicit user limits.",
+      "original_dependencies": "RSP-068.",
+      "parsed_dependency_ids": [
+        "RSP-068"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-070",
+      "number": 70,
+      "title": "Qualify hostile archive worker separately",
+      "original_object_sha256": "337b5febf08dd93777cde2c98b1ae2eb5725dc0b6e3379bd41a9d867786e5a41",
+      "original_acceptance": "Profile interpreter/member-loop cost; retain isolation, digest/inode binding, expansion checks and launch binding for any native worker.",
+      "original_dependencies": "RSP-066,RSP-024.",
+      "parsed_dependency_ids": [
+        "RSP-066",
+        "RSP-024"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-071",
+      "number": 71,
+      "title": "Run secret and scanner adversarial parity",
+      "original_object_sha256": "b107146f648ead78c8d6737fbb91dd05b1138b5b2de73a1a9b284277b13e6b5d",
+      "original_acceptance": "Cover realistic/fixture credentials, unstaged changes, hardlinks/symlinks, invalid encodings, mutation, archive bombs and incomplete scans.",
+      "original_dependencies": "RSP-069,RSP-070.",
+      "parsed_dependency_ids": [
+        "RSP-069",
+        "RSP-070"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-072",
+      "number": 72,
+      "title": "Publish scanner go/no-go and coverage evidence",
+      "original_object_sha256": "a8ee601eb4cc4bf94bfc7b94a069f5543137a620346d6cf3baf65aa088c45c54",
+      "original_acceptance": "Report full CLI wall time and CPU versus optimized Python, complete finding equivalence, platforms and deliberately retained Python scopes.",
+      "original_dependencies": "RSP-071,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-071",
+        "RSP-010"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original scanner detector, Git occurrence and hostile-archive scope and the exact remaining-work record. Revalidate real consumers and adversarial parity as required; unrelated native launcher evidence does not qualify this workstream."
+    },
+    {
+      "id": "RSP-073",
+      "number": 73,
+      "title": "Rank launcher cost by actual harness use",
+      "original_object_sha256": "7f6bcf2282a2a1aed5dc03158faddb80d47374cbe24cd993d58734d7f3d13226",
+      "original_acceptance": "Use installed baseline measurements and explicit supported-route inventory; do not assume all adapters are Python command hooks.",
+      "original_dependencies": "RSP-007,RSP-012,RSP-014.",
+      "parsed_dependency_ids": [
+        "RSP-007",
+        "RSP-012",
+        "RSP-014"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The separate pure lazy-export comparison completed 176 original calls with correct native outcomes, but every 50/100/200 ms ceiling failed. Do not repeat that experiment as pending work or claim qualified benefit. Revalidate current installed routes with the original populations and host/source scope."
+    },
+    {
+      "id": "RSP-074",
+      "number": 74,
+      "title": "Design a package-bound native launcher command",
+      "original_object_sha256": "899c764c20f7c83da0f59fce9ce284228e12f1435652d818015f5f99fe8bf21f",
+      "original_acceptance": "Reuse existing runtime distribution and identity validation; specify argv, stdin, stdout, exit and environment contracts.",
+      "original_dependencies": "RSP-024,RSP-073.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-073"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-075",
+      "number": 75,
+      "title": "Implement one canonical pre/post launcher",
+      "original_object_sha256": "6ebe5d5354ababfad8fb21693d8488e357ec3f08e21b1ed9942e8d309f912336",
+      "original_acceptance": "Start with the highest justified installed route and preserve response/continuation semantics without PATH lookup or auto download.",
+      "original_dependencies": "RSP-074,RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-074",
+        "RSP-015"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-076",
+      "number": 76,
+      "title": "Integrate registration and repair",
+      "original_object_sha256": "eaee13bc2ea5cf49bc3ff3b6cef503084b8e73028206d26cb71e2888e52799cb",
+      "original_acceptance": "Update generated hook entries, detect existing installs, and preserve idempotent reinstall/uninstall and exact package ownership.",
+      "original_dependencies": "RSP-075.",
+      "parsed_dependency_ids": [
+        "RSP-075"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-077",
+      "number": 77,
+      "title": "Verify no-environment installed selection",
+      "original_object_sha256": "9b2e1b2cdcf8b08d219683b47ae8faf50c4d475bcfb8c9850a7d9369b70423c7",
+      "original_acceptance": "Clear development overrides and prove runtime origin plus actual registered executable use; source-checkout execution is insufficient.",
+      "original_dependencies": "RSP-076.",
+      "parsed_dependency_ids": [
+        "RSP-076"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-078",
+      "number": 78,
+      "title": "Port and qualify an alias-heavy harness",
+      "original_object_sha256": "94f0992d3a4db0bf1e62c953a881968097e2fbf12fd221339e5e55c746399ae4",
+      "original_acceptance": "Exercise native Cursor/Copilot event and response forms, including permission and unavailable cases, not just normalized daemon JSON.",
+      "original_dependencies": "RSP-077.",
+      "parsed_dependency_ids": [
+        "RSP-077"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-079",
+      "number": 79,
+      "title": "Port and qualify Pi/OMP source references",
+      "original_object_sha256": "0ce4fefc341221c16d22017a50d79f40c2fe4e93a31ff41a411c0bd303a16dc9",
+      "original_acceptance": "Preserve reference identity, external-source permission, plaintext bounds, output equivalence and response schemas.",
+      "original_dependencies": "RSP-077.",
+      "parsed_dependency_ids": [
+        "RSP-077"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-080",
+      "number": 80,
+      "title": "Preserve approval continuation across launchers",
+      "original_object_sha256": "ae4f5ff45c2e46f523941e93361084da1f2240794d654ac1f836c7c553cc5468",
+      "original_acceptance": "Test review/pause/approve/revalidate/consume, expired approvals, restart and ambiguous completion without duplicate tool execution.",
+      "original_dependencies": "RSP-078,RSP-079,RSP-021.",
+      "parsed_dependency_ids": [
+        "RSP-078",
+        "RSP-079",
+        "RSP-021"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require actual atomic approved continuation consumption and replay/generation behavior across selected launchers. Declared Ollama fixtures and availability continuation are not a substitute for this approval lifecycle."
+    },
+    {
+      "id": "RSP-081",
+      "number": 81,
+      "title": "Qualify wheels and frozen sidecars",
+      "original_object_sha256": "e07cbf3327393ec03dd40150d0ca88ed3441bf4b40a7ae0b007430707cf076ee",
+      "original_acceptance": "Test Linux x64, macOS x64/arm64 and Windows x64 package/version/manifest binding and signing/freeze changes.",
+      "original_dependencies": "RSP-077,RSP-029.",
+      "parsed_dependency_ids": [
+        "RSP-077",
+        "RSP-029"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-082",
+      "number": 82,
+      "title": "Measure cold/warm launcher improvements",
+      "original_object_sha256": "5392b7d3af2a2a9d441b08bc3878d02b5bc20a13eb1654d7cafc576bb4354c28",
+      "original_acceptance": "Apply actual launcher targets and include final response, setup and queue time; publish any platform or route misses.",
+      "original_dependencies": "RSP-080,RSP-081,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-080",
+        "RSP-081",
+        "RSP-010"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The separate pure lazy-export comparison completed 176 original calls with correct native outcomes, but every 50/100/200 ms ceiling failed. Do not repeat that experiment as pending work or claim qualified benefit. Revalidate current installed routes with the original populations and host/source scope."
+    },
+    {
+      "id": "RSP-083",
+      "number": 83,
+      "title": "Expand route by route with declared support",
+      "original_object_sha256": "1c9937fca56f61e0124d4d154e4d6a3eb06d2e6351ac21b2c9b8c0aeb0cf0623",
+      "original_acceptance": "Move only routes with parity and benefit proof; keep preflight-only/observation-only surfaces labeled correctly.",
+      "original_dependencies": "RSP-082.",
+      "parsed_dependency_ids": [
+        "RSP-082"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-084",
+      "number": 84,
+      "title": "Test launcher upgrade and rollback",
+      "original_object_sha256": "63b6c23ba2ffa9516e284c0333b30f5678bff2b68c21171390c51db487158c0e",
+      "original_acceptance": "Retire old registration/generation safely, preserve in-progress sessions and verify the prior tested native route can be restored.",
+      "original_dependencies": "RSP-083,RSP-081.",
+      "parsed_dependency_ids": [
+        "RSP-083",
+        "RSP-081"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-085",
+      "number": 85,
+      "title": "Profile discovery/connect/auth versus evaluation",
+      "original_object_sha256": "22551fefa25d05fe9f55e3cc722c2e1d58b7804900529cf3f526126cc4f41a29",
+      "original_acceptance": "Measure platform-specific per-request work through the existing persistent helper and resident; count current socket opens.",
+      "original_dependencies": "RSP-035,RSP-048,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-035",
+        "RSP-048",
+        "RSP-010"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the recovered, already reviewed phase plan and clarification; the driver-only implementation and meaningful untimed controls are in progress. Rebind all exact 88 original launcher calls, immutable input strings and frozen daemon entry projections to the selected source before one diagnostic. Preserve original argv/deadlines, one-call forwarding, same-call joins and distinct inclusive intervals. Do not infer unobserved child import/auth, internal Rust or asynchronous SQLite costs."
+    },
+    {
+      "id": "RSP-086",
+      "number": 86,
+      "title": "Choose connection reuse or ingress consolidation",
+      "original_object_sha256": "cbc4cc2d9753093916fa1ebbf768e05b100fcaab1dda20eb8c7004a4a2401d0f",
+      "original_acceptance": "Compare alternatives with full process-tree cost; do not port the entire administrative server to optimize hooks.",
+      "original_dependencies": "RSP-085,RSP-012.",
+      "parsed_dependency_ids": [
+        "RSP-085",
+        "RSP-012"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-087",
+      "number": 87,
+      "title": "Specify bounded native session protocol",
+      "original_object_sha256": "5a03d9346c2991626f5767254685169ae08c16a94c01f079a2d58fbea87f81e5",
+      "original_acceptance": "Define generation/peer binding, framing, inflight limit, request correlation, idle timeout, cancellation and freshness checks.",
+      "original_dependencies": "RSP-020,RSP-021,RSP-086.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-021",
+        "RSP-086"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-088",
+      "number": 88,
+      "title": "Implement generation-bound persistent connections",
+      "original_object_sha256": "09f76795f268d56b51baf28844d454eba0ba22cdad133f6e9c1f11d6bfe1871a",
+      "original_acceptance": "Reuse only within the authenticated scope and capability contract; bound pools, memory and lifetime.",
+      "original_dependencies": "RSP-087.",
+      "parsed_dependency_ids": [
+        "RSP-087"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-089",
+      "number": 89,
+      "title": "Exercise replacement and recovery races",
+      "original_object_sha256": "ddfb93a4b0d81eebef63a3c3f4c1a5d6f10adbee28dbb64ffd3f0ff82ed9608b",
+      "original_acceptance": "Test restart, stale discovery, peer replacement, failed auth, reconnect, concurrent requests, cancellation and ambiguous commit.",
+      "original_dependencies": "RSP-088,RSP-021.",
+      "parsed_dependency_ids": [
+        "RSP-088",
+        "RSP-021"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The exact integrated deadline source 124472 is on the PR after four-platform validation: 9 focused controls per Unix platform and 7 on Windows; workspace 318/311/311/360 passes with 6 ignored per platform; both Clippy scopes, release build and self-test pass. Preserve original committed-request nonreplay and earlier error identity. Windows reader-only 6061 failed both held-destination cases. Its separate Ex22 experiment 6c02 failed 8 of 16 cases: every admitted rename, including unheld/missing destination, returned WinError 87. The reviewed absolute-name/NULL-root successor is an unexecuted argument-form hypothesis, with full-path resolution limits. Preserve negative sharing, audit, cleanup and supported CRT behavior."
+    },
+    {
+      "id": "RSP-090",
+      "number": 90,
+      "title": "Prototype hook-only native ingress if selected",
+      "original_object_sha256": "30bd92afcf2b0442691ab1e43b70cff7970c85e02c38ef75d3e327d4dfb196b4",
+      "original_acceptance": "Preserve auth, context binding, scheduler/admission, response and evidence contracts while keeping product/admin APIs on their current owner.",
+      "original_dependencies": "RSP-086,RSP-024.",
+      "parsed_dependency_ids": [
+        "RSP-086",
+        "RSP-024"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-091",
+      "number": 91,
+      "title": "Preserve Windows and Unix transport guarantees",
+      "original_object_sha256": "1d2bba26b43e8ff82f77de4902f2ea37212c45ad68933e86a5500eca6797eaa3",
+      "original_acceptance": "Test DACL/owner/SYSTEM rules, loopback authentication, exact package process, Unix private paths, permissions and peer identity.",
+      "original_dependencies": "RSP-089,RSP-090.",
+      "parsed_dependency_ids": [
+        "RSP-089",
+        "RSP-090"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Exact integrated deadline source 124472 now passes its four-platform source validation and is on the PR. Preserve original Windows/Unix transport, authentication, process identity, absolute deadlines and committed-request nonreplay. No Windows replacement candidate is ready for product integration: reader-only 6061 failed, and Ex22 source 6c02 has no successful API replacement. The separate reviewed Unicode UCRT preservation gate remains unexecuted and makes no replacement-concurrency claim. No permission relaxation, retries or rewritten expected success."
+    },
+    {
+      "id": "RSP-092",
+      "number": 92,
+      "title": "Audit the remaining Python process-pool callers",
+      "original_object_sha256": "6b69d4fa827e915ec77c209fb98064247c13006a934291bdadd00068a07d6de2",
+      "original_acceptance": "Enumerate compatibility and Codex approval revalidation consumers and measure idle/startup footprint before changing startup.",
+      "original_dependencies": "RSP-013,RSP-011.",
+      "parsed_dependency_ids": [
+        "RSP-013",
+        "RSP-011"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the original explicit caller/surface inventory and verify live source aliases before modifying ownership. Retain complete harness and process-pool scope; a lazy public scanner import does not remove unmeasured consumers."
+    },
+    {
+      "id": "RSP-093",
+      "number": 93,
+      "title": "Lazy-start or replace only proven pool consumers",
+      "original_object_sha256": "49cdaf1e5045ad5c4fb45fd6a5d492e7235504473e3cc1e6e0bdaf5f1f9382b0",
+      "original_acceptance": "Preserve first-approval latency, fresh reevaluation, containment and lifecycle cleanup; never claim ordinary-hook IPC removal here.",
+      "original_dependencies": "RSP-092,RSP-080.",
+      "parsed_dependency_ids": [
+        "RSP-092",
+        "RSP-080"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original RSP-024 and measured-selection prerequisites explicit. Prepare concrete contract/implementation evidence for independent review before conditional native launcher/ingress expansion; do not infer approval from existing code or a forecasted speedup."
+    },
+    {
+      "id": "RSP-094",
+      "number": 94,
+      "title": "Stress admission and fault containment",
+      "original_object_sha256": "e2f819f2001ad60155fb74b3296ca2872c984f7dbc5c721dc45bdc88643b8aa5",
+      "original_acceptance": "Use mixed large/small hooks at c16/c64, stalled clients, panic/worker failure and blocked I/O; require bounded failures and no cross-session leak.",
+      "original_dependencies": "RSP-091,RSP-093.",
+      "parsed_dependency_ids": [
+        "RSP-091",
+        "RSP-093"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep original failed and completed source scopes distinct. Exact 124472 deadline validation passes on all four platforms; its fresh normal CI is pending. Historical 4afa Windows edge validation failed during initial resident startup before duplicate-edge assertions, with native_resident_start_timeout and the original 750 ms fallback. The source-bound parent diagnostic is being implemented without changing deadlines or adding process probes; serving-child cause is unavailable. Original 4d Linux cause diagnostic passed its controls and two selectors once, so that historical policy-push failure did not reproduce and remains unexplained."
+    },
+    {
+      "id": "RSP-095",
+      "number": 95,
+      "title": "Qualify the transport benefit",
+      "original_object_sha256": "1df78fa61e2f6c2380755075313cab4fc5654f06892e0a326e0c68562035db48",
+      "original_acceptance": "Meet adopted p99/CPU/memory thresholds against the optimized current route; report all unavailable, rejected and timed-out work.",
+      "original_dependencies": "RSP-094,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-094",
+        "RSP-010"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-096",
+      "number": 96,
+      "title": "Roll out or defer native ingress explicitly",
+      "original_object_sha256": "a31d35055bbf85c0862d737bfa8c9265bb083c518333facb5067e1b034db6acd",
+      "original_acceptance": "Activate only proven routes/platforms with tested generation rollback; retain simpler current transport if benefit is insufficient.",
+      "original_dependencies": "RSP-095.",
+      "parsed_dependency_ids": [
+        "RSP-095"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-097",
+      "number": 97,
+      "title": "Trace actual stdio and remote MCP behavior",
+      "original_object_sha256": "1deab409d2390e29df829cabf31e73c33509c4c692aaeb4fa6d5e5aaf20747b1",
+      "original_acceptance": "Reinspect [#2931](https://github.com/hashgraph-online/hol-guard/pull/2931) and current dispatch; document catalog lifecycle, approvals, forwarding commit and response multiplexing.",
+      "original_dependencies": "RSP-002,RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-002",
+        "RSP-003"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-098",
+      "number": 98,
+      "title": "Benchmark Guard overhead separate from server wait",
+      "original_object_sha256": "a23a267c352d542ec5cc8de0eecc94c8e48483c0d2a1fd5b5c0626743af2bc92",
+      "original_acceptance": "Measure startup, catalog hashing, classification, policy, barrier, child/network/human wait and serialization with identical synthetic traces.",
+      "original_dependencies": "RSP-097,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-097",
+        "RSP-010"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-099",
+      "number": 99,
+      "title": "Cache immutable full-catalog fingerprints",
+      "original_object_sha256": "47fdacd1bca5f3af1fc0912441c92f24a850e1f2fc5ba8628a6479016dac3e4b",
+      "original_acceptance": "Reuse canonical digest per validated catalog generation; preserve full-catalog binding and invalidation during pending approvals.",
+      "original_dependencies": "RSP-098,RSP-020.",
+      "parsed_dependency_ids": [
+        "RSP-098",
+        "RSP-020"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify immutable full-catalog digest reuse and invalidation on exact current source, including catalog generation changes while approval is pending. Preserve full-catalog binding and every original dependency; the archived label is not final-source acceptance."
+    },
+    {
+      "id": "RSP-100",
+      "number": 100,
+      "title": "Reuse request-local risk analysis",
+      "original_object_sha256": "047d19986f0fbdac1c32e54934144133f7480feaa7c90a7359e6bf18043e20c0",
+      "original_acceptance": "Compute categories/signals once for unchanged exact inputs; recompute after any authority/catalog/input change.",
+      "original_dependencies": "RSP-099.",
+      "parsed_dependency_ids": [
+        "RSP-099"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Combined v2 source 63e4b2/tree aa39 admits both actual registries (pair 174 bindings; approval defaults available), correct venv and all five source origins. Run 35504497691 has 325 passing tests, the one existing Python-version skip, and all 11 mandatory positives. Exact original JUnit confirms all 49 approval cases passed. Ruff/format pass on all nine files; two basedpyright tuple-narrowing errors keep the overall run failed. The independently reviewed one-line cast tree ea5849 is preparing a four-platform driver; corrected source has not yet executed. Preserve original RSP-099-only dependency, unchanged-input once-only facts, authority/catalog/input invalidation, three preparations/two policy callbacks, private request state, exception order and final 5 ms fence. Stopped E/F campaigns remain immutable."
+    },
+    {
+      "id": "RSP-101",
+      "number": 101,
+      "title": "Bound framing and buffering where required",
+      "original_object_sha256": "0b335bea082974bfd1abcfe066ce4266e2c281dd1a9d58641637c60c9e7e762d",
+      "original_acceptance": "Define limits and backpressure for lines, queues and response buffers without deadlocking notifications while approvals are pending.",
+      "original_dependencies": "RSP-024,RSP-098.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-098"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-102",
+      "number": 102,
+      "title": "Preserve the final prewrite freshness barrier",
+      "original_object_sha256": "f2aa459bf09ad0eef0382a631f4233b6550e6075b3dd7bbb7e78f55d1a58f1de",
+      "original_acceptance": "Retain catalog invalidation during quiet drain and entrypoint-change quarantine. Removing a 5 ms wait requires an equivalent reviewed ordering design.",
+      "original_dependencies": "RSP-097,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-097",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-103",
+      "number": 103,
+      "title": "Rebaseline optimized Python proxy",
+      "original_object_sha256": "b736174f435c9cda2c81214f2139c22d1ccfd22fc9eeea132ff17fd475381439",
+      "original_acceptance": "Measure actual proxy overhead and memory; distinguish deliberate waits and remote latency from local CPU before choosing Rust.",
+      "original_dependencies": "RSP-100,RSP-101,RSP-102.",
+      "parsed_dependency_ids": [
+        "RSP-100",
+        "RSP-101",
+        "RSP-102"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-104",
+      "number": 104,
+      "title": "Specify coarse native MCP facts contract if justified",
+      "original_object_sha256": "10e362df2f75e0f64c6b26634f08634e43654bfcd2441ec1b383812779ee31cf",
+      "original_acceptance": "Pass bounded catalog/request facts with immutable identities; keep credentials and remote session orchestration outside the kernel.",
+      "original_dependencies": "RSP-103,RSP-024.",
+      "parsed_dependency_ids": [
+        "RSP-103",
+        "RSP-024"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-105",
+      "number": 105,
+      "title": "Implement and integrate selected pure native kernels",
+      "original_object_sha256": "ca50dc2fcd356f2308778aeeeda6eccd7a8589c432343eb983a0de6905ce1ec3",
+      "original_acceptance": "Port canonicalization/risk evidence at one coarse boundary; preserve full policy/claim composition and redacted evidence.",
+      "original_dependencies": "RSP-104.",
+      "parsed_dependency_ids": [
+        "RSP-104"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-106",
+      "number": 106,
+      "title": "Test protocol and forwarding correctness",
+      "original_object_sha256": "adc4cf6c50ed3967142d8acbfbf6958690a2c2cd8556657338a35083167c85e0",
+      "original_acceptance": "Cover IDs, notifications, cancellation, out-of-order replies, schema changes, EOF, slow consumers, package calls and no replay after ambiguous writes.",
+      "original_dependencies": "RSP-105,RSP-021.",
+      "parsed_dependency_ids": [
+        "RSP-105",
+        "RSP-021"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-107",
+      "number": 107,
+      "title": "Qualify native kernels against optimized proxy",
+      "original_object_sha256": "c425fa1ccbc963833cc5db6a7777f684d8bed95de07f2beeea4bc856a4c4745c",
+      "original_acceptance": "Require measured benefit at the real proxy boundary with no catalog/approval/forwarding regressions.",
+      "original_dependencies": "RSP-106,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-106",
+        "RSP-010"
+      ],
+      "archived_status": "DEFERRED",
+      "status_at_this_checkpoint": "DEFERRED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve the original measured deferral and its exact dependencies. This recovery packet selects no native package/scanner/MCP kernel and does not promote a deferred task."
+    },
+    {
+      "id": "RSP-108",
+      "number": 108,
+      "title": "Record full proxy rewrite decision",
+      "original_object_sha256": "68c1653a74db33385278331b3a8d07046d19a7674d6815fb3c490135c9e47f05",
+      "original_acceptance": "Defer unless kernels and Python optimizations cannot meet adopted goals. If justified, require a separate ADR and complete protocol rollout scope.",
+      "original_dependencies": "RSP-107.",
+      "parsed_dependency_ids": [
+        "RSP-107"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete the original MCP/protocol functional obligations in their original dependency order. Production still derives risk twice; this observation does not satisfy RSP-100. Preserve the final prewrite preparation and 5 ms freshness fence. Prior E/F attempts remain inactive and cannot be resumed, pooled or retroactively repaired. RSP-106 retains its complete original object."
+    },
+    {
+      "id": "RSP-109",
+      "number": 109,
+      "title": "Inventory matcher semantics and current native coverage",
+      "original_object_sha256": "a43aee220e7e30f3af934072a8e2856d2c28ee5cf967c24d7f0e3ffd714f46c1",
+      "original_acceptance": "Enumerate all concrete matcher classes and safe variants; distinguish Python catalog presence from production Rust execution.",
+      "original_dependencies": "RSP-014,RSP-001.",
+      "parsed_dependency_ids": [
+        "RSP-014",
+        "RSP-001"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-110",
+      "number": 110,
+      "title": "Freeze extension outcome and control fixtures",
+      "original_object_sha256": "aed24765af1cd3bc14bcd730ba50900bf1f69cee295ec28bc752990d3620fbe4",
+      "original_acceptance": "Cover defaults, local opt-in, managed layers, permission IDs, uncertainty, overlaps, safe variants and hard floors.",
+      "original_dependencies": "RSP-109,RSP-023.",
+      "parsed_dependency_ids": [
+        "RSP-109",
+        "RSP-023"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-111",
+      "number": 111,
+      "title": "Define a bounded versioned matcher IR",
+      "original_object_sha256": "1b0bf78d15e12d16d69bf6ac348120ba9edefa6949481c099fc67afb6b6f9606",
+      "original_acceptance": "Specify executable semantics, full config, rule/program digests and limits. Matcher kind+digest alone is not executable IR.",
+      "original_dependencies": "RSP-110,RSP-017.",
+      "parsed_dependency_ids": [
+        "RSP-110",
+        "RSP-017"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-112",
+      "number": 112,
+      "title": "Build trusted deterministic IR compilation",
+      "original_object_sha256": "ca23f30960b459c5256524c02c7260997381443f1687e6f9bfaf3964417a77db",
+      "original_acceptance": "Compile supported reviewed definitions without arbitrary runtime Python imports. Reject unsupported types and emit per-rule coverage.",
+      "original_dependencies": "RSP-111.",
+      "parsed_dependency_ids": [
+        "RSP-111"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-113",
+      "number": 113,
+      "title": "Preserve the existing contribution and Builder flow",
+      "original_object_sha256": "9fbc76a5ec21006185e82f7003841f8d1daa9385f95520b5c13b9c00a7560262",
+      "original_acceptance": "Keep python-module metadata and supported declarative authoring; normal contributors should not need a Rust toolchain.",
+      "original_dependencies": "RSP-112.",
+      "parsed_dependency_ids": [
+        "RSP-112"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-114",
+      "number": 114,
+      "title": "Implement native matcher primitives incrementally",
+      "original_object_sha256": "37ba418d7e0e6c2c3648dddafa08c77bf588205c8cfe71a11437045550af1fa4",
+      "original_acceptance": "Cover real operand/path-set/specialized matchers as well as basic combinators; unsupported must not become no-match/allow.",
+      "original_dependencies": "RSP-111,RSP-024.",
+      "parsed_dependency_ids": [
+        "RSP-111",
+        "RSP-024"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-115",
+      "number": 115,
+      "title": "Bind native program to control snapshots",
+      "original_object_sha256": "d8f41566fee75b534c20dd3a62108836543d60477991bdb65baf1e739b158494",
+      "original_acceptance": "Preserve catalog/trust identity, opt-in, independent revisions, durable commit-before-publish and equivocation rejection.",
+      "original_dependencies": "RSP-114,RSP-020.",
+      "parsed_dependency_ids": [
+        "RSP-114",
+        "RSP-020"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-116",
+      "number": 116,
+      "title": "Integrate native matching with one canonical command",
+      "original_object_sha256": "5b75ab93fd4e84b3950a10dc3d93b33a689b0ff5053901827bd8c4ddf066768d",
+      "original_acceptance": "Return complete observations, variants, uncertainty and redacted evidence. No per-rule IPC or duplicate independent parsing.",
+      "original_dependencies": "RSP-115.",
+      "parsed_dependency_ids": [
+        "RSP-115"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-117",
+      "number": 117,
+      "title": "Protect core floors and unknown-command behavior",
+      "original_object_sha256": "aedc6571ea34e144e4c7ae47b33cff320979ce09a549c1c3419cc7071b2b96d6",
+      "original_acceptance": "Test that extension outcomes cannot weaken non-overridable native policy/security floors and unsupported families retain explicit handling.",
+      "original_dependencies": "RSP-116,RSP-110.",
+      "parsed_dependency_ids": [
+        "RSP-116",
+        "RSP-110"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the original extension IR, snapshot binding, floors, unknown-command and contribution/Builder contracts. Revalidate required real surfaces and dependent review without turning catalog/component success into installed lifecycle qualification."
+    },
+    {
+      "id": "RSP-118",
+      "number": 118,
+      "title": "Qualify command.ollama end to end",
+      "original_object_sha256": "43377cb7b593a41b5e780a2ab03d4709ccdd40528b64e389e8196fcabe196510",
+      "original_acceptance": "Exercise contribution/build/install/enable/native review/receipt/disable/update/rollback; Python matcher tests alone cannot complete this task.",
+      "original_dependencies": "RSP-113,RSP-117.",
+      "parsed_dependency_ids": [
+        "RSP-113",
+        "RSP-117"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep native command.ollama review lifecycle separate from legacy approval reuse. Declared22-case fixtures do not complete end-to-end approval consumption, full catalog coverage or performance qualification."
+    },
+    {
+      "id": "RSP-119",
+      "number": 119,
+      "title": "Benchmark full catalog execution",
+      "original_object_sha256": "01e0c145d4c99b7fc38827dc9eb68bbd9e14af773a5d322519e37145f4582b9e",
+      "original_acceptance": "Separate cold compile/load from warm evaluation; vary catalog/candidates/controls within valid combined limits and include false-review counts.",
+      "original_dependencies": "RSP-118,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-118",
+        "RSP-010"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep native command.ollama review lifecycle separate from legacy approval reuse. Declared22-case fixtures do not complete end-to-end approval consumption, full catalog coverage or performance qualification."
+    },
+    {
+      "id": "RSP-120",
+      "number": 120,
+      "title": "Publish native extension coverage and diagnostics",
+      "original_object_sha256": "3225892d40a9a1ea8789e607dbc839b4db30ae10f85cabaa36590bf78808d945",
+      "original_acceptance": "Declare translated and unsupported matcher families, exact artifact/catalog versions and production route proof; do not call compatibility gain a measured speedup.",
+      "original_dependencies": "RSP-119.",
+      "parsed_dependency_ids": [
+        "RSP-119"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep native command.ollama review lifecycle separate from legacy approval reuse. Declared22-case fixtures do not complete end-to-end approval consumption, full catalog coverage or performance qualification."
+    },
+    {
+      "id": "RSP-121",
+      "number": 121,
+      "title": "Measure foreground evidence submission cost",
+      "original_object_sha256": "fae8ae7a5aaa11d911892cf599e9a7c64d8c105c9344266056f53caabe4326fb",
+      "original_acceptance": "Attribute full payload copies/JSON before response, queue admission, native receipt validation and rejected work; use maximum envelopes.",
+      "original_dependencies": "RSP-008.",
+      "parsed_dependency_ids": [
+        "RSP-008"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Use the recovered, already reviewed phase plan and clarification; the driver-only implementation and meaningful untimed controls are in progress. Rebind all exact 88 original launcher calls, immutable input strings and frozen daemon entry projections to the selected source before one diagnostic. Preserve original argv/deadlines, one-call forwarding, same-call joins and distinct inclusive intervals. Do not infer unobserved child import/auth, internal Rust or asynchronous SQLite costs."
+    },
+    {
+      "id": "RSP-122",
+      "number": 122,
+      "title": "Use bounded compact evidence before queue admission",
+      "original_object_sha256": "69805d61916fcc5850cf77b105ba1c310040dbd089920fae22dc87716d3f2924",
+      "original_acceptance": "Avoid unnecessary full payload copying; preserve correlation/attempt identity and explicit aggregate degraded counters.",
+      "original_dependencies": "RSP-121,RSP-016.",
+      "parsed_dependency_ids": [
+        "RSP-121",
+        "RSP-016"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The exact original 8f ZIP and two ledger/summary members are now recovered and independently verified. Missing load joins are mixed-load-313 and mixed-load-321. All 603 observed unique native receipts were admitted and committed with valid bindings (598 load plus five controls). Aggregate 605 hook calls and 604 scheduler completions support one pre-scheduler completion and one normal native None, but original per-attempt fields cannot assign these paths to either missing call or prove cause. The reported first recovery decision was offered before restart. Preserve this evidence limitation; no SQLite loss or replacement-resident first decision is proved. Add bounded actual per-attempt route/reason capture before any new authorized diagnostic."
+    },
+    {
+      "id": "RSP-123",
+      "number": 123,
+      "title": "Define persistence milestones and loss window",
+      "original_object_sha256": "052a2ec5e5c519333196f891bcb28a8ab6d4daa469afdc550a210d9096d80df5",
+      "original_acceptance": "Document memory accepted versus journal durable versus DB committed; specify deduplication, crash cut points and single-writer ownership.",
+      "original_dependencies": "RSP-024,RSP-121.",
+      "parsed_dependency_ids": [
+        "RSP-024",
+        "RSP-121"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Fresh observer commits all 603 observed native receipts without writer loss, yet only 598/600 completed hooks have matching receipts. Preserve this as incomplete native decision coverage, not SQLite data loss. Trace retained request/receipt joins, original recovery and unavailable resources without inventing missing events."
+    },
+    {
+      "id": "RSP-124",
+      "number": 124,
+      "title": "Implement real SQL transaction batching",
+      "original_object_sha256": "fe0fc49bc6681547fda22c0312c59b1917631decb47d38f534bb0ebd39077bd8",
+      "original_acceptance": "Group inserts within bounded latency/size limits; preserve uniqueness and per-record outcomes without silently changing durability promises.",
+      "original_dependencies": "RSP-123.",
+      "parsed_dependency_ids": [
+        "RSP-123"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Fresh observer commits all 603 observed native receipts without writer loss, yet only 598/600 completed hooks have matching receipts. Preserve this as incomplete native decision coverage, not SQLite data loss. Trace retained request/receipt joins, original recovery and unavailable resources without inventing missing events."
+    },
+    {
+      "id": "RSP-125",
+      "number": 125,
+      "title": "Replace per-record whole-journal rewrites",
+      "original_object_sha256": "efd27b3b4c5e9115bd0fadf078cc7d8a2ebdcd0e91b9f9f51a7ad4d2f600b623",
+      "original_acceptance": "Use bounded checkpoint/segment compaction or equivalent; keep exact replay and sidecar consistency under crash and backlog.",
+      "original_dependencies": "RSP-123,RSP-124.",
+      "parsed_dependency_ids": [
+        "RSP-123",
+        "RSP-124"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Fresh observer commits all 603 observed native receipts without writer loss, yet only 598/600 completed hooks have matching receipts. Preserve this as incomplete native decision coverage, not SQLite data loss. Trace retained request/receipt joins, original recovery and unavailable resources without inventing missing events."
+    },
+    {
+      "id": "RSP-126",
+      "number": 126,
+      "title": "Exercise persistence fault recovery",
+      "original_object_sha256": "d6ab3c8dfd8b3f10e2279c0413a8631396fac9258f8c32e302b83b04734c72eb",
+      "original_acceptance": "Test duplicate IDs, SQLite busy/corrupt, read-only/full disk, truncated journal and death at append/commit/checkpoint; decisions must not be rerun.",
+      "original_dependencies": "RSP-125.",
+      "parsed_dependency_ids": [
+        "RSP-125"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The exact original 8f ZIP and two ledger/summary members are now recovered and independently verified. Missing load joins are mixed-load-313 and mixed-load-321. All 603 observed unique native receipts were admitted and committed with valid bindings (598 load plus five controls). Aggregate 605 hook calls and 604 scheduler completions support one pre-scheduler completion and one normal native None, but original per-attempt fields cannot assign these paths to either missing call or prove cause. The reported first recovery decision was offered before restart. Preserve this evidence limitation; no SQLite loss or replacement-resident first decision is proved. Add bounded actual per-attempt route/reason capture before any new authorized diagnostic."
+    },
+    {
+      "id": "RSP-127",
+      "number": 127,
+      "title": "Introduce precise policy invalidation",
+      "original_object_sha256": "111457daf6ea23dccd891319d969dd6a48cdb6931b7cb3319884e9dc08955dc9",
+      "original_acceptance": "Use domain revisions/dirty signals with cross-process and WAL-aware reconciliation; unrelated receipt writes must not trigger full recompilation.",
+      "original_dependencies": "RSP-020,RSP-002.",
+      "parsed_dependency_ids": [
+        "RSP-020",
+        "RSP-002"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Read all 15 fresh workspace cells and actual accepted/ACK/ready/current-authority timestamps. All four prior small-scope origin defects pass; 100-scope first admission, service restart and key rotation still fail. Preserve absolute 400 ms and withdrawal fences; lost-hint 100 passing does not prove the remaining timing cause fixed."
+    },
+    {
+      "id": "RSP-128",
+      "number": 128,
+      "title": "Bound workspace policy tracking",
+      "original_object_sha256": "e70e59128e0a16a4171a9f0cf286ba92a40060da435e5b16fec40755f2c7ee70",
+      "original_acceptance": "Measure 1/10/100 workspaces; coalesce compilation and define safe cache/registration lifecycle without losing active stricter overlays.",
+      "original_dependencies": "RSP-127.",
+      "parsed_dependency_ids": [
+        "RSP-127"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain original policy-tracking acceptance and the failed historical 15-cell campaign. The narrower 2ac poststart diagnostic now reaches all 1/10/100 cells; it does not supply a replacement complete original campaign or complete process-resource proof."
+    },
+    {
+      "id": "RSP-129",
+      "number": 129,
+      "title": "Test mutation-to-enforcement freshness",
+      "original_object_sha256": "7ec2fbf527b6c20b47bbdf350bce19e21b2596812397a812f26545ee50fe5ae6",
+      "original_acceptance": "Measure accepted change→compile→publish→ACK→first decision; cover lost watcher hints, restart, key change, expiry and rollout admission.",
+      "original_dependencies": "RSP-128,RSP-034.",
+      "parsed_dependency_ids": [
+        "RSP-128",
+        "RSP-034"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The existing 2ac hosted retirement run 35496733388 has been independently decoded: 29 Python cases/87 phases, six separate producer cases/18 phases, 24 Rust tests, nine installed accepted-to-ACK observations with matching SQL receipts, and six retired service instances. Retained direct workers exited -9; do not describe this as graceful shutdown or complete descendant certification. Full original mutation/restart/key/expiry/rollout acceptance remains OPEN."
+    },
+    {
+      "id": "RSP-130",
+      "number": 130,
+      "title": "Profile and optimize incremental inventory",
+      "original_object_sha256": "22142697ee378e169d16aaf2d5f63dcdc0a8c11798f37b822bf833e1930fb3ea",
+      "original_acceptance": "Separate traversal, third-party scanner and cloud wait; coalesce changes and batch joins/upserts without changing client_unverified provenance.",
+      "original_dependencies": "RSP-011,RSP-012.",
+      "parsed_dependency_ids": [
+        "RSP-011",
+        "RSP-012"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain complete inventory/process-resource profiling and exact original dependencies. The f247649b inventory-join optimization remains unselected; no shortcut is justified by missing resource observations."
+    },
+    {
+      "id": "RSP-131",
+      "number": 131,
+      "title": "Qualify real receipt ingestion under mixed load",
+      "original_object_sha256": "444cc85ac211b4f2a9b15cdc19a254531e0ee6833ca963317617a02da9da1bd3",
+      "original_acceptance": "Drive actual native receipts alongside mixed pre/post hooks and policy updates; report fsyncs, bytes rewritten, queue age and process-tree resources.",
+      "original_dependencies": "RSP-126,RSP-129,RSP-130.",
+      "parsed_dependency_ids": [
+        "RSP-126",
+        "RSP-129",
+        "RSP-130"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "The exact original 8f ZIP and two ledger/summary members are now recovered and independently verified. Missing load joins are mixed-load-313 and mixed-load-321. All 603 observed unique native receipts were admitted and committed with valid bindings (598 load plus five controls). Aggregate 605 hook calls and 604 scheduler completions support one pre-scheduler completion and one normal native None, but original per-attempt fields cannot assign these paths to either missing call or prove cause. The reported first recovery decision was offered before restart. Preserve this evidence limitation; no SQLite loss or replacement-resident first decision is proved. Add bounded actual per-attempt route/reason capture before any new authorized diagnostic."
+    },
+    {
+      "id": "RSP-132",
+      "number": 132,
+      "title": "Decide whether native spool/compiler is still needed",
+      "original_object_sha256": "b1e7cb542c5bed526cd1acc2a4e18b9bcd6e297723c32e1c8f263ba8f27d5097",
+      "original_acceptance": "Keep Python improvements if they meet targets; native spool requires writer fencing, and compiler port requires evidenced local CPU/ACK benefit.",
+      "original_dependencies": "RSP-131,RSP-012.",
+      "parsed_dependency_ids": [
+        "RSP-131",
+        "RSP-012"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-133",
+      "number": 133,
+      "title": "Audit workflow dependency selection",
+      "original_object_sha256": "8e6e33bae5c053c81132fc0fcb008b5d3848e64d476e59fe125bd70d63686474",
+      "original_acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+      "original_dependencies": "RSP-006,RSP-022.",
+      "parsed_dependency_ids": [
+        "RSP-006",
+        "RSP-022"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Audit exact current workflow selectors and combined required checks for native, wrapper, publisher, evidence and benchmark changes. Retain platform controls and immutable driver/source bindings. The actual review size request concerns CLI test partitions; RSP-133 is workflow dependency selection, not a global file-size requirement."
+    },
+    {
+      "id": "RSP-134",
+      "number": 134,
+      "title": "Run scope-appropriate Rust and Python validation",
+      "original_object_sha256": "c12cee287288068e87020780096a5fbf4e5997a364b6222fd374b62eec21a07b",
+      "original_acceptance": "Run formatting/lint, crate tests, rule/command differential, adversarial, policy/approval and source mutation suites needed by the selected changes.",
+      "original_dependencies": "RSP-133; all selected implementation tasks.",
+      "parsed_dependency_ids": [
+        "RSP-133"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Preserve exact dependency clause RSP-133; all selected implementation tasks. Exact 124472 passes focused 9/9/9/7 controls and full Rust workspace 318/311/311/360 passes with 6 ignored each, both Clippy scopes, release build and self-test on four platforms; focused cases overlap workspace counts. Fresh normal PR CI remains separate. RSP-100 corrected Python source and any selected Windows repair require their own final-source validation and combined integration checks. Original 4d supplemental 634 cases/1902 phases and 2ac retirement remain completed only within their source scopes. Failed setup, admission, type and API attempts remain attached."
+    },
+    {
+      "id": "RSP-135",
+      "number": 135,
+      "title": "Build and attest all selected release artifacts",
+      "original_object_sha256": "d683c081622182bb8ea18b1a56f6400eab022dc211bdbf27a12465d4c86f315e",
+      "original_acceptance": "Use locked dependencies and current toolchain; bind source/version/target/rule/runtime digests and verify post-sign/frozen manifests.",
+      "original_dependencies": "RSP-134,RSP-081.",
+      "parsed_dependency_ids": [
+        "RSP-134",
+        "RSP-081"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-136",
+      "number": 136,
+      "title": "Verify installed route and control-mode coverage",
+      "original_object_sha256": "8915a0cdf34471f2bd4e2b99068d0d1ca480a041a12a912fcc8264b78680f9af",
+      "original_acceptance": "Exercise actual launchers, no-env auto, aliases, source refs, Watch, availability and approval flow from each selected package.",
+      "original_dependencies": "RSP-135,RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-135",
+        "RSP-015"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Verify actual installed route and control-mode outcomes. Keep Watch/availability delivery separate from native evaluated allow; supplemental fixture-daemon counters may leave the child route unknown. No fabricated native event or implicit launcher acceptance."
+    },
+    {
+      "id": "RSP-137",
+      "number": 137,
+      "title": "Run full performance qualification",
+      "original_object_sha256": "33a6053a588b965b25a1970c0bf4baeb1b2acb7d0e23929efc92c5a7737995d0",
+      "original_acceptance": "Use frozen targets and sample methodology against matching baseline artifacts on declared hardware; include every error/denial/retry.",
+      "original_dependencies": "RSP-136,RSP-010.",
+      "parsed_dependency_ids": [
+        "RSP-136",
+        "RSP-010"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-138",
+      "number": 138,
+      "title": "Run mixed offered-load and recovery soak",
+      "original_object_sha256": "9ced5f6016d7006bc4bd598d71af5c636b404a22a38674fbc623b15e99aead71",
+      "original_acceptance": "Include real evidence ingest, policy mutations, inventory, startup/restart and saturation; preserve responsiveness and bounded process resources.",
+      "original_dependencies": "RSP-137,RSP-131.",
+      "parsed_dependency_ids": [
+        "RSP-137",
+        "RSP-131"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the original measured selection and qualification dependency gates. Required smoke/coverage/receipt outcomes are not all passing; no full qualification, relative-benefit claim or conditional native activation is supported."
+    },
+    {
+      "id": "RSP-139",
+      "number": 139,
+      "title": "Verify update, downgrade and rollback behavior",
+      "original_object_sha256": "5f209dd579abf0860849654655763c02dca1d1765a8914205e0a072592fe282d",
+      "original_acceptance": "Test mixed generations, in-progress requests, signing changes and installed registration; never reopen hidden Python semantic fallback.",
+      "original_dependencies": "RSP-135,RSP-138.",
+      "parsed_dependency_ids": [
+        "RSP-135",
+        "RSP-138"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-140",
+      "number": 140,
+      "title": "Verify evidence privacy and truthful status",
+      "original_object_sha256": "440d862cacc76bb99e8a46e1d8bbd6a2723f2952af38de626b7a24e72b2f6f4b",
+      "original_acceptance": "Probe exported metrics, error paths and receipts for raw secrets, commands, output and private paths; separate availability continuations from evaluated allows.",
+      "original_dependencies": "RSP-136,RSP-138.",
+      "parsed_dependency_ids": [
+        "RSP-136",
+        "RSP-138"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Publish only bounded verified evidence and preserve failed/incomplete attempts. Keep signed download URLs and raw secrets out of records. Distinguish reported-only binary digests from independently rehashed bytes and recovery records from unavailable original freezes."
+    },
+    {
+      "id": "RSP-141",
+      "number": 141,
+      "title": "Reconcile current architecture and old PRDs",
+      "original_object_sha256": "e5b4417b3efbb9eb8d8c295c5da64b7f7fda755d15c329895f087adea468c2e4",
+      "original_acceptance": "Update actual route graphs, authority/availability wording, capability coverage and SLO truth; mark obsolete claims superseded without inventing history.",
+      "original_dependencies": "RSP-136,RSP-137.",
+      "parsed_dependency_ids": [
+        "RSP-136",
+        "RSP-137"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep the complete original PRD, all144 task objects and119 catalog objects, exact dependencies and accurate continuation together. Both the primary workspace and later tfbs sandbox became unavailable. This Git publication preserves surviving records and explicitly lists missing raw/derived bytes; it does not restore the lost seven-file/494-file primary packet or the later staged recovery packet. Implementation, qualification, approval and release remain incomplete."
+    },
+    {
+      "id": "RSP-142",
+      "number": 142,
+      "title": "Complete independent review of the final head",
+      "original_object_sha256": "90805af9bbc7d38c94909a0c5fcfcd00f469880316ca48d9cce0e439639d1ffe",
+      "original_acceptance": "Resolve review threads and required CI on the actual candidate SHA. Explain intentional behavior differences separately from performance changes.",
+      "original_dependencies": "RSP-134,RSP-140,RSP-141.",
+      "parsed_dependency_ids": [
+        "RSP-134",
+        "RSP-140",
+        "RSP-141"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Current PR source is 124472 after exact four-platform deadline validation; its fresh normal CI is in progress and has no terminal census yet. Preserve historical 4afa census 166 success/19 skipped/2 failed, the Windows initial-startup failure and Kilo rate limit. Last inspected review records were 59 resolved threads, 51 COMMENTED formal reviews and zero APPROVED; these do not establish current-head approval. Complete required current-source CI and obtain genuine eligible CODEOWNER/last-push approval after final-source review. Agent peers and a second account cannot supply that approval."
+    },
+    {
+      "id": "RSP-143",
+      "number": 143,
+      "title": "Prepare concrete canary and rollback evidence",
+      "original_object_sha256": "1fd10682035932152de357891c18b699930c08bfdea8fb4fbfb10debc60f3508",
+      "original_acceptance": "Specify selected versions, platforms, cohorts, stop conditions and tested rollback. Publish or merge only within the implementation session's authorization.",
+      "original_dependencies": "RSP-139,RSP-142.",
+      "parsed_dependency_ids": [
+        "RSP-139",
+        "RSP-142"
+      ],
+      "archived_status": "BLOCKED",
+      "status_at_this_checkpoint": "BLOCKED",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Complete actual signed/version-bound installed artifacts and live update/downgrade/rollback/canary evidence after their original prerequisites. Compatible-prior rollback phases do not replace original-baseline rejection and candidate restoration."
+    },
+    {
+      "id": "RSP-144",
+      "number": 144,
+      "title": "Publish an accurate implementation handoff",
+      "original_object_sha256": "95c8368fd94e324ab2478dd9cc260c5c0b09a33bd96fe0cc4349899b9e8bb93a",
+      "original_acceptance": "List selected/deferred tasks, artifacts, exact metrics and coverage, commands/results and rollback. No measured claim without attached evidence.",
+      "original_dependencies": "RSP-137,RSP-138,RSP-139,RSP-140,RSP-141,RSP-142,RSP-143.",
+      "parsed_dependency_ids": [
+        "RSP-137",
+        "RSP-138",
+        "RSP-139",
+        "RSP-140",
+        "RSP-141",
+        "RSP-142",
+        "RSP-143"
+      ],
+      "archived_status": "OPEN",
+      "status_at_this_checkpoint": "OPEN",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Publish the complete original PRD, 144 whole task objects, 119 catalog objects and exact dependencies with attached source-bound commands/results/limits. This additive checkpoint records integrated 124472 all-platform success and PR fast-forward, combined v2 positive admission/325 passes with type failure, original Ex22 WinError 87 failure, recovered accepted phase plan and exact original receipt-gap data. Preserve all earlier failures and incomplete bytes; no old campaign is rerun or pooled. Selected Python/Windows implementation, final combined validation, original installed performance/resource/rollback qualification and eligible final approval remain incomplete."
+    }
+  ],
+  "prior_overlay_commit": "32ff6657a1854e047d9721ed1ae860b878f53e80",
+  "status_semantics": "Archived status retained. Current source-specific validation and actions do not promote original acceptance.",
+  "observation_note": "Additive checkpoint prepared 2026-09-20 10:37:46 UTC. Original task objects, statuses, acceptance, dependencies and catalog remain unchanged. Exact integrated deadline validation and PR integration, failed combined-v2 typing, failed Ex API experiment, accepted-plan recovery and original receipt-data reconciliation retain distinct sources and cutoffs."
+}

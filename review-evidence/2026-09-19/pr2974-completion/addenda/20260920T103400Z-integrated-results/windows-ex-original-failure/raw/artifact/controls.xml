@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="16" time="3.506" timestamp="2026-09-20T10:05:27.345725+00:00" hostname="runnervmvmocb"><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_with_actual_held_reader[held_destination-bounded_manager]" file="tests\test_windows_atomic_rename_probe.py" line="90" time="0.275"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="reader_retired" value="True" /><property name="reader_descriptor_closed" value="True" /><property name="writer_is_separate_process" value="True" /><property name="source_crt_negative_control" value="False" /><property name="writer_exit_code" value="1" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /></properties><failure message="AssertionError">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_rename_with_actual_hel0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000234BF39E000&gt;
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF3F47C0&gt;
+probe_child = None, route = 'bounded_manager', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["held_destination", "held_source_negative"])
+    def test_ex_rename_with_actual_held_reader(tmp_path, monkeypatch, record_property, probe_child, route, hold_crt_source):
+        properties = {}
+    
+        def record(name, value):
+            properties[name] = value
+            record_property(name, value)
+    
+&gt;       original.test_actual_reader_allows_other_process_replace_without_changing_writer(
+            tmp_path, monkeypatch, record, route, hold_crt_source
+        )
+
+tests\test_windows_atomic_rename_probe.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_rename_with_actual_hel0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000234BF39E000&gt;
+record_property = &lt;function test_ex_rename_with_actual_held_reader.&lt;locals&gt;.record at 0x00000234BF3F4900&gt;
+route = 'bounded_manager', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["destination_only", "separate_crt_source"])
+    def test_actual_reader_allows_other_process_replace_without_changing_writer(
+        tmp_path,
+        monkeypatch,
+        record_property,
+        route,
+        hold_crt_source,
+    ):
+        assert Path(private_file_io.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/private_file_io.py"
+        assert Path(replaceable.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        manager._write_private_atomic_text(target, _OLD)
+        before = target.stat()
+        old_identity = before.st_dev, before.st_ino
+        held = _HeldRead()
+        values = queue.Queue(maxsize=1)
+        errors = queue.Queue(maxsize=1)
+    
+        def read():
+            held.owner = threading.get_ident()
+            try:
+                if route == "bounded_manager":
+                    value = manager.load_guard_daemon_auth_token(home)
+                else:
+                    value = codex_daemon_hook_auth._private_file_text(target, label="token")
+                values.put_nowait(value)
+            except BaseException as error:
+                errors.put_nowait(error)
+    
+        def open_text(path, *arguments, **keywords):
+            # The returned handle is owned by the original caller's context manager.
+            handle = builtins.open(path, *arguments, **keywords)  # noqa: SIM115
+            if Path(path) == target and threading.get_ident() == held.owner:
+                return _TextRead(handle, held)
+            return handle
+    
+        thread = threading.Thread(target=read, name="owned-source-reader", daemon=True)
+        report = None
+        code = None
+        held_after_child = False
+        old_handle_after_child = False
+        with monkeypatch.context() as patch:
+            patch.setattr(private_file_io, "os", _ReaderOs(held))
+            patch.setattr(replaceable, "open", open_text, raising=False)
+            thread.start()
+            try:
+                if not held.entered.wait(_CONTROL_SECONDS):
+                    raise TimeoutError("control_reader_ready_timeout")
+                if held.descriptor is None:
+                    raise RuntimeError("control_reader_descriptor_missing")
+                extra = ["--hold-crt-source"] if hold_crt_source else []
+                code, report = _run_child(
+                    target,
+                    "--operation",
+                    "writer",
+                    *extra,
+                    record_property=record_property,
+                    label="writer",
+                )
+                held_after_child = thread.is_alive() and not held.closed.is_set()
+                after = os.fstat(held.descriptor)
+                old_handle_after_child = (after.st_dev, after.st_ino) == old_identity
+            finally:
+                held.release.set()
+                thread.join(_CONTROL_SECONDS)
+                record_property("reader_retired", not thread.is_alive())
+                record_property("reader_descriptor_closed", held.closed.is_set())
+                record_property("writer_is_separate_process", True)
+                record_property("source_crt_negative_control", hold_crt_source)
+                record_property("writer_exit_code", code)
+                record_property("writer_report", json.dumps(report, sort_keys=True))
+        assert not thread.is_alive()
+        assert errors.empty()
+        assert held.closed.is_set()
+        assert held.inheritable is False
+        assert held.identity == old_identity
+        assert held_after_child and old_handle_after_child
+        assert values.get_nowait() == _OLD
+        assert report is not None
+        assert report["writer_calls"] == report["replace_calls"] == 1
+        assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+        assert report["source_reader_opened"] is hold_crt_source
+        assert report["source_reader_closed"] is hold_crt_source
+        assert report["temporary_siblings_removed"]
+        assert report["original_exception_identity_preserved"]
+        if hold_crt_source:
+            assert code == 1
+            assert report["replace_returned"] is False
+            assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 32}
+            assert target.read_text(encoding="utf-8") == _OLD
+        else:
+&gt;           assert code == 0
+                   ^^^^^^^^^
+E           AssertionError
+
+tests\test_windows_replaceable_reader_process.py:357: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_with_actual_held_reader[held_destination-codex_text]" file="tests\test_windows_atomic_rename_probe.py" line="90" time="0.247"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="reader_retired" value="True" /><property name="reader_descriptor_closed" value="True" /><property name="writer_is_separate_process" value="True" /><property name="source_crt_negative_control" value="False" /><property name="writer_exit_code" value="1" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /></properties><failure message="AssertionError">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_rename_with_actual_hel1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000234BF39DA00&gt;
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF3F7C40&gt;
+probe_child = None, route = 'codex_text', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["held_destination", "held_source_negative"])
+    def test_ex_rename_with_actual_held_reader(tmp_path, monkeypatch, record_property, probe_child, route, hold_crt_source):
+        properties = {}
+    
+        def record(name, value):
+            properties[name] = value
+            record_property(name, value)
+    
+&gt;       original.test_actual_reader_allows_other_process_replace_without_changing_writer(
+            tmp_path, monkeypatch, record, route, hold_crt_source
+        )
+
+tests\test_windows_atomic_rename_probe.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_rename_with_actual_hel1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000234BF39DA00&gt;
+record_property = &lt;function test_ex_rename_with_actual_held_reader.&lt;locals&gt;.record at 0x00000234BF3F7B00&gt;
+route = 'codex_text', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["destination_only", "separate_crt_source"])
+    def test_actual_reader_allows_other_process_replace_without_changing_writer(
+        tmp_path,
+        monkeypatch,
+        record_property,
+        route,
+        hold_crt_source,
+    ):
+        assert Path(private_file_io.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/private_file_io.py"
+        assert Path(replaceable.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        manager._write_private_atomic_text(target, _OLD)
+        before = target.stat()
+        old_identity = before.st_dev, before.st_ino
+        held = _HeldRead()
+        values = queue.Queue(maxsize=1)
+        errors = queue.Queue(maxsize=1)
+    
+        def read():
+            held.owner = threading.get_ident()
+            try:
+                if route == "bounded_manager":
+                    value = manager.load_guard_daemon_auth_token(home)
+                else:
+                    value = codex_daemon_hook_auth._private_file_text(target, label="token")
+                values.put_nowait(value)
+            except BaseException as error:
+                errors.put_nowait(error)
+    
+        def open_text(path, *arguments, **keywords):
+            # The returned handle is owned by the original caller's context manager.
+            handle = builtins.open(path, *arguments, **keywords)  # noqa: SIM115
+            if Path(path) == target and threading.get_ident() == held.owner:
+                return _TextRead(handle, held)
+            return handle
+    
+        thread = threading.Thread(target=read, name="owned-source-reader", daemon=True)
+        report = None
+        code = None
+        held_after_child = False
+        old_handle_after_child = False
+        with monkeypatch.context() as patch:
+            patch.setattr(private_file_io, "os", _ReaderOs(held))
+            patch.setattr(replaceable, "open", open_text, raising=False)
+            thread.start()
+            try:
+                if not held.entered.wait(_CONTROL_SECONDS):
+                    raise TimeoutError("control_reader_ready_timeout")
+                if held.descriptor is None:
+                    raise RuntimeError("control_reader_descriptor_missing")
+                extra = ["--hold-crt-source"] if hold_crt_source else []
+                code, report = _run_child(
+                    target,
+                    "--operation",
+                    "writer",
+                    *extra,
+                    record_property=record_property,
+                    label="writer",
+                )
+                held_after_child = thread.is_alive() and not held.closed.is_set()
+                after = os.fstat(held.descriptor)
+                old_handle_after_child = (after.st_dev, after.st_ino) == old_identity
+            finally:
+                held.release.set()
+                thread.join(_CONTROL_SECONDS)
+                record_property("reader_retired", not thread.is_alive())
+                record_property("reader_descriptor_closed", held.closed.is_set())
+                record_property("writer_is_separate_process", True)
+                record_property("source_crt_negative_control", hold_crt_source)
+                record_property("writer_exit_code", code)
+                record_property("writer_report", json.dumps(report, sort_keys=True))
+        assert not thread.is_alive()
+        assert errors.empty()
+        assert held.closed.is_set()
+        assert held.inheritable is False
+        assert held.identity == old_identity
+        assert held_after_child and old_handle_after_child
+        assert values.get_nowait() == _OLD
+        assert report is not None
+        assert report["writer_calls"] == report["replace_calls"] == 1
+        assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+        assert report["source_reader_opened"] is hold_crt_source
+        assert report["source_reader_closed"] is hold_crt_source
+        assert report["temporary_siblings_removed"]
+        assert report["original_exception_identity_preserved"]
+        if hold_crt_source:
+            assert code == 1
+            assert report["replace_returned"] is False
+            assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 32}
+            assert target.read_text(encoding="utf-8") == _OLD
+        else:
+&gt;           assert code == 0
+                   ^^^^^^^^^
+E           AssertionError
+
+tests\test_windows_replaceable_reader_process.py:357: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_with_actual_held_reader[held_source_negative-bounded_manager]" file="tests\test_windows_atomic_rename_probe.py" line="90" time="0.243"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 561, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 13, \&quot;kind\&quot;: \&quot;PermissionError\&quot;, \&quot;winerror\&quot;: 32}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 1, \&quot;first_failed_operation\&quot;: \&quot;source_open\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 0, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: true, \&quot;source_reader_opened\&quot;: true, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;5696f9049c97616bc6e7f0bbbbed6ba0d225c6f479de5cdf0184d8a6679b7035&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="reader_retired" value="True" /><property name="reader_descriptor_closed" value="True" /><property name="writer_is_separate_process" value="True" /><property name="source_crt_negative_control" value="True" /><property name="writer_exit_code" value="1" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 13, &quot;kind&quot;: &quot;PermissionError&quot;, &quot;winerror&quot;: 32}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 1, &quot;first_failed_operation&quot;: &quot;source_open&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: true, &quot;source_reader_opened&quot;: true, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_with_actual_held_reader[held_source_negative-codex_text]" file="tests\test_windows_atomic_rename_probe.py" line="90" time="0.253"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 561, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 13, \&quot;kind\&quot;: \&quot;PermissionError\&quot;, \&quot;winerror\&quot;: 32}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 1, \&quot;first_failed_operation\&quot;: \&quot;source_open\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 0, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: true, \&quot;source_reader_opened\&quot;: true, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;5696f9049c97616bc6e7f0bbbbed6ba0d225c6f479de5cdf0184d8a6679b7035&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="reader_retired" value="True" /><property name="reader_descriptor_closed" value="True" /><property name="writer_is_separate_process" value="True" /><property name="source_crt_negative_control" value="True" /><property name="writer_exit_code" value="1" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 13, &quot;kind&quot;: &quot;PermissionError&quot;, &quot;winerror&quot;: 32}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 1, &quot;first_failed_operation&quot;: &quot;source_open&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: true, &quot;source_reader_opened&quot;: true, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_writer_admission_and_destination_types[unheld]" file="tests\test_windows_atomic_rename_probe.py" line="113" time="0.247"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /><property name="writer_exit_code" value="1" /><property name="temporary_siblings_removed" value="True" /></properties><failure message="assert 1 == 0">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_writer_admission_and_d0')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF438720&gt;
+probe_child = None, case = 'unheld'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_ex_writer_admission_and_destination_types(tmp_path, record_property, probe_child, case):
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        if case == "directory_destination":
+            target.mkdir()
+        elif case != "missing":
+            manager._write_private_atomic_text(target, original._OLD)
+        held = None
+        if case == "crt_destination":
+            held = os.open(target, os.O_RDONLY)
+        if case == "readonly_destination":
+            target.chmod(stat.S_IREAD)
+        try:
+            code, report = original._run_child(
+                target, "--operation", "writer", record_property=record_property, label="writer"
+            )
+            assert isinstance(report, dict)
+            record_property("writer_report", json.dumps(report, sort_keys=True))
+            record_property("writer_exit_code", code)
+            assert report["writer_calls"] == report["replace_calls"] == 1
+            assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+            assert report["temporary_siblings_removed"]
+            assert report["original_exception_identity_preserved"]
+            native = report["probe"]
+            assert native["writer_snapshot_taken"] is True
+            assert native["owned_handles_remaining"] == 0
+            assert native["opens"] == native["closes"] == 2
+            assert native["rename_calls"] == 1
+            if case in ("unheld", "missing"):
+&gt;               assert code == 0
+E               assert 1 == 0
+
+tests\test_windows_atomic_rename_probe.py:147: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_writer_admission_and_destination_types[missing]" file="tests\test_windows_atomic_rename_probe.py" line="113" time="0.235"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /><property name="writer_exit_code" value="1" /><property name="temporary_siblings_removed" value="True" /></properties><failure message="assert 1 == 0">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_writer_admission_and_d1')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF438D60&gt;
+probe_child = None, case = 'missing'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_ex_writer_admission_and_destination_types(tmp_path, record_property, probe_child, case):
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        if case == "directory_destination":
+            target.mkdir()
+        elif case != "missing":
+            manager._write_private_atomic_text(target, original._OLD)
+        held = None
+        if case == "crt_destination":
+            held = os.open(target, os.O_RDONLY)
+        if case == "readonly_destination":
+            target.chmod(stat.S_IREAD)
+        try:
+            code, report = original._run_child(
+                target, "--operation", "writer", record_property=record_property, label="writer"
+            )
+            assert isinstance(report, dict)
+            record_property("writer_report", json.dumps(report, sort_keys=True))
+            record_property("writer_exit_code", code)
+            assert report["writer_calls"] == report["replace_calls"] == 1
+            assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+            assert report["temporary_siblings_removed"]
+            assert report["original_exception_identity_preserved"]
+            native = report["probe"]
+            assert native["writer_snapshot_taken"] is True
+            assert native["owned_handles_remaining"] == 0
+            assert native["opens"] == native["closes"] == 2
+            assert native["rename_calls"] == 1
+            if case in ("unheld", "missing"):
+&gt;               assert code == 0
+E               assert 1 == 0
+
+tests\test_windows_atomic_rename_probe.py:147: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_writer_admission_and_destination_types[crt_destination]" file="tests\test_windows_atomic_rename_probe.py" line="113" time="0.254"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /><property name="writer_exit_code" value="1" /><property name="destination_crt_reader_closed" value="True" /><property name="temporary_siblings_removed" value="True" /></properties><failure message="AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...winerror': 32}&#10;  &#10;  Differing items:&#10;  {'kind': 'OSError'} != {'kind': 'PermissionError'}&#10;  {'errno': 22} != {'errno': 13}&#10;  {'winerror': 87} != {'winerror': 32}&#10;  &#10;  Full diff:&#10;    {&#10;  -     'errno': 13,&#10;  ?              ^^&#10;  +     'errno': 22,&#10;  ?              ^^&#10;  -     'kind': 'PermissionError',&#10;  ?              ^^^^^^^^^^&#10;  +     'kind': 'OSError',&#10;  ?              ^^&#10;  -     'winerror': 32,&#10;  ?                 ^^&#10;  +     'winerror': 87,&#10;  ?                 ^^&#10;    }">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_writer_admission_and_d2')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF439260&gt;
+probe_child = None, case = 'crt_destination'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_ex_writer_admission_and_destination_types(tmp_path, record_property, probe_child, case):
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        if case == "directory_destination":
+            target.mkdir()
+        elif case != "missing":
+            manager._write_private_atomic_text(target, original._OLD)
+        held = None
+        if case == "crt_destination":
+            held = os.open(target, os.O_RDONLY)
+        if case == "readonly_destination":
+            target.chmod(stat.S_IREAD)
+        try:
+            code, report = original._run_child(
+                target, "--operation", "writer", record_property=record_property, label="writer"
+            )
+            assert isinstance(report, dict)
+            record_property("writer_report", json.dumps(report, sort_keys=True))
+            record_property("writer_exit_code", code)
+            assert report["writer_calls"] == report["replace_calls"] == 1
+            assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+            assert report["temporary_siblings_removed"]
+            assert report["original_exception_identity_preserved"]
+            native = report["probe"]
+            assert native["writer_snapshot_taken"] is True
+            assert native["owned_handles_remaining"] == 0
+            assert native["opens"] == native["closes"] == 2
+            assert native["rename_calls"] == 1
+            if case in ("unheld", "missing"):
+                assert code == 0
+                assert report["replace_returned"] and native["rename_returned"]
+                assert report["error"] is None
+                assert target.read_text(encoding="utf-8") == original._NEW
+            else:
+                assert code == 1
+                assert report["replace_returned"] is native["rename_returned"] is False
+&gt;               assert report["error"] == {
+                    "kind": "PermissionError",
+                    "errno": 13,
+                    "winerror": 32 if case == "crt_destination" else 5,
+                }
+E               AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...winerror': 32}
+E                 
+E                 Differing items:
+E                 {'kind': 'OSError'} != {'kind': 'PermissionError'}
+E                 {'errno': 22} != {'errno': 13}
+E                 {'winerror': 87} != {'winerror': 32}
+E                 
+E                 Full diff:
+E                   {
+E                 -     'errno': 13,
+E                 ?              ^^
+E                 +     'errno': 22,
+E                 ?              ^^
+E                 -     'kind': 'PermissionError',
+E                 ?              ^^^^^^^^^^
+E                 +     'kind': 'OSError',
+E                 ?              ^^
+E                 -     'winerror': 32,
+E                 ?                 ^^
+E                 +     'winerror': 87,
+E                 ?                 ^^
+E                   }
+
+tests\test_windows_atomic_rename_probe.py:154: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_writer_admission_and_destination_types[readonly_destination]" file="tests\test_windows_atomic_rename_probe.py" line="113" time="0.250"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /><property name="writer_exit_code" value="1" /><property name="temporary_siblings_removed" value="True" /></properties><failure message="AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...'winerror': 5}&#10;  &#10;  Differing items:&#10;  {'kind': 'OSError'} != {'kind': 'PermissionError'}&#10;  {'errno': 22} != {'errno': 13}&#10;  {'winerror': 87} != {'winerror': 5}&#10;  &#10;  Full diff:&#10;    {&#10;  -     'errno': 13,&#10;  ?              ^^&#10;  +     'errno': 22,&#10;  ?              ^^&#10;  -     'kind': 'PermissionError',&#10;  ?              ^^^^^^^^^^&#10;  +     'kind': 'OSError',&#10;  ?              ^^&#10;  -     'winerror': 5,&#10;  ?                 ^&#10;  +     'winerror': 87,&#10;  ?                 ^^&#10;    }">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_writer_admission_and_d3')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF439760&gt;
+probe_child = None, case = 'readonly_destination'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_ex_writer_admission_and_destination_types(tmp_path, record_property, probe_child, case):
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        if case == "directory_destination":
+            target.mkdir()
+        elif case != "missing":
+            manager._write_private_atomic_text(target, original._OLD)
+        held = None
+        if case == "crt_destination":
+            held = os.open(target, os.O_RDONLY)
+        if case == "readonly_destination":
+            target.chmod(stat.S_IREAD)
+        try:
+            code, report = original._run_child(
+                target, "--operation", "writer", record_property=record_property, label="writer"
+            )
+            assert isinstance(report, dict)
+            record_property("writer_report", json.dumps(report, sort_keys=True))
+            record_property("writer_exit_code", code)
+            assert report["writer_calls"] == report["replace_calls"] == 1
+            assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+            assert report["temporary_siblings_removed"]
+            assert report["original_exception_identity_preserved"]
+            native = report["probe"]
+            assert native["writer_snapshot_taken"] is True
+            assert native["owned_handles_remaining"] == 0
+            assert native["opens"] == native["closes"] == 2
+            assert native["rename_calls"] == 1
+            if case in ("unheld", "missing"):
+                assert code == 0
+                assert report["replace_returned"] and native["rename_returned"]
+                assert report["error"] is None
+                assert target.read_text(encoding="utf-8") == original._NEW
+            else:
+                assert code == 1
+                assert report["replace_returned"] is native["rename_returned"] is False
+&gt;               assert report["error"] == {
+                    "kind": "PermissionError",
+                    "errno": 13,
+                    "winerror": 32 if case == "crt_destination" else 5,
+                }
+E               AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...'winerror': 5}
+E                 
+E                 Differing items:
+E                 {'kind': 'OSError'} != {'kind': 'PermissionError'}
+E                 {'errno': 22} != {'errno': 13}
+E                 {'winerror': 87} != {'winerror': 5}
+E                 
+E                 Full diff:
+E                   {
+E                 -     'errno': 13,
+E                 ?              ^^
+E                 +     'errno': 22,
+E                 ?              ^^
+E                 -     'kind': 'PermissionError',
+E                 ?              ^^^^^^^^^^
+E                 +     'kind': 'OSError',
+E                 ?              ^^
+E                 -     'winerror': 5,
+E                 ?                 ^
+E                 +     'winerror': 87,
+E                 ?                 ^^
+E                   }
+
+tests\test_windows_atomic_rename_probe.py:154: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_writer_admission_and_destination_types[directory_destination]" file="tests\test_windows_atomic_rename_probe.py" line="113" time="0.240"><properties><property name="child_capture_writer" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 1, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 550, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;operation\&quot;: \&quot;writer\&quot;, \&quot;original_exception_identity_preserved\&quot;: true, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false, \&quot;writer_snapshot_taken\&quot;: true}, \&quot;replace_calls\&quot;: 1, \&quot;replace_returned\&quot;: false, \&quot;schema\&quot;: 1, \&quot;source_reader_closed\&quot;: false, \&quot;source_reader_opened\&quot;: false, \&quot;temporary_siblings_removed\&quot;: true, \&quot;writer_calls\&quot;: 1, \&quot;writer_fd_closed_before_replace\&quot;: true, \&quot;writer_locked\&quot;: true}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;bf8dd16962c5641ce50afc8bf8cff2b5e047a6427b3ca94e8c3f41da9ffdf623&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="writer_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;operation&quot;: &quot;writer&quot;, &quot;original_exception_identity_preserved&quot;: true, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false, &quot;writer_snapshot_taken&quot;: true}, &quot;replace_calls&quot;: 1, &quot;replace_returned&quot;: false, &quot;schema&quot;: 1, &quot;source_reader_closed&quot;: false, &quot;source_reader_opened&quot;: false, &quot;temporary_siblings_removed&quot;: true, &quot;writer_calls&quot;: 1, &quot;writer_fd_closed_before_replace&quot;: true, &quot;writer_locked&quot;: true}" /><property name="writer_exit_code" value="1" /><property name="temporary_siblings_removed" value="True" /></properties><failure message="AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...'winerror': 5}&#10;  &#10;  Differing items:&#10;  {'kind': 'OSError'} != {'kind': 'PermissionError'}&#10;  {'errno': 22} != {'errno': 13}&#10;  {'winerror': 87} != {'winerror': 5}&#10;  &#10;  Full diff:&#10;    {&#10;  -     'errno': 13,&#10;  ?              ^^&#10;  +     'errno': 22,&#10;  ?              ^^&#10;  -     'kind': 'PermissionError',&#10;  ?              ^^^^^^^^^^&#10;  +     'kind': 'OSError',&#10;  ?              ^^&#10;  -     'winerror': 5,&#10;  ?                 ^&#10;  +     'winerror': 87,&#10;  ?                 ^^&#10;    }">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_writer_admission_and_d4')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF439C60&gt;
+probe_child = None, case = 'directory_destination'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_ex_writer_admission_and_destination_types(tmp_path, record_property, probe_child, case):
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        if case == "directory_destination":
+            target.mkdir()
+        elif case != "missing":
+            manager._write_private_atomic_text(target, original._OLD)
+        held = None
+        if case == "crt_destination":
+            held = os.open(target, os.O_RDONLY)
+        if case == "readonly_destination":
+            target.chmod(stat.S_IREAD)
+        try:
+            code, report = original._run_child(
+                target, "--operation", "writer", record_property=record_property, label="writer"
+            )
+            assert isinstance(report, dict)
+            record_property("writer_report", json.dumps(report, sort_keys=True))
+            record_property("writer_exit_code", code)
+            assert report["writer_calls"] == report["replace_calls"] == 1
+            assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+            assert report["temporary_siblings_removed"]
+            assert report["original_exception_identity_preserved"]
+            native = report["probe"]
+            assert native["writer_snapshot_taken"] is True
+            assert native["owned_handles_remaining"] == 0
+            assert native["opens"] == native["closes"] == 2
+            assert native["rename_calls"] == 1
+            if case in ("unheld", "missing"):
+                assert code == 0
+                assert report["replace_returned"] and native["rename_returned"]
+                assert report["error"] is None
+                assert target.read_text(encoding="utf-8") == original._NEW
+            else:
+                assert code == 1
+                assert report["replace_returned"] is native["rename_returned"] is False
+&gt;               assert report["error"] == {
+                    "kind": "PermissionError",
+                    "errno": 13,
+                    "winerror": 32 if case == "crt_destination" else 5,
+                }
+E               AssertionError: assert {'errno': 22,...winerror': 87} == {'errno': 13,...'winerror': 5}
+E                 
+E                 Differing items:
+E                 {'kind': 'OSError'} != {'kind': 'PermissionError'}
+E                 {'errno': 22} != {'errno': 13}
+E                 {'winerror': 87} != {'winerror': 5}
+E                 
+E                 Full diff:
+E                   {
+E                 -     'errno': 13,
+E                 ?              ^^
+E                 +     'errno': 22,
+E                 ?              ^^
+E                 -     'kind': 'PermissionError',
+E                 ?              ^^^^^^^^^^
+E                 +     'kind': 'OSError',
+E                 ?              ^^
+E                 -     'winerror': 5,
+E                 ?                 ^
+E                 +     'winerror': 87,
+E                 ?                 ^^
+E                   }
+
+tests\test_windows_atomic_rename_probe.py:154: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_preserves_original_audit_boundary[observe]" file="tests\test_windows_atomic_rename_probe.py" line="171" time="0.225"><properties><property name="child_capture_original" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 0, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 392, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: null, \&quot;events\&quot;: [{\&quot;destination_dir_fd\&quot;: -1, \&quot;destination_same\&quot;: true, \&quot;opens_before_event\&quot;: 0, \&quot;renames_before_event\&quot;: 0, \&quot;source_dir_fd\&quot;: -1, \&quot;source_same\&quot;: true}], \&quot;operation\&quot;: \&quot;rename_audit\&quot;, \&quot;probe\&quot;: {\&quot;closes\&quot;: 0, \&quot;first_failed_operation\&quot;: null, \&quot;opens\&quot;: 0, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 0, \&quot;rename_returned\&quot;: false}, \&quot;refusal_same_object\&quot;: false, \&quot;schema\&quot;: 1}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;2485b4000ac9afe44a7f1d7f2e76b05169c5451de9a80c0a8a6ad4e55b5e0d11&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="original_report" value="{&quot;error&quot;: null, &quot;events&quot;: [{&quot;destination_dir_fd&quot;: -1, &quot;destination_same&quot;: true, &quot;opens_before_event&quot;: 0, &quot;renames_before_event&quot;: 0, &quot;source_dir_fd&quot;: -1, &quot;source_same&quot;: true}], &quot;operation&quot;: &quot;rename_audit&quot;, &quot;probe&quot;: {&quot;closes&quot;: 0, &quot;first_failed_operation&quot;: null, &quot;opens&quot;: 0, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}, &quot;refusal_same_object&quot;: false, &quot;schema&quot;: 1}" /><property name="child_capture_candidate" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 0, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 440, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: 22, \&quot;kind\&quot;: \&quot;OSError\&quot;, \&quot;winerror\&quot;: 87}, \&quot;events\&quot;: [{\&quot;destination_dir_fd\&quot;: -1, \&quot;destination_same\&quot;: true, \&quot;opens_before_event\&quot;: 0, \&quot;renames_before_event\&quot;: 0, \&quot;source_dir_fd\&quot;: -1, \&quot;source_same\&quot;: true}], \&quot;operation\&quot;: \&quot;rename_audit\&quot;, \&quot;probe\&quot;: {\&quot;closes\&quot;: 2, \&quot;first_failed_operation\&quot;: \&quot;rename\&quot;, \&quot;opens\&quot;: 2, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 1, \&quot;rename_returned\&quot;: false}, \&quot;refusal_same_object\&quot;: false, \&quot;schema\&quot;: 1}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;f289e87a4d8346c098cbcf3cd554e5d0dd16bf8e60ed6d7b19cb3225b2df5313&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="candidate_report" value="{&quot;error&quot;: {&quot;errno&quot;: 22, &quot;kind&quot;: &quot;OSError&quot;, &quot;winerror&quot;: 87}, &quot;events&quot;: [{&quot;destination_dir_fd&quot;: -1, &quot;destination_same&quot;: true, &quot;opens_before_event&quot;: 0, &quot;renames_before_event&quot;: 0, &quot;source_dir_fd&quot;: -1, &quot;source_same&quot;: true}], &quot;operation&quot;: &quot;rename_audit&quot;, &quot;probe&quot;: {&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: &quot;rename&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 1, &quot;rename_returned&quot;: false}, &quot;refusal_same_object&quot;: false, &quot;schema&quot;: 1}" /></properties><failure message="assert False is ((True and not False))">tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_ex_rename_preserves_origi0')
+record_property = &lt;function record_property.&lt;locals&gt;.append_property at 0x00000234BF43A160&gt;
+probe_child = None, refuse = False
+
+    @pytest.mark.parametrize("refuse", [False, True], ids=["observe", "refuse"])
+    def test_ex_rename_preserves_original_audit_boundary(tmp_path, record_property, probe_child, refuse):
+        records = []
+        for candidate in (False, True):
+            home = tmp_path / ("candidate" if candidate else "original")
+            home.mkdir()
+            target = home / "authority"
+            target.write_text(original._OLD, encoding="utf-8")
+            source = home / ".rename-audit-source"
+            source.write_text(original._NEW, encoding="utf-8")
+            extra = ["--candidate"] if candidate else []
+            if refuse:
+                extra.append("--refuse")
+            code, report = original._run_child(
+                target,
+                "--operation",
+                "rename_audit",
+                *extra,
+                record_property=record_property,
+                label="candidate" if candidate else "original",
+            )
+            record_property("candidate_report" if candidate else "original_report", json.dumps(report, sort_keys=True))
+            assert code == 0 and isinstance(report, dict)
+            records.append({key: value for key, value in report.items() if key != "probe"})
+            assert report["probe"]["owned_handles_remaining"] == 0
+&gt;           assert report["probe"]["rename_returned"] is (candidate and not refuse)
+E           assert False is ((True and not False))
+
+tests\test_windows_atomic_rename_probe.py:197: AssertionError</failure></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_rename_preserves_original_audit_boundary[refuse]" file="tests\test_windows_atomic_rename_probe.py" line="171" time="0.232"><properties><property name="child_capture_original" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 0, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 437, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: null, \&quot;kind\&quot;: \&quot;other\&quot;, \&quot;winerror\&quot;: null}, \&quot;events\&quot;: [{\&quot;destination_dir_fd\&quot;: -1, \&quot;destination_same\&quot;: true, \&quot;opens_before_event\&quot;: 0, \&quot;renames_before_event\&quot;: 0, \&quot;source_dir_fd\&quot;: -1, \&quot;source_same\&quot;: true}], \&quot;operation\&quot;: \&quot;rename_audit\&quot;, \&quot;probe\&quot;: {\&quot;closes\&quot;: 0, \&quot;first_failed_operation\&quot;: null, \&quot;opens\&quot;: 0, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 0, \&quot;rename_returned\&quot;: false}, \&quot;refusal_same_object\&quot;: true, \&quot;schema\&quot;: 1}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;0f6bf141b38d11de6515f7e2379da42a8f7e423aa49e307d654260054ba780ee&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="original_report" value="{&quot;error&quot;: {&quot;errno&quot;: null, &quot;kind&quot;: &quot;other&quot;, &quot;winerror&quot;: null}, &quot;events&quot;: [{&quot;destination_dir_fd&quot;: -1, &quot;destination_same&quot;: true, &quot;opens_before_event&quot;: 0, &quot;renames_before_event&quot;: 0, &quot;source_dir_fd&quot;: -1, &quot;source_same&quot;: true}], &quot;operation&quot;: &quot;rename_audit&quot;, &quot;probe&quot;: {&quot;closes&quot;: 0, &quot;first_failed_operation&quot;: null, &quot;opens&quot;: 0, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}, &quot;refusal_same_object&quot;: true, &quot;schema&quot;: 1}" /><property name="child_capture_candidate" value="{&quot;cleanup_error&quot;: null, &quot;kill_requested&quot;: false, &quot;process_retired&quot;: true, &quot;report_valid&quot;: true, &quot;return_code&quot;: 0, &quot;stderr_bytes&quot;: 0, &quot;stderr_content_retained&quot;: false, &quot;stderr_sha256&quot;: &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;, &quot;stdout_bytes&quot;: 437, &quot;stdout_content&quot;: &quot;{\&quot;error\&quot;: {\&quot;errno\&quot;: null, \&quot;kind\&quot;: \&quot;other\&quot;, \&quot;winerror\&quot;: null}, \&quot;events\&quot;: [{\&quot;destination_dir_fd\&quot;: -1, \&quot;destination_same\&quot;: true, \&quot;opens_before_event\&quot;: 0, \&quot;renames_before_event\&quot;: 0, \&quot;source_dir_fd\&quot;: -1, \&quot;source_same\&quot;: true}], \&quot;operation\&quot;: \&quot;rename_audit\&quot;, \&quot;probe\&quot;: {\&quot;closes\&quot;: 0, \&quot;first_failed_operation\&quot;: null, \&quot;opens\&quot;: 0, \&quot;owned_handles_remaining\&quot;: 0, \&quot;rename_calls\&quot;: 0, \&quot;rename_returned\&quot;: false}, \&quot;refusal_same_object\&quot;: true, \&quot;schema\&quot;: 1}\r\n&quot;, &quot;stdout_sha256&quot;: &quot;0f6bf141b38d11de6515f7e2379da42a8f7e423aa49e307d654260054ba780ee&quot;, &quot;timed_out&quot;: false, &quot;timeout_partial&quot;: null, &quot;transport_error&quot;: null}" /><property name="candidate_report" value="{&quot;error&quot;: {&quot;errno&quot;: null, &quot;kind&quot;: &quot;other&quot;, &quot;winerror&quot;: null}, &quot;events&quot;: [{&quot;destination_dir_fd&quot;: -1, &quot;destination_same&quot;: true, &quot;opens_before_event&quot;: 0, &quot;renames_before_event&quot;: 0, &quot;source_dir_fd&quot;: -1, &quot;source_same&quot;: true}], &quot;operation&quot;: &quot;rename_audit&quot;, &quot;probe&quot;: {&quot;closes&quot;: 0, &quot;first_failed_operation&quot;: null, &quot;opens&quot;: 0, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}, &quot;refusal_same_object&quot;: true, &quot;schema&quot;: 1}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_source_guards_reject_before_mutation[wrong_identity]" file="tests\test_windows_atomic_rename_probe.py" line="216" time="0.005"><properties><property name="native_probe" value="{&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: null, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_source_guards_reject_before_mutation[directory_source]" file="tests\test_windows_atomic_rename_probe.py" line="216" time="0.005"><properties><property name="native_probe" value="{&quot;closes&quot;: 1, &quot;first_failed_operation&quot;: &quot;source_open&quot;, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_ex_source_guards_reject_before_mutation[reparse_source]" file="tests\test_windows_atomic_rename_probe.py" line="216" time="0.005"><properties><property name="native_probe" value="{&quot;closes&quot;: 2, &quot;first_failed_operation&quot;: null, &quot;opens&quot;: 2, &quot;owned_handles_remaining&quot;: 0, &quot;rename_calls&quot;: 0, &quot;rename_returned&quot;: false}" /></properties></testcase><testcase classname="tests.test_windows_atomic_rename_probe" name="test_snapshot_failure_preserves_original_close_then_error" file="tests\test_windows_atomic_rename_probe.py" line="249" time="0.005" /><testcase classname="tests.test_windows_atomic_rename_probe" name="test_native_report_keeps_committed_rename_separate_from_close_failure" file="tests\test_windows_atomic_rename_probe.py" line="269" time="0.001" /></testsuite></testsuites>

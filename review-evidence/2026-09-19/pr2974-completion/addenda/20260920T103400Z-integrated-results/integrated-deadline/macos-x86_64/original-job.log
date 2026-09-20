@@ -1,0 +1,573 @@
+﻿2026-09-20T09:48:46.1589220Z Current runner version: '2.337.0'
+2026-09-20T09:48:46.1637520Z ##[group]Runner Image Provisioner
+2026-09-20T09:48:46.1638680Z Hosted Compute Agent
+2026-09-20T09:48:46.1639970Z Version: 20260819.586
+2026-09-20T09:48:46.1640870Z Commit: 3cc4a88dfa507ef76119ad1bb3eccc6378bb2b76
+2026-09-20T09:48:46.1641910Z Build Date: 2026-08-18T23:20:18Z
+2026-09-20T09:48:46.1642850Z Worker ID: {ce8fb18b-e4a4-4c31-a7e4-7d7c22b27a62}
+2026-09-20T09:48:46.1643860Z Azure Region: westus
+2026-09-20T09:48:46.1644620Z ##[endgroup]
+2026-09-20T09:48:46.1646950Z ##[group]Operating System
+2026-09-20T09:48:46.1647790Z macOS
+2026-09-20T09:48:46.1648490Z 15.7.9
+2026-09-20T09:48:46.1649160Z 24G830
+2026-09-20T09:48:46.1649840Z ##[endgroup]
+2026-09-20T09:48:46.1650560Z ##[group]Runner Image
+2026-09-20T09:48:46.1651340Z Image: macos-15
+2026-09-20T09:48:46.1652080Z Version: 20260824.0482.1
+2026-09-20T09:48:46.1653920Z Included Software: https://github.com/actions/runner-images/blob/macos-15/20260824.0482/images/macos/macos-15-Readme.md
+2026-09-20T09:48:46.1656340Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15%2F20260824.0482
+2026-09-20T09:48:46.1657860Z ##[endgroup]
+2026-09-20T09:48:46.1659480Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T09:48:46.1663710Z Contents: read
+2026-09-20T09:48:46.1664480Z Metadata: read
+2026-09-20T09:48:46.1665260Z ##[endgroup]
+2026-09-20T09:48:46.1668190Z Secret source: Actions
+2026-09-20T09:48:46.1669430Z Cache mode: write
+2026-09-20T09:48:46.1671560Z Prepare workflow directory
+2026-09-20T09:48:46.2575040Z Prepare all required actions
+2026-09-20T09:48:46.2692220Z Getting action download info
+2026-09-20T09:48:46.5435490Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T09:48:47.4004420Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T09:48:48.5249130Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T09:48:49.0836330Z Complete job name: deadline-validation (macos-x86_64, macos-15-intel, x86_64-apple-darwin, 3.12.10)
+2026-09-20T09:48:49.2328410Z ##[group]Run git config --global core.autocrlf false
+2026-09-20T09:48:49.2333080Z [36;1mgit config --global core.autocrlf false[0m
+2026-09-20T09:48:49.2616330Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T09:48:49.2620000Z env:
+2026-09-20T09:48:49.2622720Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:48:49.2625930Z ##[endgroup]
+2026-09-20T09:48:50.1676970Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T09:48:50.1682690Z with:
+2026-09-20T09:48:50.1685550Z   ref: af1af84ea196783f86ba92d7a7f1f8e2fd24988d
+2026-09-20T09:48:50.1691680Z   path: driver
+2026-09-20T09:48:50.1694590Z   fetch-depth: 2
+2026-09-20T09:48:50.1698260Z   persist-credentials: false
+2026-09-20T09:48:50.1701780Z   repository: hashgraph-online/hol-guard
+2026-09-20T09:48:50.1731700Z   token: ***
+2026-09-20T09:48:50.1734400Z   ssh-strict: true
+2026-09-20T09:48:50.1736950Z   ssh-user: git
+2026-09-20T09:48:50.1739430Z   clean: true
+2026-09-20T09:48:50.1742040Z   sparse-checkout-cone-mode: true
+2026-09-20T09:48:50.1745550Z   fetch-tags: false
+2026-09-20T09:48:50.1748270Z   show-progress: true
+2026-09-20T09:48:50.1751400Z   lfs: false
+2026-09-20T09:48:50.1756050Z   submodules: false
+2026-09-20T09:48:50.1759220Z   set-safe-directory: true
+2026-09-20T09:48:50.1762260Z env:
+2026-09-20T09:48:50.1766560Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:48:50.1772280Z ##[endgroup]
+2026-09-20T09:48:55.5873820Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T09:48:55.5881090Z ##[group]Getting Git version info
+2026-09-20T09:48:55.6269330Z Working directory is '/Users/runner/work/hol-guard/hol-guard/driver'
+2026-09-20T09:48:55.6277810Z [command]/usr/local/bin/git version
+2026-09-20T09:48:55.6449510Z git version 2.55.0
+2026-09-20T09:48:55.6471110Z ##[endgroup]
+2026-09-20T09:48:55.6539450Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/59292795-f7e1-4fd3-9aad-770063668717/.gitconfig'
+2026-09-20T09:48:55.6593150Z Temporarily overriding HOME='/Users/runner/work/_temp/59292795-f7e1-4fd3-9aad-770063668717' before making global git config changes
+2026-09-20T09:48:55.6602220Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T09:48:55.7059380Z [command]/usr/local/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T09:48:55.8911230Z ##[group]Determining repository object format
+2026-09-20T09:48:55.8948830Z ##[endgroup]
+2026-09-20T09:48:55.9007980Z ##[group]Initializing the repository
+2026-09-20T09:48:55.9021480Z [command]/usr/local/bin/git init /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T09:48:57.0247520Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T09:48:57.1268600Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T09:48:57.1333810Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T09:48:57.1447560Z hint: call:
+2026-09-20T09:48:57.1494330Z hint:
+2026-09-20T09:48:57.1517860Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T09:48:57.1593500Z hint:
+2026-09-20T09:48:57.1670930Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T09:48:57.1782060Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T09:48:57.1806480Z hint:
+2026-09-20T09:48:57.1923850Z hint: 	git branch -m <name>
+2026-09-20T09:48:57.1968210Z hint:
+2026-09-20T09:48:57.1984420Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T09:48:57.2037620Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/driver/.git/
+2026-09-20T09:48:57.2084700Z [command]/usr/local/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T09:48:57.2111800Z ##[endgroup]
+2026-09-20T09:48:57.2131960Z ##[group]Disabling automatic garbage collection
+2026-09-20T09:48:57.2140630Z [command]/usr/local/bin/git config --local gc.auto 0
+2026-09-20T09:48:57.2163500Z ##[endgroup]
+2026-09-20T09:48:57.2170440Z ##[group]Setting up auth
+2026-09-20T09:48:57.2176790Z Removing SSH command configuration
+2026-09-20T09:48:57.2184890Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:48:57.2772320Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:48:59.4317170Z Removing HTTP extra header
+2026-09-20T09:48:59.4586130Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:48:59.5059800Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:49:01.4279490Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:49:01.4333060Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:49:01.4927290Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:49:03.7524800Z [command]/usr/local/bin/git config --file /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T09:49:03.9779270Z [command]/usr/local/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:04.0636850Z [command]/usr/local/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:04.1179000Z [command]/usr/local/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:04.1373470Z [command]/usr/local/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:04.1641830Z ##[endgroup]
+2026-09-20T09:49:04.2647120Z ##[group]Fetching the repository
+2026-09-20T09:49:04.3665800Z [command]/usr/local/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin af1af84ea196783f86ba92d7a7f1f8e2fd24988d
+2026-09-20T09:49:10.7640520Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T09:49:10.7642710Z  * branch            af1af84ea196783f86ba92d7a7f1f8e2fd24988d -> FETCH_HEAD
+2026-09-20T09:49:10.7671250Z [command]/usr/local/bin/git rev-parse --verify --quiet af1af84ea196783f86ba92d7a7f1f8e2fd24988d^{object}
+2026-09-20T09:49:10.7952130Z af1af84ea196783f86ba92d7a7f1f8e2fd24988d
+2026-09-20T09:49:10.8071640Z ##[endgroup]
+2026-09-20T09:49:10.8231050Z ##[group]Determining the checkout info
+2026-09-20T09:49:10.8233320Z ##[endgroup]
+2026-09-20T09:49:10.8235210Z [command]/usr/local/bin/git sparse-checkout disable
+2026-09-20T09:49:10.8473400Z [command]/usr/local/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T09:49:10.9254230Z ##[group]Checking out the ref
+2026-09-20T09:49:10.9306160Z [command]/usr/local/bin/git checkout --progress --force af1af84ea196783f86ba92d7a7f1f8e2fd24988d
+2026-09-20T09:49:12.3088230Z Updating files:  14% (679/4763)
+2026-09-20T09:49:12.4094070Z Updating files:  15% (715/4763)
+2026-09-20T09:49:12.4946470Z Updating files:  16% (763/4763)
+2026-09-20T09:49:12.7240690Z Updating files:  17% (810/4763)
+2026-09-20T09:49:12.8438490Z Updating files:  18% (858/4763)
+2026-09-20T09:49:13.1757000Z Updating files:  19% (905/4763)
+2026-09-20T09:49:13.2987510Z Updating files:  20% (953/4763)
+2026-09-20T09:49:13.4560490Z Updating files:  20% (990/4763)
+2026-09-20T09:49:13.9010970Z Updating files:  21% (1001/4763)
+2026-09-20T09:49:14.0188350Z Updating files:  22% (1048/4763)
+2026-09-20T09:49:14.2291540Z Updating files:  23% (1096/4763)
+2026-09-20T09:49:14.2600070Z Updating files:  23% (1128/4763)
+2026-09-20T09:49:14.3284140Z Updating files:  24% (1144/4763)
+2026-09-20T09:49:14.3703710Z Updating files:  25% (1191/4763)
+2026-09-20T09:49:14.4017250Z Updating files:  26% (1239/4763)
+2026-09-20T09:49:14.4548360Z Updating files:  27% (1287/4763)
+2026-09-20T09:49:14.4903140Z Updating files:  28% (1334/4763)
+2026-09-20T09:49:14.5204340Z Updating files:  29% (1382/4763)
+2026-09-20T09:49:14.5566460Z Updating files:  30% (1429/4763)
+2026-09-20T09:49:14.5911310Z Updating files:  31% (1477/4763)
+2026-09-20T09:49:14.6395920Z Updating files:  32% (1525/4763)
+2026-09-20T09:49:14.6612780Z Updating files:  33% (1572/4763)
+2026-09-20T09:49:14.7129810Z Updating files:  34% (1620/4763)
+2026-09-20T09:49:14.7746250Z Updating files:  35% (1668/4763)
+2026-09-20T09:49:14.8905710Z Updating files:  36% (1715/4763)
+2026-09-20T09:49:14.9093770Z Updating files:  37% (1763/4763)
+2026-09-20T09:49:15.0015840Z Updating files:  38% (1810/4763)
+2026-09-20T09:49:15.1309560Z Updating files:  39% (1858/4763)
+2026-09-20T09:49:15.1645840Z Updating files:  40% (1906/4763)
+2026-09-20T09:49:15.1651750Z Updating files:  41% (1953/4763)
+2026-09-20T09:49:15.1979750Z Updating files:  41% (1954/4763)
+2026-09-20T09:49:15.2461750Z Updating files:  42% (2001/4763)
+2026-09-20T09:49:15.4583910Z Updating files:  43% (2049/4763)
+2026-09-20T09:49:15.5134970Z Updating files:  44% (2096/4763)
+2026-09-20T09:49:15.5512450Z Updating files:  45% (2144/4763)
+2026-09-20T09:49:15.5943690Z Updating files:  46% (2191/4763)
+2026-09-20T09:49:15.6346140Z Updating files:  47% (2239/4763)
+2026-09-20T09:49:15.6750780Z Updating files:  48% (2287/4763)
+2026-09-20T09:49:15.7099230Z Updating files:  49% (2334/4763)
+2026-09-20T09:49:15.7530720Z Updating files:  50% (2382/4763)
+2026-09-20T09:49:15.7802940Z Updating files:  51% (2430/4763)
+2026-09-20T09:49:15.8145370Z Updating files:  52% (2477/4763)
+2026-09-20T09:49:15.8660040Z Updating files:  53% (2525/4763)
+2026-09-20T09:49:15.9364320Z Updating files:  54% (2573/4763)
+2026-09-20T09:49:16.0112530Z Updating files:  55% (2620/4763)
+2026-09-20T09:49:16.1560690Z Updating files:  56% (2668/4763)
+2026-09-20T09:49:16.1680190Z Updating files:  57% (2715/4763)
+2026-09-20T09:49:16.6055930Z Updating files:  57% (2717/4763)
+2026-09-20T09:49:16.8009740Z Updating files:  58% (2763/4763)
+2026-09-20T09:49:16.8767820Z Updating files:  59% (2811/4763)
+2026-09-20T09:49:16.9258360Z Updating files:  60% (2858/4763)
+2026-09-20T09:49:17.0338280Z Updating files:  61% (2906/4763)
+2026-09-20T09:49:17.1192190Z Updating files:  62% (2954/4763)
+2026-09-20T09:49:17.2033000Z Updating files:  63% (3001/4763)
+2026-09-20T09:49:17.2288180Z Updating files:  63% (3038/4763)
+2026-09-20T09:49:17.2681460Z Updating files:  64% (3049/4763)
+2026-09-20T09:49:17.3358550Z Updating files:  65% (3096/4763)
+2026-09-20T09:49:17.3754580Z Updating files:  66% (3144/4763)
+2026-09-20T09:49:17.4084050Z Updating files:  67% (3192/4763)
+2026-09-20T09:49:17.4648510Z Updating files:  68% (3239/4763)
+2026-09-20T09:49:17.5244210Z Updating files:  69% (3287/4763)
+2026-09-20T09:49:17.5801910Z Updating files:  70% (3335/4763)
+2026-09-20T09:49:17.6586010Z Updating files:  71% (3382/4763)
+2026-09-20T09:49:17.8203090Z Updating files:  72% (3430/4763)
+2026-09-20T09:49:17.9587040Z Updating files:  73% (3477/4763)
+2026-09-20T09:49:18.0986200Z Updating files:  74% (3525/4763)
+2026-09-20T09:49:18.1982300Z Updating files:  75% (3573/4763)
+2026-09-20T09:49:18.1984440Z Updating files:  76% (3620/4763)
+2026-09-20T09:49:18.2141400Z Updating files:  76% (3621/4763)
+2026-09-20T09:49:18.3074330Z Updating files:  77% (3668/4763)
+2026-09-20T09:49:18.3815670Z Updating files:  78% (3716/4763)
+2026-09-20T09:49:18.4883690Z Updating files:  79% (3763/4763)
+2026-09-20T09:49:18.5613350Z Updating files:  80% (3811/4763)
+2026-09-20T09:49:18.7099770Z Updating files:  81% (3859/4763)
+2026-09-20T09:49:18.7718660Z Updating files:  82% (3906/4763)
+2026-09-20T09:49:18.9189110Z Updating files:  83% (3954/4763)
+2026-09-20T09:49:19.0166540Z Updating files:  84% (4001/4763)
+2026-09-20T09:49:19.2694250Z Updating files:  85% (4049/4763)
+2026-09-20T09:49:19.4725370Z Updating files:  85% (4061/4763)
+2026-09-20T09:49:19.6756430Z Updating files:  86% (4097/4763)
+2026-09-20T09:49:19.8031320Z Updating files:  87% (4144/4763)
+2026-09-20T09:49:20.1900360Z Updating files:  88% (4192/4763)
+2026-09-20T09:49:20.2903690Z Updating files:  88% (4226/4763)
+2026-09-20T09:49:20.5920440Z Updating files:  89% (4240/4763)
+2026-09-20T09:49:20.8042400Z Updating files:  90% (4287/4763)
+2026-09-20T09:49:21.0744750Z Updating files:  91% (4335/4763)
+2026-09-20T09:49:21.2752040Z Updating files:  92% (4382/4763)
+2026-09-20T09:49:21.3759160Z Updating files:  92% (4418/4763)
+2026-09-20T09:49:21.4776450Z Updating files:  93% (4430/4763)
+2026-09-20T09:49:21.5781140Z Updating files:  94% (4478/4763)
+2026-09-20T09:49:21.6803000Z Updating files:  95% (4525/4763)
+2026-09-20T09:49:21.8380080Z Updating files:  96% (4573/4763)
+2026-09-20T09:49:21.9591810Z Updating files:  97% (4621/4763)
+2026-09-20T09:49:22.0246630Z Updating files:  98% (4668/4763)
+2026-09-20T09:49:22.2641160Z Updating files:  99% (4716/4763)
+2026-09-20T09:49:22.3653330Z Updating files:  99% (4762/4763)
+2026-09-20T09:49:22.4615840Z Updating files: 100% (4763/4763)
+2026-09-20T09:49:22.4815530Z Updating files: 100% (4763/4763), done.
+2026-09-20T09:49:22.5841070Z HEAD is now at af1af84 ci: validate the integrated deadline candidate on four platforms
+2026-09-20T09:49:22.6048580Z ##[endgroup]
+2026-09-20T09:49:22.6392360Z [command]/usr/local/bin/git log -1 --format=%H
+2026-09-20T09:49:22.7321740Z af1af84ea196783f86ba92d7a7f1f8e2fd24988d
+2026-09-20T09:49:22.7565260Z ##[group]Removing auth
+2026-09-20T09:49:22.7701770Z Removing SSH command configuration
+2026-09-20T09:49:22.7762210Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:49:22.9079400Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:49:24.7287090Z Removing HTTP extra header
+2026-09-20T09:49:24.7325410Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:49:24.8922520Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:49:26.6884850Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:49:26.7137880Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:49:26.7210150Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T09:49:26.7283440Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T09:49:26.7345100Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T09:49:26.7377570Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T09:49:26.7647690Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T09:49:26.7919530Z /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:26.9013980Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:26.9188590Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T09:49:26.9226100Z /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.0519980Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.3886070Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T09:49:27.3888670Z /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.3891920Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.3910690Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T09:49:27.4361900Z /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.4375540Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config
+2026-09-20T09:49:27.4382850Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:49:27.9643980Z Removing credentials config '/Users/runner/work/_temp/git-credentials-1bbbd5ed-59b0-40b7-b507-f401a151c673.config'
+2026-09-20T09:49:28.0261400Z ##[endgroup]
+2026-09-20T09:49:28.0682800Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T09:49:28.0683550Z with:
+2026-09-20T09:49:28.0683910Z   ref: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:28.0685120Z   path: candidate
+2026-09-20T09:49:28.0685870Z   fetch-depth: 2
+2026-09-20T09:49:28.0686550Z   persist-credentials: false
+2026-09-20T09:49:28.0687240Z   repository: hashgraph-online/hol-guard
+2026-09-20T09:49:28.0694910Z   token: ***
+2026-09-20T09:49:28.0695300Z   ssh-strict: true
+2026-09-20T09:49:28.0695660Z   ssh-user: git
+2026-09-20T09:49:28.0696150Z   clean: true
+2026-09-20T09:49:28.0696510Z   sparse-checkout-cone-mode: true
+2026-09-20T09:49:28.0696970Z   fetch-tags: false
+2026-09-20T09:49:28.0697350Z   show-progress: true
+2026-09-20T09:49:28.0697860Z   lfs: false
+2026-09-20T09:49:28.0698190Z   submodules: false
+2026-09-20T09:49:28.0698570Z   set-safe-directory: true
+2026-09-20T09:49:28.0698970Z env:
+2026-09-20T09:49:28.0699520Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:28.0700170Z ##[endgroup]
+2026-09-20T09:49:28.9203420Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T09:49:28.9239200Z ##[group]Getting Git version info
+2026-09-20T09:49:28.9277860Z Working directory is '/Users/runner/work/hol-guard/hol-guard/candidate'
+2026-09-20T09:49:28.9332170Z [command]/usr/local/bin/git version
+2026-09-20T09:49:28.9420760Z git version 2.55.0
+2026-09-20T09:49:28.9577880Z ##[endgroup]
+2026-09-20T09:49:28.9657410Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/0dc11b15-cd88-4ec1-b086-c9ebe95380cf/.gitconfig'
+2026-09-20T09:49:28.9712080Z Temporarily overriding HOME='/Users/runner/work/_temp/0dc11b15-cd88-4ec1-b086-c9ebe95380cf' before making global git config changes
+2026-09-20T09:49:28.9742510Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T09:49:28.9902450Z [command]/usr/local/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T09:49:29.0059750Z ##[group]Determining repository object format
+2026-09-20T09:49:29.0069200Z ##[endgroup]
+2026-09-20T09:49:29.0092520Z ##[group]Initializing the repository
+2026-09-20T09:49:29.0110940Z [command]/usr/local/bin/git init /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T09:49:29.0143440Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T09:49:29.0152180Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T09:49:29.0163210Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T09:49:29.0174260Z hint: call:
+2026-09-20T09:49:29.0184190Z hint:
+2026-09-20T09:49:29.0205270Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T09:49:29.0239500Z hint:
+2026-09-20T09:49:29.0243370Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T09:49:29.0247500Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T09:49:29.0251000Z hint:
+2026-09-20T09:49:29.0253890Z hint: 	git branch -m <name>
+2026-09-20T09:49:29.0256810Z hint:
+2026-09-20T09:49:29.0260440Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T09:49:29.0264440Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/candidate/.git/
+2026-09-20T09:49:29.0273120Z [command]/usr/local/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T09:49:29.0385650Z ##[endgroup]
+2026-09-20T09:49:29.0433790Z ##[group]Disabling automatic garbage collection
+2026-09-20T09:49:29.0599040Z [command]/usr/local/bin/git config --local gc.auto 0
+2026-09-20T09:49:29.0671710Z ##[endgroup]
+2026-09-20T09:49:29.0673680Z ##[group]Setting up auth
+2026-09-20T09:49:29.0678960Z Removing SSH command configuration
+2026-09-20T09:49:29.0683200Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:49:29.0692090Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:49:29.3651460Z Removing HTTP extra header
+2026-09-20T09:49:29.3663480Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:49:29.3907170Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:49:29.6404340Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:49:29.6430570Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:49:29.7591280Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:49:29.9907790Z [command]/usr/local/bin/git config --file /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T09:49:30.0107090Z [command]/usr/local/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:30.0246950Z [command]/usr/local/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:30.0433530Z [command]/usr/local/bin/git config --local includeIf.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:30.0601480Z [command]/usr/local/bin/git config --local includeIf.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:30.0791810Z ##[endgroup]
+2026-09-20T09:49:30.0793060Z ##[group]Fetching the repository
+2026-09-20T09:49:30.0809570Z [command]/usr/local/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:33.7072400Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T09:49:33.8074400Z  * branch            124472b8949805e0dd36052df6894b335d8b519d -> FETCH_HEAD
+2026-09-20T09:49:34.0826040Z [command]/usr/local/bin/git rev-parse --verify --quiet 124472b8949805e0dd36052df6894b335d8b519d^{object}
+2026-09-20T09:49:34.0911460Z 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:34.1097060Z ##[endgroup]
+2026-09-20T09:49:34.1098460Z ##[group]Determining the checkout info
+2026-09-20T09:49:34.1103880Z ##[endgroup]
+2026-09-20T09:49:34.1106330Z [command]/usr/local/bin/git sparse-checkout disable
+2026-09-20T09:49:34.1119720Z [command]/usr/local/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T09:49:34.1125030Z ##[group]Checking out the ref
+2026-09-20T09:49:34.1128920Z [command]/usr/local/bin/git checkout --progress --force 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:34.8959700Z Updating files:  43% (2056/4754)
+2026-09-20T09:49:34.9163780Z Updating files:  44% (2092/4754)
+2026-09-20T09:49:34.9408110Z Updating files:  45% (2140/4754)
+2026-09-20T09:49:34.9737610Z Updating files:  46% (2187/4754)
+2026-09-20T09:49:35.0772290Z Updating files:  47% (2235/4754)
+2026-09-20T09:49:35.1707880Z Updating files:  48% (2282/4754)
+2026-09-20T09:49:35.2137340Z Updating files:  49% (2330/4754)
+2026-09-20T09:49:35.2726340Z Updating files:  50% (2377/4754)
+2026-09-20T09:49:35.2989410Z Updating files:  51% (2425/4754)
+2026-09-20T09:49:35.3170840Z Updating files:  52% (2473/4754)
+2026-09-20T09:49:35.3473810Z Updating files:  53% (2520/4754)
+2026-09-20T09:49:35.4651490Z Updating files:  54% (2568/4754)
+2026-09-20T09:49:35.5655690Z Updating files:  55% (2615/4754)
+2026-09-20T09:49:35.5855920Z Updating files:  56% (2663/4754)
+2026-09-20T09:49:35.5857830Z Updating files:  57% (2710/4754)
+2026-09-20T09:49:35.5859670Z Updating files:  58% (2758/4754)
+2026-09-20T09:49:35.6860580Z Updating files:  59% (2805/4754)
+2026-09-20T09:49:35.7865290Z Updating files:  60% (2853/4754)
+2026-09-20T09:49:35.8277020Z Updating files:  61% (2900/4754)
+2026-09-20T09:49:35.8560740Z Updating files:  62% (2948/4754)
+2026-09-20T09:49:35.8764110Z Updating files:  63% (2996/4754)
+2026-09-20T09:49:35.8856290Z Updating files:  64% (3043/4754)
+2026-09-20T09:49:35.8871450Z Updating files:  65% (3091/4754)
+2026-09-20T09:49:35.8898950Z Updating files:  66% (3138/4754)
+2026-09-20T09:49:35.8917130Z Updating files:  67% (3186/4754)
+2026-09-20T09:49:35.8930860Z Updating files:  68% (3233/4754)
+2026-09-20T09:49:35.8948200Z Updating files:  69% (3281/4754)
+2026-09-20T09:49:35.8980320Z Updating files:  70% (3328/4754)
+2026-09-20T09:49:35.8981310Z Updating files:  71% (3376/4754)
+2026-09-20T09:49:35.9007560Z Updating files:  72% (3423/4754)
+2026-09-20T09:49:35.9041350Z Updating files:  72% (3441/4754)
+2026-09-20T09:49:35.9056210Z Updating files:  73% (3471/4754)
+2026-09-20T09:49:36.0239100Z Updating files:  74% (3518/4754)
+2026-09-20T09:49:36.0634200Z Updating files:  75% (3566/4754)
+2026-09-20T09:49:36.0800060Z Updating files:  76% (3614/4754)
+2026-09-20T09:49:36.0980650Z Updating files:  77% (3661/4754)
+2026-09-20T09:49:36.1002530Z Updating files:  78% (3709/4754)
+2026-09-20T09:49:36.1005040Z Updating files:  79% (3756/4754)
+2026-09-20T09:49:36.1009560Z Updating files:  80% (3804/4754)
+2026-09-20T09:49:36.1013240Z Updating files:  81% (3851/4754)
+2026-09-20T09:49:36.1017180Z Updating files:  82% (3899/4754)
+2026-09-20T09:49:36.1149800Z Updating files:  83% (3946/4754)
+2026-09-20T09:49:36.1362660Z Updating files:  84% (3994/4754)
+2026-09-20T09:49:36.1563770Z Updating files:  85% (4041/4754)
+2026-09-20T09:49:36.1769300Z Updating files:  86% (4089/4754)
+2026-09-20T09:49:36.1967860Z Updating files:  87% (4136/4754)
+2026-09-20T09:49:36.2168190Z Updating files:  88% (4184/4754)
+2026-09-20T09:49:36.2910460Z Updating files:  89% (4232/4754)
+2026-09-20T09:49:36.3134560Z Updating files:  90% (4279/4754)
+2026-09-20T09:49:36.3412350Z Updating files:  91% (4327/4754)
+2026-09-20T09:49:36.4535870Z Updating files:  92% (4374/4754)
+2026-09-20T09:49:36.5292710Z Updating files:  93% (4422/4754)
+2026-09-20T09:49:36.5536950Z Updating files:  94% (4469/4754)
+2026-09-20T09:49:36.5803120Z Updating files:  95% (4517/4754)
+2026-09-20T09:49:36.6015380Z Updating files:  96% (4564/4754)
+2026-09-20T09:49:36.6190340Z Updating files:  97% (4612/4754)
+2026-09-20T09:49:36.6364540Z Updating files:  98% (4659/4754)
+2026-09-20T09:49:36.6589880Z Updating files:  99% (4707/4754)
+2026-09-20T09:49:36.6590780Z Updating files: 100% (4754/4754)
+2026-09-20T09:49:36.6592150Z Updating files: 100% (4754/4754), done.
+2026-09-20T09:49:36.6755850Z HEAD is now at 124472b fix: enforce the original deadline immediately before Unix connect
+2026-09-20T09:49:36.6844170Z ##[endgroup]
+2026-09-20T09:49:36.7000530Z [command]/usr/local/bin/git log -1 --format=%H
+2026-09-20T09:49:36.7171200Z 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:36.7195560Z ##[group]Removing auth
+2026-09-20T09:49:36.7196470Z Removing SSH command configuration
+2026-09-20T09:49:36.7207190Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:49:36.7377130Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:49:37.0718030Z Removing HTTP extra header
+2026-09-20T09:49:37.0785190Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:49:37.1394460Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:49:37.3706460Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:49:37.3742470Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:49:37.3798920Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T09:49:37.3831000Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T09:49:37.3861660Z includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T09:49:37.3888000Z includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T09:49:37.4067530Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T09:49:37.4082990Z /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.4192670Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git.path /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.4284300Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T09:49:37.4315730Z /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5303410Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/candidate/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5401950Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T09:49:37.5496010Z /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5558750Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5667730Z [command]/usr/local/bin/git config --local --get-all includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T09:49:37.5733400Z /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5739760Z [command]/usr/local/bin/git config --local --unset includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config
+2026-09-20T09:49:37.5750320Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:49:37.7697010Z Removing credentials config '/Users/runner/work/_temp/git-credentials-155497a8-9d46-49dd-a461-319afb6682f4.config'
+2026-09-20T09:49:37.7704290Z ##[endgroup]
+2026-09-20T09:49:37.8012610Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T09:49:37.8013920Z with:
+2026-09-20T09:49:37.8014460Z   python-version: 3.12.10
+2026-09-20T09:49:37.8015210Z   check-latest: false
+2026-09-20T09:49:37.8023190Z   token: ***
+2026-09-20T09:49:37.8023830Z   update-environment: true
+2026-09-20T09:49:37.8024520Z   allow-prereleases: false
+2026-09-20T09:49:37.8025180Z   freethreaded: false
+2026-09-20T09:49:37.8025760Z env:
+2026-09-20T09:49:37.8026360Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:37.8027110Z ##[endgroup]
+2026-09-20T09:49:38.1361110Z ##[group]Installed versions
+2026-09-20T09:49:38.1448030Z Successfully set up CPython (3.12.10)
+2026-09-20T09:49:38.1453240Z ##[endgroup]
+2026-09-20T09:49:38.1734800Z ##[group]Run set -euo pipefail
+2026-09-20T09:49:38.1735920Z [36;1mset -euo pipefail[0m
+2026-09-20T09:49:38.1737400Z [36;1mrustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy \[0m
+2026-09-20T09:49:38.1739200Z [36;1m  2>&1 | tee "$RUNNER_TEMP/deadline-validation-rustup.log"[0m
+2026-09-20T09:49:38.1970850Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T09:49:38.1971810Z env:
+2026-09-20T09:49:38.1972630Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:38.1975030Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:38.1976710Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/x64/lib/pkgconfig
+2026-09-20T09:49:38.1978380Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:38.1979860Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:38.1981490Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:38.1982740Z ##[endgroup]
+2026-09-20T09:49:38.3290510Z info: syncing channel updates for 1.88.0-x86_64-apple-darwin
+2026-09-20T09:49:38.6633630Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T09:49:38.7654710Z info: downloading 5 components
+2026-09-20T09:49:53.8473380Z 
+2026-09-20T09:49:53.8865820Z   1.88.0-x86_64-apple-darwin installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T09:49:53.8866960Z 
+2026-09-20T09:49:53.8868610Z info: self-update is disabled for this build of rustup
+2026-09-20T09:49:53.8871220Z info: any updates to rustup will need to be fetched with your system package manager
+2026-09-20T09:49:53.9576180Z ##[group]Run set -euo pipefail
+2026-09-20T09:49:53.9577210Z [36;1mset -euo pipefail[0m
+2026-09-20T09:49:53.9578220Z [36;1mpython driver/ci/pr2974_deadline_validation/run.py \[0m
+2026-09-20T09:49:53.9579470Z [36;1m  --candidate-root "$GITHUB_WORKSPACE/candidate" \[0m
+2026-09-20T09:49:53.9580660Z [36;1m  --driver-root "$GITHUB_WORKSPACE/driver" \[0m
+2026-09-20T09:49:53.9581800Z [36;1m  --candidate-sha "$DEADLINE_CANDIDATE_SHA" \[0m
+2026-09-20T09:49:53.9582860Z [36;1m  --driver-sha "$GITHUB_SHA" \[0m
+2026-09-20T09:49:53.9583890Z [36;1m  --expected-host "$DEADLINE_EXPECTED_HOST" \[0m
+2026-09-20T09:49:53.9585070Z [36;1m  --output "$RUNNER_TEMP/deadline-validation-output" \[0m
+2026-09-20T09:49:53.9586140Z [36;1m  --target-root "$RUNNER_TEMP/deadline-validation-targets"[0m
+2026-09-20T09:49:53.9697920Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T09:49:53.9698860Z env:
+2026-09-20T09:49:53.9699800Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:49:53.9701250Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:53.9702800Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/x64/lib/pkgconfig
+2026-09-20T09:49:53.9704360Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:53.9705840Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:53.9707360Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:49:53.9709180Z   DEADLINE_EXPECTED_HOST: x86_64-apple-darwin
+2026-09-20T09:49:53.9848660Z ##[endgroup]
+2026-09-20T09:52:04.9632210Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "13-candidate-managed-list.stdout", "original": {"bytes": 665, "path": "commands/13-candidate-managed-list.stdout", "sha256": "2c263585ae2e85add1adfec4991ddd46739aafeeb1fe04db7a6b0f05b366ebfd"}, "selected_bytes": 665, "selected_sha256": "2c263585ae2e85add1adfec4991ddd46739aafeeb1fe04db7a6b0f05b366ebfd", "stage": "candidate-managed-list"}
+2026-09-20T09:52:04.9663640Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "bWFuYWdlZF9yZXNpZGVudDo6ZGVhZGxpbmVfdGVzdHM6OmxhdGVfbGVhc2VfY2xlYW51cF9wcmVzZXJ2ZXNfY29tbWl0dGVkX3Jlc3BvbnNlX2Vycm9yOiB0ZXN0Cm1hbmFnZWRfcmVzaWRlbnQ6OmRlYWRsaW5lX3Rlc3RzOjpsYXRlX2xlYXNlX2NsZWFudXBfcHJlc2VydmVzX2ZhdGFsX2F1dGhlbnRpY2F0aW9uX2Vycm9yOiB0ZXN0Cm1hbmFnZWRfcmVzaWRlbnQ6OmRlYWRsaW5lX3Rlc3RzOjpsZWFzZV9jbGVhbnVwX2RvZXNfbm90X3JldHVybl9sYXRlX2JvdW5kX3N1Y2Nlc3M6IHRlc3QKbWFuYWdlZF9yZXNpZGVudDo6ZGVhZGxpbmVfdGVzdHM6OmxlYXNlX2NsZWFudXBfcmV0dXJuc190aW1lbHlfYm91bmRfc3VjY2VzczogdGVzdAptYW5hZ2VkX3Jlc2lkZW50OjpkZWFkbGluZV90ZXN0czo6bGVhc2VkX3JlcXVlc3RfZG9lc19ub3RfcmV0dXJuX2xhdGVfYm91bmRfc3VjY2VzczogdGVzdAptYW5hZ2VkX3Jlc2lkZW50OjpkZWFkbGluZV90ZXN0czo6dmFsaWRhdGVkX3JlcXVlc3RfY29tcGxldGVzX2F1dGhlbnRpY2F0ZWRfYm91bmRfZXhjaGFuZ2Vfb25jZTogdGVzdAptYW5hZ2VkX3Jlc2lkZW50OjpkZWFkbGluZV90ZXN0czo6dmFsaWRhdGlvbl9kZWxheV9kb2VzX25vdF9hZG1pdF9leHBpcmVkX3JlcXVlc3Q6IHRlc3QKCjcgdGVzdHMsIDAgYmVuY2htYXJrcwo=", "file": "13-candidate-managed-list.stdout", "index": 0}
+2026-09-20T09:52:04.9687400Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "13-candidate-managed-list.stdout", "original": {"bytes": 665, "path": "commands/13-candidate-managed-list.stdout", "sha256": "2c263585ae2e85add1adfec4991ddd46739aafeeb1fe04db7a6b0f05b366ebfd"}, "selected_bytes": 665, "selected_sha256": "2c263585ae2e85add1adfec4991ddd46739aafeeb1fe04db7a6b0f05b366ebfd", "stage": "candidate-managed-list"}
+2026-09-20T09:52:04.9694330Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 0, "complete_file": true, "file": "13-candidate-managed-list.stderr", "original": {"bytes": 0, "path": "commands/13-candidate-managed-list.stderr", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "selected_bytes": 0, "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stage": "candidate-managed-list"}
+2026-09-20T09:52:04.9707470Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 0, "complete_file": true, "file": "13-candidate-managed-list.stderr", "original": {"bytes": 0, "path": "commands/13-candidate-managed-list.stderr", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "selected_bytes": 0, "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stage": "candidate-managed-list"}
+2026-09-20T09:52:17.2578780Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "14-candidate-managed-run.stdout", "original": {"bytes": 800, "path": "commands/14-candidate-managed-run.stdout", "sha256": "308dd3e8bb5bfd0a825b1a62f4a3e12616cfa15ebe41b7a8e92c883ba6eaa678"}, "selected_bytes": 800, "selected_sha256": "308dd3e8bb5bfd0a825b1a62f4a3e12616cfa15ebe41b7a8e92c883ba6eaa678", "stage": "candidate-managed-run"}
+2026-09-20T09:52:17.3369910Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "CnJ1bm5pbmcgNyB0ZXN0cwp0ZXN0IG1hbmFnZWRfcmVzaWRlbnQ6OmRlYWRsaW5lX3Rlc3RzOjpsYXRlX2xlYXNlX2NsZWFudXBfcHJlc2VydmVzX2NvbW1pdHRlZF9yZXNwb25zZV9lcnJvciAuLi4gb2sKdGVzdCBtYW5hZ2VkX3Jlc2lkZW50OjpkZWFkbGluZV90ZXN0czo6bGF0ZV9sZWFzZV9jbGVhbnVwX3ByZXNlcnZlc19mYXRhbF9hdXRoZW50aWNhdGlvbl9lcnJvciAuLi4gb2sKdGVzdCBtYW5hZ2VkX3Jlc2lkZW50OjpkZWFkbGluZV90ZXN0czo6bGVhc2VfY2xlYW51cF9kb2VzX25vdF9yZXR1cm5fbGF0ZV9ib3VuZF9zdWNjZXNzIC4uLiBvawp0ZXN0IG1hbmFnZWRfcmVzaWRlbnQ6OmRlYWRsaW5lX3Rlc3RzOjpsZWFzZV9jbGVhbnVwX3JldHVybnNfdGltZWx5X2JvdW5kX3N1Y2Nlc3MgLi4uIG9rCnRlc3QgbWFuYWdlZF9yZXNpZGVudDo6ZGVhZGxpbmVfdGVzdHM6OmxlYXNlZF9yZXF1ZXN0X2RvZXNfbm90X3JldHVybl9sYXRlX2JvdW5kX3N1Y2Nlc3MgLi4uIG9rCnRlc3QgbWFuYWdlZF9yZXNpZGVudDo6ZGVhZGxpbmVfdGVzdHM6OnZhbGlkYXRlZF9yZXF1ZXN0X2NvbXBsZXRlc19hdXRoZW50aWNhdGVkX2JvdW5kX2V4Y2hhbmdlX29uY2UgLi4uIG9rCnRlc3QgbWFuYWdlZF9yZXNpZGVudDo6ZGVhZGxpbmVfdGVzdHM6OnZhbGlkYXRpb25fZGVsYXlfZG9lc19ub3RfYWRtaXRfZXhwaXJlZF9yZXF1ZXN0IC4uLiBvawoKdGVzdCByZXN1bHQ6IG9rLiA3IHBhc3NlZDsgMCBmYWlsZWQ7IDAgaWdub3JlZDsgMCBtZWFzdXJlZDsgMTgyIGZpbHRlcmVkIG91dDsgZmluaXNoZWQgaW4gMTIuMTlzCgo=", "file": "14-candidate-managed-run.stdout", "index": 0}
+2026-09-20T09:52:17.3490940Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "14-candidate-managed-run.stdout", "original": {"bytes": 800, "path": "commands/14-candidate-managed-run.stdout", "sha256": "308dd3e8bb5bfd0a825b1a62f4a3e12616cfa15ebe41b7a8e92c883ba6eaa678"}, "selected_bytes": 800, "selected_sha256": "308dd3e8bb5bfd0a825b1a62f4a3e12616cfa15ebe41b7a8e92c883ba6eaa678", "stage": "candidate-managed-run"}
+2026-09-20T09:52:17.3551130Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "14-candidate-managed-run.stderr", "original": {"bytes": 1347, "path": "commands/14-candidate-managed-run.stderr", "sha256": "54758f9a5a0ca402e33f8bb7a405b5b91bdd942c2016d6e6feaef1dc2248c952"}, "selected_bytes": 1347, "selected_sha256": "54758f9a5a0ca402e33f8bb7a405b5b91bdd942c2016d6e6feaef1dc2248c952", "stage": "candidate-managed-run"}
+2026-09-20T09:52:17.3869550Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "SE9MX0dVQVJEX0RFQURMSU5FX0NPTlRST0wgeyJjYXNlIjoibGF0ZV9sZWFzZV9jbGVhbnVwX3ByZXNlcnZlc19jb21taXR0ZWRfcmVzcG9uc2VfZXJyb3IiLCJjb25uZWN0aW9ucyI6MSwiZXhwaXJlZF9vbl9yZWxlYXNlIjp0cnVlLCJvd25lZF9jbGVhbnVwIjp0cnVlLCJyZXF1ZXN0cyI6MSwicmVzdWx0IjoibGl2ZV9yZXF1ZXN0X2ZhaWxlZCJ9CkhPTF9HVUFSRF9ERUFETElORV9DT05UUk9MIHsiY2FzZSI6ImxhdGVfbGVhc2VfY2xlYW51cF9wcmVzZXJ2ZXNfZmF0YWxfYXV0aGVudGljYXRpb25fZXJyb3IiLCJjb25uZWN0aW9ucyI6MSwiZXhwaXJlZF9vbl9yZWxlYXNlIjp0cnVlLCJvd25lZF9jbGVhbnVwIjp0cnVlLCJyZXF1ZXN0cyI6MCwicmVzdWx0IjoibGl2ZV9yZXF1ZXN0X2ZhaWxlZCJ9CkhPTF9HVUFSRF9ERUFETElORV9DT05UUk9MIHsiY2FzZSI6ImxlYXNlX2NsZWFudXBfZG9lc19ub3RfcmV0dXJuX2xhdGVfYm91bmRfc3VjY2VzcyIsImNvbm5lY3Rpb25zIjoxLCJleHBpcmVkX29uX3JlbGVhc2UiOnRydWUsIm93bmVkX2NsZWFudXAiOnRydWUsInJlcXVlc3RzIjoxLCJyZXN1bHQiOiJkZWFkbGluZSJ9CkhPTF9HVUFSRF9ERUFETElORV9DT05UUk9MIHsiY2FzZSI6ImxlYXNlX2NsZWFudXBfcmV0dXJuc190aW1lbHlfYm91bmRfc3VjY2VzcyIsImNvbm5lY3Rpb25zIjoxLCJleHBpcmVkX29uX3JlbGVhc2UiOmZhbHNlLCJvd25lZF9jbGVhbnVwIjp0cnVlLCJyZXF1ZXN0cyI6MSwicmVzdWx0IjoiYm91bmRfcmVzcG9uc2UifQpIT0xfR1VBUkRfREVBRExJTkVfQ09OVFJPTCB7ImNhc2UiOiJsZWFzZWRfcmVxdWVzdF9kb2VzX25vdF9yZXR1cm5fbGF0ZV9ib3VuZF9zdWNjZXNzIiwiY29ubmVjdGlvbnMiOjEsImV4cGlyZWRfb25fcmVsZWFzZSI6dHJ1ZSwib3duZWRfY2xlYW51cCI6dHJ1ZSwicmVxdWVzdHMiOjEsInJlc3VsdCI6ImRlYWRsaW5lIn0KSE9MX0dVQVJEX0RFQURMSU5FX0NPTlRST0wgeyJjYXNlIjoidmFsaWRhdGVkX3JlcXVlc3RfY29tcGxldGVzX2F1dGhlbnRpY2F0ZWRfYm91bmRfZXhjaGFuZ2Vfb25jZSIsImNvbm5lY3Rpb25zIjoxLCJleHBpcmVkX29uX3JlbGVhc2UiOmZhbHNlLCJvd25lZF9jbGVhbnVwIjp0cnVlLCJyZXF1ZXN0cyI6MSwicmVzdWx0IjoiYm91bmRfcmVzcG9uc2UifQpIT0xfR1VBUkRfREVBRExJTkVfQ09OVFJPTCB7ImNhc2UiOiJ2YWxpZGF0aW9uX2RlbGF5X2RvZXNfbm90X2FkbWl0X2V4cGlyZWRfcmVxdWVzdCIsImNvbm5lY3Rpb25zIjowLCJleHBpcmVkX29uX3JlbGVhc2UiOnRydWUsIm93bmVkX2NsZWFudXAiOnRydWUsInJlcXVlc3RzIjowLCJyZXN1bHQiOiJsaXZlX3JlcXVlc3RfZmFpbGVkIn0K", "file": "14-candidate-managed-run.stderr", "index": 0}
+2026-09-20T09:52:17.3982810Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "14-candidate-managed-run.stderr", "original": {"bytes": 1347, "path": "commands/14-candidate-managed-run.stderr", "sha256": "54758f9a5a0ca402e33f8bb7a405b5b91bdd942c2016d6e6feaef1dc2248c952"}, "selected_bytes": 1347, "selected_sha256": "54758f9a5a0ca402e33f8bb7a405b5b91bdd942c2016d6e6feaef1dc2248c952", "stage": "candidate-managed-run"}
+2026-09-20T09:52:18.0682790Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "16-candidate-unix-list.stdout", "original": {"bytes": 219, "path": "commands/16-candidate-unix-list.stdout", "sha256": "4d2553086d91b0a613b2832ceb25f8cacdc5017afd0c7d3bf377884a427e39b8"}, "selected_bytes": 219, "selected_sha256": "4d2553086d91b0a613b2832ceb25f8cacdc5017afd0c7d3bf377884a427e39b8", "stage": "candidate-unix-list"}
+2026-09-20T09:52:18.0693640Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "cmVzaWRlbnRfY2xpZW50Ojpjb25uZWN0X2RlYWRsaW5lX3Rlc3RzOjp1bml4X3NvY2tldF9zZXR1cF9jYW5ub3RfYWRtaXRfYWZ0ZXJfb3JpZ2luYWxfZGVhZGxpbmU6IHRlc3QKcmVzaWRlbnRfY2xpZW50Ojpjb25uZWN0X2RlYWRsaW5lX3Rlc3RzOjp1bml4X3NvY2tldF9zZXR1cF9yZXRhaW5zX2luX2J1ZGdldF9jb25uZWN0aW9uOiB0ZXN0CgoyIHRlc3RzLCAwIGJlbmNobWFya3MK", "file": "16-candidate-unix-list.stdout", "index": 0}
+2026-09-20T09:52:18.0703860Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "16-candidate-unix-list.stdout", "original": {"bytes": 219, "path": "commands/16-candidate-unix-list.stdout", "sha256": "4d2553086d91b0a613b2832ceb25f8cacdc5017afd0c7d3bf377884a427e39b8"}, "selected_bytes": 219, "selected_sha256": "4d2553086d91b0a613b2832ceb25f8cacdc5017afd0c7d3bf377884a427e39b8", "stage": "candidate-unix-list"}
+2026-09-20T09:52:18.0712390Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 0, "complete_file": true, "file": "16-candidate-unix-list.stderr", "original": {"bytes": 0, "path": "commands/16-candidate-unix-list.stderr", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "selected_bytes": 0, "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stage": "candidate-unix-list"}
+2026-09-20T09:52:18.0723310Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 0, "complete_file": true, "file": "16-candidate-unix-list.stderr", "original": {"bytes": 0, "path": "commands/16-candidate-unix-list.stderr", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "selected_bytes": 0, "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stage": "candidate-unix-list"}
+2026-09-20T09:52:20.2794550Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "17-candidate-unix-run.stdout", "original": {"bytes": 323, "path": "commands/17-candidate-unix-run.stdout", "sha256": "0e6af3d90df8bc11d6d480946528680dfdbd9cbfaac7626b75b3143a6a86558f"}, "selected_bytes": 323, "selected_sha256": "0e6af3d90df8bc11d6d480946528680dfdbd9cbfaac7626b75b3143a6a86558f", "stage": "candidate-unix-run"}
+2026-09-20T09:52:20.2809700Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "CnJ1bm5pbmcgMiB0ZXN0cwp0ZXN0IHJlc2lkZW50X2NsaWVudDo6Y29ubmVjdF9kZWFkbGluZV90ZXN0czo6dW5peF9zb2NrZXRfc2V0dXBfY2Fubm90X2FkbWl0X2FmdGVyX29yaWdpbmFsX2RlYWRsaW5lIC4uLiBvawp0ZXN0IHJlc2lkZW50X2NsaWVudDo6Y29ubmVjdF9kZWFkbGluZV90ZXN0czo6dW5peF9zb2NrZXRfc2V0dXBfcmV0YWluc19pbl9idWRnZXRfY29ubmVjdGlvbiAuLi4gb2sKCnRlc3QgcmVzdWx0OiBvay4gMiBwYXNzZWQ7IDAgZmFpbGVkOyAwIGlnbm9yZWQ7IDAgbWVhc3VyZWQ7IDE4NyBmaWx0ZXJlZCBvdXQ7IGZpbmlzaGVkIGluIDIuMTNzCgo=", "file": "17-candidate-unix-run.stdout", "index": 0}
+2026-09-20T09:52:20.2918910Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "17-candidate-unix-run.stdout", "original": {"bytes": 323, "path": "commands/17-candidate-unix-run.stdout", "sha256": "0e6af3d90df8bc11d6d480946528680dfdbd9cbfaac7626b75b3143a6a86558f"}, "selected_bytes": 323, "selected_sha256": "0e6af3d90df8bc11d6d480946528680dfdbd9cbfaac7626b75b3143a6a86558f", "stage": "candidate-unix-run"}
+2026-09-20T09:52:20.2963700Z HOL_GUARD_DEADLINE_OUTPUT_BEGIN {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "17-candidate-unix-run.stderr", "original": {"bytes": 349, "path": "commands/17-candidate-unix-run.stderr", "sha256": "c312264e1e68500aa805d2a3c66c6ce4856df3dfb7787cc17b43afd2fc9a7c9a"}, "selected_bytes": 349, "selected_sha256": "c312264e1e68500aa805d2a3c66c6ce4856df3dfb7787cc17b43afd2fc9a7c9a", "stage": "candidate-unix-run"}
+2026-09-20T09:52:20.2979850Z HOL_GUARD_DEADLINE_OUTPUT_CHUNK {"base64": "SE9MX0dVQVJEX0RFQURMSU5FX0NPTlRST0wgeyJjYXNlIjoidW5peF9zb2NrZXRfc2V0dXBfY2Fubm90X2FkbWl0X2FmdGVyX29yaWdpbmFsX2RlYWRsaW5lIiwiY29ubmVjdGVkIjpmYWxzZSwiZXhwaXJlZF9vbl9yZWxlYXNlIjp0cnVlLCJvd25lZF9jbGVhbnVwIjp0cnVlLCJyZXN1bHQiOiJkZWFkbGluZSJ9CkhPTF9HVUFSRF9ERUFETElORV9DT05UUk9MIHsiY2FzZSI6InVuaXhfc29ja2V0X3NldHVwX3JldGFpbnNfaW5fYnVkZ2V0X2Nvbm5lY3Rpb24iLCJjb25uZWN0ZWQiOnRydWUsImV4cGlyZWRfb25fcmVsZWFzZSI6ZmFsc2UsIm93bmVkX2NsZWFudXAiOnRydWUsInJlc3VsdCI6ImNvbm5lY3RlZCJ9Cg==", "file": "17-candidate-unix-run.stderr", "index": 0}
+2026-09-20T09:52:20.3027520Z HOL_GUARD_DEADLINE_OUTPUT_END {"chunk_bytes": 3072, "chunks": 1, "complete_file": true, "file": "17-candidate-unix-run.stderr", "original": {"bytes": 349, "path": "commands/17-candidate-unix-run.stderr", "sha256": "c312264e1e68500aa805d2a3c66c6ce4856df3dfb7787cc17b43afd2fc9a7c9a"}, "selected_bytes": 349, "selected_sha256": "c312264e1e68500aa805d2a3c66c6ce4856df3dfb7787cc17b43afd2fc9a7c9a", "stage": "candidate-unix-run"}
+2026-09-20T09:58:30.5166260Z HOL_GUARD_DEADLINE_ADMISSION {"binary_sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d", "controls": 7, "expected_failures_observed": 0, "group": "managed", "passed": true, "phase": "after", "qualification_complete": false, "records": [{"case": "late_lease_cleanup_preserves_committed_response_error", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "live_request_failed"}, {"case": "late_lease_cleanup_preserves_fatal_authentication_error", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 0, "result": "live_request_failed"}, {"case": "lease_cleanup_does_not_return_late_bound_success", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "deadline"}, {"case": "lease_cleanup_returns_timely_bound_success", "connections": 1, "expired_on_release": false, "owned_cleanup": true, "requests": 1, "result": "bound_response"}, {"case": "leased_request_does_not_return_late_bound_success", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "deadline"}, {"case": "validated_request_completes_authenticated_bound_exchange_once", "connections": 1, "expired_on_release": false, "owned_cleanup": true, "requests": 1, "result": "bound_response"}, {"case": "validation_delay_does_not_admit_expired_request", "connections": 0, "expired_on_release": true, "owned_cleanup": true, "requests": 0, "result": "live_request_failed"}], "runtime_test_exit": 0}
+2026-09-20T09:58:30.5189670Z HOL_GUARD_DEADLINE_ADMISSION {"binary_sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d", "controls": 2, "expected_failures_observed": 0, "group": "unix", "passed": true, "phase": "after", "qualification_complete": false, "records": [{"case": "unix_socket_setup_cannot_admit_after_original_deadline", "connected": false, "expired_on_release": true, "owned_cleanup": true, "result": "deadline"}, {"case": "unix_socket_setup_retains_in_budget_connection", "connected": true, "expired_on_release": false, "owned_cleanup": true, "result": "connected"}], "runtime_test_exit": 0}
+2026-09-20T09:58:30.5241600Z HOL_GUARD_DEADLINE_VALIDATION {"after_bindings": {"candidate": {"head": "124472b8949805e0dd36052df6894b335d8b519d", "parent": "4afa20cf014ccba918bf2fa61552dafe66767930", "status": "", "tree": "a0c139c4e02535545c5b0e602c240a38affde5fe"}, "driver": {"head": "af1af84ea196783f86ba92d7a7f1f8e2fd24988d", "parent": "124472b8949805e0dd36052df6894b335d8b519d", "status": "", "tree": "ece2b961f964e7b91222de997f25c7ef1d185ccf"}}, "before_bindings": {"candidate": {"head": "124472b8949805e0dd36052df6894b335d8b519d", "parent": "4afa20cf014ccba918bf2fa61552dafe66767930", "status": "", "tree": "a0c139c4e02535545c5b0e602c240a38affde5fe"}, "driver": {"head": "af1af84ea196783f86ba92d7a7f1f8e2fd24988d", "parent": "124472b8949805e0dd36052df6894b335d8b519d", "status": "", "tree": "ece2b961f964e7b91222de997f25c7ef1d185ccf"}}, "failure": null, "passed": true, "performance_qualification": false, "result": {"bytes": 34036, "sha256": "3a29e15e0cd2826eb4630a642eed2fc35574b5591d0e1e7ad0804d2709cfb121"}, "roles": {"candidate": {"build_sha": "124472b8949805e0dd36052df6894b335d8b519d", "compile_succeeded": true, "controls": [{"binary_sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d", "collection_admitted_before_execution": true, "controls": 7, "exact_collected_names": ["managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error", "managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error", "managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success", "managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success", "managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success", "managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once", "managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request"], "expected_failures_observed": 0, "group": "managed", "passed": true, "phase": "after", "qualification_complete": false, "records": [{"case": "late_lease_cleanup_preserves_committed_response_error", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "live_request_failed"}, {"case": "late_lease_cleanup_preserves_fatal_authentication_error", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 0, "result": "live_request_failed"}, {"case": "lease_cleanup_does_not_return_late_bound_success", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "deadline"}, {"case": "lease_cleanup_returns_timely_bound_success", "connections": 1, "expired_on_release": false, "owned_cleanup": true, "requests": 1, "result": "bound_response"}, {"case": "leased_request_does_not_return_late_bound_success", "connections": 1, "expired_on_release": true, "owned_cleanup": true, "requests": 1, "result": "deadline"}, {"case": "validated_request_completes_authenticated_bound_exchange_once", "connections": 1, "expired_on_release": false, "owned_cleanup": true, "requests": 1, "result": "bound_response"}, {"case": "validation_delay_does_not_admit_expired_request", "connections": 0, "expired_on_release": true, "owned_cleanup": true, "requests": 0, "result": "live_request_failed"}], "runtime_test_exit": 0}, {"binary_sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d", "collection_admitted_before_execution": true, "controls": 2, "exact_collected_names": ["resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline", "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection"], "expected_failures_observed": 0, "group": "unix", "passed": true, "phase": "after", "qualification_complete": false, "records": [{"case": "unix_socket_setup_cannot_admit_after_original_deadline", "connected": false, "expired_on_release": true, "owned_cleanup": true, "result": "deadline"}, {"case": "unix_socket_setup_retains_in_budget_connection", "connected": true, "expired_on_release": false, "owned_cleanup": true, "result": "connected"}], "runtime_test_exit": 0}], "package_version": "3.0.1", "release_binary": {"bytes": 11311000, "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime", "sha256": "db7a60fe02c6ce78ed8e151f2f38990ad840593cb030484814609476e27b1a22"}, "target_dir": "/Users/runner/work/_temp/deadline-validation-targets/candidate", "test_binary": {"bytes": 26366760, "path": "/Users/runner/work/_temp/deadline-validation-targets/candidate/debug/deps/hol_guard_runtime-aa3dc4cff9dda5fa", "sha256": "ff0589e95789d1863e4c59dbbddbf3d2f933c79f9b67ca669fc9aa5a2e7b435d"}}}, "workloads_executed": false}
+2026-09-20T09:58:30.5740960Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T09:58:30.5742780Z with:
+2026-09-20T09:58:30.5743990Z   name: pr2974-deadline-macos-x86_64-35503330438
+2026-09-20T09:58:30.5745580Z   if-no-files-found: error
+2026-09-20T09:58:30.5746700Z   retention-days: 90
+2026-09-20T09:58:30.5748790Z   path: /Users/runner/work/_temp/deadline-validation-rustup.log
+/Users/runner/work/_temp/deadline-validation-output/
+
+2026-09-20T09:58:30.5750930Z   compression-level: 6
+2026-09-20T09:58:30.5752120Z   overwrite: false
+2026-09-20T09:58:30.5753130Z   include-hidden-files: false
+2026-09-20T09:58:30.5754330Z   archive: true
+2026-09-20T09:58:30.5755340Z env:
+2026-09-20T09:58:30.5757000Z   DEADLINE_CANDIDATE_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+2026-09-20T09:58:30.5758770Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:58:30.5760610Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/x64/lib/pkgconfig
+2026-09-20T09:58:30.5763250Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:58:30.5764660Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:58:30.5765790Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/x64
+2026-09-20T09:58:30.5767090Z ##[endgroup]
+2026-09-20T09:58:31.3862900Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T09:58:31.3867430Z The least common ancestor is /Users/runner/work/_temp. This will be the root directory of the artifact
+2026-09-20T09:58:31.3869480Z With the provided path, there will be 70 files uploaded
+2026-09-20T09:58:31.3874760Z Artifact name is valid!
+2026-09-20T09:58:31.3876980Z Root directory input is valid!
+2026-09-20T09:58:31.4311370Z Uploading artifact: pr2974-deadline-macos-x86_64-35503330438.zip
+2026-09-20T09:58:31.4346490Z Beginning upload of artifact content to blob storage
+2026-09-20T09:58:31.8042120Z Uploaded bytes 46037
+2026-09-20T09:58:31.8193220Z Finished uploading artifact content to blob storage!
+2026-09-20T09:58:31.8197860Z SHA256 digest of uploaded artifact is 6a01f6206dd93a7352bbb817b795f85c30e717e5862d94b9f295a41565001e28
+2026-09-20T09:58:31.8201000Z Finalizing artifact upload
+2026-09-20T09:58:32.0950760Z Artifact pr2974-deadline-macos-x86_64-35503330438 successfully finalized. Artifact ID 10603176628
+2026-09-20T09:58:32.0955000Z Artifact pr2974-deadline-macos-x86_64-35503330438 has been successfully uploaded! Final size is 46037 bytes. Artifact ID is 10603176628
+2026-09-20T09:58:32.1784860Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35503330438/artifacts/10603176628
+2026-09-20T09:58:32.2102040Z Post job cleanup.
+2026-09-20T09:58:32.5178840Z Post job cleanup.
+2026-09-20T09:58:32.7512150Z [command]/usr/local/bin/git version
+2026-09-20T09:58:32.7665710Z git version 2.55.0
+2026-09-20T09:58:32.7734930Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/44df4e36-0513-496a-b10b-d9d4f5e2ed12/.gitconfig'
+2026-09-20T09:58:32.7754590Z Temporarily overriding HOME='/Users/runner/work/_temp/44df4e36-0513-496a-b10b-d9d4f5e2ed12' before making global git config changes
+2026-09-20T09:58:32.7756570Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T09:58:32.7765900Z [command]/usr/local/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/candidate
+2026-09-20T09:58:32.7913420Z Removing SSH command configuration
+2026-09-20T09:58:32.7915130Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:58:32.8068960Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:58:32.9915760Z Removing HTTP extra header
+2026-09-20T09:58:32.9926120Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:58:33.0106820Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:58:33.2267630Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:58:33.2280760Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:58:33.2422470Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:58:33.4795520Z Post job cleanup.
+2026-09-20T09:58:33.6849790Z [command]/usr/local/bin/git version
+2026-09-20T09:58:33.6997930Z git version 2.55.0
+2026-09-20T09:58:33.7060850Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/07e3afbd-fc00-4edd-9da6-870053cc20b7/.gitconfig'
+2026-09-20T09:58:33.7084400Z Temporarily overriding HOME='/Users/runner/work/_temp/07e3afbd-fc00-4edd-9da6-870053cc20b7' before making global git config changes
+2026-09-20T09:58:33.7086850Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T09:58:33.7098590Z [command]/usr/local/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T09:58:33.7254470Z Removing SSH command configuration
+2026-09-20T09:58:33.7269310Z [command]/usr/local/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T09:58:33.7423830Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T09:58:33.9184770Z Removing HTTP extra header
+2026-09-20T09:58:33.9196010Z [command]/usr/local/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T09:58:33.9328670Z [command]/usr/local/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T09:58:34.0872190Z Removing includeIf entries pointing to credentials config files
+2026-09-20T09:58:34.0883540Z [command]/usr/local/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T09:58:34.1018210Z [command]/usr/local/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T09:58:34.2770620Z Cleaning up orphan processes

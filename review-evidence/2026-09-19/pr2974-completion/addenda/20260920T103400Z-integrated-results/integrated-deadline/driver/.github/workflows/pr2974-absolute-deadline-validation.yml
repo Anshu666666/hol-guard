@@ -1,0 +1,94 @@
+name: PR2974 integrated deadline candidate validation
+
+on:
+  push:
+    branches:
+      - "codex/pr2974-integrated-deadline-validation-20260920"
+
+permissions:
+  contents: read
+
+jobs:
+  deadline-validation:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+            rust_host: x86_64-unknown-linux-gnu
+            python_version: "3.12.14"
+          - platform: macos-x86_64
+            runner: macos-15-intel
+            rust_host: x86_64-apple-darwin
+            python_version: "3.12.10"
+          - platform: macos-arm64
+            runner: macos-15
+            rust_host: aarch64-apple-darwin
+            python_version: "3.12.10"
+          - platform: windows-x86_64
+            runner: windows-2025
+            rust_host: x86_64-pc-windows-msvc
+            python_version: "3.12.10"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    env:
+      DEADLINE_CANDIDATE_SHA: "124472b8949805e0dd36052df6894b335d8b519d"
+    steps:
+      - name: Preserve canonical checkout bytes on every platform
+        shell: bash
+        run: git config --global core.autocrlf false
+
+      - name: Checkout immutable validation driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Checkout candidate source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "124472b8949805e0dd36052df6894b335d8b519d"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up pinned Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install project Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy \
+            2>&1 | tee "$RUNNER_TEMP/deadline-validation-rustup.log"
+
+      - name: Verify exact source, compile, collect and exercise original boundaries
+        shell: bash
+        env:
+          DEADLINE_EXPECTED_HOST: ${{ matrix.rust_host }}
+        run: |
+          set -euo pipefail
+          python driver/ci/pr2974_deadline_validation/run.py \
+            --candidate-root "$GITHUB_WORKSPACE/candidate" \
+            --driver-root "$GITHUB_WORKSPACE/driver" \
+            --candidate-sha "$DEADLINE_CANDIDATE_SHA" \
+            --driver-sha "$GITHUB_SHA" \
+            --expected-host "$DEADLINE_EXPECTED_HOST" \
+            --output "$RUNNER_TEMP/deadline-validation-output" \
+            --target-root "$RUNNER_TEMP/deadline-validation-targets"
+
+      - name: Preserve all source, compile, control and regression results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-deadline-${{ matrix.platform }}-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/deadline-validation-rustup.log
+            ${{ runner.temp }}/deadline-validation-output/

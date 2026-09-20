@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .. import windows_atomic_replace as _windows_replace
 from . import manager as _manager
 
 
@@ -185,7 +186,9 @@ def _write_private_text(path: _manager.Path, text: str) -> None:
     )
     if _manager.os.name != "nt" and hasattr(_manager.os, "fchmod"):
         with _manager.suppress(OSError):
-            _manager.os.fchmod(descriptor, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE)
+            _manager.os.fchmod(  # pyright: ignore[reportAttributeAccessIssue]
+                descriptor, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE
+            )
     with _manager.os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(text)
     _manager._set_private_mode(path, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE)
@@ -196,14 +199,27 @@ def _write_private_atomic_text(path: _manager.Path, text: str) -> None:
     temporary_path = _manager.Path(temporary_name)
     try:
         if _manager.os.name != "nt" and hasattr(_manager.os, "fchmod"):
-            _manager.os.fchmod(descriptor, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE)
+            _manager.os.fchmod(  # pyright: ignore[reportAttributeAccessIssue]
+                descriptor, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE
+            )
         with _manager.os.fdopen(descriptor, "w", encoding="utf-8", closefd=False) as handle:
             handle.write(text)
             handle.flush()
             _manager.os.fsync(handle.fileno())
-        _manager.os.close(descriptor)
-        descriptor = -1
-        _manager.os.replace(temporary_path, path)
+        if _manager.os.name == "nt":
+            owned_descriptor = descriptor
+            descriptor = -1
+            _windows_replace.replace_temporary_descriptor(
+                owned_descriptor,
+                temporary_path,
+                path,
+                close_descriptor=lambda descriptor: _manager.os.close(descriptor),
+                legacy_replace=lambda source, destination: _manager.os.replace(source, destination),
+            )
+        else:
+            _manager.os.close(descriptor)
+            descriptor = -1
+            _manager.os.replace(temporary_path, path)
         _manager._set_private_mode(path, _manager._GUARD_DAEMON_PRIVATE_FILE_MODE)
     finally:
         if descriptor >= 0:

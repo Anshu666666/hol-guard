@@ -327,6 +327,18 @@ jobs:
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Verify Windows storage sharing and exclusive recovery
         run: uv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py --tb=short
+      - name: Verify actual Windows private readers and atomic writer
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/test_guard_private_file_io.py
+          tests/test_private_reader_descriptor_guards.py
+          tests/test_windows_replaceable_file.py
+          tests/test_windows_replaceable_reader_process.py
+          tests/test_windows_replaceable_unicode_crt.py
+          tests/test_windows_wtext_acceptance_probe.py
+          tests/test_windows_atomic_replace.py
+          tests/test_windows_atomic_replace_process.py
+          --junitxml=windows-private-authority-controls.xml --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |
@@ -414,6 +426,7 @@ jobs:
           path: |
             native-dist/*.whl
             native-default-auto.json
+            windows-private-authority-controls.xml
             native-installed-identity.json
             native-installed-control-lock.json
           if-no-files-found: error

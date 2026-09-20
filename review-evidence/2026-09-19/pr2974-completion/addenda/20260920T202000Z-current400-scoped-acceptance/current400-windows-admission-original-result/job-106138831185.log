@@ -1,0 +1,1124 @@
+﻿2026-09-20T19:52:20.9129745Z Current runner version: '2.337.0'
+2026-09-20T19:52:20.9161717Z ##[group]Runner Image Provisioner
+2026-09-20T19:52:20.9162906Z Hosted Compute Agent
+2026-09-20T19:52:20.9163794Z Version: 20260828.587
+2026-09-20T19:52:20.9164785Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T19:52:20.9165921Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T19:52:20.9167396Z Worker ID: {8868c412-21dc-4f90-a9db-c004e8c1c55f}
+2026-09-20T19:52:20.9168532Z Azure Region: westus
+2026-09-20T19:52:20.9169359Z ##[endgroup]
+2026-09-20T19:52:20.9171348Z ##[group]Operating System
+2026-09-20T19:52:20.9172380Z Microsoft Windows Server 2025
+2026-09-20T19:52:20.9173402Z 10.0.26100
+2026-09-20T19:52:20.9174186Z Datacenter
+2026-09-20T19:52:20.9174958Z ##[endgroup]
+2026-09-20T19:52:20.9175808Z ##[group]Runner Image
+2026-09-20T19:52:20.9176680Z Image: windows-2025-vs2026
+2026-09-20T19:52:20.9177581Z Version: 20260907.229.1
+2026-09-20T19:52:20.9180103Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+2026-09-20T19:52:20.9183122Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+2026-09-20T19:52:20.9185000Z ##[endgroup]
+2026-09-20T19:52:20.9186444Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T19:52:20.9188943Z Contents: read
+2026-09-20T19:52:20.9189637Z Metadata: read
+2026-09-20T19:52:20.9190216Z ##[endgroup]
+2026-09-20T19:52:20.9192289Z Secret source: Actions
+2026-09-20T19:52:20.9193320Z Cache mode: write
+2026-09-20T19:52:20.9194063Z Prepare workflow directory
+2026-09-20T19:52:20.9680602Z Prepare all required actions
+2026-09-20T19:52:20.9736635Z Getting action download info
+2026-09-20T19:52:21.3500765Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T19:52:21.4788920Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T19:52:21.6151849Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T19:52:22.0100030Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T19:52:22.2509617Z Complete job name: windows-admission-observation
+2026-09-20T19:52:22.3937880Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:52:22.3939331Z with:
+2026-09-20T19:52:22.3939935Z   path: driver
+2026-09-20T19:52:22.3940812Z   persist-credentials: false
+2026-09-20T19:52:22.3941543Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:52:22.3946231Z   token: ***
+2026-09-20T19:52:22.3946783Z   ssh-strict: true
+2026-09-20T19:52:22.3947344Z   ssh-user: git
+2026-09-20T19:52:22.3947876Z   clean: true
+2026-09-20T19:52:22.3948430Z   sparse-checkout-cone-mode: true
+2026-09-20T19:52:22.3949061Z   fetch-depth: 1
+2026-09-20T19:52:22.4012163Z   fetch-tags: false
+2026-09-20T19:52:22.4012856Z   show-progress: true
+2026-09-20T19:52:22.4013354Z   lfs: false
+2026-09-20T19:52:22.4013798Z   submodules: false
+2026-09-20T19:52:22.4014279Z   set-safe-directory: true
+2026-09-20T19:52:22.4015272Z env:
+2026-09-20T19:52:22.4015875Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:22.4016827Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:22.4017683Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:22.4018611Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:22.4019543Z ##[endgroup]
+2026-09-20T19:52:22.5612853Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:52:22.5614832Z ##[group]Getting Git version info
+2026-09-20T19:52:22.5615603Z Working directory is 'D:\a\hol-guard\hol-guard\driver'
+2026-09-20T19:52:22.6530133Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:52:22.9764531Z git version 2.55.0.windows.5
+2026-09-20T19:52:22.9824556Z ##[endgroup]
+2026-09-20T19:52:22.9845595Z Temporarily overriding HOME='D:\a\_temp\e63adbe0-a6aa-45b0-9f52-637b5b4cd40a' before making global git config changes
+2026-09-20T19:52:22.9850580Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:52:22.9859564Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\driver
+2026-09-20T19:52:23.0506620Z ##[group]Determining repository object format
+2026-09-20T19:52:23.0509410Z ##[endgroup]
+2026-09-20T19:52:23.0510727Z ##[group]Initializing the repository
+2026-09-20T19:52:23.0518965Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\driver
+2026-09-20T19:52:23.1289937Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/driver/.git/
+2026-09-20T19:52:23.1336577Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:23.1935025Z ##[endgroup]
+2026-09-20T19:52:23.1936878Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:52:23.1943649Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T19:52:23.2243624Z ##[endgroup]
+2026-09-20T19:52:23.2245427Z ##[group]Setting up auth
+2026-09-20T19:52:23.2246714Z Removing SSH command configuration
+2026-09-20T19:52:23.2255597Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:23.2591018Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:24.6823941Z Removing HTTP extra header
+2026-09-20T19:52:24.6834004Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:24.7142860Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:25.2846754Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:25.2861771Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:25.3189569Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:25.8462391Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T19:52:25.8793376Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:25.9115869Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:25.9471755Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:25.9801903Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:26.0155946Z ##[endgroup]
+2026-09-20T19:52:26.0156566Z ##[group]Fetching the repository
+2026-09-20T19:52:26.0177455Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c90833fc1d3551e39d61f86e315d0f0aee3ae885:refs/remotes/origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:29.1858887Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:29.1860555Z  * [new ref]         c90833fc1d3551e39d61f86e315d0f0aee3ae885 -> origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:29.1924577Z [command]"C:\Program Files\Git\bin\git.exe" branch --list --remote origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:29.2307823Z   origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:29.2355187Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse refs/remotes/origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:29.2757336Z c90833fc1d3551e39d61f86e315d0f0aee3ae885
+2026-09-20T19:52:29.2795997Z ##[endgroup]
+2026-09-20T19:52:29.2796666Z ##[group]Determining the checkout info
+2026-09-20T19:52:29.2798551Z ##[endgroup]
+2026-09-20T19:52:29.2808268Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T19:52:29.3314404Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:52:29.3668688Z ##[group]Checking out the ref
+2026-09-20T19:52:29.3682179Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force -B codex/pr2974-windows400-admission-observation-20260920 refs/remotes/origin/codex/pr2974-windows400-admission-observation-20260920
+2026-09-20T19:52:30.4271102Z Updating files:  73% (3515/4807)
+2026-09-20T19:52:30.4410752Z Updating files:  74% (3558/4807)
+2026-09-20T19:52:30.4547221Z Updating files:  75% (3606/4807)
+2026-09-20T19:52:30.4672504Z Updating files:  76% (3654/4807)
+2026-09-20T19:52:30.4812752Z Updating files:  77% (3702/4807)
+2026-09-20T19:52:30.4945245Z Updating files:  78% (3750/4807)
+2026-09-20T19:52:30.5076269Z Updating files:  79% (3798/4807)
+2026-09-20T19:52:30.5202191Z Updating files:  80% (3846/4807)
+2026-09-20T19:52:30.5344793Z Updating files:  81% (3894/4807)
+2026-09-20T19:52:30.5480505Z Updating files:  82% (3942/4807)
+2026-09-20T19:52:30.5618562Z Updating files:  83% (3990/4807)
+2026-09-20T19:52:30.5745644Z Updating files:  84% (4038/4807)
+2026-09-20T19:52:30.5902326Z Updating files:  85% (4086/4807)
+2026-09-20T19:52:30.6041772Z Updating files:  86% (4135/4807)
+2026-09-20T19:52:30.6187503Z Updating files:  87% (4183/4807)
+2026-09-20T19:52:30.6329635Z Updating files:  88% (4231/4807)
+2026-09-20T19:52:30.6462419Z Updating files:  89% (4279/4807)
+2026-09-20T19:52:30.6813575Z Updating files:  90% (4327/4807)
+2026-09-20T19:52:30.7147633Z Updating files:  91% (4375/4807)
+2026-09-20T19:52:30.8628709Z Updating files:  92% (4423/4807)
+2026-09-20T19:52:30.9045628Z Updating files:  93% (4471/4807)
+2026-09-20T19:52:30.9174915Z Updating files:  94% (4519/4807)
+2026-09-20T19:52:30.9315968Z Updating files:  95% (4567/4807)
+2026-09-20T19:52:30.9457321Z Updating files:  96% (4615/4807)
+2026-09-20T19:52:30.9602029Z Updating files:  97% (4663/4807)
+2026-09-20T19:52:30.9735656Z Updating files:  98% (4711/4807)
+2026-09-20T19:52:30.9930414Z Updating files:  99% (4759/4807)
+2026-09-20T19:52:30.9931147Z Updating files: 100% (4807/4807)
+2026-09-20T19:52:30.9931789Z Updating files: 100% (4807/4807), done.
+2026-09-20T19:52:31.0136836Z Switched to a new branch 'codex/pr2974-windows400-admission-observation-20260920'
+2026-09-20T19:52:31.0159448Z branch 'codex/pr2974-windows400-admission-observation-20260920' set up to track 'origin/codex/pr2974-windows400-admission-observation-20260920'.
+2026-09-20T19:52:31.0229363Z ##[endgroup]
+2026-09-20T19:52:31.0594627Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T19:52:31.0866822Z c90833fc1d3551e39d61f86e315d0f0aee3ae885
+2026-09-20T19:52:31.0909825Z ##[group]Removing auth
+2026-09-20T19:52:31.0910112Z Removing SSH command configuration
+2026-09-20T19:52:31.0917848Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:31.1219983Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:31.6603949Z Removing HTTP extra header
+2026-09-20T19:52:31.6612850Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:31.6919002Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:32.2689326Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:32.2697943Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:32.2961248Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:52:32.2961882Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:52:32.2962331Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:52:32.2962747Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:52:32.3004938Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:52:32.3277014Z D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.3326921Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.3644271Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:52:32.3920497Z D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.3969468Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.4307545Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:52:32.4616492Z /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.4661352Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.4975630Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:52:32.5248759Z /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.5294900Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:52:32.5613801Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:33.1475754Z Removing credentials config 'D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config'
+2026-09-20T19:52:33.1488654Z ##[endgroup]
+2026-09-20T19:52:33.1936801Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:52:33.1937264Z with:
+2026-09-20T19:52:33.1937499Z   ref: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:33.1937791Z   path: candidate
+2026-09-20T19:52:33.1937988Z   fetch-depth: 2
+2026-09-20T19:52:33.1938197Z   persist-credentials: false
+2026-09-20T19:52:33.1938465Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:52:33.1941614Z   token: ***
+2026-09-20T19:52:33.1941820Z   ssh-strict: true
+2026-09-20T19:52:33.1942026Z   ssh-user: git
+2026-09-20T19:52:33.1942206Z   clean: true
+2026-09-20T19:52:33.1942409Z   sparse-checkout-cone-mode: true
+2026-09-20T19:52:33.1942660Z   fetch-tags: false
+2026-09-20T19:52:33.1942866Z   show-progress: true
+2026-09-20T19:52:33.1943071Z   lfs: false
+2026-09-20T19:52:33.1943254Z   submodules: false
+2026-09-20T19:52:33.1943455Z   set-safe-directory: true
+2026-09-20T19:52:33.1943669Z env:
+2026-09-20T19:52:33.1943964Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:33.1944398Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:33.1944806Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:33.1945206Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:33.1945533Z ##[endgroup]
+2026-09-20T19:52:33.3116947Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:52:33.3126087Z ##[group]Getting Git version info
+2026-09-20T19:52:33.3126742Z Working directory is 'D:\a\hol-guard\hol-guard\candidate'
+2026-09-20T19:52:33.3978651Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:52:33.4262669Z git version 2.55.0.windows.5
+2026-09-20T19:52:33.4314200Z ##[endgroup]
+2026-09-20T19:52:33.4332606Z Temporarily overriding HOME='D:\a\_temp\b9fb3d38-c0f2-403c-93cd-20426cf9467d' before making global git config changes
+2026-09-20T19:52:33.4333389Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:52:33.4343499Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\candidate
+2026-09-20T19:52:33.4660708Z ##[group]Determining repository object format
+2026-09-20T19:52:33.4664153Z ##[endgroup]
+2026-09-20T19:52:33.4664592Z ##[group]Initializing the repository
+2026-09-20T19:52:33.4674856Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\candidate
+2026-09-20T19:52:33.5051093Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/candidate/.git/
+2026-09-20T19:52:33.5100397Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:33.5484745Z ##[endgroup]
+2026-09-20T19:52:33.5485363Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:52:33.5496079Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T19:52:33.5832963Z ##[endgroup]
+2026-09-20T19:52:33.5833350Z ##[group]Setting up auth
+2026-09-20T19:52:33.5835304Z Removing SSH command configuration
+2026-09-20T19:52:33.5848053Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:33.6166754Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:34.2042021Z Removing HTTP extra header
+2026-09-20T19:52:34.2051762Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:34.2346065Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:34.8003179Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:34.8011994Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:34.8313477Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:35.3905929Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T19:52:35.4211817Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:35.4513336Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:35.4811133Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:35.5110432Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:35.5406797Z ##[endgroup]
+2026-09-20T19:52:35.5407169Z ##[group]Fetching the repository
+2026-09-20T19:52:35.5420030Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:38.2897088Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:38.2899708Z  * branch            cae549421ecaea55715adcad32afd7d9043a172c -> FETCH_HEAD
+2026-09-20T19:52:38.2987712Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet cae549421ecaea55715adcad32afd7d9043a172c^{object}
+2026-09-20T19:52:38.3419894Z cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:38.3475159Z ##[endgroup]
+2026-09-20T19:52:38.3476324Z ##[group]Determining the checkout info
+2026-09-20T19:52:38.3479782Z ##[endgroup]
+2026-09-20T19:52:38.3493794Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T19:52:38.3908155Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:52:38.4426818Z ##[group]Checking out the ref
+2026-09-20T19:52:38.4437523Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:39.4960695Z Updating files:  62% (3012/4806)
+2026-09-20T19:52:39.5097681Z Updating files:  63% (3028/4806)
+2026-09-20T19:52:39.5209538Z Updating files:  64% (3076/4806)
+2026-09-20T19:52:39.5333963Z Updating files:  65% (3124/4806)
+2026-09-20T19:52:39.5490248Z Updating files:  66% (3172/4806)
+2026-09-20T19:52:39.5641826Z Updating files:  67% (3221/4806)
+2026-09-20T19:52:39.5769335Z Updating files:  68% (3269/4806)
+2026-09-20T19:52:39.5899161Z Updating files:  69% (3317/4806)
+2026-09-20T19:52:39.6026169Z Updating files:  70% (3365/4806)
+2026-09-20T19:52:39.6181125Z Updating files:  71% (3413/4806)
+2026-09-20T19:52:39.6312584Z Updating files:  72% (3461/4806)
+2026-09-20T19:52:39.6458440Z Updating files:  73% (3509/4806)
+2026-09-20T19:52:39.6588778Z Updating files:  74% (3557/4806)
+2026-09-20T19:52:39.6736291Z Updating files:  75% (3605/4806)
+2026-09-20T19:52:39.6882780Z Updating files:  76% (3653/4806)
+2026-09-20T19:52:39.7024832Z Updating files:  77% (3701/4806)
+2026-09-20T19:52:39.7160966Z Updating files:  78% (3749/4806)
+2026-09-20T19:52:39.7297474Z Updating files:  79% (3797/4806)
+2026-09-20T19:52:39.7430758Z Updating files:  80% (3845/4806)
+2026-09-20T19:52:39.7604395Z Updating files:  81% (3893/4806)
+2026-09-20T19:52:39.7743561Z Updating files:  82% (3941/4806)
+2026-09-20T19:52:39.7887349Z Updating files:  83% (3989/4806)
+2026-09-20T19:52:39.8019588Z Updating files:  84% (4038/4806)
+2026-09-20T19:52:39.8172595Z Updating files:  85% (4086/4806)
+2026-09-20T19:52:39.8316570Z Updating files:  86% (4134/4806)
+2026-09-20T19:52:39.8463128Z Updating files:  87% (4182/4806)
+2026-09-20T19:52:39.8602750Z Updating files:  88% (4230/4806)
+2026-09-20T19:52:39.8733538Z Updating files:  89% (4278/4806)
+2026-09-20T19:52:39.8875939Z Updating files:  90% (4326/4806)
+2026-09-20T19:52:39.9016331Z Updating files:  91% (4374/4806)
+2026-09-20T19:52:39.9153825Z Updating files:  92% (4422/4806)
+2026-09-20T19:52:39.9312702Z Updating files:  93% (4470/4806)
+2026-09-20T19:52:39.9459089Z Updating files:  94% (4518/4806)
+2026-09-20T19:52:39.9587340Z Updating files:  95% (4566/4806)
+2026-09-20T19:52:39.9729244Z Updating files:  96% (4614/4806)
+2026-09-20T19:52:39.9887494Z Updating files:  97% (4662/4806)
+2026-09-20T19:52:40.0018684Z Updating files:  98% (4710/4806)
+2026-09-20T19:52:40.0213568Z Updating files:  99% (4758/4806)
+2026-09-20T19:52:40.0214084Z Updating files: 100% (4806/4806)
+2026-09-20T19:52:40.0214534Z Updating files: 100% (4806/4806), done.
+2026-09-20T19:52:40.0404827Z Note: switching to 'cae549421ecaea55715adcad32afd7d9043a172c'.
+2026-09-20T19:52:40.0405741Z 
+2026-09-20T19:52:40.0406121Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T19:52:40.0407023Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T19:52:40.0407885Z state without impacting any branches by switching back to a branch.
+2026-09-20T19:52:40.0408473Z 
+2026-09-20T19:52:40.0408843Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T19:52:40.0409633Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T19:52:40.0410092Z 
+2026-09-20T19:52:40.0410296Z   git switch -c <new-branch-name>
+2026-09-20T19:52:40.0410605Z 
+2026-09-20T19:52:40.0410773Z Or undo this operation with:
+2026-09-20T19:52:40.0411065Z 
+2026-09-20T19:52:40.0411212Z   git switch -
+2026-09-20T19:52:40.0411408Z 
+2026-09-20T19:52:40.0411782Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T19:52:40.0412343Z 
+2026-09-20T19:52:40.0412890Z HEAD is now at cae5494 Observe existing Windows default-auto admission counters without changing requests
+2026-09-20T19:52:40.0494226Z ##[endgroup]
+2026-09-20T19:52:40.0857990Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T19:52:40.1171582Z cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:40.1221863Z ##[group]Removing auth
+2026-09-20T19:52:40.1222239Z Removing SSH command configuration
+2026-09-20T19:52:40.1231216Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:40.1592095Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:40.8790680Z Removing HTTP extra header
+2026-09-20T19:52:40.8802129Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:40.9119470Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:41.4606780Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:41.4615924Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:41.4891339Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T19:52:41.4891912Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T19:52:41.4892696Z includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T19:52:41.4893153Z includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T19:52:41.4937298Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T19:52:41.5212205Z D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.5259275Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.5577669Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T19:52:41.5869156Z D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.5923236Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.6251844Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T19:52:41.6545252Z /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.6591648Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.6966538Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T19:52:41.7353578Z /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.7459398Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:52:41.7844467Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:42.4135625Z Removing credentials config 'D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config'
+2026-09-20T19:52:42.4146475Z ##[endgroup]
+2026-09-20T19:52:42.4499134Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:52:42.4499592Z with:
+2026-09-20T19:52:42.4499834Z   ref: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:42.4500130Z   path: product
+2026-09-20T19:52:42.4500346Z   persist-credentials: false
+2026-09-20T19:52:42.4500620Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:52:42.4503468Z   token: ***
+2026-09-20T19:52:42.4503666Z   ssh-strict: true
+2026-09-20T19:52:42.4503865Z   ssh-user: git
+2026-09-20T19:52:42.4504046Z   clean: true
+2026-09-20T19:52:42.4504248Z   sparse-checkout-cone-mode: true
+2026-09-20T19:52:42.4504499Z   fetch-depth: 1
+2026-09-20T19:52:42.4504687Z   fetch-tags: false
+2026-09-20T19:52:42.4504886Z   show-progress: true
+2026-09-20T19:52:42.4505083Z   lfs: false
+2026-09-20T19:52:42.4505258Z   submodules: false
+2026-09-20T19:52:42.4505458Z   set-safe-directory: true
+2026-09-20T19:52:42.4505675Z env:
+2026-09-20T19:52:42.4505974Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:42.4506417Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:42.4506826Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:42.4507661Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:42.4507994Z ##[endgroup]
+2026-09-20T19:52:42.5610633Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:52:42.5619666Z ##[group]Getting Git version info
+2026-09-20T19:52:42.5620436Z Working directory is 'D:\a\hol-guard\hol-guard\product'
+2026-09-20T19:52:42.6449183Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:52:42.6726147Z git version 2.55.0.windows.5
+2026-09-20T19:52:42.6773496Z ##[endgroup]
+2026-09-20T19:52:42.6791358Z Temporarily overriding HOME='D:\a\_temp\9b9a371e-589d-4a5a-8212-31809e75643f' before making global git config changes
+2026-09-20T19:52:42.6792565Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:52:42.6802547Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\product
+2026-09-20T19:52:42.7110446Z ##[group]Determining repository object format
+2026-09-20T19:52:42.7113368Z ##[endgroup]
+2026-09-20T19:52:42.7114344Z ##[group]Initializing the repository
+2026-09-20T19:52:42.7124443Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\product
+2026-09-20T19:52:42.7484978Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/product/.git/
+2026-09-20T19:52:42.7544114Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:42.7931734Z ##[endgroup]
+2026-09-20T19:52:42.7932442Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:52:42.7944172Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T19:52:42.8288598Z ##[endgroup]
+2026-09-20T19:52:42.8289212Z ##[group]Setting up auth
+2026-09-20T19:52:42.8290747Z Removing SSH command configuration
+2026-09-20T19:52:42.8303544Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:42.8665660Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:43.4257920Z Removing HTTP extra header
+2026-09-20T19:52:43.4275196Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:43.4596148Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:43.9886397Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:43.9902686Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:44.0224029Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:44.5777120Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T19:52:44.6072665Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/product/.git.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:44.6362942Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:44.6658800Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/product/.git.path /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:44.6962010Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/product/.git/worktrees/*.path /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:44.7252098Z ##[endgroup]
+2026-09-20T19:52:44.7252471Z ##[group]Fetching the repository
+2026-09-20T19:52:44.7265201Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:47.4136658Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:52:47.4137442Z  * branch            4001185e4f39cad51fd5eab314bf02b86b8a1674 -> FETCH_HEAD
+2026-09-20T19:52:47.4194751Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet 4001185e4f39cad51fd5eab314bf02b86b8a1674^{object}
+2026-09-20T19:52:47.4461631Z 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:47.4494423Z ##[endgroup]
+2026-09-20T19:52:47.4495411Z ##[group]Determining the checkout info
+2026-09-20T19:52:47.4497162Z ##[endgroup]
+2026-09-20T19:52:47.4506306Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T19:52:47.4861682Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:52:47.5159005Z ##[group]Checking out the ref
+2026-09-20T19:52:47.5168990Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:48.5593684Z Updating files:  73% (3550/4800)
+2026-09-20T19:52:48.5719091Z Updating files:  74% (3552/4800)
+2026-09-20T19:52:48.5856020Z Updating files:  75% (3600/4800)
+2026-09-20T19:52:48.5995195Z Updating files:  76% (3648/4800)
+2026-09-20T19:52:48.6136513Z Updating files:  77% (3696/4800)
+2026-09-20T19:52:48.6270935Z Updating files:  78% (3744/4800)
+2026-09-20T19:52:48.6407542Z Updating files:  79% (3792/4800)
+2026-09-20T19:52:48.6537481Z Updating files:  80% (3840/4800)
+2026-09-20T19:52:48.6682434Z Updating files:  81% (3888/4800)
+2026-09-20T19:52:48.6821654Z Updating files:  82% (3936/4800)
+2026-09-20T19:52:48.6963428Z Updating files:  83% (3984/4800)
+2026-09-20T19:52:48.7090902Z Updating files:  84% (4032/4800)
+2026-09-20T19:52:48.7259116Z Updating files:  85% (4080/4800)
+2026-09-20T19:52:48.7405110Z Updating files:  86% (4128/4800)
+2026-09-20T19:52:48.7556820Z Updating files:  87% (4176/4800)
+2026-09-20T19:52:48.7699897Z Updating files:  88% (4224/4800)
+2026-09-20T19:52:48.7835570Z Updating files:  89% (4272/4800)
+2026-09-20T19:52:48.7980514Z Updating files:  90% (4320/4800)
+2026-09-20T19:52:48.8121354Z Updating files:  91% (4368/4800)
+2026-09-20T19:52:48.8273619Z Updating files:  92% (4416/4800)
+2026-09-20T19:52:48.8407682Z Updating files:  93% (4464/4800)
+2026-09-20T19:52:48.8565742Z Updating files:  94% (4512/4800)
+2026-09-20T19:52:48.9185232Z Updating files:  95% (4560/4800)
+2026-09-20T19:52:48.9341229Z Updating files:  96% (4608/4800)
+2026-09-20T19:52:48.9722829Z Updating files:  97% (4656/4800)
+2026-09-20T19:52:49.0205206Z Updating files:  98% (4704/4800)
+2026-09-20T19:52:49.0612798Z Updating files:  99% (4752/4800)
+2026-09-20T19:52:49.0613302Z Updating files: 100% (4800/4800)
+2026-09-20T19:52:49.0613706Z Updating files: 100% (4800/4800), done.
+2026-09-20T19:52:49.0762622Z Note: switching to '4001185e4f39cad51fd5eab314bf02b86b8a1674'.
+2026-09-20T19:52:49.0763110Z 
+2026-09-20T19:52:49.0763452Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T19:52:49.0763963Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T19:52:49.0764445Z state without impacting any branches by switching back to a branch.
+2026-09-20T19:52:49.0764721Z 
+2026-09-20T19:52:49.0764924Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T19:52:49.0765371Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T19:52:49.0765624Z 
+2026-09-20T19:52:49.0765728Z   git switch -c <new-branch-name>
+2026-09-20T19:52:49.0765905Z 
+2026-09-20T19:52:49.0765996Z Or undo this operation with:
+2026-09-20T19:52:49.0766154Z 
+2026-09-20T19:52:49.0766230Z   git switch -
+2026-09-20T19:52:49.0766345Z 
+2026-09-20T19:52:49.0766551Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T19:52:49.0767154Z 
+2026-09-20T19:52:49.0767452Z HEAD is now at 4001185 Hydrate private encrypted post references and defer daemon manager imports
+2026-09-20T19:52:49.0848786Z ##[endgroup]
+2026-09-20T19:52:49.1186236Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T19:52:49.1464385Z 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:49.1508805Z ##[group]Removing auth
+2026-09-20T19:52:49.1509186Z Removing SSH command configuration
+2026-09-20T19:52:49.1518960Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:52:49.1842404Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:52:49.7350245Z Removing HTTP extra header
+2026-09-20T19:52:49.7360456Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:52:49.7682393Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:52:50.3460054Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:52:50.3468722Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:52:50.3743170Z includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path
+2026-09-20T19:52:50.3744002Z includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path
+2026-09-20T19:52:50.3744741Z includeif.gitdir:/github/workspace/product/.git.path
+2026-09-20T19:52:50.3745396Z includeif.gitdir:/github/workspace/product/.git/worktrees/*.path
+2026-09-20T19:52:50.3788280Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path
+2026-09-20T19:52:50.4057374Z D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.4103348Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.4414500Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path
+2026-09-20T19:52:50.4680522Z D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.4722638Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.5031518Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/product/.git.path
+2026-09-20T19:52:50.5307004Z /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.5352098Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/product/.git.path /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.5678557Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/product/.git/worktrees/*.path
+2026-09-20T19:52:50.5949142Z /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.5991928Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/product/.git/worktrees/*.path /github/runner_temp/git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:52:50.6315501Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:52:51.1925315Z Removing credentials config 'D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config'
+2026-09-20T19:52:51.1937918Z ##[endgroup]
+2026-09-20T19:52:51.2308250Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T19:52:51.2308742Z with:
+2026-09-20T19:52:51.2308979Z   python-version: 3.12.10
+2026-09-20T19:52:51.2309220Z   check-latest: false
+2026-09-20T19:52:51.2312480Z   token: ***
+2026-09-20T19:52:51.2312697Z   update-environment: true
+2026-09-20T19:52:51.2312938Z   allow-prereleases: false
+2026-09-20T19:52:51.2313158Z   freethreaded: false
+2026-09-20T19:52:51.2313355Z env:
+2026-09-20T19:52:51.2313618Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:51.2314050Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:51.2314469Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:51.2314878Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:51.2315203Z ##[endgroup]
+2026-09-20T19:52:51.4032329Z ##[group]Installed versions
+2026-09-20T19:52:51.4147671Z Successfully set up CPython (3.12.10)
+2026-09-20T19:52:51.4148569Z ##[endgroup]
+2026-09-20T19:52:51.4484126Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T19:52:51.4484602Z with:
+2026-09-20T19:52:51.4484789Z   version: 0.9.26
+2026-09-20T19:52:51.4485007Z   enable-cache: false
+2026-09-20T19:52:51.4485234Z   activate-environment: false
+2026-09-20T19:52:51.4485479Z   no-project: false
+2026-09-20T19:52:51.4485724Z   working-directory: D:\a\hol-guard\hol-guard
+2026-09-20T19:52:51.4488995Z   github-token: ***
+2026-09-20T19:52:51.4489599Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T19:52:51.4490236Z   restore-cache: true
+2026-09-20T19:52:51.4490440Z   save-cache: true
+2026-09-20T19:52:51.4490639Z   prune-cache: true
+2026-09-20T19:52:51.4490841Z   cache-python: false
+2026-09-20T19:52:51.4491062Z   ignore-nothing-to-cache: false
+2026-09-20T19:52:51.4491324Z   ignore-empty-workdir: false
+2026-09-20T19:52:51.4491626Z   download-from-astral-mirror: true
+2026-09-20T19:52:51.4491895Z   add-problem-matchers: true
+2026-09-20T19:52:51.4492121Z   quiet: false
+2026-09-20T19:52:51.4492322Z   resolution-strategy: highest
+2026-09-20T19:52:51.4492550Z env:
+2026-09-20T19:52:51.4492810Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:51.4493287Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:51.4493698Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:51.4494111Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:51.4494531Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:51.4495031Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:52:51.4495504Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:51.4495922Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:51.4496341Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:51.4496666Z ##[endgroup]
+2026-09-20T19:52:51.6559679Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T19:52:51.7252375Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-pc-windows-msvc.zip" ...
+2026-09-20T19:52:52.3478077Z [command]C:\Windows\system32\tar.exe x -C D:\a\_temp\3b9c2b32-6908-4c81-b30b-7c878fd1f7a6 -f D:\a\_temp\9e160fdf-30b1-4236-9483-2fc73fad74ec
+2026-09-20T19:52:52.5657143Z Set UV_TOOL_BIN_DIR to D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:52:52.5660768Z Added D:\a\_temp\uv-tool-bin-dir to the path
+2026-09-20T19:52:52.5670758Z Added C:\hostedtoolcache\windows\uv\0.9.26\x86_64 to the path
+2026-09-20T19:52:52.5673439Z Set UV_TOOL_DIR to D:\a\_temp\uv-tool-dir
+2026-09-20T19:52:52.5676331Z Set UV_PYTHON_INSTALL_DIR to D:\a\_temp\uv-python-dir
+2026-09-20T19:52:52.5679757Z Added D:\a\_temp\uv-python-dir to the path
+2026-09-20T19:52:52.5690436Z Successfully installed uv version 0.9.26
+2026-09-20T19:52:54.1447898Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:52:54.1448584Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:52:54.1448998Z [36;1mNew-Item -ItemType Directory -Force evidence | Out-Null[0m
+2026-09-20T19:52:54.1449425Z [36;1m$driver = (git -C driver rev-parse HEAD).Trim()[0m
+2026-09-20T19:52:54.1449817Z [36;1m$source = (git -C candidate rev-parse HEAD).Trim()[0m
+2026-09-20T19:52:54.1450232Z [36;1m$tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()[0m
+2026-09-20T19:52:54.1450652Z [36;1m$product = (git -C product rev-parse HEAD).Trim()[0m
+2026-09-20T19:52:54.1451077Z [36;1m$productTree = (git -C product rev-parse 'HEAD^{tree}').Trim()[0m
+2026-09-20T19:52:54.1452136Z [36;1mif ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $product -ne $env:PRODUCT_SOURCE_SHA -or $productTree -ne $env:PRODUCT_SOURCE_TREE) { throw 'checkout_identity_mismatch' }[0m
+2026-09-20T19:52:54.1453958Z [36;1m@{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; product=$product; product_tree=$productTree; historical_failed_executable=$false; new_isolated_build=$true} | ConvertTo-Json | Set-Content evidence/checkouts-before.json[0m
+2026-09-20T19:52:54.1765307Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:52:54.1765770Z env:
+2026-09-20T19:52:54.1766130Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:54.1766676Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:54.1767233Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:54.1767673Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:54.1768109Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.1768602Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:52:54.1769103Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.1769555Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.1769990Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.1770366Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:52:54.1770667Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:52:54.1770976Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:52:54.1771278Z ##[endgroup]
+2026-09-20T19:52:54.9299464Z ##[group]Run uv sync --frozen --extra dev --python 3.12.10
+2026-09-20T19:52:54.9299961Z [36;1muv sync --frozen --extra dev --python 3.12.10[0m
+2026-09-20T19:52:54.9300352Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:52:54.9372799Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:52:54.9373160Z env:
+2026-09-20T19:52:54.9373491Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:52:54.9373930Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:52:54.9374361Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:52:54.9374784Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:52:54.9375219Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.9375694Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:52:54.9376197Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.9376617Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.9377026Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:52:54.9377383Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:52:54.9377669Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:52:54.9377964Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:52:54.9378249Z ##[endgroup]
+2026-09-20T19:52:55.3691016Z Using CPython 3.12.10 interpreter at: C:\hostedtoolcache\windows\Python\3.12.10\x64\python3.exe
+2026-09-20T19:52:55.3691994Z Creating virtual environment at: .venv
+2026-09-20T19:52:55.4839999Z    Building hol-guard @ file:///D:/a/hol-guard/hol-guard/candidate
+2026-09-20T19:52:55.5594732Z Downloading pygments (1.2MiB)
+2026-09-20T19:52:55.5790719Z Downloading basedpyright (12.6MiB)
+2026-09-20T19:52:55.5839634Z Downloading pywin32 (9.1MiB)
+2026-09-20T19:52:55.5846691Z Downloading cryptography (3.7MiB)
+2026-09-20T19:52:55.5858163Z Downloading ruff (11.5MiB)
+2026-09-20T19:52:55.5873234Z Downloading libcst (2.0MiB)
+2026-09-20T19:52:55.5879375Z Downloading pydantic-core (1.9MiB)
+2026-09-20T19:52:55.5885601Z Downloading nodejs-wheel-binaries (40.1MiB)
+2026-09-20T19:52:56.8287176Z  Downloaded pydantic-core
+2026-09-20T19:53:00.3188626Z  Downloaded cryptography
+2026-09-20T19:53:01.1569159Z  Downloaded pygments
+2026-09-20T19:53:02.2303377Z  Downloaded libcst
+2026-09-20T19:53:02.6461246Z  Downloaded ruff
+2026-09-20T19:53:02.7618222Z  Downloaded pywin32
+2026-09-20T19:53:04.6272239Z       Built hol-guard @ file:///D:/a/hol-guard/hol-guard/candidate
+2026-09-20T19:53:05.4901257Z  Downloaded nodejs-wheel-binaries
+2026-09-20T19:53:08.8696150Z  Downloaded basedpyright
+2026-09-20T19:53:08.8724016Z Prepared 70 packages in 13.45s
+2026-09-20T19:53:08.8754275Z warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+2026-09-20T19:53:08.8767214Z          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+2026-09-20T19:53:08.8776379Z          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+2026-09-20T19:53:12.0685550Z Installed 70 packages in 3.19s
+2026-09-20T19:53:12.0689063Z  + annotated-types==0.7.0
+2026-09-20T19:53:12.0691054Z  + anyio==4.14.2
+2026-09-20T19:53:12.0692522Z  + attrs==26.1.0
+2026-09-20T19:53:12.0694178Z  + basedpyright==1.39.8
+2026-09-20T19:53:12.0695567Z  + build==1.5.0
+2026-09-20T19:53:12.0697140Z  + certifi==2026.2.25
+2026-09-20T19:53:12.0698794Z  + cffi==2.0.0
+2026-09-20T19:53:12.0700336Z  + charset-normalizer==3.4.7
+2026-09-20T19:53:12.0701674Z  + click==8.4.1
+2026-09-20T19:53:12.0703174Z  + colorama==0.4.6
+2026-09-20T19:53:12.0704350Z  + coverage==7.13.5
+2026-09-20T19:53:12.0705886Z  + cryptography==50.0.0
+2026-09-20T19:53:12.0707335Z  + h11==0.16.0
+2026-09-20T19:53:12.0712234Z  + hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard/candidate)
+2026-09-20T19:53:12.0712894Z  + httpcore==1.0.9
+2026-09-20T19:53:12.0713101Z  + httpx==0.28.1
+2026-09-20T19:53:12.0714350Z  + httpx-sse==0.4.3
+2026-09-20T19:53:12.0715533Z  + idna==3.15
+2026-09-20T19:53:12.0716856Z  + importlib-metadata==8.9.0
+2026-09-20T19:53:12.0718154Z  + iniconfig==2.3.0
+2026-09-20T19:53:12.0719597Z  + jaraco-classes==3.4.0
+2026-09-20T19:53:12.0721054Z  + jaraco-context==6.1.2
+2026-09-20T19:53:12.0722433Z  + jaraco-functools==4.4.0
+2026-09-20T19:53:12.0723746Z  + jsonschema==4.26.0
+2026-09-20T19:53:12.0725148Z  + jsonschema-specifications==2025.9.1
+2026-09-20T19:53:12.0726457Z  + keyring==25.7.0
+2026-09-20T19:53:12.0727918Z  + libcst==1.9.0
+2026-09-20T19:53:12.0729652Z  + linkify-it-py==2.1.0
+2026-09-20T19:53:12.0730643Z  + markdown-it-py==4.0.0
+2026-09-20T19:53:12.0732101Z  + mcp==1.28.1
+2026-09-20T19:53:12.0733572Z  + mdit-py-plugins==0.5.0
+2026-09-20T19:53:12.0734893Z  + mdurl==0.1.2
+2026-09-20T19:53:12.0736370Z  + more-itertools==11.0.1
+2026-09-20T19:53:12.0737866Z  + mutmut==3.7.0
+2026-09-20T19:53:12.0739451Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T19:53:12.0740477Z  + packaging==26.0
+2026-09-20T19:53:12.0742048Z  + platformdirs==4.9.4
+2026-09-20T19:53:12.0743416Z  + pluggy==1.6.0
+2026-09-20T19:53:12.0744776Z  + psutil==7.2.2
+2026-09-20T19:53:12.0746385Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T19:53:12.0747679Z  + pycparser==3.0
+2026-09-20T19:53:12.0749620Z  + pydantic==2.12.5
+2026-09-20T19:53:12.0750798Z  + pydantic-core==2.41.5
+2026-09-20T19:53:12.0752111Z  + pydantic-settings==2.14.1
+2026-09-20T19:53:12.0753663Z  + pygments==2.20.0
+2026-09-20T19:53:12.0755007Z  + pyjwt==2.13.0
+2026-09-20T19:53:12.0756583Z  + pyproject-hooks==1.2.0
+2026-09-20T19:53:12.0758057Z  + pytest==9.0.3
+2026-09-20T19:53:12.0759565Z  + pytest-cov==7.1.0
+2026-09-20T19:53:12.0761106Z  + python-dotenv==1.2.2
+2026-09-20T19:53:12.0762427Z  + python-multipart==0.0.32
+2026-09-20T19:53:12.0763245Z  + pywin32==311
+2026-09-20T19:53:12.0764991Z  + pywin32-ctypes==0.2.3
+2026-09-20T19:53:12.0766373Z  + pyyaml==6.0.3
+2026-09-20T19:53:12.0767870Z  + referencing==0.37.0
+2026-09-20T19:53:12.0769849Z  + regex==2026.4.4
+2026-09-20T19:53:12.0770922Z  + requests==2.33.1
+2026-09-20T19:53:12.0772315Z  + rich==14.2.0
+2026-09-20T19:53:12.0773758Z  + rpds-py==0.30.0
+2026-09-20T19:53:12.0775244Z  + ruff==0.15.17
+2026-09-20T19:53:12.0776612Z  + setproctitle==1.3.7
+2026-09-20T19:53:12.0778155Z  + sse-starlette==3.4.4
+2026-09-20T19:53:12.0779478Z  + starlette==1.3.1
+2026-09-20T19:53:12.0781080Z  + textual==7.5.0
+2026-09-20T19:53:12.0782506Z  + typing-extensions==4.15.0
+2026-09-20T19:53:12.0784023Z  + typing-inspection==0.4.2
+2026-09-20T19:53:12.0785473Z  + uc-micro-py==2.0.0
+2026-09-20T19:53:12.0787008Z  + urllib3==2.7.0
+2026-09-20T19:53:12.0788390Z  + uvicorn==0.40.0
+2026-09-20T19:53:12.0790213Z  + zipp==3.23.0
+2026-09-20T19:53:12.3702870Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:53:12.3703344Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:53:12.3705021Z [36;1m$files = @('ci/native_runtime/admission_observation_values.py', 'ci/native_runtime/admission_observation_capture.py', 'ci/native_runtime/admission_observation_binding.py', 'ci/native_runtime/admission_observation_run.py', 'tests/test_admission_observation.py', 'tests/test_admission_observation_runner.py')[0m
+2026-09-20T19:53:12.3706396Z [36;1m& .venv/Scripts/ruff.exe check @files *> ../evidence/ruff.log[0m
+2026-09-20T19:53:12.3706950Z [36;1mif ($LASTEXITCODE -ne 0) { Get-Content ../evidence/ruff.log; exit $LASTEXITCODE }[0m
+2026-09-20T19:53:12.3707526Z [36;1m& .venv/Scripts/ruff.exe format --check @files *> ../evidence/format.log[0m
+2026-09-20T19:53:12.3708096Z [36;1mif ($LASTEXITCODE -ne 0) { Get-Content ../evidence/format.log; exit $LASTEXITCODE }[0m
+2026-09-20T19:53:12.3709053Z [36;1m& .venv/Scripts/basedpyright.exe --pythonversion 3.12 --pythonplatform Windows --outputjson @files > ../evidence/types.json[0m
+2026-09-20T19:53:12.3709836Z [36;1mif ($LASTEXITCODE -ne 0) { Get-Content ../evidence/types.json; exit $LASTEXITCODE }[0m
+2026-09-20T19:53:12.3710845Z [36;1m& .venv/Scripts/python.exe -m pytest tests/test_admission_observation.py tests/test_admission_observation_runner.py -q --tb=short --junitxml=../evidence/controls.xml *> ../evidence/controls.log[0m
+2026-09-20T19:53:12.3711686Z [36;1m$code = $LASTEXITCODE[0m
+2026-09-20T19:53:12.3711960Z [36;1mGet-Content ../evidence/controls.log[0m
+2026-09-20T19:53:12.3712273Z [36;1mif ($code -ne 0) { exit $code }[0m
+2026-09-20T19:53:12.3712603Z [36;1m[xml]$xml = Get-Content -Raw ../evidence/controls.xml[0m
+2026-09-20T19:53:12.3712993Z [36;1m$cases = @($xml.testsuites.testsuite.testcase)[0m
+2026-09-20T19:53:12.3713412Z [36;1m$names = @($cases | ForEach-Object { $_.classname + '::' + $_.name })[0m
+2026-09-20T19:53:12.3714599Z [36;1mif ($cases.Count -ne 34 -or @($names | Select-Object -Unique).Count -ne 34 -or [int]$xml.testsuites.testsuite.failures -ne 0 -or [int]$xml.testsuites.testsuite.errors -ne 0 -or [int]$xml.testsuites.testsuite.skipped -ne 0) { throw 'diagnostic_control_gate_failed' }[0m
+2026-09-20T19:53:12.3795089Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:53:12.3795473Z env:
+2026-09-20T19:53:12.3795772Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:53:12.3796227Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:53:12.3796652Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:53:12.3797072Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:53:12.3797706Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:12.3798172Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:53:12.3798648Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:12.3799068Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:12.3799495Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:12.3799871Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:53:12.3800174Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:53:12.3800471Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:53:12.3800765Z ##[endgroup]
+2026-09-20T19:53:25.4838615Z ..................................                                       [100%]
+2026-09-20T19:53:25.4841370Z 34 passed in 1.38s
+2026-09-20T19:53:25.5682188Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal
+2026-09-20T19:53:25.5682752Z [36;1mrustup toolchain install 1.88.0 --profile minimal[0m
+2026-09-20T19:53:25.5683388Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:25.5683721Z [36;1mrustup default 1.88.0[0m
+2026-09-20T19:53:25.5684043Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:25.5684422Z [36;1mrustc --version --verbose > evidence/rustc.txt[0m
+2026-09-20T19:53:25.5760478Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:53:25.5760855Z env:
+2026-09-20T19:53:25.5761140Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:53:25.5761595Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:53:25.5762027Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:53:25.5762440Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:53:25.5762915Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:25.5763395Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:53:25.5764074Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:25.5764601Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:25.5765030Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:25.5765391Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:53:25.5765708Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:53:25.5766012Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:53:25.5766309Z ##[endgroup]
+2026-09-20T19:53:26.5714943Z info: syncing channel updates for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T19:53:27.1622441Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T19:53:27.1746110Z info: downloading 3 components
+2026-09-20T19:53:35.0516676Z 
+2026-09-20T19:53:35.5274867Z   1.88.0-x86_64-pc-windows-msvc installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T19:53:35.5275281Z 
+2026-09-20T19:53:35.5633460Z info: using existing install for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T19:53:35.5676183Z info: default toolchain set to 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T19:53:35.5678275Z 
+2026-09-20T19:53:35.5904490Z   1.88.0-x86_64-pc-windows-msvc unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T19:53:35.5904876Z 
+2026-09-20T19:53:36.3088032Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:53:36.3088478Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:53:36.3088935Z [36;1m& ../candidate/.venv/Scripts/python.exe -m build --wheel --outdir pure-dist[0m
+2026-09-20T19:53:36.3089436Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3090142Z [36;1m$version = (& ../candidate/.venv/Scripts/python.exe scripts/sync_repo_version.py --check).Trim()[0m
+2026-09-20T19:53:36.3090810Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3091409Z [36;1m$env:HOL_GUARD_PACKAGE_VERSION = $version[0m
+2026-09-20T19:53:36.3092160Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime[0m
+2026-09-20T19:53:36.3092680Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3093227Z [36;1m& ./rust/target/release/hol-guard-runtime.exe self-test --json > ../evidence/build-self-test.json[0m
+2026-09-20T19:53:36.3093789Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3094351Z [36;1m& ./rust/target/release/hol-guard-runtime.exe capabilities --json > ../evidence/build-capabilities.json[0m
+2026-09-20T19:53:36.3094916Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3095364Z [36;1m$caps = Get-Content -Raw ../evidence/build-capabilities.json | ConvertFrom-Json[0m
+2026-09-20T19:53:36.3096941Z [36;1m& ../candidate/.venv/Scripts/python.exe scripts/build_native_hol_guard_wheel.py --wheel "pure-dist/hol_guard-$version-py3-none-any.whl" --runtime rust/target/release/hol-guard-runtime.exe --output-dir native-dist --version $version --platform-tag win_amd64 --target x86_64-pc-windows-msvc --source-sha $env:PRODUCT_SOURCE_SHA --rule-digest $caps.rule_digest[0m
+2026-09-20T19:53:36.3098413Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:53:36.3173877Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:53:36.3174258Z env:
+2026-09-20T19:53:36.3174536Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:53:36.3174967Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:53:36.3175382Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:53:36.3175792Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:53:36.3176219Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:36.3176689Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:53:36.3177179Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:36.3177601Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:36.3178013Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:53:36.3178369Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:53:36.3178662Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:53:36.3178949Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:53:36.3179306Z   HOL_GUARD_BUILD_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:53:36.3179622Z ##[endgroup]
+2026-09-20T19:53:36.8346479Z * Creating isolated environment: venv+pip...
+2026-09-20T19:53:41.7576185Z * Installing packages in isolated environment:
+2026-09-20T19:53:41.7576891Z   - hatchling<1.31
+2026-09-20T19:53:44.4814556Z * Getting build dependencies for wheel...
+2026-09-20T19:53:44.7873284Z * Building wheel...
+2026-09-20T19:53:46.4344853Z Successfully built hol_guard-3.0.1-py3-none-any.whl
+2026-09-20T19:53:47.2637272Z     Updating crates.io index
+2026-09-20T19:53:47.6740804Z  Downloading crates ...
+2026-09-20T19:53:47.7842006Z   Downloaded itoa v1.0.18
+2026-09-20T19:53:47.7996075Z   Downloaded windows-permissions v0.2.4
+2026-09-20T19:53:47.8408697Z   Downloaded windows-strings v0.4.2
+2026-09-20T19:53:47.8608285Z   Downloaded windows-threading v0.1.0
+2026-09-20T19:53:47.8712044Z   Downloaded zmij v1.0.23
+2026-09-20T19:53:47.8908092Z   Downloaded unicode-ident v1.0.24
+2026-09-20T19:53:47.9199324Z   Downloaded proc-macro2 v1.0.107
+2026-09-20T19:53:47.9503388Z   Downloaded getrandom v0.2.17
+2026-09-20T19:53:47.9797825Z   Downloaded serde v1.0.229
+2026-09-20T19:53:48.0092364Z   Downloaded typenum v1.20.1
+2026-09-20T19:53:48.0314596Z   Downloaded ntapi v0.4.3
+2026-09-20T19:53:48.0695057Z   Downloaded memchr v2.8.3
+2026-09-20T19:53:48.1950397Z   Downloaded serde_json v1.0.151
+2026-09-20T19:53:48.2595133Z   Downloaded sysinfo v0.37.2
+2026-09-20T19:53:48.3578876Z   Downloaded regex v1.13.1
+2026-09-20T19:53:48.3999419Z   Downloaded aho-corasick v1.1.5
+2026-09-20T19:53:48.4364578Z   Downloaded cc v1.4.4
+2026-09-20T19:53:48.4601515Z   Downloaded getrandom v0.3.4
+2026-09-20T19:53:48.4926554Z   Downloaded shlex v2.0.1
+2026-09-20T19:53:48.5053820Z   Downloaded syn v2.0.119
+2026-09-20T19:53:48.5863543Z   Downloaded syn v3.0.3
+2026-09-20T19:53:48.6651366Z   Downloaded regex-syntax v0.8.11
+2026-09-20T19:53:48.7022128Z   Downloaded serde_derive v1.0.229
+2026-09-20T19:53:48.7312155Z   Downloaded serde_core v1.0.229
+2026-09-20T19:53:48.7534730Z   Downloaded quote v1.0.47
+2026-09-20T19:53:48.7789045Z   Downloaded digest v0.10.7
+2026-09-20T19:53:48.7999789Z   Downloaded windows-link v0.1.3
+2026-09-20T19:53:48.8069387Z   Downloaded windows-future v0.2.1
+2026-09-20T19:53:48.8193670Z   Downloaded thiserror v2.0.20
+2026-09-20T19:53:48.8915608Z   Downloaded hex v0.4.3
+2026-09-20T19:53:48.9044109Z   Downloaded find-msvc-tools v0.1.11
+2026-09-20T19:53:48.9184780Z   Downloaded windows-numerics v0.2.0
+2026-09-20T19:53:48.9311720Z   Downloaded windows-interface v0.59.3
+2026-09-20T19:53:48.9399048Z   Downloaded windows-collections v0.2.0
+2026-09-20T19:53:48.9515376Z   Downloaded version_check v0.9.5
+2026-09-20T19:53:48.9622272Z   Downloaded thiserror-impl v2.0.20
+2026-09-20T19:53:48.9755148Z   Downloaded sha2 v0.10.9
+2026-09-20T19:53:49.0036754Z   Downloaded generic-array v0.14.7
+2026-09-20T19:53:49.0182263Z   Downloaded regex-automata v0.4.18
+2026-09-20T19:53:49.0994921Z   Downloaded crypto-common v0.1.7
+2026-09-20T19:53:49.1107718Z   Downloaded cfg-if v1.0.4
+2026-09-20T19:53:49.1239581Z   Downloaded block-buffer v0.10.4
+2026-09-20T19:53:49.1339555Z   Downloaded bitflags v1.3.2
+2026-09-20T19:53:49.1642895Z   Downloaded windows-result v0.3.4
+2026-09-20T19:53:49.1794995Z   Downloaded windows-implement v0.60.2
+2026-09-20T19:53:49.1875451Z   Downloaded windows-core v0.61.2
+2026-09-20T19:53:49.2144622Z   Downloaded untrusted v0.9.0
+2026-09-20T19:53:49.2283217Z   Downloaded fs2 v0.4.3
+2026-09-20T19:53:49.2371919Z   Downloaded libc v0.2.189
+2026-09-20T19:53:50.0644187Z   Downloaded cpufeatures v0.2.17
+2026-09-20T19:53:50.0794446Z   Downloaded winapi v0.3.9
+2026-09-20T19:53:50.3468107Z   Downloaded ring v0.17.14
+2026-09-20T19:53:50.6676808Z   Downloaded windows v0.61.3
+2026-09-20T19:53:53.0464844Z    Compiling proc-macro2 v1.0.107
+2026-09-20T19:53:53.0465702Z    Compiling unicode-ident v1.0.24
+2026-09-20T19:53:53.0467564Z    Compiling quote v1.0.47
+2026-09-20T19:53:53.0468679Z    Compiling version_check v0.9.5
+2026-09-20T19:53:53.1820383Z    Compiling typenum v1.20.1
+2026-09-20T19:53:53.4522698Z    Compiling generic-array v0.14.7
+2026-09-20T19:53:54.1033983Z    Compiling cfg-if v1.0.4
+2026-09-20T19:53:54.1619723Z    Compiling memchr v2.8.3
+2026-09-20T19:53:55.0672169Z    Compiling winapi v0.3.9
+2026-09-20T19:53:55.8902971Z    Compiling windows-link v0.1.3
+2026-09-20T19:53:55.9935027Z    Compiling serde_core v1.0.229
+2026-09-20T19:53:56.3707193Z    Compiling crypto-common v0.1.7
+2026-09-20T19:53:56.4275406Z    Compiling block-buffer v0.10.4
+2026-09-20T19:53:56.5375239Z    Compiling syn v3.0.3
+2026-09-20T19:53:56.6062569Z    Compiling digest v0.10.7
+2026-09-20T19:53:56.6103034Z    Compiling cpufeatures v0.2.17
+2026-09-20T19:53:56.6706844Z    Compiling syn v2.0.119
+2026-09-20T19:53:56.8883598Z    Compiling sha2 v0.10.9
+2026-09-20T19:54:00.1582376Z    Compiling hex v0.4.3
+2026-09-20T19:54:00.5994298Z    Compiling zmij v1.0.23
+2026-09-20T19:54:00.8323855Z    Compiling serde v1.0.229
+2026-09-20T19:54:00.9768815Z    Compiling serde_derive v1.0.229
+2026-09-20T19:54:01.2766179Z    Compiling windows-result v0.3.4
+2026-09-20T19:54:01.9166509Z    Compiling windows-strings v0.4.2
+2026-09-20T19:54:03.0549546Z    Compiling libc v0.2.189
+2026-09-20T19:54:03.2529296Z    Compiling windows-implement v0.60.2
+2026-09-20T19:54:03.5739923Z    Compiling windows-interface v0.59.3
+2026-09-20T19:54:04.3816979Z    Compiling thiserror v2.0.20
+2026-09-20T19:54:04.6504078Z    Compiling serde_json v1.0.151
+2026-09-20T19:54:04.8171027Z    Compiling windows-core v0.61.2
+2026-09-20T19:54:04.9798539Z    Compiling thiserror-impl v2.0.20
+2026-09-20T19:54:05.5742855Z    Compiling itoa v1.0.18
+2026-09-20T19:54:05.9795402Z    Compiling bitflags v1.3.2
+2026-09-20T19:54:06.0467167Z    Compiling windows-permissions v0.2.4
+2026-09-20T19:54:07.4362637Z    Compiling guard-rules v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-rules)
+2026-09-20T19:54:07.7188162Z    Compiling aho-corasick v1.1.5
+2026-09-20T19:54:07.7481531Z    Compiling regex-syntax v0.8.11
+2026-09-20T19:54:07.8079606Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T19:54:09.1498116Z    Compiling shlex v2.0.1
+2026-09-20T19:54:09.3858099Z    Compiling cc v1.4.4
+2026-09-20T19:54:11.4167146Z    Compiling regex-automata v0.4.18
+2026-09-20T19:54:11.7739573Z    Compiling guard-contracts v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-contracts)
+2026-09-20T19:54:19.3073489Z    Compiling guard-runtime-windows-process v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-runtime-windows-process)
+2026-09-20T19:54:19.8815865Z    Compiling windows-threading v0.1.0
+2026-09-20T19:54:20.0267899Z    Compiling ntapi v0.4.3
+2026-09-20T19:54:20.3004187Z    Compiling windows-future v0.2.1
+2026-09-20T19:54:20.9240649Z    Compiling guard-secure-fs v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-secure-fs)
+2026-09-20T19:54:22.3794792Z    Compiling regex v1.13.1
+2026-09-20T19:54:23.4710008Z    Compiling ring v0.17.14
+2026-09-20T19:54:24.2735354Z    Compiling windows-numerics v0.2.0
+2026-09-20T19:54:24.5784746Z    Compiling windows-collections v0.2.0
+2026-09-20T19:54:24.7069160Z    Compiling getrandom v0.3.4
+2026-09-20T19:54:24.9483953Z    Compiling windows v0.61.3
+2026-09-20T19:54:25.2795840Z    Compiling guard-scanner v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-scanner)
+2026-09-20T19:54:29.9460971Z    Compiling getrandom v0.2.17
+2026-09-20T19:54:30.1455198Z    Compiling untrusted v0.9.0
+2026-09-20T19:54:30.2792378Z    Compiling guard-hook-core v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-hook-core)
+2026-09-20T19:54:33.3524973Z    Compiling guard-command v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-command)
+2026-09-20T19:54:37.8316860Z    Compiling guard-policy-snapshot v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-policy-snapshot)
+2026-09-20T19:54:39.4264245Z    Compiling guard-rule-contract v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-rule-contract)
+2026-09-20T19:54:40.1381957Z    Compiling fs2 v0.4.3
+2026-09-20T19:55:14.3711587Z    Compiling sysinfo v0.37.2
+2026-09-20T19:55:22.4944200Z    Compiling hol-guard-runtime v0.1.0 (D:\a\hol-guard\hol-guard\product\rust\crates\guard-runtime)
+2026-09-20T19:55:44.6875480Z     Finished `release` profile [optimized] target(s) in 1m 57s
+2026-09-20T19:55:46.3924471Z native-dist\hol_guard-3.0.1-py3-none-win_amd64.whl
+2026-09-20T19:55:46.4493804Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:55:46.4494475Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:55:46.4495246Z [36;1m$wheels = @(Get-ChildItem ../product/native-dist/*.whl)[0m
+2026-09-20T19:55:46.4495998Z [36;1mif ($wheels.Count -ne 1) { throw 'exactly_one_new_wheel_required' }[0m
+2026-09-20T19:55:46.4496728Z [36;1muv pip uninstall --python .venv/Scripts/python.exe hol-guard[0m
+2026-09-20T19:55:46.4497402Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:55:46.4498489Z [36;1muv pip install --python .venv/Scripts/python.exe --no-deps --force-reinstall $wheels[0].FullName[0m
+2026-09-20T19:55:46.4499073Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T19:55:46.4574512Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:55:46.4574888Z env:
+2026-09-20T19:55:46.4575174Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:55:46.4575672Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:55:46.4576357Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:55:46.4576777Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:55:46.4577203Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:46.4577664Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:55:46.4578131Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:46.4578554Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:46.4579234Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:46.4579613Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:55:46.4579910Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:55:46.4580206Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:55:46.4580495Z ##[endgroup]
+2026-09-20T19:55:46.9884849Z Uninstalled 1 package in 123ms
+2026-09-20T19:55:46.9885746Z  - hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard/candidate)
+2026-09-20T19:55:47.1419794Z Resolved 1 package in 4ms
+2026-09-20T19:55:47.5792499Z Prepared 1 package in 437ms
+2026-09-20T19:55:47.5815930Z warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+2026-09-20T19:55:47.5816699Z          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+2026-09-20T19:55:47.5817513Z          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+2026-09-20T19:55:48.1661274Z Installed 1 package in 586ms
+2026-09-20T19:55:48.1662988Z  + hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard/product/native-dist/hol_guard-3.0.1-py3-none-win_amd64.whl)
+2026-09-20T19:55:48.2449930Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:55:48.2450507Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:55:48.2453899Z [36;1m$names = @('HOL_GUARD_NATIVE','HOL_GUARD_NATIVE_BINARY','HOL_GUARD_HOOK_FAST_PATH','HOL_GUARD_NATIVE_MODE','HOL_GUARD_NATIVE_ORACLE','HOL_GUARD_NATIVE_DIAGNOSTIC','HOL_GUARD_HOOK_FAST_PATH_SHADOW','HOL_GUARD_HOOK_SOURCE_REF','HOL_GUARD_HOOK_BINARY','HOL_GUARD_FAST_PATH','HOL_GUARD_BINARY','HOL_GUARD_ORACLE','HOL_GUARD_DIAGNOSTIC','HOL_GUARD_TEST_MODE','HOL_GUARD_PYTHON_ORACLE','HOL_GUARD_TEST_KEYRING_FILE','HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST','GUARD_NATIVE','GUARD_NATIVE_BINARY','GUARD_NATIVE_MODE','GUARD_NATIVE_ORACLE','GUARD_NATIVE_DIAGNOSTIC','GUARD_HOOK_FAST_PATH','GUARD_HOOK_FAST_PATH_SHADOW','GUARD_HOOK_SOURCE_REF','GUARD_HOOK_BINARY','GUARD_FAST_PATH','GUARD_BINARY','GUARD_ORACLE','GUARD_DIAGNOSTIC','GUARD_TEST_MODE','GUARD_TEST_KEYRING_FILE','GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','GUARD_PYTEST_DURATION_OUTPUT','PYTEST_CURRENT_TEST','PYTEST_ADDOPTS','PYTEST_PLUGINS','PYTHONPATH')[0m
+2026-09-20T19:55:48.2457357Z [36;1mforeach ($name in $names) { Remove-Item "Env:$name" -ErrorAction SilentlyContinue }[0m
+2026-09-20T19:55:48.2457955Z [36;1m$wheels = @(Get-ChildItem ../product/native-dist/*.whl)[0m
+2026-09-20T19:55:48.2458720Z [36;1mif ($wheels.Count -ne 1) { throw 'exactly_one_new_wheel_required' }[0m
+2026-09-20T19:55:48.2459828Z [36;1m& .venv/Scripts/python.exe ci/native_runtime/admission_observation_run.py --wheel $wheels[0].FullName --output ../evidence *> ../evidence/original-probe.log[0m
+2026-09-20T19:55:48.2460606Z [36;1m$code = $LASTEXITCODE[0m
+2026-09-20T19:55:48.2461516Z [36;1m@{driver_invocations=1; returncode=$code; instrumented_diagnostic=$true; timing_qualification=$false; historical_failed_executable=$false} | ConvertTo-Json | Set-Content ../evidence/original-probe-exit.json[0m
+2026-09-20T19:55:48.2462494Z [36;1mGet-Content ../evidence/original-probe.log[0m
+2026-09-20T19:55:48.2462884Z [36;1mexit $code[0m
+2026-09-20T19:55:48.2536545Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:55:48.2537191Z env:
+2026-09-20T19:55:48.2537549Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:55:48.2538066Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:55:48.2538552Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:55:48.2539126Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:55:48.2539794Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:48.2540674Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:55:48.2541313Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:48.2541913Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:48.2542399Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:55:48.2542812Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:55:48.2543145Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:55:48.2543504Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:55:48.2543864Z ##[endgroup]
+2026-09-20T19:56:04.0713875Z {"command_authority_fixture": {"enrollment_flow": "not_exercised", "provisioning": "isolated_ci_generated_key_empty_authority", "verified_health": "protected"}, "corpus_decisions": 21, "corpus_scope": "normalized_daemon_ingress", "default_mode": "auto", "evidence_failure_diagnostics": {"all_evidence": {}, "native_receipts": {}}, "fail_safe_decisions": 0, "fast_path": "enabled", "mode_invariants": {"off": {"decision": null, "python_oracle": false, "reason_code": "native_hook_disabled"}, "shadow": {"decision": null, "python_oracle": false, "reason_code": "native_shadow_diagnostic_disabled"}}, "oneshot_decisions": 0, "python_semantic_decisions": 0, "reason_code_counts": {"native_policy_warning": 15}, "receipt_metrics": {"accepted": 21, "deduped": 0, "dropped": 0, "durable_pending": 0, "failures": 0, "processed": 21}, "resident_decisions": 21, "resident_share": 1.0, "rollback": "off", "route_receipts": [{"event": "PreToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PostToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PreToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PostToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PreToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PostToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PreToolUse", "harness": "grok", "route": "native_resident"}, {"event": "PreToolUse", "harness": "hermes", "route": "native_resident"}, {"event": "PreToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PostToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PreToolUse", "harness": "openclaw", "route": "native_resident"}, {"event": "PreToolUse", "harness": "opencode", "route": "native_resident"}, {"event": "PreToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "zcode", "route": "native_resident"}], "runtime_reason": "native_ready", "schema": "hol-guard.native-default-installed-receipt.v1", "target": "x86_64-windows"}
+2026-09-20T19:56:04.1061970Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:56:04.1062432Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:56:04.1062916Z [36;1m$report = Get-Content -Raw evidence/admission-observation.json | ConvertFrom-Json[0m
+2026-09-20T19:56:04.1063746Z [36;1m$binding = Get-Content -Raw evidence/binding-comparison.json | ConvertFrom-Json[0m
+2026-09-20T19:56:04.1065309Z [36;1mif ($report.observation_complete -ne $true -or $report.callbacks_restored -ne $true -or $report.original_probe_invocations -ne 1 -or @($report.deliveries).Count -ne 21 -or $binding.equal -ne $true) { throw 'admission_observation_incomplete' }[0m
+2026-09-20T19:56:04.1137183Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:56:04.1137539Z env:
+2026-09-20T19:56:04.1137820Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:56:04.1138270Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:56:04.1138714Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:56:04.1139125Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:56:04.1139537Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.1140010Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:56:04.1140495Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.1140945Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.1141367Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.1141731Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:56:04.1142031Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:56:04.1142322Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:56:04.1142618Z ##[endgroup]
+2026-09-20T19:56:04.5415726Z ##[group]Run $ErrorActionPreference = 'Stop'
+2026-09-20T19:56:04.5416171Z [36;1m$ErrorActionPreference = 'Stop'[0m
+2026-09-20T19:56:04.5416524Z [36;1m$driver = (git -C driver rev-parse HEAD).Trim()[0m
+2026-09-20T19:56:04.5416912Z [36;1m$source = (git -C candidate rev-parse HEAD).Trim()[0m
+2026-09-20T19:56:04.5417319Z [36;1m$tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()[0m
+2026-09-20T19:56:04.5417729Z [36;1m$product = (git -C product rev-parse HEAD).Trim()[0m
+2026-09-20T19:56:04.5418143Z [36;1m$productTree = (git -C product rev-parse 'HEAD^{tree}').Trim()[0m
+2026-09-20T19:56:04.5419208Z [36;1m$dirty = @(git -C candidate diff --name-only) + @(git -C candidate diff --cached --name-only) + @(git -C driver diff --name-only) + @(git -C driver diff --cached --name-only) + @(git -C product diff --name-only) + @(git -C product diff --cached --name-only)[0m
+2026-09-20T19:56:04.5420865Z [36;1m@{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; product=$product; product_tree=$productTree; tracked_changes=$dirty} | ConvertTo-Json | Set-Content evidence/checkouts-after.json[0m
+2026-09-20T19:56:04.5422608Z [36;1mif ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $product -ne $env:PRODUCT_SOURCE_SHA -or $productTree -ne $env:PRODUCT_SOURCE_TREE -or $dirty.Count -ne 0) { throw 'final_checkout_binding_failed' }[0m
+2026-09-20T19:56:04.5494886Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T19:56:04.5495244Z env:
+2026-09-20T19:56:04.5495526Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:56:04.5495980Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:56:04.5496401Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:56:04.5496819Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:56:04.5497252Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.5497713Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:56:04.5498178Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.5498597Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.5499015Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:04.5499555Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:56:04.5499849Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:56:04.5500143Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:56:04.5500430Z ##[endgroup]
+2026-09-20T19:56:05.8649018Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T19:56:05.8649957Z with:
+2026-09-20T19:56:05.8650443Z   name: windows-exact400-admission-observation
+2026-09-20T19:56:05.8651113Z   path: evidence/
+product/native-dist/*.whl
+
+2026-09-20T19:56:05.8651701Z   if-no-files-found: error
+2026-09-20T19:56:05.8652190Z   retention-days: 14
+2026-09-20T19:56:05.8652642Z   compression-level: 6
+2026-09-20T19:56:05.8653097Z   overwrite: false
+2026-09-20T19:56:05.8653578Z   include-hidden-files: false
+2026-09-20T19:56:05.8653906Z   archive: true
+2026-09-20T19:56:05.8654164Z env:
+2026-09-20T19:56:05.8654506Z   DIAGNOSTIC_SOURCE_SHA: cae549421ecaea55715adcad32afd7d9043a172c
+2026-09-20T19:56:05.8655052Z   DIAGNOSTIC_SOURCE_TREE: 48e237aa34fb80b27f3b11ab609c8705cc96c3e1
+2026-09-20T19:56:05.8655540Z   PRODUCT_SOURCE_SHA: 4001185e4f39cad51fd5eab314bf02b86b8a1674
+2026-09-20T19:56:05.8656082Z   PRODUCT_SOURCE_TREE: 7a328609488ffefecd3cdd12a9c7adba6a591e97
+2026-09-20T19:56:05.8656558Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:05.8657086Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T19:56:05.8657616Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:05.8658097Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:05.8658578Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T19:56:05.8659014Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T19:56:05.8659402Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T19:56:05.8659755Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T19:56:05.8660118Z ##[endgroup]
+2026-09-20T19:56:06.0478895Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T19:56:06.0482068Z The least common ancestor is D:\a\hol-guard\hol-guard. This will be the root directory of the artifact
+2026-09-20T19:56:06.0482963Z With the provided path, there will be 18 files uploaded
+2026-09-20T19:56:06.0487724Z Artifact name is valid!
+2026-09-20T19:56:06.0489041Z Root directory input is valid!
+2026-09-20T19:56:06.4528127Z Uploading artifact: windows-exact400-admission-observation.zip
+2026-09-20T19:56:06.4574175Z Beginning upload of artifact content to blob storage
+2026-09-20T19:56:08.0868823Z Uploaded bytes 8281145
+2026-09-20T19:56:08.1626319Z Finished uploading artifact content to blob storage!
+2026-09-20T19:56:08.1628818Z SHA256 digest of uploaded artifact is c2e663bd5c8e4b3fb578952b7177fe07dba384e99a0e99b731d39575e64788f4
+2026-09-20T19:56:08.1629528Z Finalizing artifact upload
+2026-09-20T19:56:08.5407863Z Artifact windows-exact400-admission-observation successfully finalized. Artifact ID 10611323937
+2026-09-20T19:56:08.5408885Z Artifact windows-exact400-admission-observation has been successfully uploaded! Final size is 8281145 bytes. Artifact ID is 10611323937
+2026-09-20T19:56:08.5416265Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35533705972/artifacts/10611323937
+2026-09-20T19:56:08.5781884Z Post job cleanup.
+2026-09-20T19:56:08.7198953Z UV_PYTHON_INSTALL_DIR is already set to D:\a\_temp\uv-python-dir
+2026-09-20T19:56:08.7474172Z Post job cleanup.
+2026-09-20T19:56:08.9260098Z Post job cleanup.
+2026-09-20T19:56:09.1220182Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:56:09.1485431Z git version 2.55.0.windows.5
+2026-09-20T19:56:09.1553203Z Temporarily overriding HOME='D:\a\_temp\bfda91d4-4212-44f5-9e8a-61bc8918aac2' before making global git config changes
+2026-09-20T19:56:09.1554951Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:56:09.1565874Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\product
+2026-09-20T19:56:09.1918647Z Removing SSH command configuration
+2026-09-20T19:56:09.1930563Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:56:09.2229641Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:56:09.7563945Z Removing HTTP extra header
+2026-09-20T19:56:09.7574361Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:56:09.7876466Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:56:10.3338165Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:56:10.3351113Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:56:10.3606495Z includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path
+2026-09-20T19:56:10.3607116Z includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path
+2026-09-20T19:56:10.3644360Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path
+2026-09-20T19:56:10.3889359Z D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:56:10.3928575Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:56:10.4222900Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path
+2026-09-20T19:56:10.4473933Z D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:56:10.4514632Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/product/.git/worktrees/*.path D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config
+2026-09-20T19:56:10.4803826Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:56:11.0238755Z Removing credentials config 'D:\a\_temp\git-credentials-1e3a147d-befe-42e1-abc5-93ee41a8cabc.config'
+2026-09-20T19:56:11.0554045Z Post job cleanup.
+2026-09-20T19:56:11.2498553Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:56:11.2763778Z git version 2.55.0.windows.5
+2026-09-20T19:56:11.2833719Z Temporarily overriding HOME='D:\a\_temp\36223905-73c9-43e0-8084-07bff9b88b4b' before making global git config changes
+2026-09-20T19:56:11.2835033Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:56:11.2844646Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\candidate
+2026-09-20T19:56:11.3131058Z Removing SSH command configuration
+2026-09-20T19:56:11.3142166Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:56:11.3442690Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:56:11.8913792Z Removing HTTP extra header
+2026-09-20T19:56:11.8927972Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:56:11.9247197Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:56:12.4424951Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:56:12.4437551Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:56:12.4709520Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T19:56:12.4710382Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T19:56:12.4756394Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T19:56:12.5013637Z D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:56:12.5054101Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:56:12.5349189Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T19:56:12.5600970Z D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:56:12.5640069Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config
+2026-09-20T19:56:12.5930371Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:56:13.1130422Z Removing credentials config 'D:\a\_temp\git-credentials-d02c4f1b-442c-4cd1-9f4d-5a8fe1630502.config'
+2026-09-20T19:56:13.1470445Z Post job cleanup.
+2026-09-20T19:56:13.3416402Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T19:56:13.3690084Z git version 2.55.0.windows.5
+2026-09-20T19:56:13.3754824Z Temporarily overriding HOME='D:\a\_temp\5988cf0d-8595-4b0d-90fd-8e6ebb70f55d' before making global git config changes
+2026-09-20T19:56:13.3756247Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:56:13.3766539Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\driver
+2026-09-20T19:56:13.4057626Z Removing SSH command configuration
+2026-09-20T19:56:13.4068773Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:56:13.4372908Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T19:56:13.9701250Z Removing HTTP extra header
+2026-09-20T19:56:13.9712449Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:56:14.0029436Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T19:56:14.5372489Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:56:14.5385411Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:56:14.5643704Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:56:14.5644529Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:56:14.5684878Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:56:14.5946936Z D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:56:14.5990122Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:56:14.6300873Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:56:14.6578148Z D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:56:14.6625602Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config
+2026-09-20T19:56:14.6938312Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T19:56:15.2248938Z Removing credentials config 'D:\a\_temp\git-credentials-5838bd9a-2bea-42fe-adc7-b32d0f62474e.config'
+2026-09-20T19:56:15.2445692Z Cleaning up orphan processes
+2026-09-20T19:56:15.2975027Z Terminate orphan process: pid (8628) (vctip)

@@ -1,0 +1,694 @@
+﻿2026-09-20T19:55:41.6042590Z Current runner version: '2.337.0'
+2026-09-20T19:55:41.6058060Z ##[group]Runner Image Provisioner
+2026-09-20T19:55:41.6058690Z Hosted Compute Agent
+2026-09-20T19:55:41.6059080Z Version: 20260828.587
+2026-09-20T19:55:41.6059570Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T19:55:41.6060130Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T19:55:41.6060670Z Worker ID: {43088f41-584e-4d90-97a6-3314e420ecff}
+2026-09-20T19:55:41.6061180Z Azure Region: westus
+2026-09-20T19:55:41.6061590Z ##[endgroup]
+2026-09-20T19:55:41.6062550Z ##[group]Operating System
+2026-09-20T19:55:41.6062950Z macOS
+2026-09-20T19:55:41.6063280Z 15.7.9
+2026-09-20T19:55:41.6063600Z 24G830
+2026-09-20T19:55:41.6063920Z ##[endgroup]
+2026-09-20T19:55:41.6064270Z ##[group]Runner Image
+2026-09-20T19:55:41.6064640Z Image: macos-15-arm64
+2026-09-20T19:55:41.6065000Z Version: 20260907.0337.1
+2026-09-20T19:55:41.6065780Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+2026-09-20T19:55:41.6066750Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+2026-09-20T19:55:41.6067370Z ##[endgroup]
+2026-09-20T19:55:41.6068090Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T19:55:41.6069040Z Actions: read
+2026-09-20T19:55:41.6069380Z Contents: read
+2026-09-20T19:55:41.6069720Z Metadata: read
+2026-09-20T19:55:41.6070060Z ##[endgroup]
+2026-09-20T19:55:41.6071280Z Secret source: Actions
+2026-09-20T19:55:41.6071880Z Cache mode: write
+2026-09-20T19:55:41.6072300Z Prepare workflow directory
+2026-09-20T19:55:41.6398830Z Prepare all required actions
+2026-09-20T19:55:41.6433820Z Getting action download info
+2026-09-20T19:55:41.9330310Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T19:55:42.1223570Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T19:55:42.1946110Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-20T19:55:42.2720440Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T19:55:43.0640900Z Download action repository 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' (SHA:3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c)
+2026-09-20T19:55:43.7656670Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T19:55:43.9342480Z Complete job name: correctness (mac-arm64, macos-15, 10611690703)
+2026-09-20T19:55:43.9848240Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:55:43.9849720Z with:
+2026-09-20T19:55:43.9850260Z   path: driver
+2026-09-20T19:55:43.9850810Z   fetch-depth: 4
+2026-09-20T19:55:43.9851410Z   persist-credentials: false
+2026-09-20T19:55:43.9852110Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:55:43.9858600Z   token: ***
+2026-09-20T19:55:43.9859150Z   ssh-strict: true
+2026-09-20T19:55:43.9859710Z   ssh-user: git
+2026-09-20T19:55:43.9860260Z   clean: true
+2026-09-20T19:55:43.9860850Z   sparse-checkout-cone-mode: true
+2026-09-20T19:55:43.9861580Z   fetch-tags: false
+2026-09-20T19:55:43.9862200Z   show-progress: true
+2026-09-20T19:55:43.9862770Z   lfs: false
+2026-09-20T19:55:43.9863350Z   submodules: false
+2026-09-20T19:55:43.9864000Z   set-safe-directory: true
+2026-09-20T19:55:43.9864910Z env:
+2026-09-20T19:55:43.9865620Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:43.9866420Z   CELL: mac-arm64
+2026-09-20T19:55:43.9867140Z ##[endgroup]
+2026-09-20T19:55:44.2683560Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:55:44.2685870Z ##[group]Getting Git version info
+2026-09-20T19:55:44.2686810Z Working directory is '/Users/runner/work/hol-guard/hol-guard/driver'
+2026-09-20T19:55:44.2688850Z [command]/opt/homebrew/bin/git version
+2026-09-20T19:55:44.3482790Z git version 2.55.0
+2026-09-20T19:55:44.3495440Z ##[endgroup]
+2026-09-20T19:55:44.3501110Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/3e9ee3ef-908a-4469-9d0e-84ba7430327c/.gitconfig'
+2026-09-20T19:55:44.3506280Z Temporarily overriding HOME='/Users/runner/work/_temp/3e9ee3ef-908a-4469-9d0e-84ba7430327c' before making global git config changes
+2026-09-20T19:55:44.3508020Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:55:44.3509600Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:55:44.3605330Z ##[group]Determining repository object format
+2026-09-20T19:55:44.3606720Z ##[endgroup]
+2026-09-20T19:55:44.3607680Z ##[group]Initializing the repository
+2026-09-20T19:55:44.3610000Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:55:44.3796810Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T19:55:44.3798560Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T19:55:44.3799820Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T19:55:44.3800780Z hint: call:
+2026-09-20T19:55:44.3801320Z hint:
+2026-09-20T19:55:44.3802000Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T19:55:44.3802800Z hint:
+2026-09-20T19:55:44.3803550Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T19:55:44.3804740Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T19:55:44.3805730Z hint:
+2026-09-20T19:55:44.3806320Z hint: 	git branch -m <name>
+2026-09-20T19:55:44.3806960Z hint:
+2026-09-20T19:55:44.3807770Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T19:55:44.3809120Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/driver/.git/
+2026-09-20T19:55:44.3811550Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:55:44.3869940Z ##[endgroup]
+2026-09-20T19:55:44.3871040Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:55:44.3872000Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T19:55:44.3931400Z ##[endgroup]
+2026-09-20T19:55:44.3932610Z ##[group]Setting up auth
+2026-09-20T19:55:44.3933310Z Removing SSH command configuration
+2026-09-20T19:55:44.3935330Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:55:44.3995170Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:55:44.4830720Z Removing HTTP extra header
+2026-09-20T19:55:44.4832030Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:55:44.4883090Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:55:44.5770150Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:55:44.5773170Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:55:44.5898710Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:55:44.7074870Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T19:55:44.7139720Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:44.7198180Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:44.7259470Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:44.7322890Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:44.7377630Z ##[endgroup]
+2026-09-20T19:55:44.7378790Z ##[group]Fetching the repository
+2026-09-20T19:55:44.7382670Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=4 origin +a9b51e6ddd80e8975d9e16c050cd2fd78d074560:refs/remotes/origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:47.5532700Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:55:47.5533420Z  * [new ref]         a9b51e6ddd80e8975d9e16c050cd2fd78d074560 -> origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:47.5540720Z [command]/opt/homebrew/bin/git branch --list --remote origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:47.5608190Z   origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:47.5613910Z [command]/opt/homebrew/bin/git rev-parse refs/remotes/origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:47.5662400Z a9b51e6ddd80e8975d9e16c050cd2fd78d074560
+2026-09-20T19:55:47.5663820Z ##[endgroup]
+2026-09-20T19:55:47.5664140Z ##[group]Determining the checkout info
+2026-09-20T19:55:47.5664830Z ##[endgroup]
+2026-09-20T19:55:47.5668600Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T19:55:47.5766130Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:55:47.5830030Z ##[group]Checking out the ref
+2026-09-20T19:55:47.5833190Z [command]/opt/homebrew/bin/git checkout --progress --force -B codex/pr2974-pi-encrypted-installed-20260920-v1 refs/remotes/origin/codex/pr2974-pi-encrypted-installed-20260920-v1
+2026-09-20T19:55:48.2784330Z Switched to a new branch 'codex/pr2974-pi-encrypted-installed-20260920-v1'
+2026-09-20T19:55:48.2841930Z branch 'codex/pr2974-pi-encrypted-installed-20260920-v1' set up to track 'origin/codex/pr2974-pi-encrypted-installed-20260920-v1'.
+2026-09-20T19:55:48.2905450Z ##[endgroup]
+2026-09-20T19:55:48.2984270Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T19:55:48.3038050Z a9b51e6ddd80e8975d9e16c050cd2fd78d074560
+2026-09-20T19:55:48.3045670Z ##[group]Removing auth
+2026-09-20T19:55:48.3047090Z Removing SSH command configuration
+2026-09-20T19:55:48.3063360Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:55:48.3172880Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:55:48.5094040Z Removing HTTP extra header
+2026-09-20T19:55:48.5159450Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:55:48.5184670Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:55:48.6023040Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:55:48.6030640Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:55:48.6174550Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:55:48.6182030Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:55:48.6195090Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:55:48.6214380Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:55:48.6327570Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:55:48.6354610Z /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6368570Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git.path /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6450710Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:55:48.6502700Z /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6714990Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6792370Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:55:48.6793030Z /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6794320Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6795810Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:55:48.6824450Z /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6830390Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config
+2026-09-20T19:55:48.6896950Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:55:48.7736380Z Removing credentials config '/Users/runner/work/_temp/git-credentials-afc70756-4995-4686-8a94-672cad4fbe8a.config'
+2026-09-20T19:55:48.7741840Z ##[endgroup]
+2026-09-20T19:55:48.8464850Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:55:48.8465250Z with:
+2026-09-20T19:55:48.8465430Z   ref: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:48.8465650Z   path: artifact-source
+2026-09-20T19:55:48.8465830Z   fetch-depth: 1
+2026-09-20T19:55:48.8478260Z   persist-credentials: false
+2026-09-20T19:55:48.8478490Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:55:48.8480670Z   token: ***
+2026-09-20T19:55:48.8480810Z   ssh-strict: true
+2026-09-20T19:55:48.8480950Z   ssh-user: git
+2026-09-20T19:55:48.8481090Z   clean: true
+2026-09-20T19:55:48.8481240Z   sparse-checkout-cone-mode: true
+2026-09-20T19:55:48.8481420Z   fetch-tags: false
+2026-09-20T19:55:48.8481560Z   show-progress: true
+2026-09-20T19:55:48.8481710Z   lfs: false
+2026-09-20T19:55:48.8481840Z   submodules: false
+2026-09-20T19:55:48.8481990Z   set-safe-directory: true
+2026-09-20T19:55:48.8482150Z env:
+2026-09-20T19:55:48.8482350Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:48.8482570Z   CELL: mac-arm64
+2026-09-20T19:55:48.8482950Z ##[endgroup]
+2026-09-20T19:55:49.0041710Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:55:49.0043470Z ##[group]Getting Git version info
+2026-09-20T19:55:49.0045390Z Working directory is '/Users/runner/work/hol-guard/hol-guard/artifact-source'
+2026-09-20T19:55:49.0056500Z [command]/opt/homebrew/bin/git version
+2026-09-20T19:55:49.0114760Z git version 2.55.0
+2026-09-20T19:55:49.0125830Z ##[endgroup]
+2026-09-20T19:55:49.0131440Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/2ae0a871-7d51-40fd-b594-8dea7f07ae7a/.gitconfig'
+2026-09-20T19:55:49.0198870Z Temporarily overriding HOME='/Users/runner/work/_temp/2ae0a871-7d51-40fd-b594-8dea7f07ae7a' before making global git config changes
+2026-09-20T19:55:49.0201380Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:55:49.0204400Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/artifact-source
+2026-09-20T19:55:49.0378690Z ##[group]Determining repository object format
+2026-09-20T19:55:49.0380000Z ##[endgroup]
+2026-09-20T19:55:49.0380360Z ##[group]Initializing the repository
+2026-09-20T19:55:49.0383470Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard/artifact-source
+2026-09-20T19:55:49.0475250Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T19:55:49.0477490Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T19:55:49.0477990Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T19:55:49.0479900Z hint: call:
+2026-09-20T19:55:49.0480100Z hint:
+2026-09-20T19:55:49.0480890Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T19:55:49.0487890Z hint:
+2026-09-20T19:55:49.0496830Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T19:55:49.0497340Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T19:55:49.0497740Z hint:
+2026-09-20T19:55:49.0497950Z hint: 	git branch -m <name>
+2026-09-20T19:55:49.0498180Z hint:
+2026-09-20T19:55:49.0498480Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T19:55:49.0499070Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/artifact-source/.git/
+2026-09-20T19:55:49.0500120Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:55:49.0546690Z ##[endgroup]
+2026-09-20T19:55:49.0547050Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:55:49.0550140Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T19:55:49.0606210Z ##[endgroup]
+2026-09-20T19:55:49.0606560Z ##[group]Setting up auth
+2026-09-20T19:55:49.0606880Z Removing SSH command configuration
+2026-09-20T19:55:49.0610980Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:55:49.0667170Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:55:49.1616470Z Removing HTTP extra header
+2026-09-20T19:55:49.1620840Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:55:49.1685550Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:55:49.2966550Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:55:49.3068670Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:55:49.3308390Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:55:49.3978750Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T19:55:49.4033500Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git.path /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:49.4081760Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:49.4135070Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/artifact-source/.git.path /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:49.4183870Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/artifact-source/.git/worktrees/*.path /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:49.4231960Z ##[endgroup]
+2026-09-20T19:55:49.4232330Z ##[group]Fetching the repository
+2026-09-20T19:55:49.4238650Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:52.3186640Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:55:52.3187140Z  * branch            37fd05b37685d0f4b37f836608820cf577a06602 -> FETCH_HEAD
+2026-09-20T19:55:52.3197270Z [command]/opt/homebrew/bin/git rev-parse --verify --quiet 37fd05b37685d0f4b37f836608820cf577a06602^{object}
+2026-09-20T19:55:52.3265590Z 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:52.3267700Z ##[endgroup]
+2026-09-20T19:55:52.3268000Z ##[group]Determining the checkout info
+2026-09-20T19:55:52.3268570Z ##[endgroup]
+2026-09-20T19:55:52.3271760Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T19:55:52.3347840Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:55:52.3405050Z ##[group]Checking out the ref
+2026-09-20T19:55:52.3407600Z [command]/opt/homebrew/bin/git checkout --progress --force 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:52.9313460Z HEAD is now at 37fd05b Merge 4001185e4f39cad51fd5eab314bf02b86b8a1674 into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T19:55:52.9323930Z ##[endgroup]
+2026-09-20T19:55:52.9402910Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T19:55:52.9466260Z 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:52.9559150Z ##[group]Removing auth
+2026-09-20T19:55:52.9559580Z Removing SSH command configuration
+2026-09-20T19:55:52.9561030Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:55:52.9562620Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:55:53.0346080Z Removing HTTP extra header
+2026-09-20T19:55:53.0348400Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:55:53.0397350Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:55:53.1017020Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:55:53.1019220Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:55:53.1062630Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git.path
+2026-09-20T19:55:53.1063460Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git/worktrees/*.path
+2026-09-20T19:55:53.1063940Z includeif.gitdir:/github/workspace/artifact-source/.git.path
+2026-09-20T19:55:53.1064320Z includeif.gitdir:/github/workspace/artifact-source/.git/worktrees/*.path
+2026-09-20T19:55:53.1067790Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git.path
+2026-09-20T19:55:53.1109120Z /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1114970Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git.path /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1161390Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git/worktrees/*.path
+2026-09-20T19:55:53.1200430Z /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1204980Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/artifact-source/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1250580Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/artifact-source/.git.path
+2026-09-20T19:55:53.1294790Z /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1299080Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/artifact-source/.git.path /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1346200Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/artifact-source/.git/worktrees/*.path
+2026-09-20T19:55:53.1389240Z /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1393210Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/artifact-source/.git/worktrees/*.path /github/runner_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config
+2026-09-20T19:55:53.1444160Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:55:53.2173790Z Removing credentials config '/Users/runner/work/_temp/git-credentials-7fb08b46-037c-48a7-87de-116a066a877d.config'
+2026-09-20T19:55:53.2179320Z ##[endgroup]
+2026-09-20T19:55:53.2313740Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T19:55:53.2314030Z with:
+2026-09-20T19:55:53.2314230Z   python-version: 3.12
+2026-09-20T19:55:53.2314420Z   check-latest: false
+2026-09-20T19:55:53.2316410Z   token: ***
+2026-09-20T19:55:53.2316540Z   update-environment: true
+2026-09-20T19:55:53.2316740Z   allow-prereleases: false
+2026-09-20T19:55:53.2316960Z   freethreaded: false
+2026-09-20T19:55:53.2317140Z env:
+2026-09-20T19:55:53.2317330Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:53.2317570Z   CELL: mac-arm64
+2026-09-20T19:55:53.2317800Z ##[endgroup]
+2026-09-20T19:55:53.3467070Z ##[group]Installed versions
+2026-09-20T19:55:53.3522270Z Successfully set up CPython (3.12.10)
+2026-09-20T19:55:53.3522730Z ##[endgroup]
+2026-09-20T19:55:53.3613000Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-20T19:55:53.3614030Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-09-20T19:55:53.3614320Z with:
+2026-09-20T19:55:53.3614450Z   node-version: 22
+2026-09-20T19:55:53.3614600Z   always-auth: false
+2026-09-20T19:55:53.3614750Z   check-latest: false
+2026-09-20T19:55:53.3616640Z   token: ***
+2026-09-20T19:55:53.3616790Z env:
+2026-09-20T19:55:53.3616960Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:53.3617180Z   CELL: mac-arm64
+2026-09-20T19:55:53.3617420Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.3617840Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:53.3618400Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.3618750Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.3619070Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.3619340Z ##[endgroup]
+2026-09-20T19:55:53.4781890Z Found in cache @ /Users/runner/hostedtoolcache/node/22.23.2/arm64
+2026-09-20T19:55:53.4785970Z (node:3159) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-20T19:55:53.4786600Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T19:55:53.4788440Z ##[group]Environment details
+2026-09-20T19:55:53.9104850Z node: v22.23.2
+2026-09-20T19:55:53.9105320Z npm: 10.9.8
+2026-09-20T19:55:53.9105530Z yarn: 1.22.22
+2026-09-20T19:55:53.9106090Z ##[endgroup]
+2026-09-20T19:55:53.9265600Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T19:55:53.9266580Z with:
+2026-09-20T19:55:53.9267190Z   version: 0.9.26
+2026-09-20T19:55:53.9267670Z   enable-cache: false
+2026-09-20T19:55:53.9268210Z   activate-environment: false
+2026-09-20T19:55:53.9268910Z   no-project: false
+2026-09-20T19:55:53.9269860Z   working-directory: /Users/runner/work/hol-guard/hol-guard
+2026-09-20T19:55:53.9272560Z   github-token: ***
+2026-09-20T19:55:53.9273150Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T19:55:53.9274740Z   restore-cache: true
+2026-09-20T19:55:53.9275030Z   save-cache: true
+2026-09-20T19:55:53.9275350Z   prune-cache: true
+2026-09-20T19:55:53.9275550Z   cache-python: false
+2026-09-20T19:55:53.9275800Z   ignore-nothing-to-cache: false
+2026-09-20T19:55:53.9276120Z   ignore-empty-workdir: false
+2026-09-20T19:55:53.9276420Z   download-from-astral-mirror: true
+2026-09-20T19:55:53.9276700Z   add-problem-matchers: true
+2026-09-20T19:55:53.9276930Z   quiet: false
+2026-09-20T19:55:53.9277130Z   resolution-strategy: highest
+2026-09-20T19:55:53.9277420Z env:
+2026-09-20T19:55:53.9277620Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:53.9277940Z   CELL: mac-arm64
+2026-09-20T19:55:53.9279300Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.9279780Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:53.9280250Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.9280640Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.9281070Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:53.9281390Z ##[endgroup]
+2026-09-20T19:55:54.0815510Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T19:55:54.1645490Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-aarch64-apple-darwin.tar.gz" ...
+2026-09-20T19:55:54.4045000Z [command]/usr/bin/tar xz -C /Users/runner/work/_temp/e73f764b-4d5c-4c87-b402-827e6281a342 -f /Users/runner/work/_temp/658baad3-4976-4a33-9c5e-8f33061661e1
+2026-09-20T19:55:54.5711750Z Added /Users/runner/.local/bin to the path
+2026-09-20T19:55:54.5717190Z Added /Users/runner/hostedtoolcache/uv/0.9.26/aarch64 to the path
+2026-09-20T19:55:54.5721610Z Set UV_PYTHON_INSTALL_DIR to /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:55:54.5722200Z Added /Users/runner/work/_temp/uv-python-dir to the path
+2026-09-20T19:55:54.5746000Z Successfully installed uv version 0.9.26
+2026-09-20T19:55:54.9691740Z ##[group]Run mkdir "$GITHUB_WORKSPACE/pi-encrypted-evidence"
+2026-09-20T19:55:54.9692120Z [36;1mmkdir "$GITHUB_WORKSPACE/pi-encrypted-evidence"[0m
+2026-09-20T19:55:54.9692580Z [36;1mcp scripts/ci/pi_installed_encrypted/input-contract.json "$GITHUB_WORKSPACE/pi-encrypted-evidence/"[0m
+2026-09-20T19:55:54.9693080Z [36;1mecho "OUT=$GITHUB_WORKSPACE/pi-encrypted-evidence" >> "$GITHUB_ENV"[0m
+2026-09-20T19:55:54.9693650Z [36;1mecho "DRIVER_TREE=$(git rev-parse HEAD^{tree})" >> "$GITHUB_ENV"[0m
+2026-09-20T19:55:54.9739980Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:55:54.9740300Z env:
+2026-09-20T19:55:54.9741400Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:54.9742330Z   CELL: mac-arm64
+2026-09-20T19:55:54.9744490Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:54.9745880Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:54.9746720Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:54.9747450Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:54.9748000Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:54.9748500Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:55:54.9749470Z ##[endgroup]
+2026-09-20T19:55:55.0490630Z ##[group]Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+2026-09-20T19:55:55.0490960Z with:
+2026-09-20T19:55:55.0491110Z   artifact-ids: 10611690703
+2026-09-20T19:55:55.0491280Z   run-id: 35531198716
+2026-09-20T19:55:55.0493360Z   github-token: ***
+2026-09-20T19:55:55.0493520Z   path: retained-artifact
+2026-09-20T19:55:55.0493690Z   merge-multiple: true
+2026-09-20T19:55:55.0493910Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:55:55.0494130Z   skip-decompress: false
+2026-09-20T19:55:55.0494300Z   digest-mismatch: error
+2026-09-20T19:55:55.0494450Z env:
+2026-09-20T19:55:55.0494630Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:55.0494840Z   CELL: mac-arm64
+2026-09-20T19:55:55.0495070Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:55.0495460Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:55.0495890Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:55.0496290Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:55.0496630Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:55.0497020Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:55:55.0497330Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:55:55.0497710Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:55:55.0497930Z ##[endgroup]
+2026-09-20T19:55:55.1793060Z Downloading artifacts by ID
+2026-09-20T19:55:55.1795090Z Fetching artifact list for workflow run 35531198716 in repository hashgraph-online/hol-guard
+2026-09-20T19:55:55.5527490Z Found 5 artifact(s)
+2026-09-20T19:55:55.5529480Z Preparing to download the following artifacts:
+2026-09-20T19:55:55.5532000Z - hol-guard-native-wheel-aarch64-apple-darwin (ID: 10611690703, Size: 13289363, Expected Digest: sha256:ab77181a643a9b69fb489e3025d8290b8463676e4787262b3e4e6fc0e4994883)
+2026-09-20T19:55:55.5535990Z Downloading artifact '10611690703' from 'hashgraph-online/hol-guard'
+2026-09-20T19:55:55.8094980Z Redirecting to blob download url: https://productionresultssa15.blob.core.windows.net/actions-results/f472395b-4ffb-44dd-8e1b-c4400204e492/workflow-job-run-b2ea176f-1963-5c20-a0c6-ac3fd6fc4c91/artifacts/d8decc13b483c1d2dda01878776ba2c63e6d449bc704a45879618525fb581c6e.zip
+2026-09-20T19:55:55.8096410Z Starting download of artifact to: /Users/runner/work/hol-guard/hol-guard/retained-artifact
+2026-09-20T19:55:56.0223750Z (node:3184) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-09-20T19:55:56.0228440Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T19:55:56.6266890Z SHA256 digest of downloaded artifact is ab77181a643a9b69fb489e3025d8290b8463676e4787262b3e4e6fc0e4994883
+2026-09-20T19:55:56.6268290Z Artifact download completed successfully.
+2026-09-20T19:55:56.6268640Z Total of 1 artifact(s) downloaded
+2026-09-20T19:55:56.6274800Z Download artifact has finished successfully
+2026-09-20T19:55:56.6330090Z ##[group]Run python scripts/ci/pi_installed_encrypted/driver.py before --cell "$CELL" \
+2026-09-20T19:55:56.6330580Z [36;1mpython scripts/ci/pi_installed_encrypted/driver.py before --cell "$CELL" \[0m
+2026-09-20T19:55:56.6331120Z [36;1m  --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"[0m
+2026-09-20T19:55:56.6359990Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:55:56.6360220Z env:
+2026-09-20T19:55:56.6360400Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:56.6360620Z   CELL: mac-arm64
+2026-09-20T19:55:56.6360850Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:56.6361230Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:56.6361620Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:56.6361990Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:56.6362340Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:56.6362670Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:55:56.6363000Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:55:56.6363300Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:55:56.6363520Z ##[endgroup]
+2026-09-20T19:55:57.6509540Z {"operation": "before", "passed": true}
+2026-09-20T19:55:57.6595720Z ##[group]Run uv sync --frozen --extra dev --no-install-project --python 3.12
+2026-09-20T19:55:57.6596150Z [36;1muv sync --frozen --extra dev --no-install-project --python 3.12[0m
+2026-09-20T19:55:57.6626900Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:55:57.6627170Z env:
+2026-09-20T19:55:57.6627350Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:55:57.6627570Z   CELL: mac-arm64
+2026-09-20T19:55:57.6627810Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:57.6628200Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:55:57.6628570Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:57.6628920Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:57.6629260Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:55:57.6629620Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:55:57.6629950Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:55:57.6630260Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:55:57.6630480Z ##[endgroup]
+2026-09-20T19:55:57.7401860Z Using CPython 3.12.10 interpreter at: /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+2026-09-20T19:55:57.7402480Z Creating virtual environment at: .venv
+2026-09-20T19:55:58.1593000Z Downloading pygments (1.2MiB)
+2026-09-20T19:55:58.1594360Z Downloading libcst (1.9MiB)
+2026-09-20T19:55:58.1644890Z Downloading ruff (10.1MiB)
+2026-09-20T19:55:58.1646640Z Downloading pydantic-core (1.8MiB)
+2026-09-20T19:55:58.1652750Z Downloading basedpyright (12.6MiB)
+2026-09-20T19:55:58.1654850Z Downloading cryptography (3.8MiB)
+2026-09-20T19:55:58.1657680Z Downloading nodejs-wheel-binaries (53.1MiB)
+2026-09-20T19:55:58.4858050Z  Downloaded pydantic-core
+2026-09-20T19:55:58.8622150Z  Downloaded ruff
+2026-09-20T19:55:58.9635510Z  Downloaded cryptography
+2026-09-20T19:55:59.2675770Z  Downloaded libcst
+2026-09-20T19:55:59.2694370Z  Downloaded pygments
+2026-09-20T19:56:00.6020370Z  Downloaded basedpyright
+2026-09-20T19:56:00.6318100Z  Downloaded nodejs-wheel-binaries
+2026-09-20T19:56:00.6325820Z Prepared 66 packages in 2.87s
+2026-09-20T19:56:00.9518860Z Installed 66 packages in 318ms
+2026-09-20T19:56:00.9537870Z  + annotated-types==0.7.0
+2026-09-20T19:56:00.9538800Z  + anyio==4.14.2
+2026-09-20T19:56:00.9539390Z  + attrs==26.1.0
+2026-09-20T19:56:00.9540110Z  + basedpyright==1.39.8
+2026-09-20T19:56:00.9540790Z  + build==1.5.0
+2026-09-20T19:56:00.9541440Z  + certifi==2026.2.25
+2026-09-20T19:56:00.9542040Z  + cffi==2.0.0
+2026-09-20T19:56:00.9542690Z  + charset-normalizer==3.4.7
+2026-09-20T19:56:00.9543890Z  + click==8.4.1
+2026-09-20T19:56:00.9544470Z  + coverage==7.13.5
+2026-09-20T19:56:00.9545710Z  + cryptography==50.0.0
+2026-09-20T19:56:00.9546300Z  + h11==0.16.0
+2026-09-20T19:56:00.9546850Z  + httpcore==1.0.9
+2026-09-20T19:56:00.9547460Z  + httpx==0.28.1
+2026-09-20T19:56:00.9548000Z  + httpx-sse==0.4.3
+2026-09-20T19:56:00.9548470Z  + idna==3.15
+2026-09-20T19:56:00.9549050Z  + importlib-metadata==8.9.0
+2026-09-20T19:56:00.9549680Z  + iniconfig==2.3.0
+2026-09-20T19:56:00.9550250Z  + jaraco-classes==3.4.0
+2026-09-20T19:56:00.9550920Z  + jaraco-context==6.1.2
+2026-09-20T19:56:00.9551640Z  + jaraco-functools==4.4.0
+2026-09-20T19:56:00.9552260Z  + jsonschema==4.26.0
+2026-09-20T19:56:00.9553420Z  + jsonschema-specifications==2025.9.1
+2026-09-20T19:56:00.9554110Z  + keyring==25.7.0
+2026-09-20T19:56:00.9554650Z  + libcst==1.9.0
+2026-09-20T19:56:00.9555150Z  + linkify-it-py==2.1.0
+2026-09-20T19:56:00.9555770Z  + markdown-it-py==4.0.0
+2026-09-20T19:56:00.9556690Z  + mcp==1.28.1
+2026-09-20T19:56:00.9557580Z  + mdit-py-plugins==0.5.0
+2026-09-20T19:56:00.9558090Z  + mdurl==0.1.2
+2026-09-20T19:56:00.9558550Z  + more-itertools==11.0.1
+2026-09-20T19:56:00.9559050Z  + mutmut==3.7.0
+2026-09-20T19:56:00.9559590Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T19:56:00.9562000Z  + packaging==26.0
+2026-09-20T19:56:00.9562640Z  + platformdirs==4.9.4
+2026-09-20T19:56:00.9563330Z  + pluggy==1.6.0
+2026-09-20T19:56:00.9563840Z  + psutil==7.2.2
+2026-09-20T19:56:00.9564620Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T19:56:00.9565340Z  + pycparser==3.0
+2026-09-20T19:56:00.9565900Z  + pydantic==2.12.5
+2026-09-20T19:56:00.9566520Z  + pydantic-core==2.41.5
+2026-09-20T19:56:00.9567180Z  + pydantic-settings==2.14.1
+2026-09-20T19:56:00.9567750Z  + pygments==2.20.0
+2026-09-20T19:56:00.9568210Z  + pyjwt==2.13.0
+2026-09-20T19:56:00.9568720Z  + pyproject-hooks==1.2.0
+2026-09-20T19:56:00.9569240Z  + pytest==9.0.3
+2026-09-20T19:56:00.9570030Z  + pytest-cov==7.1.0
+2026-09-20T19:56:00.9570570Z  + python-dotenv==1.2.2
+2026-09-20T19:56:00.9571140Z  + python-multipart==0.0.32
+2026-09-20T19:56:00.9572050Z  + pyyaml==6.0.3
+2026-09-20T19:56:00.9572780Z  + referencing==0.37.0
+2026-09-20T19:56:00.9573720Z  + regex==2026.4.4
+2026-09-20T19:56:00.9574230Z  + requests==2.33.1
+2026-09-20T19:56:00.9574730Z  + rich==14.2.0
+2026-09-20T19:56:00.9575260Z  + rpds-py==0.30.0
+2026-09-20T19:56:00.9575780Z  + ruff==0.15.17
+2026-09-20T19:56:00.9576260Z  + setproctitle==1.3.7
+2026-09-20T19:56:00.9576820Z  + sse-starlette==3.4.4
+2026-09-20T19:56:00.9577490Z  + starlette==1.3.1
+2026-09-20T19:56:00.9578240Z  + textual==7.5.0
+2026-09-20T19:56:00.9578780Z  + typing-extensions==4.15.0
+2026-09-20T19:56:00.9579640Z  + typing-inspection==0.4.2
+2026-09-20T19:56:00.9580190Z  + uc-micro-py==2.0.0
+2026-09-20T19:56:00.9580700Z  + urllib3==2.7.0
+2026-09-20T19:56:00.9581680Z  + uvicorn==0.40.0
+2026-09-20T19:56:00.9582250Z  + zipp==3.23.0
+2026-09-20T19:56:00.9832480Z ##[group]Run PYTHONPATH=src .venv/bin/python -m pytest -q tests/test_native_slo_pi_encrypted_coverage.py tests/test_native_slo_pi_receipts.py tests/test_native_slo_pi_sources.py tests/test_installed_pi_command_fixture.py tests/test_installed_pi_output_probe.py tests/test_native_slo_command_fixture.py tests/test_pi_installed_encrypted_driver.py --junitxml="$OUT/source-controls.xml" > "$OUT/source-controls.txt" 2>&1
+2026-09-20T19:56:00.9834840Z [36;1mPYTHONPATH=src .venv/bin/python -m pytest -q tests/test_native_slo_pi_encrypted_coverage.py tests/test_native_slo_pi_receipts.py tests/test_native_slo_pi_sources.py tests/test_installed_pi_command_fixture.py tests/test_installed_pi_output_probe.py tests/test_native_slo_command_fixture.py tests/test_pi_installed_encrypted_driver.py --junitxml="$OUT/source-controls.xml" > "$OUT/source-controls.txt" 2>&1[0m
+2026-09-20T19:56:00.9836390Z [36;1mpython - "$OUT/source-controls.xml" <<'PY'[0m
+2026-09-20T19:56:00.9836740Z [36;1mimport sys, xml.etree.ElementTree as ET[0m
+2026-09-20T19:56:00.9837120Z [36;1mrows = list(ET.parse(sys.argv[1]).iter("testcase"))[0m
+2026-09-20T19:56:00.9837620Z [36;1massert len(rows) == 147 and not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))[0m
+2026-09-20T19:56:00.9838030Z [36;1mPY[0m
+2026-09-20T19:56:00.9906750Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:56:00.9907030Z env:
+2026-09-20T19:56:00.9907250Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:00.9907500Z   CELL: mac-arm64
+2026-09-20T19:56:00.9907770Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:00.9908260Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:00.9908730Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:00.9909160Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:00.9909570Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:00.9910020Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:00.9910430Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:00.9910760Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:00.9911040Z ##[endgroup]
+2026-09-20T19:56:09.9248870Z ##[group]Run python - "$OUT" <<'PY'
+2026-09-20T19:56:09.9249240Z [36;1mpython - "$OUT" <<'PY'[0m
+2026-09-20T19:56:09.9249640Z [36;1mimport hashlib, json, os, pathlib, signal, subprocess, sys[0m
+2026-09-20T19:56:09.9250030Z [36;1mout = pathlib.Path(sys.argv[1])[0m
+2026-09-20T19:56:09.9250340Z [36;1mrequirement = out / "wheel-requirements.txt"[0m
+2026-09-20T19:56:09.9250840Z [36;1mcommand = ["uv", "--no-config", "pip", "install", "--python", str(pathlib.Path(".venv/bin/python").absolute()),[0m
+2026-09-20T19:56:09.9251480Z [36;1m           "--no-index", "--no-deps", "--force-reinstall", "--require-hashes", "--only-binary", ":all:",[0m
+2026-09-20T19:56:09.9251910Z [36;1m           "-r", str(requirement)][0m
+2026-09-20T19:56:09.9252350Z [36;1mrecord = {"require_hashes": True, "requirement": {"bytes": requirement.stat().st_size,[0m
+2026-09-20T19:56:09.9252910Z [36;1m          "sha256": hashlib.sha256(requirement.read_bytes()).hexdigest()}, "command": command}[0m
+2026-09-20T19:56:09.9253470Z [36;1mwith (out / "install.stdout").open("wb") as stdout, (out / "install.stderr").open("wb") as stderr:[0m
+2026-09-20T19:56:09.9254030Z [36;1m    process = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)[0m
+2026-09-20T19:56:09.9254360Z [36;1m    try:[0m
+2026-09-20T19:56:09.9254660Z [36;1m        record["return_code"] = process.wait(timeout=180)[0m
+2026-09-20T19:56:09.9264730Z [36;1m    except subprocess.TimeoutExpired:[0m
+2026-09-20T19:56:09.9265050Z [36;1m        record.update(return_code=None, timed_out=True)[0m
+2026-09-20T19:56:09.9265410Z [36;1m        os.killpg(process.pid, signal.SIGKILL)[0m
+2026-09-20T19:56:09.9265860Z [36;1m        record["reaped_return_code"] = process.wait(timeout=10)[0m
+2026-09-20T19:56:09.9266290Z [36;1m(out / "install-record.json").write_text(json.dumps(record, indent=2) + "\n")[0m
+2026-09-20T19:56:09.9266680Z [36;1mraise SystemExit(0 if record["return_code"] == 0 else 1)[0m
+2026-09-20T19:56:09.9266930Z [36;1mPY[0m
+2026-09-20T19:56:09.9299720Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:56:09.9299990Z env:
+2026-09-20T19:56:09.9300160Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:09.9300400Z   CELL: mac-arm64
+2026-09-20T19:56:09.9300630Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:09.9303750Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:09.9304270Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:09.9304600Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:09.9305080Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:09.9305430Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:09.9305860Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:09.9306300Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:09.9306540Z ##[endgroup]
+2026-09-20T19:56:10.3822990Z ##[group]Run .venv/bin/python -I scripts/ci/pi_installed_encrypted/driver.py provision --cell "$CELL" \
+2026-09-20T19:56:10.3823600Z [36;1m.venv/bin/python -I scripts/ci/pi_installed_encrypted/driver.py provision --cell "$CELL" \[0m
+2026-09-20T19:56:10.3824240Z [36;1m  --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"[0m
+2026-09-20T19:56:10.3856090Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:56:10.3856340Z env:
+2026-09-20T19:56:10.3856540Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:10.3856760Z   CELL: mac-arm64
+2026-09-20T19:56:10.3857000Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:10.3857410Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:10.3857800Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:10.3858190Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:10.3858560Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:10.3858880Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:10.3859240Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:10.3859550Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:10.3859790Z ##[endgroup]
+2026-09-20T19:56:13.7439290Z {"operation": "provision", "passed": true}
+2026-09-20T19:56:13.8279320Z ##[group]Run .venv/bin/python -I scripts/ci/pi_installed_encrypted/driver.py run --cell "$CELL" \
+2026-09-20T19:56:13.8279930Z [36;1m.venv/bin/python -I scripts/ci/pi_installed_encrypted/driver.py run --cell "$CELL" \[0m
+2026-09-20T19:56:13.8280530Z [36;1m  --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"[0m
+2026-09-20T19:56:13.8315750Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:56:13.8316020Z env:
+2026-09-20T19:56:13.8316220Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:13.8316470Z   CELL: mac-arm64
+2026-09-20T19:56:13.8316720Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:13.8317200Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:13.8317600Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:13.8318090Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:13.8318480Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:13.8318830Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:13.8319240Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:13.8319570Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:13.8319810Z ##[endgroup]
+2026-09-20T19:56:24.1115040Z {"operation": "run", "passed": false}
+2026-09-20T19:56:24.1918510Z ##[error]Process completed with exit code 1.
+2026-09-20T19:56:24.1997450Z ##[group]Run python scripts/ci/pi_installed_encrypted/driver.py after --cell "$CELL" \
+2026-09-20T19:56:24.1999030Z [36;1mpython scripts/ci/pi_installed_encrypted/driver.py after --cell "$CELL" \[0m
+2026-09-20T19:56:24.1999870Z [36;1m  --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/pi-encrypted-evidence"[0m
+2026-09-20T19:56:24.2042640Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T19:56:24.2042980Z env:
+2026-09-20T19:56:24.2043380Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:24.2043730Z   CELL: mac-arm64
+2026-09-20T19:56:24.2044150Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.2044720Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:24.2045260Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.2045980Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.2046440Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.2046970Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:24.2047430Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:24.2047920Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:24.2048280Z ##[endgroup]
+2026-09-20T19:56:24.6473180Z {"operation": "after", "passed": true}
+2026-09-20T19:56:24.6635330Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T19:56:24.6635850Z with:
+2026-09-20T19:56:24.6636110Z   name: pi-encrypted-mac-arm64-35533876624
+2026-09-20T19:56:24.6636520Z   path: pi-encrypted-evidence/
+2026-09-20T19:56:24.6636830Z   if-no-files-found: error
+2026-09-20T19:56:24.6637230Z   retention-days: 30
+2026-09-20T19:56:24.6637430Z   compression-level: 6
+2026-09-20T19:56:24.6637650Z   overwrite: false
+2026-09-20T19:56:24.6637910Z   include-hidden-files: false
+2026-09-20T19:56:24.6638250Z   archive: true
+2026-09-20T19:56:24.6638550Z env:
+2026-09-20T19:56:24.6638820Z   BUILD_SHA: 37fd05b37685d0f4b37f836608820cf577a06602
+2026-09-20T19:56:24.6639110Z   CELL: mac-arm64
+2026-09-20T19:56:24.6639420Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.6640070Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T19:56:24.6640650Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.6641190Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.6641710Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T19:56:24.6642160Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T19:56:24.6642560Z   OUT: /Users/runner/work/hol-guard/hol-guard/pi-encrypted-evidence
+2026-09-20T19:56:24.6642950Z   DRIVER_TREE: 2cd025b429e922cad2bed524fd620e80cb280f27
+2026-09-20T19:56:24.6643390Z ##[endgroup]
+2026-09-20T19:56:24.9296900Z With the provided path, there will be 16 files uploaded
+2026-09-20T19:56:24.9299220Z Artifact name is valid!
+2026-09-20T19:56:24.9299570Z Root directory input is valid!
+2026-09-20T19:56:25.2326260Z Uploading artifact: pi-encrypted-mac-arm64-35533876624.zip
+2026-09-20T19:56:25.2369800Z Beginning upload of artifact content to blob storage
+2026-09-20T19:56:25.4736740Z Uploaded bytes 24478
+2026-09-20T19:56:25.5201240Z Finished uploading artifact content to blob storage!
+2026-09-20T19:56:25.5203130Z SHA256 digest of uploaded artifact is 3f402eddee48f8f388631c8a8de6866ea6c7e29b9e0742b013a44b72014021d0
+2026-09-20T19:56:25.5205080Z Finalizing artifact upload
+2026-09-20T19:56:25.8070930Z Artifact pi-encrypted-mac-arm64-35533876624 successfully finalized. Artifact ID 10612143023
+2026-09-20T19:56:25.8074540Z Artifact pi-encrypted-mac-arm64-35533876624 has been successfully uploaded! Final size is 24478 bytes. Artifact ID is 10612143023
+2026-09-20T19:56:25.8084650Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35533876624/artifacts/10612143023
+2026-09-20T19:56:25.8353110Z Post job cleanup.
+2026-09-20T19:56:25.9234370Z [command]/opt/homebrew/bin/git version
+2026-09-20T19:56:25.9294380Z git version 2.55.0
+2026-09-20T19:56:25.9315440Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/8e0c3b0d-03bb-4469-b28a-59cc19982b94/.gitconfig'
+2026-09-20T19:56:25.9324420Z Temporarily overriding HOME='/Users/runner/work/_temp/8e0c3b0d-03bb-4469-b28a-59cc19982b94' before making global git config changes
+2026-09-20T19:56:25.9325330Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:56:25.9327590Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/artifact-source
+2026-09-20T19:56:25.9385600Z Removing SSH command configuration
+2026-09-20T19:56:25.9391070Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:56:25.9456420Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:56:26.0168960Z Removing HTTP extra header
+2026-09-20T19:56:26.0173360Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:56:26.0226700Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:56:26.0925770Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:56:26.0930380Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:56:26.0988020Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:56:26.1723860Z Post job cleanup.
+2026-09-20T19:56:26.2415510Z [command]/opt/homebrew/bin/git version
+2026-09-20T19:56:26.2465750Z git version 2.55.0
+2026-09-20T19:56:26.2483290Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/b6a177ce-c560-4bf7-811e-ca6e812efc3e/.gitconfig'
+2026-09-20T19:56:26.2489500Z Temporarily overriding HOME='/Users/runner/work/_temp/b6a177ce-c560-4bf7-811e-ca6e812efc3e' before making global git config changes
+2026-09-20T19:56:26.2490480Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:56:26.2492650Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:56:26.2541860Z Removing SSH command configuration
+2026-09-20T19:56:26.2546090Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:56:26.2593980Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:56:26.3162410Z Removing HTTP extra header
+2026-09-20T19:56:26.3166080Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:56:26.3213390Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:56:26.3861100Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:56:26.3866160Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:56:26.3924030Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:56:26.4778210Z Cleaning up orphan processes
+2026-09-20T19:56:26.6473340Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

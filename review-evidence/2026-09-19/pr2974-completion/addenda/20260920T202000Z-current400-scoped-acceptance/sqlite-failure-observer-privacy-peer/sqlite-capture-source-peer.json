@@ -1,0 +1,49 @@
+{
+  "schema": "pr2974.sqlite-failure-capture.native-source-peer.v1",
+  "verdict": "clear_for_prepared_source_scope_with_operational_lifetime_prerequisite",
+  "packet_tree": "e0e43c153c99ce47cfe8e50dc65257d648e3aeab",
+  "manifest_blob": "3baaa638088765235f472771841ca22fa050be8b",
+  "source_files": [
+    {
+      "path": "ci/native_runtime/sqlite_failure_capture.py",
+      "bytes": 7980,
+      "git_blob": "d149c096d3aad5d9ebf6bf6dd72ef92c3b424894",
+      "sha256": "bba7a5929181acce8f6e00e25f8628e2694c4b947e397d407e24e5ddc7d0da16"
+    },
+    {
+      "path": "ci/native_runtime/sqlite_failure_binding.py",
+      "bytes": 6328,
+      "git_blob": "4678982a6c9fbe2ec7d33d74feddbe0610e287c5",
+      "sha256": "245bf472429b3f0fbd2f2bedc49cf04f73b2b465b3107989a739cebc3f4f23f2"
+    },
+    {
+      "path": "tests/test_sqlite_failure_capture.py",
+      "bytes": 14829,
+      "git_blob": "a87eef17883da0f43283153db46e478a1fd60918",
+      "sha256": "adcb3f7612843e46b654cbec3f1b0d4ab6102d1520820f8e95f6c6c00a59c23f"
+    }
+  ],
+  "all_three_local_and_remote_bodies_equal": true,
+  "review_scope": [
+    "Complete capture forwarding/privacy/bounded projection read",
+    "Source binding and control context read; finite marshal format2 admission detail is separately reviewed by partition",
+    "Meaningful actual held-SQLite receipt retry/checkpoint, actual commit-denial and postcommit-read controls read, without execution by peer"
+  ],
+  "findings": [
+    "The live writer alias is captured before installation. Classifier executes exactly once with the identical original error; successful return is retained by identity; original BaseException is re-raised before observation. Observation failure cannot suppress that original call or replace its result.",
+    "Terminal traceback and cause/context are traversed using BaseException descriptors, without exception strings/args/locals/path values. Exact known exception types and typed SQLite numeric codes are projected, while unsupported subclasses remain unsupported and do not invoke hostile custom attribute/metaclass handlers.",
+    "At most32 traceback frames,4 chain entries and128 selected callback events are retained. Contention, overflow, recording/classifier/restoration faults remain explicit and refuse observation completeness. Returned event structures are detached JSON primitives.",
+    "Only the actual innermost traceback frame can provide an operation label. Unknown inner frames stay unknown even when an outer known operation exists. Scope rows distinguish receipt persistence from command activity; multiple scopes refuse a unique phase.",
+    "The post_commit_dispatch_expression marker means only that the exact helper passed its original commit call. It does not prove that the generation function was called, durable commit, or any particular C-level operation. The later unknown total_changes failure control explicitly retains incomplete observation.",
+    "Numeric sqlite_errorcode is read only from exact SQLite error types, accepts an exact bounded nonnegative integer, and retains unavailable codes as null. No WinError, SQL statement, database path or guessed primary/extended cause is emitted.",
+    "Callback counts are correctly not equated to failed record units. Explicit original unacknowledged branches bypass the classifier; empty events cannot establish absence of every persistence failure.",
+    "The tests include actual SQLite lock/drain with original0.05second timeout and independent persisted-row check, plus after_commit/single_ack/batch_ack retries, actual authorizer-denied commit versus postcommit read, unknown traceback, error chains, loss, hostile fields and exact source/alias mutation refusal."
+  ],
+  "operational_prerequisites": [
+    "Alias restoration alone does not prove that an already-entered classifier callback completed. A future integration must export after the original owned writer shutdown/containment boundary or explicitly refuse in-flight completeness; do not add a new wait or probe to manufacture coverage.",
+    "No original workload, final driver, platform environment, callback-to-record reconciliation or qualification is admitted by this source peer.",
+    "The27 passing controls and0 type errors are owner evidence in the frozen packet, not repeated execution by this peer.",
+    "Source-bound no-event or unknown-site results must retain their limited scope and cannot resolve historical SQLite-busy causes."
+  ],
+  "execution_performed": false
+}

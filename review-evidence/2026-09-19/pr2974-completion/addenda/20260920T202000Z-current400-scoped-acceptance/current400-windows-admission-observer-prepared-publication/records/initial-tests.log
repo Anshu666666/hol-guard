@@ -1,0 +1,70 @@
+.F.....F........F..                                                      [100%]
+=================================== FAILURES ===================================
+___ test_all_original_calls_and_aggregate_snapshots_without_mode_population ____
+
+    def test_all_original_calls_and_aggregate_snapshots_without_mode_population():
+        probe, routes, daemon, calls, token = fixture()
+        original = routes._installed_hook_request
+        with AdmissionCapture(probe, routes) as capture:
+            assert probe.bind_corpus(daemon) is token
+            for index in range(21):
+                assert deliver(routes, daemon, index)["decision"] == "allow"
+            stats = daemon._server.hook_worker.metrics.snapshot()
+            assert probe.observe_corpus(daemon, stats) is token
+            # Original mode-invariant call forwards but cannot enter the 21-case record.
+            deliver(routes, daemon, 0)
+            assert probe.end_corpus(daemon, stats, receipts()) is token
+        assert routes._installed_hook_request is original and len(calls) == 22
+        report = capture.report()
+>       assert report["observation_complete"] and report["callbacks_restored"]
+E       assert (False)
+
+tests/test_admission_observation.py:87: AssertionError
+_ test_existing_scheduler_deadline_rejection_is_observed_without_another_acquire _
+
+    def test_existing_scheduler_deadline_rejection_is_observed_without_another_acquire():
+        probe, routes, daemon, calls, _ = fixture()
+        server = daemon._server
+        before = values.snapshot(server)
+        admission = server.runtime_hook_scheduler.acquire(
+            harness="omp", client_key="private", lane="content-security", payload_bytes=1, deadline=0.0
+        )
+        assert admission.permit is None and admission.reason_code == "daemon_hook_deadline_exhausted"
+        with server.hook_capacity_lock:
+            server.rejected_hook_requests += 1
+            server.hook_harness_rejected["omp"] = 1
+        after = values.snapshot(server)
+        assert before["scheduler"]["values"]["rejected"] == {}
+        assert after["scheduler"]["values"]["rejected"] == {"daemon_hook_deadline_exhausted": 1}
+        assert after["admission"]["values"]["per_harness_rejected"] == {"omp": 1}
+>       assert after["metrics"]["values"]["routes"] == {} and not calls
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'values'
+
+tests/test_admission_observation.py:156: KeyError
+______ test_wrong_order_overflow_and_unrelated_later_alias_remain_failed _______
+
+    def test_wrong_order_overflow_and_unrelated_later_alias_remain_failed():
+        probe, routes, daemon, calls, _ = fixture()
+        with AdmissionCapture(probe, routes) as capture:
+            probe.bind_corpus(daemon)
+            deliver(routes, daemon, 1)
+            for index in range(21):
+                deliver(routes, daemon, index)
+            deliver(routes, daemon, 0)
+            later = lambda *args, **kwargs: None
+            routes._installed_hook_request = later
+        assert len(calls) == 23 and routes._installed_hook_request is later
+>       assert set(capture.report()["faults"]) == {"delivery_contract_changed", "delivery_overflow", "alias_ownership_lost"}
+E       AssertionError: assert {'alias_owner...t_incomplete'} == {'alias_owner...ery_overflow'}
+E         
+E         Extra items in the left set:
+E         'snapshot_incomplete'
+E         Use -v to get more diff
+
+tests/test_admission_observation.py:217: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_admission_observation.py::test_all_original_calls_and_aggregate_snapshots_without_mode_population
+FAILED tests/test_admission_observation.py::test_existing_scheduler_deadline_rejection_is_observed_without_another_acquire
+FAILED tests/test_admission_observation.py::test_wrong_order_overflow_and_unrelated_later_alias_remain_failed
+3 failed, 16 passed in 0.39s

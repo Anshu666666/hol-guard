@@ -1,0 +1,29 @@
+{
+  "schema": "rsp136.encrypted-source-reference-fixture-peer.v1",
+  "reviewer": "partition_regression",
+  "base_tree": "a58b24d0027d3476ccb1f7b17a3edd7b2ec39224",
+  "candidate_tree": "9dd4efc027b3d8fc0abb1618b63122ffc74d0df8",
+  "changed": [
+    {
+      "path": "rust/crates/guard-runtime/src/edge_encrypted_tests.rs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8747613b75f604d449958ab24b7e38e085cf30f7",
+      "size": 16638,
+      "url": "https://api.github.com/repos/hashgraph-online/hol-guard/git/blobs/8747613b75f604d449958ab24b7e38e085cf30f7"
+    }
+  ],
+  "verdict": "clear_for_the_exact_fixture_delta",
+  "evidence": [
+    "Full remote tree comparison proves exactly one test file changed with zero deletions; local body exactly equals Git blob8747613b75f604d449958ab24b7e38e085cf30f7.",
+    "Existing guard-secure-fs source_path.rs excludes txt from SOURCE_EXTENSIONS; source.txt at workspace root lacks an allowed source prefix, so classify_source_path returns not_source_like. Existing guard-hook-core converts denied source classification to no_output_to_review.",
+    "The successor retains the original clean source.txt as an explicit negative, uses permitted source.rs for clean/tail-secret/changed-source positives, and asserts exact classifier allowed/reason before the edge comparison.",
+    "Every same inner value is now evaluated through the direct existing edge before wrapping; exact full public result equality is required between direct and encrypted evaluation. Existing expected clean allow, tail secret deny and changed-source inconclusive deny remain, as do outer digest and EncryptedPayloadRef receipt checks.",
+    "The tail secret remains beyond the initial short output region: 10000 repetitions plus the known secret marker. No classifier, scanner, digest, ownership or production behavior is changed."
+  ],
+  "limits": [
+    "Original hosted failing run/result b8822f6961de7eea3d6e51a3cd57b5e95ec6fbec remains failed; this review is source-only.",
+    "This exact successor is unformatted/unexecuted at review. No tests, Cargo, workload or native calls executed by peer.",
+    "The separate driver allocation-diagnostic exclusion is outside this source receipt and needs its own exact operational peer."
+  ]
+}

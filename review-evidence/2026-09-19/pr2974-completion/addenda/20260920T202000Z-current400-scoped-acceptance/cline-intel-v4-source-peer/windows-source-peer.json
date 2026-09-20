@@ -1,0 +1,125 @@
+{
+  "schema": "pr2974.cline-intel-nested-call-source-peer.v1",
+  "reviewer": "windows_persistence_audit",
+  "result": "clear",
+  "reviewed_packet_tree": "f71767ecf27269e5f2c3e2b6168580b116c91f9f",
+  "manifest_blob": "34806ec00dbeca57cdce168dcd327edd73391a04",
+  "source_base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "previous_source": "156646a6a72f6b90dbcf45ff0c1e42d0dc2258df",
+  "source_files": [
+    {
+      "path": "scripts/ci/cline_witness/identity.py",
+      "bytes": 2075,
+      "sha256": "049d8679ef2ed3a78706f4736ac9497239aa416b9220aa06d63bd9a3018fa3b7",
+      "git_blob": "90cbb0af0a45019ae81cfa6ea2c75ae04bb1019b",
+      "lines": 48
+    },
+    {
+      "path": "scripts/ci/cline_witness/installation.py",
+      "bytes": 8262,
+      "sha256": "6a17ec3109e3f3aeed8cc3d5cd58c0253d222d44a91113e86b38c71b1d32669f",
+      "git_blob": "379741f8167624e94bb5f3f34c75713e75f01647",
+      "lines": 190
+    },
+    {
+      "path": "scripts/ci/cline_witness/invocation.py",
+      "bytes": 4727,
+      "sha256": "8356fc316a679ded012c2dd76746d9ee0fa09c6ff1a1136e9b4000c92e246488",
+      "git_blob": "716855d225d222e2f2333c6ab78b1d243cacf092",
+      "lines": 111
+    },
+    {
+      "path": "scripts/ci/cline_witness/nested_run.py",
+      "bytes": 9201,
+      "sha256": "3ddb7f155a3e1de18fdeef207624becc73b5e17fe7c2bee3e698e343a84c6661",
+      "git_blob": "472c27a3a878dc8124cc215223edd65abaef72fb",
+      "lines": 251
+    },
+    {
+      "path": "scripts/ci/cline_witness/profile_runtime.py",
+      "bytes": 12340,
+      "sha256": "a9c95d7149f73a676d221c3b4c8c65fac13cfb81850b4a9a8905c8bbd51973b2",
+      "git_blob": "8ca2ef08affdbb0b96d3fbec5656135723052fdd",
+      "lines": 309
+    },
+    {
+      "path": "scripts/ci/cline_witness/run.py",
+      "bytes": 15981,
+      "sha256": "e82480e16f1e108a3a8168b96b33bf9c5f1974afcb11927b9390a581cc62fe82",
+      "git_blob": "e166f51cd667fd832d08ce099aaf44d5cabbece9",
+      "lines": 319
+    },
+    {
+      "path": "scripts/ci/cline_witness/validation.py",
+      "bytes": 6901,
+      "sha256": "def00ef78b0ee09056f92010a1b51abec1e5a9bf8c059bbe7e0fa5034e3fe850",
+      "git_blob": "9da380109551df5681614e003a0e81c529a31d8b",
+      "lines": 155
+    },
+    {
+      "path": "tests/test_cline_child_witness.py",
+      "bytes": 29899,
+      "sha256": "7a1a662f63e9f8bf46185fad0fbf04706d96c8edd2ccd0c22e716ddb8b359841",
+      "git_blob": "fcb85b040cf38b7541ea963a2fd80c8c0bcbac49",
+      "lines": 726
+    },
+    {
+      "path": "tests/test_cline_invocation.py",
+      "bytes": 3599,
+      "sha256": "3f8d0be9218bcaa1fd4f7f7038623831395143bea4042969999c4ef4488d8f45",
+      "git_blob": "3688b4d1edc183ea729844bb226d0ca9287c4c67",
+      "lines": 96
+    },
+    {
+      "path": "tests/test_cline_nested_run.py",
+      "bytes": 15508,
+      "sha256": "e4c1617751e33b3a207dffb4c3c2663032ac2e33d4d3a0c761e1a7afc8e2689c",
+      "git_blob": "4472c51f8c01b7993f20d20237a176f2e7076303",
+      "lines": 419
+    }
+  ],
+  "verification": {
+    "all_ten_local_and_remote_bodies_equal": true,
+    "all_local_size_sha256_git_blob_identities_match": true,
+    "exact_previous_three_file_diff_read": true,
+    "new_nested_helper_and_all_new_controls_read": true,
+    "peer_test_execution": false,
+    "peer_workload_execution": false
+  },
+  "findings_resolved": [
+    "Closed exception classification now uses exact type identity, avoiding hostile metaclass equality.",
+    "Return code and errno are exact signed 32-bit integers or declared null; invalid values make capture incomplete without replacing the original object or exception."
+  ],
+  "source_assessment": [
+    "Only the already admitted generated-worker branch loads the hash-bound helper and installs the temporary subprocess.run wrapper. The nested CLI retains the prior profile branch.",
+    "Sealed worker bytes and exact generated main filename, first line and call line select the original nested call. Other subprocess calls forward unchanged and receive no selected credit.",
+    "The selected operation receives the original argument objects and values once, including timeout 9; its returned object or raised BaseException is forwarded unchanged. Recorder failures are distinct and do not replace the product outcome.",
+    "Only fixed outcome/count/return-code/errno/boolean metadata is exported; argv, payload, stdout, stderr and exception message are absent. Duplicate selected calls remain forwarded but fail admission; zero offers remain a valid diagnostic fact without native route credit.",
+    "Owned startup helper/config/cache cleanup and original process-containment conditions remain. Restoration does not overwrite a later unrelated callback; failed or missing export prevents admission.",
+    "All original delivery, complete native semantic oracle, receipt, context-field-presence and global authority predicates remain. The final route additionally requires one observed nested offer; no missing native/child facts are synthesized."
+  ],
+  "owner_validation_as_reported": {
+    "all_selected": 181,
+    "failures": 0,
+    "skips": 0,
+    "junit_sha256": "287747e71e7b18f1b46565a5cc309e96fcdec414d630cea8b193e28b9e736201",
+    "types": {
+      "filesAnalyzed": 12,
+      "errorCount": 0,
+      "warningCount": 887,
+      "informationCount": 0,
+      "timeInSec": 1.899
+    },
+    "ruff_check": 0,
+    "ruff_format_check": 0
+  },
+  "limits": [
+    "This is a read-only source peer, not a final driver/publication or hosted-result peer.",
+    "The separately bound operational successor must retain only the original four Intel cases, original nested 9-second and outer 10-second budgets; no Linux/ARM replay.",
+    "The actual-generated-worker controls use a 15-second test supervisor around the real 9-second nested operation; that control supervisor does not alter the declared installed delivery budget.",
+    "Code selection is tied to the admitted original generated source and fixed frame metadata; this receipt does not claim arbitrary post-import hostile process mutation protection.",
+    "Added observation has diagnostic overhead and does not establish uninstrumented timing.",
+    "Historical V3 Intel worker-start record plus absent child report still has no observed nested-call outcome. This source addition does not retrospectively assign its cause."
+  ],
+  "prior_failed_packet": "3c5252d3f6b1906b1c054dff5e1c8ce0fba03f8f"
+}

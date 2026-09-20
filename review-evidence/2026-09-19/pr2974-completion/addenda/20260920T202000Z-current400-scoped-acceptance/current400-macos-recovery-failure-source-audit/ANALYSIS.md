@@ -1,0 +1,29 @@
+# Current400 macOS recovery failure: source boundary
+
+This is a new failed original selector from run `35531198783`, job `106131977143`, on macOS 14 ARM. Its original log is retained here with SHA-256 `828d12aa917bfd448cd04812606202d5cb46fe733ed1ab2b48c772c8e7467af6` (102,557 bytes). This review reads that log and exact source; it does not execute tests, download another artifact or infer a detailed error from historical runs.
+
+The earlier Python admission group passed 20 tests. The release build succeeded. The later native client group reports one failure and 14 passes. The failing selector is `ci/native_runtime/test_native_hook_client.py::test_native_hook_client_recovers_after_supervisor_exit`. At line 143 the recovered `_invoke` calls `_push_snapshot`; its `resident-client --stdin` subprocess returns nonzero and the helper reports `native_resident_live_request_failed`. The recovered `hook-client --stdin` subprocess is never launched because the push raises first.
+
+The original test first completed an invocation, read a state file and its owner PID, then returned from `_terminate_process(owner_pid)`. The helper sends SIGTERM and polls `kill(pid, 0)` for up to two seconds. It also returns after that loop expires, without a final disappearance assertion. The current log does not record which termination return branch occurred, the owner/serving start markers, a replacement generation, or the selected transport. Returning from this helper alone does not prove the supervisor disappeared. It does not prove that it remained alive either.
+
+The policy push has a **2,000 ms** native budget on macOS, with the original **8 second** outer subprocess timeout. The later hook envelope uses 1,000 ms and its hook subprocess uses three seconds; those are different operations and are not the failed push's budget. The fixture's final `resident-stop` is a separate two-second subprocess whose return code is not asserted by the original helper. Its success and full descendant containment are not established by this normal log.
+
+## What the collapsed error establishes
+
+In exact `managed_resident.rs::try_home_states`, discovered states undergo runtime/process identity checks, token extraction and the real detailed client call using the original absolute deadline. Explicit retryable errors continue the search. Every other detailed error is collapsed to `native_resident_live_request_failed` and returned immediately. The current error therefore identifies a nonretryable detailed client result at that boundary, but not its code, I/O origin or exchange phase.
+
+The retry whitelist is exact: connection failure, authentication timeout setup failure, stale process identity, and authentication nonce write failure only when explicitly classified as retryable teardown. Authentication rejection, protocol/binding failures, frame write/read failure and deadline expiration can all be nonretryable. A response-side error can follow an already committed policy push, so later process disappearance does not justify replay. The report does not propose a retry or change error classification.
+
+The retained normal log does not contain the original full child stderr, frame-read site, OS error, state generation, deadline remaining or termination observations. The Python helper keeps only the first `native_*` stderr token. Historical V2 captured `native_client_frame_read_failed` on a different source/run, and historical V3 did not reproduce that failure. Neither observation can be assigned to this current400 failure.
+
+## Exact source comparison
+
+All 16 selected test, Python push-contract and Rust request/discovery/transport/policy files in `source-identity.json` are byte-identical between E440 and current400 (`4001185e4f39cad51fd5eab314bf02b86b8a1674`, tree `7a328609488ffefecd3cdd12a9c7adba6a591e97`). Source400 is the reviewed PR source identity; CI separately owns the normal job's actual merge/runtime build binding. This record does not relabel a runtime artifact or independently re-audit that build.
+
+The relevant E440-to400 Rust changes are limited to `edge.rs`, its encrypted payload helpers and their tests. `resident_protocol.rs` dispatches a policy push to the policy store, rather than the edge-envelope evaluator; the new encrypted envelope hydration is not called by this failing push. The daemon initializer change is Python package import behavior, not a change in this Rust exchange. These source facts do not prove timing equivalence between built binaries or exclude indirect scheduling/resource effects. They do establish that no newly changed transport or retry branch is visible in the selected source delta.
+
+## Next preparation boundary
+
+Root authorized preparation of a diagnostic-only successor after this review, not an immediate replay. Reuse the reviewed original-selector V3 observer if its exact source bindings still hold: retain the original termination call's selected PID and existing kill/poll outcomes, existing selected resident identity and closed detailed client error, plus the actual proof/header/body read site and underlying bounded I/O kind/raw OS code when a read fails. Preserve the original source call and its single evaluation, argument/return/exception order, authentication and absolute deadline, 2/8 second push budgets, and final original selector/cleanup result.
+
+No new process probe, forced disappearance wait, readiness poll, request, retry or fault offer is part of that preparation. Source comparison and concrete controls must establish that diagnostics are erased in the default build, that no original outcome is masked, and that missing/overflow/export loss cannot pass observation admission. The diagnostic must bind current400 and the exact compiled runtime, preserving the old V2 failure and V3 nonreproduction as separate records. A new diagnostic run requires the concrete source and operational peer before its one authorized original recovery offer.

@@ -1,0 +1,43 @@
+{
+  "schema": "pr2974.sqlite-identity-lookup.peer-addendum.v1",
+  "verdict": "clear_for_prepared_source_scope",
+  "packet_tree": "598203c273bc5bcb088d06c7d61279cbd133a601",
+  "manifest_blob": "b18ecb31592922d8c5a1f549bd72f1a50a2f382f",
+  "prior_peer": {
+    "tree": "62e15ccd6c700ce3f63ec511e14bac04510c0200",
+    "blob": "fd0b3529b1cffdce8669094715883e244bb0d1dd",
+    "unchanged_scope_and_lifetime_prerequisite": true
+  },
+  "files": [
+    {
+      "path": "ci/native_runtime/sqlite_failure_capture.py",
+      "bytes": 8283,
+      "sha256": "7132c67b27d020bfcf129405f5b87d31778277b5f1a3acd5867c547212489e08",
+      "git_blob": "e78f16ddd60ba6167ecc7c387a25b669211dfcaf"
+    },
+    {
+      "path": "tests/test_sqlite_failure_capture.py",
+      "bytes": 15868,
+      "sha256": "7a87fcb6eb9e8977e027c296e48ab41486ea734d43b1fad4dcd5ac9dd58da098",
+      "git_blob": "2e0217aef7c6d80fbe0c8d26d0d06140db34cf58"
+    }
+  ],
+  "unchanged_binding": "4678982a6c9fbe2ec7d33d74feddbe0610e287c5",
+  "local_remote_equal": true,
+  "review": [
+    "Both traceback CodeType dictionary lookups are replaced with finite identity-only scans over the already bound scope/site entries. Unknown traceback code is never hashed or equality-compared by this lookup.",
+    "The new control makes an actual function from a CodeType containing an unused hostile constant, raises the same original ValueError through it, and requires zero constant hash/equality invocations, unchanged classifier return and exception identity, no recording failure, unknown leaf and incomplete observation.",
+    "All other capture forwarding, privacy,32-frame/4-chain/128-event bounds, code fields, source-binding and callback/lifetime scope remain as the predecessor reviewed tuple."
+  ],
+  "owner_validation": {
+    "passed": 28,
+    "type_errors": 0,
+    "type_warnings": 231,
+    "not_executed_by_peer": true
+  },
+  "limits": [
+    "No original workload or future operational-driver clearance.",
+    "Writer shutdown/contained lifetime is still required before export or in-flight completeness must be refused.",
+    "No historical SQLite cause or transaction repair established."
+  ]
+}

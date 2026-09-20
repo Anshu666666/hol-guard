@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/745337b67ff9/root-lazy-integration-a5fd/scripts/ci/rust_authority_ownership_gate.py", line 494, in <module>
+    payload = run(parsed.root.resolve(), base_ref=parsed.base_ref)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/745337b67ff9/root-lazy-integration-a5fd/scripts/ci/rust_authority_ownership_gate.py", line 466, in run
+    changed = _changed_path_gate(manifest, base_ref)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/745337b67ff9/root-lazy-integration-a5fd/scripts/ci/rust_authority_ownership_gate.py", line 181, in _changed_path_gate
+    changed = _changed_files(base_ref)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/745337b67ff9/root-lazy-integration-a5fd/scripts/ci/rust_authority_ownership_gate.py", line 171, in _changed_files
+    result = subprocess.run(
+             ^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', 'diff', '--name-only', '--no-renames', '--diff-filter=ACMRD', '4b89e0d2d496a85f04922b2e019a4aea15326bb9...HEAD']' returned non-zero exit status 128.

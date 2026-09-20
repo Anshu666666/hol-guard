@@ -1,0 +1,32 @@
+..............F                                                          [100%]
+=================================== FAILURES ===================================
+_______ test_real_commit_succeeded_before_actual_postcommit_read_failure _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-469/test_real_commit_succeeded_bef0')
+
+    def test_real_commit_succeeded_before_actual_postcommit_read_failure(tmp_path):
+        class CloseAfterCommit(sqlite3.Connection):
+            def commit(self):
+                super().commit()
+                self.close()
+    
+        path = tmp_path / "database.db"
+        connection = sqlite3.connect(path, factory=CloseAfterCommit)
+        connection.execute("create table sample(value integer)")
+        connection.execute("insert into sample values(1)")
+        writer, scopes = _fixture()
+        _, _, sites, _ = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+        with SQLiteFailureCapture(writer, scopes=scopes, sites=sites) as capture:
+            _, error = _call(writer, lambda: outbox.commit_review_event_transaction(connection, 0, lambda elapsed: None))
+        assert type(error) is sqlite3.ProgrammingError
+        row = capture.report()["events"][0]["chain"][0]
+>       assert row["operation"] == "wake_schema_read"
+E       AssertionError: assert 'post_commit_generation_call' == 'wake_schema_read'
+E         
+E         - wake_schema_read
+E         + post_commit_generation_call
+
+tests/test_sqlite_failure_capture.py:182: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_sqlite_failure_capture.py::test_real_commit_succeeded_before_actual_postcommit_read_failure
+1 failed, 14 passed in 0.94s

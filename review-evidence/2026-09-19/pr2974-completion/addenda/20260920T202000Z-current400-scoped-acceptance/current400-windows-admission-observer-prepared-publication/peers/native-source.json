@@ -1,0 +1,53 @@
+{
+  "schema": "pr2974.current400-admission-capture-source-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "verdict": "clear in narrow capture/privacy/forwarding scope; operational binder/driver owned separately",
+  "packet": "aadc02ea37a5e1358f4699355cab96c4645f0204",
+  "source_tree": "48e237aa34fb80b27f3b11ab609c8705cc96c3e1",
+  "original_source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "exact_readbacks": [
+    {
+      "path": "source/ci/native_runtime/admission_observation_capture.py",
+      "sha": "3fdb64b3e27b5e8871dc7db16fb3f0b153173b49",
+      "exact": true
+    },
+    {
+      "path": "source/ci/native_runtime/admission_observation_values.py",
+      "sha": "ad3dfee447e08f3b44adc94bf2115f44f05f2f3f",
+      "exact": true
+    },
+    {
+      "path": "source/tests/test_admission_observation.py",
+      "sha": "ff3b99a076870993fc311dd9f618d4ac073aa44a",
+      "exact": true
+    },
+    {
+      "path": "records/final.xml",
+      "sha": "0a40f2498dc30b06e43e58f956154cd4f8015418",
+      "exact": true
+    }
+  ],
+  "source_findings": [
+    "Original bind/aggregate callbacks run first and return their original object; delivery forwards original args exactly once, returns the same object or reraises the same exception. Recorder failures cannot retry or replace the original operation.",
+    "Projection uses exact built-in containers/types, finite counter/reason/route names, bounded integers and scalar flags. Raw payloads, private paths, arbitrary exception names and unknown objects are not serialized.",
+    "Metrics, scheduler and admission locks are separately acquired nonblocking and released before advancing. These are sequential non-atomic snapshots; counter deltas cannot automatically assign a request cause or imply an atomic server state.",
+    "The actual 21-case roster is checked against original ownership routes by a meaningful source control. Off/shadow calls are forwarded after aggregation with capture inactive; roster mismatch/overflow remains an explicit fault.",
+    "Alias installation/restoration preserves original references and records ownership loss rather than replacing a later unrelated alias.",
+    "Original receipt snapshot is explicitly the existing end_corpus argument sampled before callback. End boundary means observed callback exit, not successful shutdown. Original probe outcome and teardown must remain separate gates."
+  ],
+  "controls_read": [
+    "Full original-argument/result/exception identity controls.",
+    "Actual existing scheduler admission rejection with no observer-induced acquire.",
+    "Hostile projection objects and invalid scalar refusal; no coercion or arbitrary hash/string conversion.",
+    "Partial alias install and later ownership loss.",
+    "Four complete-21-case traces with baseline/before/after/final snapshot lock contention refuse observation completeness.",
+    "Original result/exception survive lock-release failure; recording failure remains explicit.",
+    "Independently parsed retained owner XML:34 unique test nodes, zero failure/error/skip. Owner manifest notes final test-only generic annotation after XML; this peer does not relabel execution as exact-final-byte rerun."
+  ],
+  "limits": [
+    "No source imports, tests, build or workload executed by reviewer.",
+    "Full source/binary/archive/import and runner operational admission belongs to separate peer.",
+    "No individual route cause, native failure leaf, process containment, post-shutdown receipt census or qualification inferred.",
+    "Future result export follows original probe teardown; original cleanup evidence remains necessary and cannot be replaced by aliases_restored."
+  ]
+}

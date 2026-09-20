@@ -1,0 +1,61 @@
+{
+  "ledger_blob": "9defde72df836d6c74224a0fc8b955c776484904",
+  "task": {
+    "id": "RSP-119",
+    "number": 119,
+    "title": "Benchmark full catalog execution",
+    "acceptance": "Separate cold compile/load from warm evaluation; vary catalog/candidates/controls within valid combined limits and include false-review counts.",
+    "dependencies": [
+      "RSP-118",
+      "RSP-010"
+    ],
+    "status": "DONE",
+    "evidence_or_remaining_work": "Committed 638 catalog/control/command component combinations cover 7/48/86 actual extensions, up to 780 valid controls, cold source compilation/native admission and 100 warm samples per command. All 638 complete declarative observation sets match; false-review/stronger/weaker native action counts and exact source/binary/catalog identities are retained. Distinct Python/native authority scopes prohibit a speedup ratio. This completes the benchmark acceptance, not installed RSP-118/120 or release qualification.",
+    "evidence_refs": [
+      "program",
+      "control",
+      "ollama",
+      "catalog_matrix",
+      "allocation"
+    ],
+    "original_dependencies": "RSP-118,RSP-010."
+  },
+  "catalog": {
+    "program": {
+      "path": "../native-command-program-performance.md",
+      "source_commit": "84ada717e",
+      "scope_and_limit": "86 extensions, 291 rules, 304 permissions, 2242 nodes; all 29 reviewed matcher types admitted, 26 instantiated families. CPython 3.12/UCD15 profile only. 828 declarative observation vectors plus bounded family/compatibility oracles; explicit owned uncertainty remains."
+    },
+    "control": {
+      "path": "../rust-native-command-control-binding.md",
+      "source_commit": "531404a3e; 017214841",
+      "scope_and_limit": "Authenticated immutable program/control binding, retained SH/EX mutation fence, exact prior-floor recovery links and signed managed source context; ordinary resolved local review reuse is bound to the current decision, not native one-time consumption."
+    },
+    "catalog_matrix": {
+      "path": "../native-command-matrix-performance.md",
+      "source_commit": "d9802fac2; integrated 81ef6195c",
+      "scope_and_limit": "638 valid catalog/control/command combinations, 7/48/86 extensions, cold compile/admission and 100-sample warm observations. Complete declarative parity and false-review/stronger-action counts retained; different Python/native authority scopes prohibit an end-to-end speed ratio."
+    },
+    "allocation": {
+      "path": "../native-allocation-performance.md",
+      "source_commit": "d9802fac2; dc22fa6f0; integrated 81ef6195c",
+      "scope_and_limit": "47 instrumented components, 30 samples each, small and exact 6 MiB envelopes; retained baseline/candidate hashes and allocation counts. Borrowed identity reduces allocation without changing canonical digests. Instrumented component timings are not installed SLOs."
+    },
+    "ollama": {
+      "path": "../installed-native-ollama-qualification.md",
+      "source_commit": "9db62e8844c2ba2627f55b6b00e58cb5b175185d",
+      "scope_and_limit": "Latest 9db ARM passes all 22 installed Ollama cases; Linux/Intel/Windows retain two cases then fail enabled readiness at 400.108/407.413/407 ms against 400 ms. All four Builder checks and compatible stopped rollback sequences pass; original 2e strict quiescence and broader live/version/signing lifecycle gates remain incomplete. Earlier ae/abf observations remain historical; the actual 9db records are retained_ci_9db."
+    }
+  },
+  "original_todo_blob": "6f464adb27477ebaaceaf7ecb25083d6cfe37d06",
+  "original_todo_note": "Initial TODO marks RSP119 OPEN; preserved execution ledger later records DONE. Both are preserved, not rewritten.",
+  "original_source_api_read": {
+    "error": "GitHub API error 422: {\"message\":\"No commit found for SHA: d9802fac2142bda7cd69906cb202748d24558abc\",\"documentation_url\":\"https://docs.github.com/rest/commits/commits#get-a-commit\",\"status\":\"422\"}",
+    "error_code": "INVALID_ARGUMENT",
+    "error_data": {
+      "message": "No commit found for SHA: d9802fac2142bda7cd69906cb202748d24558abc",
+      "documentation_url": "https://docs.github.com/rest/commits/commits#get-a-commit",
+      "status": "422"
+    }
+  }
+}

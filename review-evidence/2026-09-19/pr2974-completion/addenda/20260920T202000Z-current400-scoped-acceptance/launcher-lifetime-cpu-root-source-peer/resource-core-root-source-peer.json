@@ -1,0 +1,88 @@
+{
+  "schema": "pr2974.launcher-resource-core-root-source-peer.v1",
+  "reviewed_at": "2026-09-20T19:16:45.311914+00:00",
+  "verdict": "clear_for_source_preparation",
+  "source_packet": "a3285f381e8f149ce51b2d54ad2b9195ae2ca1e9",
+  "manifest_blob": "19c4f0198356d94c2316905a45972890f5525009",
+  "source_parent": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "source_files": [
+    {
+      "bytes": 8524,
+      "git_blob": "e9eb21256ea737d85607450f973847328b4eccb1",
+      "path": "scripts/native_slo_lifetime_cpu.py",
+      "sha256": "fd71ac7919e79c08cae857027791e843fcf9f1bdd2cf788ed5fc35f8aca96500"
+    },
+    {
+      "bytes": 5506,
+      "git_blob": "961720628b10209e2c9a6039b55fd9a366901288",
+      "path": "scripts/native_slo_launcher_resources.py",
+      "sha256": "0f4d212ae4b17bab5d5db603c520985254b0044fa2dbd6fe1d773785c9aabfbe"
+    },
+    {
+      "bytes": 13185,
+      "git_blob": "0255c429e1753d5098d638372a49463a3df69122",
+      "path": "scripts/native_slo_qualification_run.py",
+      "sha256": "b1c580437054f247e86d560f48b3411cecf058c7874700cee6e81ca665fb4c92"
+    },
+    {
+      "bytes": 8031,
+      "git_blob": "cd0bb1b4e5c07af4bff3c6fc7164548722643390",
+      "path": "tests/test_native_slo_lifetime_cpu.py",
+      "sha256": "c283421ac5c670057766feb988ec9d1c7889f6d8cfd1cedea03935cc82e5d660"
+    },
+    {
+      "bytes": 10123,
+      "git_blob": "4266450f937a453e7e64501b107d563051c54671",
+      "path": "tests/test_native_slo_launcher_resources.py",
+      "sha256": "131eeb114f1af23925201f3563424d2aba0558a6d074dfc95c53512da477eef2"
+    }
+  ],
+  "full_five_api_local_bindings_match": true,
+  "actual_controls": {
+    "total": 72,
+    "passed": 71,
+    "skipped": [
+      {
+        "class": "tests.test_native_slo_lifetime_cpu",
+        "name": "test_real_protected_group_accounts_exited_child_and_grandchild",
+        "reason": "requires separately reviewed private kernel cgroup preparation; no simulated full-coverage credit"
+      }
+    ],
+    "full_kernel_positive_executed": false,
+    "types": {
+      "filesAnalyzed": 5,
+      "errorCount": 0,
+      "warningCount": 130,
+      "informationCount": 0,
+      "timeInSec": 1.234
+    },
+    "peer_tests_executed": false
+  },
+  "review": [
+    "Read all five proposed source/control bodies and the complete existing-script diff. The original launch producer receives the same session/plan once through either branch, with default None retaining the original route and timers. Only its optional resource bracket/report field and type-only cast change existing behavior.",
+    "The Linux reader holds the original directory handle, verifies actual cgroup2 mount and root ownership, bounds metadata/counter reads, refuses privileged/saved-root/capability/NoNewPrivs/thread/migration/foreign-member/child-group states, and checks its own membership around counter snapshots. It performs no cgroup writes, process reaping, product probes or retries.",
+    "Official kernel documentation confirms inherited fork membership, hierarchical cpu.stat usage/user/system counters and common-ancestor migration permission. These interfaces do not independently prove that an external controller preserved isolation.",
+    "Counter regression and admission/read failures remain unavailable. Ordinary polling still declares short-exited-descendant incompleteness. Producer returns and raised objects survive observer faults; a failed producer cannot gain a complete lifetime-tail flag.",
+    "Finite real waited-child/grandchild and failed-operation/new-session-child controls preserve the limited observation and original owner cleanup. Modeled filesystem controls validate refusal logic only; the sole real protected-kernel positive is explicitly unexecuted.",
+    "Lifetime interval totals include the worker, control and collector CPU. No observer cost is subtracted; external services, private-memory peaks, full descendant retirement and accepted CPU/request normalization are not proved."
+  ],
+  "consumer_requirements": [
+    "Treat observation_complete as successful bracket/producer completion only; inspect the nested unavailable_samples/unavailable_metrics/metric_minimum_met/sample_minimum_met fields independently. It does not mean all required resources were observed.",
+    "lifetime_cpu_complete applies only to CPU charged inside the admitted group during these snapshots. Original producer return does not prove child retirement; full_resource_qualification remains false.",
+    "Before an original benchmark, freeze and review the actual external controller, unprivileged worker identity, exact source/artifacts, environment and cleanup. No cgroup migration or new child may precede admission.",
+    "Run finite real kernel positives, refused migration and lost/partial negatives on the selected host before performance selection; an unsupported/failed host remains refused.",
+    "Preserve original sample minima, alternating runs, confidence bounds, elapsed timers, outcomes and full resource requirements. Linux-first selection needs its own concrete plan; no transfer to Mac or Windows."
+  ],
+  "next_action": "Prepare a private Linux hosted controller and finite kernel admission controls within existing authorization; no original performance workload yet.",
+  "references": [
+    {
+      "url": "https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html",
+      "scope": "fork inheritance, cpu.stat hierarchy and migration permissions; read2026-09-20"
+    },
+    {
+      "url": "https://www.man7.org/linux/man-pages/man3/getrusage.3p.html",
+      "scope": "waited-child scope; read2026-09-20"
+    }
+  ],
+  "full_prd_acceptance": false
+}

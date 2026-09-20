@@ -1,0 +1,47 @@
+--- before
++++ after
+@@ -270,8 +270,18 @@
+ #[test]
+ fn source_full_read_tail_secret_and_changed_source_oracles_remain_active() {
+     for (filename, contents, replacement, reason) in [
+-        ("source.txt", "clean content\n".to_owned(), None, "no_output_to_review"),
+-        ("source.rs", "clean content\n".to_owned(), None, "source_full_scan_allow"),
++        (
++            "source.txt",
++            "clean content\n".to_owned(),
++            None,
++            "no_output_to_review",
++        ),
++        (
++            "source.rs",
++            "clean content\n".to_owned(),
++            None,
++            "source_full_scan_allow",
++        ),
+         (
+             "source.rs",
+             format!(
+@@ -297,11 +307,20 @@
+         )
+         .unwrap();
+         let classified = guard_secure_fs::classify_source_path(
+-            filename, &workspace.root, Some(&workspace.root), false,
++            filename,
++            &workspace.root,
++            Some(&workspace.root),
++            false,
+         );
+         assert_eq!(classified.allowed, filename == "source.rs");
+-        assert_eq!(classified.reason_code,
+-            if filename == "source.rs" { "source_extension" } else { "not_source_like" });
++        assert_eq!(
++            classified.reason_code,
++            if filename == "source.rs" {
++                "source_extension"
++            } else {
++                "not_source_like"
++            }
++        );
+         let value = json!({"hook_event_name":"PostToolUse","tool_name":"Read","is_error":false,
+             "tool_input":{"file_path":filename},"guard_source_ref":{"version":1,"path":filename,
+                 "output_sha256":hex::encode(Sha256::digest(contents.as_bytes())),"output_chars":contents.chars().count()}});

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="15" time="0.945" timestamp="2026-09-20T15:38:19.491765-03:00" hostname="localhost"><testcase classname="tests.test_sqlite_failure_capture" name="test_existing_real_receipt_lock_drain_with_original_timeout_and_database_assertions" time="0.167" /><testcase classname="tests.test_sqlite_failure_capture" name="test_existing_postcommit_ack_retry_contract_is_unchanged[after_commit]" time="0.113" /><testcase classname="tests.test_sqlite_failure_capture" name="test_existing_postcommit_ack_retry_contract_is_unchanged[single_ack]" time="0.144" /><testcase classname="tests.test_sqlite_failure_capture" name="test_existing_postcommit_ack_retry_contract_is_unchanged[batch_ack]" time="0.114" /><testcase classname="tests.test_sqlite_failure_capture" name="test_original_classifier_return_and_exception_identity_and_call_count" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_classifier_failure_is_not_replaced_or_observed" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_recording_failure_preserves_original_return" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_unavailable_or_invalid_codes_are_not_synthesized[None]" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_unavailable_or_invalid_codes_are_not_synthesized[-1]" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_unavailable_or_invalid_codes_are_not_synthesized[4294967296]" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_unavailable_or_invalid_codes_are_not_synthesized[True]" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_unavailable_or_invalid_codes_are_not_synthesized[private code]" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_overflow_nonblocking_lock_and_detached_report" time="0.003" /><testcase classname="tests.test_sqlite_failure_capture" name="test_secondary_cleanup_error_remains_distinct_from_original_context" time="0.001" /><testcase classname="tests.test_sqlite_failure_capture" name="test_real_commit_succeeded_before_actual_postcommit_read_failure" time="0.004"><failure message="AssertionError: assert 'post_commit_generation_call' == 'wake_schema_read'&#10;  &#10;  - wake_schema_read&#10;  + post_commit_generation_call">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-469/test_real_commit_succeeded_bef0')
+
+    def test_real_commit_succeeded_before_actual_postcommit_read_failure(tmp_path):
+        class CloseAfterCommit(sqlite3.Connection):
+            def commit(self):
+                super().commit()
+                self.close()
+    
+        path = tmp_path / "database.db"
+        connection = sqlite3.connect(path, factory=CloseAfterCommit)
+        connection.execute("create table sample(value integer)")
+        connection.execute("insert into sample values(1)")
+        writer, scopes = _fixture()
+        _, _, sites, _ = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+        with SQLiteFailureCapture(writer, scopes=scopes, sites=sites) as capture:
+            _, error = _call(writer, lambda: outbox.commit_review_event_transaction(connection, 0, lambda elapsed: None))
+        assert type(error) is sqlite3.ProgrammingError
+        row = capture.report()["events"][0]["chain"][0]
+&gt;       assert row["operation"] == "wake_schema_read"
+E       AssertionError: assert 'post_commit_generation_call' == 'wake_schema_read'
+E         
+E         - wake_schema_read
+E         + post_commit_generation_call
+
+tests/test_sqlite_failure_capture.py:182: AssertionError</failure></testcase></testsuite></testsuites>

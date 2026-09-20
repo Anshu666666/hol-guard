@@ -1,0 +1,43 @@
+{
+  "controller": [
+    "Run stdlib-only controller with root-owned system Python -I -S on an isolated Ubuntu hosted VM; exact source hashes first",
+    "Create exactly one fresh root-owned mode0555 cgroup below real /sys/fs/cgroup; require empty group and writable cgroup.kill before any worker",
+    "In single-threaded pre-exec child only: place its own PID once into group, close inherited directory fd, clear supplementary groups, set all real/effective/saved GIDs/UIDs to original nonroot runner, set NoNewPrivs, then exec frozen worker",
+    "Worker independently admits unchanged ProtectedCgroupCpu before any child or sampler thread; platform, filesystem, privileges, all ancestors, exclusivity and source ownership are not assumed from controller success",
+    "Root controller remains outside worker group; drain stdout/stderr concurrently with128KiB shared retention and30s wall bound",
+    "On failure or remaining live members, only the pinned owned cgroup.kill is used; reap direct worker, require kernel populated0, close owned handle and remove exactly its created group. Failure to prove this keeps cleanup false. No global process kill or unrelated path deletion."
+  ],
+  "five_controls": [
+    "Exited waited child and grandchild in independent sessions; retain real before/after kernel counter domains and minimum finite CPU-burn witness",
+    "Intermediate exits without waiting for new-session grandchild. Literal stdout proves the finite CPU burn reached; EOF proves only closure of inherited pipe writers. Before the final CPU snapshot, a finite-control-only wait (at most101 reads,1second) requires protected cgroup.procs to contain only the worker; an immediate second check brackets the snapshot. Admission forbids descendant groups and the nonroot worker cannot create/migrate them. This proves no other live member at the snapshot, not waitpid/reaping of orphan zombies.",
+    "Actual nonroot child cannot open parent cgroup.procs for migration; no migration write occurs if the guard unexpectedly admits open",
+    "Original operation raises while a real session-owned child remains alive; exact exception identity and incomplete CPU/tail are retained, original test owner alone releases/reaps child",
+    "Close the admitted counter handle and preserve exact original return despite lifetime_start refusal; no false completeness"
+  ],
+  "future_measurement": "Linux-first remains a possible revised proposal only if these real kernel controls pass. All original timers, populations, confidence bounds, startup and full-resource gates remain unchanged; no source-only claim of optimized Python benefit.",
+  "local_validation": {
+    "controller_controls": 41,
+    "passed": 41,
+    "real_cgroup_positive_executed": false,
+    "real_local_tests": "finite owned subprocess output overflow and descendant-held pipe EOF bounds; no product/native workload",
+    "real_privileged_controller_executed": false,
+    "types_errors": 0,
+    "types_warnings": 134
+  },
+  "preserved_predecessor_tree": "0d4c43ce74420410e733c63253b475fa541909bc",
+  "schema": "hol-guard.kernel-cpu-finite-controller-preparation.v3",
+  "scope": "Only finite source/kernel accounting controls. No original launcher, native runtime, installed artifact or performance population.",
+  "source_core_packet": "a3285f381e8f149ce51b2d54ad2b9195ae2ca1e9",
+  "source_core_peer": "59f6590d1e34b5253ae2bd6883454fbdf84a98de",
+  "still_missing_before_launch": [
+    "Independent concrete privileged-controller/worker source peer",
+    "Frozen current source/driver lineage and exact workflow input readback",
+    "Operational whole workflow peer; original cgroup preparation and its data-only identity/cleanup admission"
+  ],
+  "strict_result_gate": "Five exact ordered control names, no duplicate JSON, original output digests, exact before/after/delta arithmetic, fixed privacy-safe error labels, exit0, no stderr, controller cleanup independently true. Missing/unsupported actual group is failed/unexecuted coverage, not a skipped success.",
+  "successor_deltas": [
+    "Retained-prefix stream length/hash labels and explicit stream_capture_complete; three strict controls",
+    "Privileged controller requires actual isolated/no-site Python flags before any filesystem/process preparation; three refusal controls. Final30-control result binds final images.",
+    "Root review corrected EOF-versus-exit wording. Added only finite protected-group live-member witness, strict witness fields and11 portable controls; no benchmark timer/population/budget change."
+  ]
+}

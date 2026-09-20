@@ -1,0 +1,447 @@
+#![forbid(unsafe_code)]
+
+use guard_contracts::{
+    HookReviewResponseV1, HookSourceFileRefV1, NativeHookRequestV1, NATIVE_PROTOCOL_VERSION,
+};
+#[cfg(test)]
+use guard_rules::{
+    MAX_CONTENT_ITEMS, MAX_DEPTH, MAX_OBJECT_KEYS, MAX_OUTPUT_CHARS, OUTPUT_TEXT_KEYS,
+};
+use guard_rules::{MAX_SCAN_BYTES, PAYLOAD_OUTPUT_KEYS, REVIEWED_EXCERPT_CHARS};
+use guard_scanner::scan_text;
+use guard_secure_fs::{classify_source_path, read_bounded, sensitive_path_family};
+use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
+use std::path::Path;
+use std::time::{Duration, Instant};
+
+mod output;
+pub use output::extract_payload_output;
+
+#[cfg(test)]
+mod output_reference_tests;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtractedOutput {
+    pub text: String,
+    pub chars: usize,
+    pub truncated: bool,
+}
+
+fn deadline(request: &NativeHookRequestV1) -> Option<Instant> {
+    request
+        .deadline_budget_ms
+        .map(|budget| Instant::now() + Duration::from_millis(budget.min(9_000)))
+}
+
+fn source_ref(payload: &Value) -> Option<HookSourceFileRefV1> {
+    payload
+        .get("guard_source_ref")
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+}
+
+fn envelope_target(payload: &Value) -> Option<String> {
+    let input = payload
+        .get("tool_input")
+        .or_else(|| payload.get("toolInput"))?
+        .as_object()?;
+    for key in ["file_path", "path", "filePath"] {
+        if let Some(value) = input.get(key).and_then(Value::as_str) {
+            if !value.trim().is_empty() {
+                return Some(value.to_owned());
+            }
+        }
+    }
+    None
+}
+
+fn sha256_text(text: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(text.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+fn has_output_key(payload: &Value) -> bool {
+    payload
+        .as_object()
+        .is_some_and(|record: &Map<String, Value>| {
+            PAYLOAD_OUTPUT_KEYS
+                .iter()
+                .any(|key| record.contains_key(*key))
+        })
+}
+
+fn allow_inline_output(reason_code: &str, text: &str) -> HookReviewResponseV1 {
+    let mut response = HookReviewResponseV1::allow(reason_code);
+    response.reviewed_output_sha256 = Some(sha256_text(text));
+    response
+}
+
+fn inline_output_hash(payload: &Value) -> Option<String> {
+    if !has_output_key(payload) {
+        return None;
+    }
+    let extracted = extract_payload_output(payload);
+    if extracted.truncated {
+        return None;
+    }
+    Some(sha256_text(&extracted.text))
+}
+
+fn output_equivalent(text: &str, output_sha256: &str, output_chars: i64) -> bool {
+    if output_chars < 0 {
+        return false;
+    }
+    if sha256_text(text) == output_sha256 && text.chars().count() == output_chars as usize {
+        return true;
+    }
+    if let Some(stripped) = text.strip_suffix('\n') {
+        return sha256_text(stripped) == output_sha256
+            && stripped.chars().count() == output_chars as usize;
+    }
+    false
+}
+
+fn local_samples_should_be_unsuppressed(path: &str) -> bool {
+    let normalized = path.replace('\\', "/").to_ascii_lowercase();
+    let parts: Vec<&str> = normalized.split('/').collect();
+    let docs = [
+        "__fixtures__",
+        "__tests__",
+        "docs",
+        "documentation",
+        "examples",
+        "fixtures",
+        "samples",
+        "spec",
+        "test",
+        "tests",
+    ];
+    if parts.iter().any(|part| docs.contains(part)) {
+        return false;
+    }
+    ![".adoc", ".md", ".mdx", ".rst", ".txt"]
+        .iter()
+        .any(|suffix| normalized.ends_with(suffix))
+}
+
+fn sensitive_reason(family: &str) -> &'static str {
+    match family {
+        "local .env file" => "Guard treats .env files as sensitive because they commonly store local secrets.",
+        "npm registry credentials" => "Guard treats .npmrc as sensitive because it may contain registry tokens.",
+        "Python package credentials" => "Guard treats .pypirc as sensitive because it may contain package credentials.",
+        "netrc credentials" => "Guard treats .netrc as sensitive because it may contain login secrets.",
+        "Git credential store" => "Guard treats .git-credentials as sensitive because it may contain repository credentials.",
+        "AWS shared credentials file" => "Guard treats AWS shared credentials as sensitive because they contain cloud access keys.",
+        "AWS shared config file" => "Guard treats AWS shared config as sensitive because it may contain credential profiles.",
+        "Docker client config" => "Guard treats Docker client config as sensitive because it may contain registry auth.",
+        "Kubernetes config" => "Guard treats Kubernetes config as sensitive because it may include cluster credentials.",
+        "SSH private key" => "Guard treats SSH private keys as sensitive because they provide direct host access.",
+        "SSH client config" => "Guard treats SSH config as sensitive because it may reveal or shape host credentials.",
+        "GnuPG key material" => "Guard treats GnuPG key material as sensitive because it can unlock encrypted assets.",
+        "Terraform variable secrets" => "Guard treats Terraform variable files as sensitive because they often contain secrets.",
+        _ => "Guard treats wallet and private-key files as sensitive because they can authorize account control.",
+    }
+}
+
+fn inconclusive_source() -> HookReviewResponseV1 {
+    // Python's source fast path retains detailed internal reason codes, but
+    // every non-risky proof failure falls back to the standard PostToolUse
+    // path. With a source-ref-only payload that public contract is a safe
+    // deny/block with `no_output_to_review`. Keep the Rust classifier details
+    // internal so native mode does not change observable reason semantics.
+    HookReviewResponseV1::deny(
+        "no_output_to_review",
+        "HOL Guard could not complete local hook review safely.",
+    )
+}
+
+fn review_source(
+    request: &NativeHookRequestV1,
+    source: &HookSourceFileRefV1,
+    deadline: Option<Instant>,
+) -> HookReviewResponseV1 {
+    if source.version != 1 {
+        return inconclusive_source();
+    }
+    if source.output_chars < 0 || source.output_chars > MAX_SCAN_BYTES as i64 {
+        return inconclusive_source();
+    }
+    if source.output_sha256.len() != 64
+        || !source
+            .output_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
+    {
+        return inconclusive_source();
+    }
+    let Some(target) = envelope_target(&request.payload) else {
+        return inconclusive_source();
+    };
+    let candidate = source.tool_input_path.as_deref().unwrap_or(&source.path);
+    let cwd = request
+        .cwd
+        .as_deref()
+        .map(Path::new)
+        .unwrap_or_else(|| Path::new("."));
+    let home = Path::new(&request.home_dir);
+    if let Some((family, _)) = sensitive_path_family(Path::new(candidate)) {
+        return HookReviewResponseV1::deny("sensitive_path", sensitive_reason(family));
+    }
+    let allow_external =
+        matches!(request.harness.as_str(), "pi" | "omp") && request.source_ref_external_allowed;
+    let candidate_decision = classify_source_path(candidate, cwd, Some(home), allow_external);
+    if !candidate_decision.allowed {
+        return inconclusive_source();
+    }
+    let target_decision = classify_source_path(&target, cwd, Some(home), allow_external);
+    if !target_decision.allowed {
+        return inconclusive_source();
+    }
+    let Some(path) = candidate_decision.resolved_path else {
+        return inconclusive_source();
+    };
+    let Some(target_path) = target_decision.resolved_path else {
+        return inconclusive_source();
+    };
+    if path != target_path {
+        return inconclusive_source();
+    }
+    let read = match read_bounded(&path, MAX_SCAN_BYTES) {
+        Ok(read) => read,
+        Err(_) => return inconclusive_source(),
+    };
+    if read.bytes.contains(&0) {
+        return inconclusive_source();
+    }
+    let Ok(text) = std::str::from_utf8(&read.bytes) else {
+        return inconclusive_source();
+    };
+    if !output_equivalent(text, &source.output_sha256, source.output_chars) {
+        return inconclusive_source();
+    }
+    let scan = scan_text(
+        text,
+        local_samples_should_be_unsuppressed(&source.path),
+        true,
+        MAX_SCAN_BYTES,
+        deadline,
+    );
+    if scan.budget_exhausted {
+        return inconclusive_source();
+    }
+    if !scan.matches.is_empty() {
+        return HookReviewResponseV1::deny(
+            "source_secret_match",
+            "HOL Guard blocked this output because it contains sensitive content.",
+        );
+    }
+    let mut response = HookReviewResponseV1::allow("source_full_scan_allow");
+    response.reviewed_output_sha256 = Some(source.output_sha256.clone());
+    response
+}
+
+fn review_inline(request: &NativeHookRequestV1, deadline: Option<Instant>) -> HookReviewResponseV1 {
+    let extracted = extract_payload_output(&request.payload);
+    if extracted.text.is_empty() {
+        if extracted.truncated {
+            return HookReviewResponseV1::deny("output_too_large", "HOL Guard blocked this output because it could not be safely excerpted within local limits.");
+        }
+        if has_output_key(&request.payload) {
+            return allow_inline_output("output_empty_allow", &extracted.text);
+        }
+        return HookReviewResponseV1::deny(
+            "no_output_to_review",
+            "HOL Guard could not complete local hook review safely.",
+        );
+    }
+    let local_content = envelope_target(&request.payload)
+        .is_some_and(|path| local_samples_should_be_unsuppressed(&path));
+    if extracted.truncated {
+        let excerpt: String = extracted
+            .text
+            .chars()
+            .take(REVIEWED_EXCERPT_CHARS)
+            .collect();
+        let scan = scan_text(&excerpt, local_content, true, MAX_SCAN_BYTES, deadline);
+        if scan.budget_exhausted || !scan.matches.is_empty() {
+            return HookReviewResponseV1::deny("output_too_large", "HOL Guard blocked this output because it could not be fully scanned within local limits.");
+        }
+        return HookReviewResponseV1::reviewed_excerpt("output_too_large", "HOL Guard returned a reviewed excerpt because the output was too large to scan in full within local limits.", excerpt);
+    }
+    let scan = scan_text(
+        &extracted.text,
+        local_content,
+        true,
+        MAX_SCAN_BYTES,
+        deadline,
+    );
+    if scan.budget_exhausted {
+        return HookReviewResponseV1::deny(
+            "scanner_budget_exhausted",
+            "HOL Guard could not complete local hook review safely.",
+        );
+    }
+    if !scan.matches.is_empty() {
+        return HookReviewResponseV1::deny(
+            "output_secret_match",
+            "HOL Guard blocked this output because it contains sensitive content.",
+        );
+    }
+    allow_inline_output("output_scan_allow", &extracted.text)
+}
+
+pub fn review_post_tool(request: &NativeHookRequestV1) -> HookReviewResponseV1 {
+    review_post_tool_with_deadline(request, deadline(request))
+}
+
+/// Preserve an upstream monotonic deadline through extraction, source reads
+/// and scanning. A caller cannot extend the request's own bounded budget.
+pub fn review_post_tool_with_deadline(
+    request: &NativeHookRequestV1,
+    upstream_deadline: Option<Instant>,
+) -> HookReviewResponseV1 {
+    let deadline = match (upstream_deadline, deadline(request)) {
+        (Some(upstream), Some(local)) => Some(upstream.min(local)),
+        (upstream, local) => upstream.or(local),
+    };
+    if request.protocol_version != NATIVE_PROTOCOL_VERSION {
+        return HookReviewResponseV1::deny(
+            "protocol_version_mismatch",
+            "HOL Guard could not complete local hook review safely.",
+        );
+    }
+    if request.event_name != "PostToolUse" {
+        return HookReviewResponseV1::deny(
+            "not_post_tool",
+            "HOL Guard could not complete local hook review safely.",
+        );
+    }
+    let source = source_ref(&request.payload);
+    let response = if let Some(source) = source.as_ref() {
+        review_source(request, source, deadline)
+    } else {
+        review_inline(request, deadline)
+    };
+    if request.observe_mode {
+        let output_hash = source
+            .as_ref()
+            .map(|value| value.output_sha256.clone())
+            .or_else(|| inline_output_hash(&request.payload));
+        if let Some(output_hash) = output_hash {
+            response.observed(Some(output_hash))
+        } else {
+            // Truncated inline output cannot prove the original bytes. Keep
+            // the fail-closed decision instead of allowing it without proof.
+            response
+        }
+    } else {
+        response
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn request(payload: Value) -> NativeHookRequestV1 {
+        NativeHookRequestV1 {
+            protocol_version: 1,
+            request_id: Some("test".into()),
+            harness: "claude-code".into(),
+            event_name: "PostToolUse".into(),
+            payload,
+            cwd: None,
+            home_dir: "/tmp".into(),
+            guard_home: "/tmp/guard".into(),
+            source_ref_external_allowed: false,
+            observe_mode: false,
+            deadline_budget_ms: Some(750),
+        }
+    }
+
+    fn github_like_token() -> String {
+        let prefix = ["gh", "p_"].concat();
+        format!("{prefix}{}", "b".repeat(30))
+    }
+
+    fn aws_like_access_key() -> String {
+        let prefix = ["AK", "IA"].concat();
+        format!("{prefix}{}", "A".repeat(16))
+    }
+
+    #[test]
+    fn clean_inline_output_is_allowed() {
+        let response = review_post_tool(&request(
+            json!({"tool_response": [{"type": "text", "text": "hello"}]}),
+        ));
+        assert_eq!(response.decision, "allow");
+        assert_eq!(response.reason_code, "output_scan_allow");
+        assert_eq!(response.reviewed_output_sha256, Some(sha256_text("hello")));
+    }
+
+    #[test]
+    fn empty_inline_output_is_allowed_with_digest() {
+        let response = review_post_tool(&request(json!({"tool_response": ""})));
+        assert_eq!(response.decision, "allow");
+        assert_eq!(response.reason_code, "output_empty_allow");
+        assert_eq!(response.reviewed_output_sha256, Some(sha256_text("")));
+    }
+
+    #[test]
+    fn upstream_deadline_is_not_restarted_before_scanning() {
+        let request = request(json!({"tool_response": "clean output"}));
+        let expired = Instant::now() - Duration::from_millis(1);
+        let response = review_post_tool_with_deadline(&request, Some(expired));
+        assert_eq!(response.decision, "deny");
+        assert_eq!(response.reason_code, "scanner_budget_exhausted");
+        assert_eq!(review_post_tool(&request).decision, "allow");
+    }
+
+    #[test]
+    fn secret_inline_output_is_blocked() {
+        let response = review_post_tool(&request(json!({"tool_response": github_like_token()})));
+        assert_eq!(response.decision, "deny");
+        assert_eq!(response.reason_code, "output_secret_match");
+    }
+
+    #[test]
+    fn observe_inline_secret_preserves_original_with_digest() {
+        let output = github_like_token();
+        let expected_hash = sha256_text(&output);
+        let mut observe_request = request(json!({"tool_response": output}));
+        observe_request.observe_mode = true;
+
+        let response = review_post_tool(&observe_request);
+
+        assert_eq!(response.decision, "allow");
+        assert_eq!(response.reason_code, "observe_output_secret_match");
+        assert_eq!(response.model_output_action, "allow_original");
+        assert_eq!(response.reviewed_output_sha256, Some(expected_hash));
+        assert_eq!(response.observed_policy_action.as_deref(), Some("block"));
+        assert!(response.observe_mode);
+    }
+
+    #[test]
+    fn observe_truncated_inline_secret_remains_blocked_without_digest() {
+        let output = format!("{}{}", github_like_token(), "x".repeat(MAX_OUTPUT_CHARS));
+        let mut observe_request = request(json!({"tool_response": output}));
+        observe_request.observe_mode = true;
+
+        let response = review_post_tool(&observe_request);
+
+        assert_eq!(response.decision, "deny");
+        assert_eq!(response.reason_code, "output_too_large");
+        assert_eq!(response.reviewed_output_sha256, None);
+        assert!(!response.observe_mode);
+    }
+
+    #[test]
+    fn stderr_is_scanned_even_when_stdout_exists() {
+        let response = review_post_tool(&request(
+            json!({"stdout": "ok", "stderr": aws_like_access_key()}),
+        ));
+        assert_eq!(response.reason_code, "output_secret_match");
+    }
+}

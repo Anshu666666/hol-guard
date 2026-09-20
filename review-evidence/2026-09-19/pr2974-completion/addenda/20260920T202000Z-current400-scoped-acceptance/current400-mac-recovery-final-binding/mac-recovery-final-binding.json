@@ -1,0 +1,99 @@
+{
+  "schema": "pr2974.current400-mac-recovery-final-binding.v1",
+  "status": "Prepared exact unreferenced source and driver commits; branch uncreated and original selector unexecuted on this tuple.",
+  "base": {
+    "sha": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97"
+  },
+  "source": {
+    "sha": "f81d496d0ac185507c61a7ab3922b512505d7672",
+    "tree": "c133117e76653c0f077d2c3cb5c09607a0554d17",
+    "parents": [
+      "4001185e4f39cad51fd5eab314bf02b86b8a1674"
+    ]
+  },
+  "driver": {
+    "sha": "a127881cb85de4e062942a4cbe204609681f5001",
+    "tree": "ab805ba4fc8f64f0bea8a8df2116154bcbd2c9ce",
+    "parents": [
+      "f81d496d0ac185507c61a7ab3922b512505d7672"
+    ]
+  },
+  "prepared_packet": "ef00294fe7a6ee3100caccff630ee3361c32741d",
+  "proposed_branch": "codex/pr2974-mac-supervisor-recovery-4001185-20260920",
+  "composition": {
+    "base_leaves": 4800,
+    "source_leaves": 4807,
+    "driver_leaves": 4811,
+    "source_delta": [
+      "ci/native_runtime/mac_recovery_capture.py",
+      "ci/native_runtime/mac_recovery_plugin.py",
+      "ci/native_runtime/mac_recovery_record.py",
+      "rust/crates/guard-runtime/src/main.rs",
+      "rust/crates/guard-runtime/src/managed_resident.rs",
+      "rust/crates/guard-runtime/src/native_client_failure_observation.rs",
+      "rust/crates/guard-runtime/src/native_client_read_observation.rs",
+      "rust/crates/guard-runtime/src/resident_client.rs",
+      "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "rust/crates/guard-runtime/src/resident_client_read_observation_tests.rs",
+      "tests/test_mac_recovery_observation.py"
+    ],
+    "driver_delta": [
+      ".github/workflows/pr2974-mac-supervisor-recovery.yml",
+      "mac-recovery-validation/input-contract.json",
+      "mac-recovery-validation/run.py",
+      "mac-recovery-validation/test_driver.py"
+    ]
+  },
+  "verification": {
+    "commit_parent_tree_api_readback": true,
+    "full_untruncated_tree_census": true,
+    "driver_four_bodies_fetched_equal": true,
+    "local_separate_index_driver_tree_recomputed": true,
+    "source_11_bodies_identical_to_executed_e440_v3": true,
+    "all21_source_dependency_contract_members_match_current400": true,
+    "placeholder_changes": {
+      "contract_source_sha": 1,
+      "workflow_source_sha": 2,
+      "workflow_source_tree": 1
+    }
+  },
+  "driver_blobs": {
+    "workflow": "d0adc5c706b39868b936ee825e7961cc4c74c6fb",
+    "contract": "221b7bd2b4f87467e4ea6050d126c148fab1cef5",
+    "runner": "71964367d9be87f89494f3238fbef0309b1e5c16",
+    "controls": "412cb730c6fbab99798faf19f91750d22c4238ea"
+  },
+  "local_preflight": {
+    "source_python_passed": 38,
+    "driver_python_passed": 28,
+    "skipped": 0,
+    "type_errors": 0,
+    "type_warnings": 355,
+    "ruff": "pass",
+    "format_check": "pass"
+  },
+  "hosted_required": {
+    "rust_default": 18,
+    "rust_feature": 25,
+    "original_selector_invocations": 1,
+    "selector": "ci/native_runtime/test_native_hook_client.py::test_native_hook_client_recovers_after_supervisor_exit",
+    "native_policy_push_ms": 2000,
+    "outer_push_seconds": 8,
+    "auth_phase_ms": 250,
+    "termination_seconds": 2,
+    "fixture_stop_seconds": 2,
+    "hook_seconds": 3
+  },
+  "scope": {
+    "source_built_diagnostic_runtime": true,
+    "installed_wheel_claim": false,
+    "old_failed_binary_reused": false,
+    "new_probes": false,
+    "new_retries": false,
+    "default_artifact_timing": false,
+    "historical_cause_assignment": false,
+    "current_product_fix": false,
+    "native_controls_executed_on_new_tuple": false
+  }
+}

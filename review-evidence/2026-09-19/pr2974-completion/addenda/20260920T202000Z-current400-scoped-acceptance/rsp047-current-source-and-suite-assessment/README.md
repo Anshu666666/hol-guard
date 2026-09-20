@@ -1,0 +1,11 @@
+This packet assesses the original RSP-047 clause and its five direct dependencies against PR source 4001185e4f39cad51fd5eab314bf02b86b8a1674, tree 7a328609488ffefecd3cdd12a9c7adba6a591e97. It recommends acceptance of that scoped correctness-suite task; no task-status file or Git ref was changed.
+
+The direct current-source evidence is the original successful Rust runtime, command, PreToolUse, PostToolUse and ownership job logs. The workspace ran 341 tests successfully with six explicit diagnostics ignored. The other logged populations overlap and must not be added into a unique grand total. ASSESSMENT.json records each dependency's exact providers, named controls, suite coverage and limitations.
+
+The logs came from GitHub's decoded job-log tool and are retained losslessly as UTF-8 text, including the initial BOM, via gzip/base64. This preserves the decoded text rather than asserting the original HTTP compression bytes. log-manifest.json records every original byte count, SHA-256 and Git blob identity. verify_logs.py is a data-only reader; it reconstructs in memory, checks identities and compares an existing original if present. It imports no project module and launches no process.
+
+Current compiler jobs explicitly normalize source formatting first. Their source provenance is exact checkout plus that declared normalization, not a retained post-format source census. The separately retained encrypted six-file formatter and three-platform 43/43 result packet remain distinct exact-afterimage evidence. All Rust changes since historical124 are precisely those six files.
+
+The previous encrypted fixture failure remains in b8822f6961de7eea3d6e51a3cd57b5e95ec6fbec. Its .txt/.rs classification discrepancy was investigated without altering the production classifier: the rejected .txt case remains a negative, and recognized .rs cases require direct plain/encrypted public result equality. The successor43/43 Linux/ARM/Intel packet is86a98c31a0f21dc1f7011c4b96fde002aa63c8e1.
+
+This is not an installed-performance, all-route, Windows default-auto, soak/resource, release, signing or human-approval decision. Original failing installed diagnostics remain unresolved in their own scopes. The review ran no tests, builds or workloads; its only execution read and hashed retained data.

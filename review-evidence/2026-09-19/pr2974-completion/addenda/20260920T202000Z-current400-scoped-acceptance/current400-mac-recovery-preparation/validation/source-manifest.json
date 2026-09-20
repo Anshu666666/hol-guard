@@ -1,0 +1,373 @@
+{
+  "schema": "pr2974.current400-mac-recovery-source.v1",
+  "base": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "base_tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+  "source_tree": "c133117e76653c0f077d2c3cb5c09607a0554d17",
+  "source_sha": null,
+  "status": "Prepared current400 overlay; all11 diagnostic source/control bodies byte-identical to executed E440 V3. Local Python38+driver28 passed; types0. New Rust build/controls and original selector unexecuted.",
+  "prior_source": "f9ae6c1ca772a4945fef07ea9519935574f8cf08",
+  "prior_driver": "04a16233f4862dfa43b0d4bc19b1ea2e911ec3e9",
+  "prior_result_tree": "e63006ffe4b8cef58f85e915d24a0b1731644349",
+  "fresh_failure_triage": "6461c0379775ca93d0ccf0904deba4811d28d299",
+  "files": [
+    {
+      "path": "ci/native_runtime/mac_recovery_capture.py",
+      "bytes": 6952,
+      "sha256": "f91bceb1373b8977906cb697da02e8cc691011f2948d73a6d77103e6f90ca577",
+      "git_blob": "23d79d5dddece0cb249054616e85ae16d4ef23b1"
+    },
+    {
+      "path": "ci/native_runtime/mac_recovery_plugin.py",
+      "bytes": 4846,
+      "sha256": "4660c589de0a623984096c58a6c9ed5cb42c0a245688eea9e1124461baeb3cfd",
+      "git_blob": "e4bdb46e722595e8c453bc23a4a1f42ac6fe5ef6"
+    },
+    {
+      "path": "ci/native_runtime/mac_recovery_record.py",
+      "bytes": 5607,
+      "sha256": "56e095138f725e58dfbb0b0e843b8a78a12153618323c7313c9e95b2ee27c397",
+      "git_blob": "4e8b39425bf219e862069f59b4151e46b437870b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "bytes": 14680,
+      "sha256": "4aaffe6d51f105f6fa7eb5551a3c787e711780f096c63e43426edb2bb469d2b8",
+      "git_blob": "212947de3fdd28fb78624d4307eb355dd06b7089"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "bytes": 17822,
+      "sha256": "fbd372e3c8c062de367e9b407efa3fd8f00d77a4be84366bd6fdfa270ff40d1c",
+      "git_blob": "94e6f09e3b0eeb0f6147b9b301f9ac9435a8d13f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_client_failure_observation.rs",
+      "bytes": 21073,
+      "sha256": "af7c14fdc1099b4f23b097bc4d32df5ee3dcd2e8b1c30c83924b86dd23615b28",
+      "git_blob": "a07dc5709a6d9edb938bc659187bd6ced3ded41a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_client_read_observation.rs",
+      "bytes": 14908,
+      "sha256": "d3581dcdf2b0c5ae05b7f87ac9ffeb529d5fe37a7ed6fb335d24518ac73b4674",
+      "git_blob": "0c82c1c6ef446d1e42b31acfea03b716196fa28e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "bytes": 15810,
+      "sha256": "3d22dd088435d5105a735fe6ebc92c5a0978191bb6ff70bb78a427e05a0f55b6",
+      "git_blob": "a05ac7030f58a5e3e8e46452f35f0016b3edea24"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "bytes": 4430,
+      "sha256": "16a5946bfc8fa37c164ecd80db610678cb3e97446fd6ab6358794a3cb563974a",
+      "git_blob": "5a052ce553bc70270fc1dec74e6a711f944adced"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_read_observation_tests.rs",
+      "bytes": 6535,
+      "sha256": "1af548988940627182675389a1d546e51563bfdddc5f40c105de9ec79f137612",
+      "git_blob": "1f84a0d5e5080faaddb961942f2c1e11bb4348ca"
+    },
+    {
+      "path": "tests/test_mac_recovery_observation.py",
+      "bytes": 12270,
+      "sha256": "6ffb196893f5d0efb0dfee4bbc70c0f2df84660696fdb84db89c9b10580b03de",
+      "git_blob": "63848113b9073b1fa1627e5758fcd46b1670289b"
+    }
+  ],
+  "local_controls": [
+    {
+      "path": "python-controls.xml",
+      "passed": 38,
+      "skipped": 0,
+      "sha256": "19b244a9fa4435618a01f438b19d05aa8e054fd4a8f854b28fad7120b03b7712",
+      "ordered_nodes": [
+        [
+          "tests.test_mac_recovery_observation",
+          "test_all_known_codes_and_maximum_scalars_roundtrip"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[extra]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[bool_pid]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[negative]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[overflow]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[code]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[transport]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[bool_fixed]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[float_fixed]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_native_records_are_rejected[loss_type]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_frame_grammar_is_rejected[duplicate]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_frame_grammar_is_rejected[placement]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_frame_grammar_is_rejected[two_frames]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_frame_grammar_is_rejected[oversized]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_invalid_frame_grammar_is_rejected[extra_line]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_native_loss_is_retained_and_blocks_complete_observation"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_exact_subprocess_forwarding_despite_capture_failure[False]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_exact_subprocess_forwarding_despite_capture_failure[True]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_nonowned_command_forwards_without_capture"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_state_projection_rejects_bool_and_never_formats_unknown_values"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_state_and_kill_observations_preserve_original_objects"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_bounded_capture_marks_loss_without_replacing_original"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_actual_module_origin_is_bound_before_attachment"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_partial_attachment_unwinds_before_original_continues"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_original_termination_loop_has_no_added_probes"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_json_alias_preserves_value_and_all_aliases_restore"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_failed_export_does_not_change_original_outcome"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates0]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates1]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates2]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates3]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates4]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates5]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates6]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates7]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_rejects_unbound_or_private_fields[updates8]"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_read_attribution_accepts_exact_enum_and_signed_errno_bounds"
+        ],
+        [
+          "tests.test_mac_recovery_observation",
+          "test_prior_native_frame_version_is_not_silently_reinterpreted"
+        ]
+      ]
+    },
+    {
+      "path": "driver-controls.xml",
+      "passed": 28,
+      "skipped": 0,
+      "sha256": "fa74893dea2f02297f6becf44fd18cc1f8be92f9d60b412e948c34307b3e2c41",
+      "ordered_nodes": [
+        [
+          "",
+          "test_original_failure_is_diagnostically_admitted_without_becoming_pass"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[native_loss]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[capture_fault]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[overflow]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[restoration]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[index]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[duplicate_offer]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[missing_return]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[role]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[stop_failed]"
+        ],
+        [
+          "",
+          "test_observation_admission_rejects_missing_or_ambiguous_evidence[outcome]"
+        ],
+        [
+          "",
+          "test_native_roster_refuses_fewer_tests_before_any_control_execution[False]"
+        ],
+        [
+          "",
+          "test_native_roster_refuses_fewer_tests_before_any_control_execution[True]"
+        ],
+        [
+          "",
+          "test_python_control_xml_requires_exact_unique_identities"
+        ],
+        [
+          "",
+          "test_original_selector_refuses_same_name_from_other_module"
+        ],
+        [
+          "",
+          "test_observation_refuses_non_mapping_row"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[missing-False]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[missing-True]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[duplicate-False]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[duplicate-True]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[unexpected-False]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[unexpected-True]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[wrong_role-False]"
+        ],
+        [
+          "",
+          "test_read_collection_rejects_wrong_roster_before_operations[wrong_role-True]"
+        ],
+        [
+          "",
+          "test_read_execution_requires_same_real_collected_names[False-False]"
+        ],
+        [
+          "",
+          "test_read_execution_requires_same_real_collected_names[False-True]"
+        ],
+        [
+          "",
+          "test_read_execution_requires_same_real_collected_names[True-False]"
+        ],
+        [
+          "",
+          "test_read_execution_requires_same_real_collected_names[True-True]"
+        ]
+      ]
+    }
+  ],
+  "types": {
+    "filesAnalyzed": 6,
+    "errorCount": 0,
+    "warningCount": 355,
+    "informationCount": 0,
+    "timeInSec": 1.098
+  },
+  "native_validation_pending": true,
+  "original_selector_executed": false,
+  "product_fix": false,
+  "scope": "Existing feature-only result/read-site/io-origin and original termination observer; same selector/operation count/auth/deadlines/no added probes."
+}

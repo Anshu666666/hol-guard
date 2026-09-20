@@ -1,0 +1,323 @@
+E501 Line too long (130 > 120)
+   --> workspace-constructor-validation/constructor/capture.py:109:121
+    |
+107 |             try:
+108 |                 if row is not None:
+109 |                     returned = "none" if result is None else "true" if result is True else "false" if result is False else "other"
+    |                                                                                                                         ^^^^^^^^^^
+110 |                     row.update(outcome="return", returned=returned)
+111 |                     if (stage == "publisher_wait" and type(result) is not bool) or (stage != "publisher_wait" and result is not None):
+    |
+
+E501 Line too long (134 > 120)
+   --> workspace-constructor-validation/constructor/capture.py:111:121
+    |
+109 |                     returned = "none" if result is None else "true" if result is True else "false" if result is False else "other"
+110 |                     row.update(outcome="return", returned=returned)
+111 |                     if (stage == "publisher_wait" and type(result) is not bool) or (stage != "publisher_wait" and result is not None):
+    |                                                                                                                         ^^^^^^^^^^^^^^
+112 |                         self.fault()
+113 |             except Exception:
+    |
+
+E501 Line too long (131 > 120)
+  --> workspace-constructor-validation/constructor/hooks.py:18:121
+   |
+16 |     "http_constructor": "codex_plugin_scanner.guard.daemon.server_service:GuardDaemonServer.__init__",
+17 |     "request_services": "codex_plugin_scanner.guard.daemon.server_http:_GuardDaemonHTTPServer.__init__",
+18 |     "hook_worker_constructor": "codex_plugin_scanner.guard.daemon.server_http:_GuardDaemonHTTPServer._initialize_request_services",
+   |                                                                                                                         ^^^^^^^^^^^
+19 |     "publisher_wait": "codex_plugin_scanner.guard.daemon.hook_worker:HookWorker.__init__",
+20 | }
+   |
+
+E501 Line too long (155 > 120)
+   --> workspace-constructor-validation/constructor/hooks.py:106:121
+    |
+105 | …
+106 | …nServer or server._GuardDaemonHttpServer is not server_http._GuardDaemonHTTPServer:
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+107 | …
+108 | …ice_constructor")
+    |
+
+E501 Line too long (121 > 120)
+  --> workspace-constructor-validation/constructor/reader.py:45:121
+   |
+43 |     accepted = value["accepted_monotonic"]
+44 |     if accepted is not None:
+45 |         require(finite(accepted) >= origin and value["acceptance_calls"] == value["factory_handoffs"] == 1, "acceptance")
+   |                                                                                                                         ^
+46 |     else:
+47 |         require(value["acceptance_calls"] == 0, "acceptance_count")
+   |
+
+E501 Line too long (138 > 120)
+  --> workspace-constructor-validation/constructor/reader.py:55:121
+   |
+53 | …row_fields")
+54 | …
+55 | …nd row["stage"] == stage and row["site"] == CALLERS[stage], "row_identity")
+   |                                                           ^^^^^^^^^^^^^^^^^^
+56 | …
+57 | …is int and parent == index - 1, "parent")
+   |
+
+E501 Line too long (129 > 120)
+  --> workspace-constructor-validation/constructor/reader.py:65:121
+   |
+63 |         if row["outcome"] == "return":
+64 |             require(row["error"] is None, "return_error")
+65 |             require(row["returned"] in {"true", "false"} if stage == "publisher_wait" else row["returned"] == "none", "returned")
+   |                                                                                                                         ^^^^^^^^^
+66 |         else:
+67 |             require(row["outcome"] == "exception" and row["returned"] is None and row["error"] in ERRORS, "exception")
+   |
+
+E501 Line too long (128 > 120)
+  --> workspace-constructor-validation/constructor/reader.py:73:121
+   |
+71 |     require(outcome in {"not_called", "return", "exception"}, "replacement_result")
+72 |     if calls == 0:
+73 |         require(outcome == "not_called" and not rows and value["factory_handoffs"] == 0 and accepted is None, "zero_activation")
+   |                                                                                                                         ^^^^^^^^
+74 |     else:
+75 |         require(outcome != "not_called", "replacement_incomplete")
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/read_result.py:3:1
+   |
+ 1 |   """Admit exact original outputs separately from diagnostic observation completeness."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import argparse
+ 6 | | import sys
+ 7 | | from pathlib import Path
+ 8 | | from typing import Any
+ 9 | |
+10 | | from admission import MAX_LEDGER, decode, reconstruct, require
+11 | | from common import digest, write
+12 | | from constructor.child import SCENARIOS
+13 | | from constructor.reader import admit_phases
+   | |___________________________________________^
+14 |
+15 |   def admit_observation(value: dict[str, Any], scenario: str, cell: dict[str, Any]) -> dict[str, Any]:
+   |
+help: Organize imports
+
+E501 Line too long (135 > 120)
+  --> workspace-constructor-validation/read_result.py:27:121
+   |
+25 | …ng_dispatch_calls"] == 1, "dispatch_count")
+26 | …inal_return"] == "dict", "serve_result")
+27 | …estored"] is True and value["dispatch_patch_restored"] is True, "restore")
+   |                                                             ^^^^^^^^^^^^^^^
+28 | …d value["additional_native_or_http_probes"] == 0, "budget")
+29 | …s True and value["headline_timing_eligible"] is False and value["qualification_complete"] is False, "scope")
+   |
+
+E501 Line too long (169 > 120)
+  --> workspace-constructor-validation/read_result.py:29:121
+   |
+27 | … and value["dispatch_patch_restored"] is True, "restore")
+28 | …al_native_or_http_probes"] == 0, "budget")
+29 | …"headline_timing_eligible"] is False and value["qualification_complete"] is False, "scope")
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+30 | …
+31 | …
+   |
+
+E501 Line too long (173 > 120)
+  --> workspace-constructor-validation/read_result.py:35:121
+   |
+33 | …
+34 | …
+35 | …gs["status_completed"] and flags["publisher_contained"], "original_identity_and_containment")
+   |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 | …failure" in cell) and flags["recovered_request_present"] == ("requests" in cell), "original_result_join")
+37 | …
+   |
+
+E501 Line too long (185 > 120)
+  --> workspace-constructor-validation/read_result.py:36:121
+   |
+34 | …
+35 | …atus_completed"] and flags["publisher_contained"], "original_identity_and_containment")
+36 | …e" in cell) and flags["recovered_request_present"] == ("requests" in cell), "original_result_join")
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+37 | …
+38 | …
+   |
+
+E501 Line too long (158 > 120)
+  --> workspace-constructor-validation/read_result.py:45:121
+   |
+43 | …
+44 | …
+45 | …ault")) is dict and type(cell.get("requests")) is dict, "fault_and_receipt_presence")
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+46 | …
+47 | …ed", "first_error_withheld_ack", "subsequent_transport_forwarded",
+   |
+
+E501 Line too long (139 > 120)
+  --> workspace-constructor-validation/read_result.py:47:121
+   |
+45 | …ell.get("fault")) is dict and type(cell.get("requests")) is dict, "fault_and_receipt_presence")
+46 | …
+47 | …ror_observed", "first_error_withheld_ack", "subsequent_transport_forwarded",
+   |                                                           ^^^^^^^^^^^^^^^^^^^
+48 | …
+49 | …is False and cell["requests"].get("passed") is True, "original_receipt_proof")
+   |
+
+E501 Line too long (141 > 120)
+  --> workspace-constructor-validation/read_result.py:49:121
+   |
+47 | …or_observed", "first_error_withheld_ack", "subsequent_transport_forwarded",
+48 | …
+49 | …s False and cell["requests"].get("passed") is True, "original_receipt_proof")
+   |                                                          ^^^^^^^^^^^^^^^^^^^^^
+50 | …passed"], "diagnostic_complete": True, **summary}
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_capture.py:3:1
+   |
+ 1 |   """Original-call forwarding and finite constructor observation controls."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | | import threading
+ 7 | | from typing import Any
+ 8 | |
+ 9 | | import pytest
+10 | |
+11 | | from constructor.capture import CURRENT, PARENTS, Capture
+12 | | from constructor.hooks import CALLERS, LocalTime
+   | |________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_dispatch.py:3:1
+   |
+ 1 |   """Owned child forwarding, setup/cleanup/export failures, and source refusal."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | | from pathlib import Path
+ 7 | | from types import SimpleNamespace
+ 8 | | from typing import Any
+ 9 | |
+10 | | import pytest
+11 | |
+12 | | from constructor import child
+13 | | from constructor.bindings import Registry
+14 | | from constructor.parent import FixtureForwarding
+   | |________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_hooks.py:3:1
+   |
+ 1 |   """Exact registry, alias restoration and real cold-worker forwarding controls."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | | import time
+ 7 | | from pathlib import Path
+ 8 | | from typing import Any
+ 9 | |
+10 | | import pytest
+11 | | from codex_plugin_scanner.guard.daemon import hook_worker, server, server_http, server_service
+12 | | from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+13 | | from codex_plugin_scanner.guard.store import GuardStore
+14 | | from scripts import native_slo_workspace_lifecycle as lifecycle
+15 | | from scripts import native_slo_workspace_startup as startup
+16 | | from scripts.native_slo_command_fixture import prepare_empty_command_authority
+17 | | from tests.native_policy_snapshot_test_fixtures import _ack, _status
+18 | |
+19 | | from constructor.bindings import Registry
+20 | | from constructor.capture import Capture
+21 | | from constructor.hooks import CALLERS, OwnedHooks
+22 | | from constructor.reader import admit_phases
+   | |___________________________________________^
+   |
+help: Organize imports
+
+E501 Line too long (128 > 120)
+  --> workspace-constructor-validation/reader_controls/test_hooks.py:26:121
+   |
+25 | def registry() -> Registry:
+26 |     return Registry(Path(lifecycle.__file__).resolve().parents[1], Path(__file__).resolve().parents[1] / "source-bindings.json")
+   |                                                                                                                         ^^^^^^^^
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_install.py:3:1
+   |
+ 1 |   """Bounded archive/source admission controls; fake runtime bytes never execute."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import hashlib
+ 6 | | import io
+ 7 | | import json
+ 8 | | import zipfile
+ 9 | | from pathlib import Path
+10 | | from typing import Any
+11 | |
+12 | | import pytest
+13 | |
+14 | | from install import SOURCE_EXCLUSION, admitted_wheel
+   | |____________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_reader.py:3:1
+   |
+ 1 |   """Refuse invented ownership, intervals, privacy fields and partial admission."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import copy
+ 6 | | from typing import Any
+ 7 | |
+ 8 | | import pytest
+ 9 | |
+10 | | from constructor.reader import admit_phases
+11 | | from reader_controls.test_capture import capture, nested
+   | |________________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> workspace-constructor-validation/reader_controls/test_workload.py:3:1
+   |
+ 1 |   """No workload execution: original CLI forwarding and failure accounting controls."""
+ 2 |
+ 3 | / from __future__ import annotations
+ 4 | |
+ 5 | | import json
+ 6 | | import sys
+ 7 | | from pathlib import Path
+ 8 | | from typing import Any
+ 9 | |
+10 | | import pytest
+11 | | from scripts import native_slo_workspace_lifecycle_runner as original
+12 | |
+13 | | import workload
+   | |_______________^
+   |
+help: Organize imports
+
+Found 23 errors.
+[*] 7 fixable with the `--fix` option.

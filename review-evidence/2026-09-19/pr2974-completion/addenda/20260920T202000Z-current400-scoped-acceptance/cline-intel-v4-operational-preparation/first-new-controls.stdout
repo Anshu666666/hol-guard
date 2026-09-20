@@ -1,0 +1,238 @@
+.........FFF..................                                           [100%]
+=================================== FAILURES ===================================
+________ test_recorder_failure_does_not_replace_original_result[before] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fdf8a478380>
+stage = 'before'
+
+    @pytest.mark.parametrize("stage", ["before", "returned", "raised"])
+    def test_recorder_failure_does_not_replace_original_result(monkeypatch: pytest.MonkeyPatch, stage: str) -> None:
+        result = subprocess.CompletedProcess([], 7, PRIVATE, PRIVATE)
+        error = RuntimeError(PRIVATE)
+        calls = []
+    
+        def original(*args: Any, **kwargs: Any) -> Any:
+            calls.append((args, kwargs))
+            if stage == "raised":
+                raise error
+            return result
+    
+        def broken(*_args: Any) -> Any:
+            raise ValueError(PRIVATE)
+    
+        main, observer, reports = model(monkeypatch, original)
+        monkeypatch.setattr(observer, stage, broken)
+        observer.start()
+        try:
+            argv, options = arguments()
+            if stage == "raised":
+                with pytest.raises(RuntimeError) as caught:
+                    main((argv,), options)
+                assert caught.value is error
+            else:
+                assert main((argv,), options) is result
+        finally:
+            observer.finish()
+        assert len(calls) == 1 and not reports[0][1]["observation_complete"]
+>       assert reports[0][1]["faults"] == ["capture_failed"] and PRIVATE not in json.dumps(reports)
+                                                                                ^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_nested_run.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:231: in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x7fdf8f90bec0>
+o = PosixPath('/owned/evidence/nested-run.json')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type PosixPath is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError
+_______ test_recorder_failure_does_not_replace_original_result[returned] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fdf8a4784d0>
+stage = 'returned'
+
+    @pytest.mark.parametrize("stage", ["before", "returned", "raised"])
+    def test_recorder_failure_does_not_replace_original_result(monkeypatch: pytest.MonkeyPatch, stage: str) -> None:
+        result = subprocess.CompletedProcess([], 7, PRIVATE, PRIVATE)
+        error = RuntimeError(PRIVATE)
+        calls = []
+    
+        def original(*args: Any, **kwargs: Any) -> Any:
+            calls.append((args, kwargs))
+            if stage == "raised":
+                raise error
+            return result
+    
+        def broken(*_args: Any) -> Any:
+            raise ValueError(PRIVATE)
+    
+        main, observer, reports = model(monkeypatch, original)
+        monkeypatch.setattr(observer, stage, broken)
+        observer.start()
+        try:
+            argv, options = arguments()
+            if stage == "raised":
+                with pytest.raises(RuntimeError) as caught:
+                    main((argv,), options)
+                assert caught.value is error
+            else:
+                assert main((argv,), options) is result
+        finally:
+            observer.finish()
+        assert len(calls) == 1 and not reports[0][1]["observation_complete"]
+>       assert reports[0][1]["faults"] == ["capture_failed"] and PRIVATE not in json.dumps(reports)
+                                                                                ^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_nested_run.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:231: in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x7fdf8f90bec0>
+o = PosixPath('/owned/evidence/nested-run.json')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type PosixPath is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError
+________ test_recorder_failure_does_not_replace_original_result[raised] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fdf8a47a3c0>
+stage = 'raised'
+
+    @pytest.mark.parametrize("stage", ["before", "returned", "raised"])
+    def test_recorder_failure_does_not_replace_original_result(monkeypatch: pytest.MonkeyPatch, stage: str) -> None:
+        result = subprocess.CompletedProcess([], 7, PRIVATE, PRIVATE)
+        error = RuntimeError(PRIVATE)
+        calls = []
+    
+        def original(*args: Any, **kwargs: Any) -> Any:
+            calls.append((args, kwargs))
+            if stage == "raised":
+                raise error
+            return result
+    
+        def broken(*_args: Any) -> Any:
+            raise ValueError(PRIVATE)
+    
+        main, observer, reports = model(monkeypatch, original)
+        monkeypatch.setattr(observer, stage, broken)
+        observer.start()
+        try:
+            argv, options = arguments()
+            if stage == "raised":
+                with pytest.raises(RuntimeError) as caught:
+                    main((argv,), options)
+                assert caught.value is error
+            else:
+                assert main((argv,), options) is result
+        finally:
+            observer.finish()
+        assert len(calls) == 1 and not reports[0][1]["observation_complete"]
+>       assert reports[0][1]["faults"] == ["capture_failed"] and PRIVATE not in json.dumps(reports)
+                                                                                ^^^^^^^^^^^^^^^^^^^
+
+tests/test_cline_nested_run.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:231: in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x7fdf8f90bec0>
+o = PosixPath('/owned/evidence/nested-run.json')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type PosixPath is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_cline_nested_run.py::test_recorder_failure_does_not_replace_original_result[before]
+FAILED tests/test_cline_nested_run.py::test_recorder_failure_does_not_replace_original_result[returned]
+FAILED tests/test_cline_nested_run.py::test_recorder_failure_does_not_replace_original_result[raised]
+3 failed, 27 passed in 10.06s

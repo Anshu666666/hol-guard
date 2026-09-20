@@ -1,0 +1,734 @@
+﻿2026-09-20T19:59:13.7568692Z Current runner version: '2.337.0'
+2026-09-20T19:59:13.7592922Z ##[group]Runner Image Provisioner
+2026-09-20T19:59:13.7593741Z Hosted Compute Agent
+2026-09-20T19:59:13.7594587Z Version: 20260828.587
+2026-09-20T19:59:13.7595172Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T19:59:13.7595824Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T19:59:13.7596440Z Worker ID: {c7156a52-61de-4a04-b7d1-ef6da8b1a2a9}
+2026-09-20T19:59:13.7597071Z Azure Region: westus3
+2026-09-20T19:59:13.7597574Z ##[endgroup]
+2026-09-20T19:59:13.7599065Z ##[group]Operating System
+2026-09-20T19:59:13.7599623Z Ubuntu
+2026-09-20T19:59:13.7600155Z 24.04.5
+2026-09-20T19:59:13.7600610Z LTS
+2026-09-20T19:59:13.7601071Z ##[endgroup]
+2026-09-20T19:59:13.7601587Z ##[group]Runner Image
+2026-09-20T19:59:13.7602241Z Image: ubuntu-24.04
+2026-09-20T19:59:13.7602760Z Version: 20260907.300.1
+2026-09-20T19:59:13.7603912Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-20T19:59:13.7605286Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-20T19:59:13.7606132Z ##[endgroup]
+2026-09-20T19:59:13.7607166Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T19:59:13.7609298Z Contents: read
+2026-09-20T19:59:13.7609873Z Metadata: read
+2026-09-20T19:59:13.7610366Z ##[endgroup]
+2026-09-20T19:59:13.7612537Z Secret source: Actions
+2026-09-20T19:59:13.7613464Z Cache mode: write
+2026-09-20T19:59:13.7614285Z Prepare workflow directory
+2026-09-20T19:59:13.7963843Z Prepare all required actions
+2026-09-20T19:59:13.8027036Z Getting action download info
+2026-09-20T19:59:14.1218554Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T19:59:14.2496468Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T19:59:15.0733301Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T19:59:15.2501743Z Complete job name: finite-linux-boundary
+2026-09-20T19:59:15.3333479Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:59:15.3334602Z with:
+2026-09-20T19:59:15.3335057Z   path: driver
+2026-09-20T19:59:15.3335515Z   fetch-depth: 3
+2026-09-20T19:59:15.3336020Z   persist-credentials: false
+2026-09-20T19:59:15.3336606Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:59:15.3340925Z   token: ***
+2026-09-20T19:59:15.3341385Z   ssh-strict: true
+2026-09-20T19:59:15.3341867Z   ssh-user: git
+2026-09-20T19:59:15.3342462Z   clean: true
+2026-09-20T19:59:15.3342946Z   sparse-checkout-cone-mode: true
+2026-09-20T19:59:15.3343524Z   fetch-tags: false
+2026-09-20T19:59:15.3344020Z   show-progress: true
+2026-09-20T19:59:15.3344527Z   lfs: false
+2026-09-20T19:59:15.3344986Z   submodules: false
+2026-09-20T19:59:15.3345478Z   set-safe-directory: true
+2026-09-20T19:59:15.3346316Z ##[endgroup]
+2026-09-20T19:59:15.4348539Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:59:15.4351065Z ##[group]Getting Git version info
+2026-09-20T19:59:15.4352235Z Working directory is '/home/runner/work/hol-guard/hol-guard/driver'
+2026-09-20T19:59:15.4353792Z [command]/usr/bin/git version
+2026-09-20T19:59:15.4387056Z git version 2.55.0
+2026-09-20T19:59:15.4408409Z ##[endgroup]
+2026-09-20T19:59:15.4420730Z Temporarily overriding HOME='/home/runner/work/_temp/bed41a52-4b6f-4aeb-a4c2-aaeae5c7c82d' before making global git config changes
+2026-09-20T19:59:15.4422382Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:59:15.4425391Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:59:15.4470536Z ##[group]Determining repository object format
+2026-09-20T19:59:15.4473219Z ##[endgroup]
+2026-09-20T19:59:15.4474083Z ##[group]Initializing the repository
+2026-09-20T19:59:15.4479023Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:59:15.4569265Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T19:59:15.4571211Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T19:59:15.4572781Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T19:59:15.4573820Z hint: call:
+2026-09-20T19:59:15.4574291Z hint:
+2026-09-20T19:59:15.4574876Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T19:59:15.4575549Z hint:
+2026-09-20T19:59:15.4576250Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T19:59:15.4577247Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T19:59:15.4578051Z hint:
+2026-09-20T19:59:15.4578520Z hint: 	git branch -m <name>
+2026-09-20T19:59:15.4579219Z hint:
+2026-09-20T19:59:15.4580097Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T19:59:15.4581791Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/driver/.git/
+2026-09-20T19:59:15.4584227Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:59:15.4617206Z ##[endgroup]
+2026-09-20T19:59:15.4618050Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:59:15.4620661Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-20T19:59:15.4643392Z ##[endgroup]
+2026-09-20T19:59:15.4644437Z ##[group]Setting up auth
+2026-09-20T19:59:15.4645045Z Removing SSH command configuration
+2026-09-20T19:59:15.4649521Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:15.4674546Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:15.4943838Z Removing HTTP extra header
+2026-09-20T19:59:15.4950054Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:15.4977386Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:15.5146703Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:15.5153713Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:15.5180544Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:15.5354032Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T19:59:15.5390092Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git.path /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:15.5415178Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:15.5441728Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:15.5465992Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:15.5521104Z ##[endgroup]
+2026-09-20T19:59:15.5521931Z ##[group]Fetching the repository
+2026-09-20T19:59:15.5529122Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=3 origin +6767a9bb4bab3ee9029cfd8dd1ceddef197f97d6:refs/remotes/origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:18.7490024Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:59:18.7494112Z  * [new ref]         6767a9bb4bab3ee9029cfd8dd1ceddef197f97d6 -> origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:18.7502645Z [command]/usr/bin/git branch --list --remote origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:18.7525713Z   origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:18.7533624Z [command]/usr/bin/git rev-parse refs/remotes/origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:18.7553711Z 6767a9bb4bab3ee9029cfd8dd1ceddef197f97d6
+2026-09-20T19:59:18.7558348Z ##[endgroup]
+2026-09-20T19:59:18.7560155Z ##[group]Determining the checkout info
+2026-09-20T19:59:18.7562382Z ##[endgroup]
+2026-09-20T19:59:18.7563320Z [command]/usr/bin/git sparse-checkout disable
+2026-09-20T19:59:18.7601132Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:59:18.7622518Z ##[group]Checking out the ref
+2026-09-20T19:59:18.7626737Z [command]/usr/bin/git checkout --progress --force -B codex/pr2974-finite-kernel-cpu-20260920-8ba371b2 refs/remotes/origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2
+2026-09-20T19:59:19.0398153Z Switched to a new branch 'codex/pr2974-finite-kernel-cpu-20260920-8ba371b2'
+2026-09-20T19:59:19.0402597Z branch 'codex/pr2974-finite-kernel-cpu-20260920-8ba371b2' set up to track 'origin/codex/pr2974-finite-kernel-cpu-20260920-8ba371b2'.
+2026-09-20T19:59:19.0414361Z ##[endgroup]
+2026-09-20T19:59:19.0453968Z [command]/usr/bin/git log -1 --format=%H
+2026-09-20T19:59:19.0475009Z 6767a9bb4bab3ee9029cfd8dd1ceddef197f97d6
+2026-09-20T19:59:19.0486125Z ##[group]Removing auth
+2026-09-20T19:59:19.0486591Z Removing SSH command configuration
+2026-09-20T19:59:19.0488668Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:19.0517506Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:19.0717066Z Removing HTTP extra header
+2026-09-20T19:59:19.0721672Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:19.0749426Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:19.0922474Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:19.0926458Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:19.0947047Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:59:19.0948131Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:59:19.0949078Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:59:19.0949792Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:59:19.0955685Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git.path
+2026-09-20T19:59:19.0974058Z /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.0982310Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git.path /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1007236Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T19:59:19.1025362Z /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1033705Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/driver/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1059856Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T19:59:19.1080946Z /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1090432Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1115649Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T19:59:19.1131897Z /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1138050Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config
+2026-09-20T19:59:19.1168369Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:19.1334991Z Removing credentials config '/home/runner/work/_temp/git-credentials-6f2da514-ced9-408a-8cad-913d47f48fa3.config'
+2026-09-20T19:59:19.1341248Z ##[endgroup]
+2026-09-20T19:59:19.1563930Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T19:59:19.1564307Z with:
+2026-09-20T19:59:19.1564531Z   ref: 8ba371b2b4b0cadbfe23392b81a64743233d8b2c
+2026-09-20T19:59:19.1564819Z   path: source
+2026-09-20T19:59:19.1565012Z   fetch-depth: 2
+2026-09-20T19:59:19.1565224Z   persist-credentials: false
+2026-09-20T19:59:19.1565482Z   repository: hashgraph-online/hol-guard
+2026-09-20T19:59:19.1568169Z   token: ***
+2026-09-20T19:59:19.1568373Z   ssh-strict: true
+2026-09-20T19:59:19.1568589Z   ssh-user: git
+2026-09-20T19:59:19.1568788Z   clean: true
+2026-09-20T19:59:19.1569007Z   sparse-checkout-cone-mode: true
+2026-09-20T19:59:19.1569277Z   fetch-tags: false
+2026-09-20T19:59:19.1569481Z   show-progress: true
+2026-09-20T19:59:19.1569684Z   lfs: false
+2026-09-20T19:59:19.1569864Z   submodules: false
+2026-09-20T19:59:19.1570068Z   set-safe-directory: true
+2026-09-20T19:59:19.1570285Z ##[endgroup]
+2026-09-20T19:59:19.2358467Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T19:59:19.2364402Z ##[group]Getting Git version info
+2026-09-20T19:59:19.2365117Z Working directory is '/home/runner/work/hol-guard/hol-guard/source'
+2026-09-20T19:59:19.2397050Z [command]/usr/bin/git version
+2026-09-20T19:59:19.2428000Z git version 2.55.0
+2026-09-20T19:59:19.2447198Z ##[endgroup]
+2026-09-20T19:59:19.2460318Z Temporarily overriding HOME='/home/runner/work/_temp/6659cf9a-54f5-4c6a-b33e-712ba2a1bd45' before making global git config changes
+2026-09-20T19:59:19.2461734Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:59:19.2466032Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/source
+2026-09-20T19:59:19.2491207Z ##[group]Determining repository object format
+2026-09-20T19:59:19.2493685Z ##[endgroup]
+2026-09-20T19:59:19.2494096Z ##[group]Initializing the repository
+2026-09-20T19:59:19.2498066Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard/source
+2026-09-20T19:59:19.2528914Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T19:59:19.2529631Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T19:59:19.2530111Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T19:59:19.2530689Z hint: call:
+2026-09-20T19:59:19.2531100Z hint:
+2026-09-20T19:59:19.2531446Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T19:59:19.2531797Z hint:
+2026-09-20T19:59:19.2532421Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T19:59:19.2533178Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T19:59:19.2533716Z hint:
+2026-09-20T19:59:19.2533922Z hint: 	git branch -m <name>
+2026-09-20T19:59:19.2534591Z hint:
+2026-09-20T19:59:19.2535005Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T19:59:19.2535782Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/source/.git/
+2026-09-20T19:59:19.2537630Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:59:19.2562530Z ##[endgroup]
+2026-09-20T19:59:19.2562929Z ##[group]Disabling automatic garbage collection
+2026-09-20T19:59:19.2565809Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-20T19:59:19.2586860Z ##[endgroup]
+2026-09-20T19:59:19.2587224Z ##[group]Setting up auth
+2026-09-20T19:59:19.2588605Z Removing SSH command configuration
+2026-09-20T19:59:19.2594767Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:19.2618854Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:19.2787599Z Removing HTTP extra header
+2026-09-20T19:59:19.2792628Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:19.2818206Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:19.2979439Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:19.2985773Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:19.3010608Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:19.3180045Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T19:59:19.3208705Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:19.3232660Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:19.3256168Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/source/.git.path /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:19.3279504Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/source/.git/worktrees/*.path /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:19.3306420Z ##[endgroup]
+2026-09-20T19:59:19.3307040Z ##[group]Fetching the repository
+2026-09-20T19:59:19.3314078Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 8ba371b2b4b0cadbfe23392b81a64743233d8b2c
+2026-09-20T19:59:22.5498195Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T19:59:22.5498710Z  * branch            8ba371b2b4b0cadbfe23392b81a64743233d8b2c -> FETCH_HEAD
+2026-09-20T19:59:22.5508925Z [command]/usr/bin/git rev-parse --verify --quiet 8ba371b2b4b0cadbfe23392b81a64743233d8b2c^{object}
+2026-09-20T19:59:22.5530397Z 8ba371b2b4b0cadbfe23392b81a64743233d8b2c
+2026-09-20T19:59:22.5539838Z ##[endgroup]
+2026-09-20T19:59:22.5540215Z ##[group]Determining the checkout info
+2026-09-20T19:59:22.5540607Z ##[endgroup]
+2026-09-20T19:59:22.5541963Z [command]/usr/bin/git sparse-checkout disable
+2026-09-20T19:59:22.5571702Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T19:59:22.5593270Z ##[group]Checking out the ref
+2026-09-20T19:59:22.5597354Z [command]/usr/bin/git checkout --progress --force 8ba371b2b4b0cadbfe23392b81a64743233d8b2c
+2026-09-20T19:59:22.8358999Z Note: switching to '8ba371b2b4b0cadbfe23392b81a64743233d8b2c'.
+2026-09-20T19:59:22.8359603Z 
+2026-09-20T19:59:22.8360026Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T19:59:22.8360866Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T19:59:22.8361759Z state without impacting any branches by switching back to a branch.
+2026-09-20T19:59:22.8362546Z 
+2026-09-20T19:59:22.8362942Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T19:59:22.8363864Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T19:59:22.8364420Z 
+2026-09-20T19:59:22.8364619Z   git switch -c <new-branch-name>
+2026-09-20T19:59:22.8364953Z 
+2026-09-20T19:59:22.8365144Z Or undo this operation with:
+2026-09-20T19:59:22.8365467Z 
+2026-09-20T19:59:22.8365632Z   git switch -
+2026-09-20T19:59:22.8365871Z 
+2026-09-20T19:59:22.8366273Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T19:59:22.8366830Z 
+2026-09-20T19:59:22.8367265Z HEAD is now at 8ba371b ci: prepare finite protected Linux CPU accounting controls
+2026-09-20T19:59:22.8369005Z ##[endgroup]
+2026-09-20T19:59:22.8404890Z [command]/usr/bin/git log -1 --format=%H
+2026-09-20T19:59:22.8429809Z 8ba371b2b4b0cadbfe23392b81a64743233d8b2c
+2026-09-20T19:59:22.8441435Z ##[group]Removing auth
+2026-09-20T19:59:22.8441956Z Removing SSH command configuration
+2026-09-20T19:59:22.8444481Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:22.8469733Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:22.8649314Z Removing HTTP extra header
+2026-09-20T19:59:22.8653878Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:22.8680021Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:22.8849123Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:22.8853710Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:22.8872281Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path
+2026-09-20T19:59:22.8873173Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path
+2026-09-20T19:59:22.8873747Z includeif.gitdir:/github/workspace/source/.git.path
+2026-09-20T19:59:22.8874120Z includeif.gitdir:/github/workspace/source/.git/worktrees/*.path
+2026-09-20T19:59:22.8883970Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path
+2026-09-20T19:59:22.8911176Z /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.8919594Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git.path /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.8945467Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path
+2026-09-20T19:59:22.8962303Z /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.8974093Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/source/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.8994852Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/source/.git.path
+2026-09-20T19:59:22.9014718Z /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.9022339Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/source/.git.path /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.9058730Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/source/.git/worktrees/*.path
+2026-09-20T19:59:22.9075261Z /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.9080902Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/source/.git/worktrees/*.path /github/runner_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config
+2026-09-20T19:59:22.9104387Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:22.9279673Z Removing credentials config '/home/runner/work/_temp/git-credentials-5c4eb7fd-9656-4798-875c-f8545c2a193b.config'
+2026-09-20T19:59:22.9288137Z ##[endgroup]
+2026-09-20T19:59:22.9446266Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T19:59:22.9446630Z with:
+2026-09-20T19:59:22.9446842Z   version: 0.9.26
+2026-09-20T19:59:22.9447054Z   enable-cache: false
+2026-09-20T19:59:22.9447279Z   activate-environment: false
+2026-09-20T19:59:22.9447513Z   no-project: false
+2026-09-20T19:59:22.9447780Z   working-directory: /home/runner/work/hol-guard/hol-guard
+2026-09-20T19:59:22.9450439Z   github-token: ***
+2026-09-20T19:59:22.9450973Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T19:59:22.9451541Z   restore-cache: true
+2026-09-20T19:59:22.9451749Z   save-cache: true
+2026-09-20T19:59:22.9451945Z   prune-cache: true
+2026-09-20T19:59:22.9452327Z   cache-python: false
+2026-09-20T19:59:22.9452561Z   ignore-nothing-to-cache: false
+2026-09-20T19:59:22.9452814Z   ignore-empty-workdir: false
+2026-09-20T19:59:22.9453104Z   download-from-astral-mirror: true
+2026-09-20T19:59:22.9453364Z   add-problem-matchers: true
+2026-09-20T19:59:22.9453587Z   quiet: false
+2026-09-20T19:59:22.9453786Z   resolution-strategy: highest
+2026-09-20T19:59:22.9454018Z ##[endgroup]
+2026-09-20T19:59:23.1068465Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T19:59:23.1895458Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-09-20T19:59:23.6398206Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/b4000acc-5ca1-4c05-8eb3-bc38a11fdd6d -f /home/runner/work/_temp/b20f8f31-4307-4364-9de7-0f68d91c7e3f
+2026-09-20T19:59:24.0613218Z Added /home/runner/.local/bin to the path
+2026-09-20T19:59:24.0616168Z Added /opt/hostedtoolcache/uv/0.9.26/x86_64 to the path
+2026-09-20T19:59:24.0617288Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+2026-09-20T19:59:24.0619235Z Added /home/runner/work/_temp/uv-python-dir to the path
+2026-09-20T19:59:24.0642305Z Successfully installed uv version 0.9.26
+2026-09-20T19:59:24.2594284Z ##[group]Run uv sync --frozen --extra dev --no-install-project --python 3.12
+2026-09-20T19:59:24.2594968Z [36;1muv sync --frozen --extra dev --no-install-project --python 3.12[0m
+2026-09-20T19:59:24.2623611Z shell: /usr/bin/bash -e {0}
+2026-09-20T19:59:24.2623867Z env:
+2026-09-20T19:59:24.2624145Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T19:59:24.2624472Z ##[endgroup]
+2026-09-20T19:59:24.3517474Z Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+2026-09-20T19:59:24.3518132Z Creating virtual environment at: .venv
+2026-09-20T19:59:24.4023424Z Downloading libcst (2.2MiB)
+2026-09-20T19:59:24.4023929Z Downloading basedpyright (12.6MiB)
+2026-09-20T19:59:24.4024437Z Downloading cryptography (4.5MiB)
+2026-09-20T19:59:24.4025164Z Downloading ruff (11.0MiB)
+2026-09-20T19:59:24.4031633Z Downloading pydantic-core (2.0MiB)
+2026-09-20T19:59:24.4033934Z Downloading pygments (1.2MiB)
+2026-09-20T19:59:24.4050381Z Downloading nodejs-wheel-binaries (57.9MiB)
+2026-09-20T19:59:24.6779841Z  Downloaded pydantic-core
+2026-09-20T19:59:24.9581428Z  Downloaded ruff
+2026-09-20T19:59:25.0126248Z  Downloaded cryptography
+2026-09-20T19:59:25.0791698Z  Downloaded pygments
+2026-09-20T19:59:25.2266199Z  Downloaded libcst
+2026-09-20T19:59:25.8356808Z  Downloaded basedpyright
+2026-09-20T19:59:25.8643076Z  Downloaded nodejs-wheel-binaries
+2026-09-20T19:59:25.8645050Z Prepared 68 packages in 1.49s
+2026-09-20T19:59:25.9950099Z Installed 68 packages in 130ms
+2026-09-20T19:59:25.9950610Z  + annotated-types==0.7.0
+2026-09-20T19:59:25.9951008Z  + anyio==4.14.2
+2026-09-20T19:59:25.9951583Z  + attrs==26.1.0
+2026-09-20T19:59:25.9952235Z  + basedpyright==1.39.8
+2026-09-20T19:59:25.9952773Z  + build==1.5.0
+2026-09-20T19:59:25.9953542Z  + certifi==2026.2.25
+2026-09-20T19:59:25.9953967Z  + cffi==2.0.0
+2026-09-20T19:59:25.9954326Z  + charset-normalizer==3.4.7
+2026-09-20T19:59:25.9954745Z  + click==8.4.1
+2026-09-20T19:59:25.9955076Z  + coverage==7.13.5
+2026-09-20T19:59:25.9955471Z  + cryptography==50.0.0
+2026-09-20T19:59:25.9955839Z  + h11==0.16.0
+2026-09-20T19:59:25.9956162Z  + httpcore==1.0.9
+2026-09-20T19:59:25.9956493Z  + httpx==0.28.1
+2026-09-20T19:59:25.9956825Z  + httpx-sse==0.4.3
+2026-09-20T19:59:25.9957175Z  + idna==3.15
+2026-09-20T19:59:25.9957514Z  + importlib-metadata==8.9.0
+2026-09-20T19:59:25.9957920Z  + iniconfig==2.3.0
+2026-09-20T19:59:25.9958308Z  + jaraco-classes==3.4.0
+2026-09-20T19:59:25.9958717Z  + jaraco-context==6.1.2
+2026-09-20T19:59:25.9959101Z  + jaraco-functools==4.4.0
+2026-09-20T19:59:25.9959513Z  + jeepney==0.9.0
+2026-09-20T19:59:25.9959911Z  + jsonschema==4.26.0
+2026-09-20T19:59:25.9960344Z  + jsonschema-specifications==2025.9.1
+2026-09-20T19:59:25.9960835Z  + keyring==25.7.0
+2026-09-20T19:59:25.9961176Z  + libcst==1.9.0
+2026-09-20T19:59:25.9961519Z  + linkify-it-py==2.1.0
+2026-09-20T19:59:25.9961922Z  + markdown-it-py==4.0.0
+2026-09-20T19:59:25.9962604Z  + mcp==1.28.1
+2026-09-20T19:59:25.9962980Z  + mdit-py-plugins==0.5.0
+2026-09-20T19:59:25.9963366Z  + mdurl==0.1.2
+2026-09-20T19:59:25.9963724Z  + more-itertools==11.0.1
+2026-09-20T19:59:25.9964104Z  + mutmut==3.7.0
+2026-09-20T19:59:25.9964503Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T19:59:25.9964956Z  + packaging==26.0
+2026-09-20T19:59:25.9965321Z  + platformdirs==4.9.4
+2026-09-20T19:59:25.9965706Z  + pluggy==1.6.0
+2026-09-20T19:59:25.9965972Z  + psutil==7.2.2
+2026-09-20T19:59:25.9966176Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T19:59:25.9966413Z  + pycparser==3.0
+2026-09-20T19:59:25.9966604Z  + pydantic==2.12.5
+2026-09-20T19:59:25.9966802Z  + pydantic-core==2.41.5
+2026-09-20T19:59:25.9967028Z  + pydantic-settings==2.14.1
+2026-09-20T19:59:25.9967255Z  + pygments==2.20.0
+2026-09-20T19:59:25.9967448Z  + pyjwt==2.13.0
+2026-09-20T19:59:25.9967646Z  + pyproject-hooks==1.2.0
+2026-09-20T19:59:25.9967867Z  + pytest==9.0.3
+2026-09-20T19:59:25.9968073Z  + pytest-cov==7.1.0
+2026-09-20T19:59:25.9968282Z  + python-dotenv==1.2.2
+2026-09-20T19:59:25.9968505Z  + python-multipart==0.0.32
+2026-09-20T19:59:25.9968955Z  + pyyaml==6.0.3
+2026-09-20T19:59:25.9969155Z  + referencing==0.37.0
+2026-09-20T19:59:25.9969360Z  + regex==2026.4.4
+2026-09-20T19:59:25.9969555Z  + requests==2.33.1
+2026-09-20T19:59:25.9969754Z  + rich==14.2.0
+2026-09-20T19:59:25.9969945Z  + rpds-py==0.30.0
+2026-09-20T19:59:25.9970137Z  + ruff==0.15.17
+2026-09-20T19:59:25.9970329Z  + secretstorage==3.5.0
+2026-09-20T19:59:25.9970539Z  + setproctitle==1.3.7
+2026-09-20T19:59:25.9970748Z  + sse-starlette==3.4.4
+2026-09-20T19:59:25.9970953Z  + starlette==1.3.1
+2026-09-20T19:59:25.9971149Z  + textual==7.5.0
+2026-09-20T19:59:25.9971350Z  + typing-extensions==4.15.0
+2026-09-20T19:59:25.9971586Z  + typing-inspection==0.4.2
+2026-09-20T19:59:25.9971896Z  + uc-micro-py==2.0.0
+2026-09-20T19:59:25.9972335Z  + urllib3==2.7.0
+2026-09-20T19:59:25.9972800Z  + uvicorn==0.40.0
+2026-09-20T19:59:25.9973170Z  + zipp==3.23.0
+2026-09-20T19:59:26.0035910Z ##[group]Run "$GITHUB_WORKSPACE/source/.venv/bin/python" -m ruff check --config "$GITHUB_WORKSPACE/source/pyproject.toml" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py
+2026-09-20T19:59:26.0037208Z [36;1m"$GITHUB_WORKSPACE/source/.venv/bin/python" -m ruff check --config "$GITHUB_WORKSPACE/source/pyproject.toml" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py[0m
+2026-09-20T19:59:26.0038429Z [36;1m"$GITHUB_WORKSPACE/source/.venv/bin/python" -m ruff format --check --config "$GITHUB_WORKSPACE/source/pyproject.toml" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py[0m
+2026-09-20T19:59:26.0039837Z [36;1m"$GITHUB_WORKSPACE/source/.venv/bin/python" -m basedpyright --project "$GITHUB_WORKSPACE/source/pyproject.toml" --pythonpath "$GITHUB_WORKSPACE/source/.venv/bin/python" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py[0m
+2026-09-20T19:59:26.0041146Z [36;1m"$GITHUB_WORKSPACE/source/.venv/bin/python" -m pytest tests/test_verify_kernel_cpu_controls.py -q --junitxml="$GITHUB_WORKSPACE/driver-controls.xml"[0m
+2026-09-20T19:59:26.0062834Z shell: /usr/bin/bash -e {0}
+2026-09-20T19:59:26.0063082Z env:
+2026-09-20T19:59:26.0063374Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T19:59:26.0063704Z ##[endgroup]
+2026-09-20T19:59:26.0387449Z All checks passed!
+2026-09-20T19:59:26.0649158Z 2 files already formatted
+2026-09-20T19:59:27.2188447Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:26:23 - warning: Type of parameter "value" is Any (reportAny)
+2026-09-20T19:59:27.2217281Z ##[warning]Type of parameter "value" is Any (reportAny)
+2026-09-20T19:59:27.2224687Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:26:30 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2226190Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2227614Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:29:9 - warning: Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2229607Z ##[warning]Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2231005Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:32:43 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2232389Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2233539Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:32:63 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2234685Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2235808Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:33:23 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2236951Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2238062Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:34:14 - warning: Type of "value" is Any (reportAny)
+2026-09-20T19:59:27.2239082Z ##[warning]Type of "value" is Any (reportAny)
+2026-09-20T19:59:27.2240129Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:41:5 - warning: Return type is Any (reportAny)
+2026-09-20T19:59:27.2241205Z ##[warning]Return type is Any (reportAny)
+2026-09-20T19:59:27.2242286Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:41:30 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2243490Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2245182Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:44:12 - warning: Return type is Any (reportAny)
+2026-09-20T19:59:27.2246331Z ##[warning]Return type is Any (reportAny)
+2026-09-20T19:59:27.2247568Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:54:18 - warning: Type of parameter "document" is Any (reportAny)
+2026-09-20T19:59:27.2248794Z ##[warning]Type of parameter "document" is Any (reportAny)
+2026-09-20T19:59:27.2250004Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:54:28 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2251210Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2252488Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:58:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2254254Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2257086Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2258902Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:61:9 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2260233Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2263070Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2264994Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:62:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2266342Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2269119Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2270935Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:63:17 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2272354Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2275077Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2276869Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:63:17 - warning: Argument type is partially unknown
+2026-09-20T19:59:27.2277664Z   Argument corresponds to parameter "o" in function "__init__"
+2026-09-20T19:59:27.2278210Z   Argument type is "Unknown | None" (reportUnknownArgumentType)
+2026-09-20T19:59:27.2280064Z ##[warning]Argument type is partially unknown
+  Argument corresponds to parameter "o" in function "__init__"
+  Argument type is "Unknown | None" (reportUnknownArgumentType)
+2026-09-20T19:59:27.2281942Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:65:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2283335Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2286082Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2287901Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:66:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2289260Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2292000Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2293885Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:67:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2295131Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2297804Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2299561Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:70:5 - warning: Type of "worker" is partially unknown
+2026-09-20T19:59:27.2300362Z   Type of "worker" is "Unknown | None" (reportUnknownVariableType)
+2026-09-20T19:59:27.2301729Z ##[warning]Type of "worker" is partially unknown
+  Type of "worker" is "Unknown | None" (reportUnknownVariableType)
+2026-09-20T19:59:27.2303116Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:70:14 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2304421Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2307144Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2308961Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:71:40 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2310276Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2313130Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2315093Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:71:78 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2316977Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2319610Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2321225Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:73:5 - warning: Type of "rows" is partially unknown
+2026-09-20T19:59:27.2321909Z   Type of "rows" is "Unknown | None" (reportUnknownVariableType)
+2026-09-20T19:59:27.2323263Z ##[warning]Type of "rows" is partially unknown
+  Type of "rows" is "Unknown | None" (reportUnknownVariableType)
+2026-09-20T19:59:27.2324425Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:73:12 - warning: Type of "get" is partially unknown
+2026-09-20T19:59:27.2325600Z   Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2327933Z ##[warning]Type of "get" is partially unknown
+  Type of "get" is "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" (reportUnknownMemberType)
+2026-09-20T19:59:27.2329504Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:74:39 - warning: Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2330554Z ##[warning]Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2331678Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:74:59 - warning: Type of "row" is unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2332964Z ##[warning]Type of "row" is unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2334019Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:76:12 - warning: Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2335078Z ##[warning]Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2336111Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:76:45 - warning: Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2337164Z ##[warning]Type of "get" is unknown (reportUnknownMemberType)
+2026-09-20T19:59:27.2338301Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:76:78 - warning: Type of "row" is unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2339530Z ##[warning]Type of "row" is unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2340633Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:80:63 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2341681Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2342838Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:100:49 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2343869Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2344884Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:100:74 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2345911Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2346891Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:103:9 - warning: Type of "path" is Any (reportAny)
+2026-09-20T19:59:27.2348246Z ##[warning]Type of "path" is Any (reportAny)
+2026-09-20T19:59:27.2349236Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:104:9 - warning: Type of "body" is Any (reportAny)
+2026-09-20T19:59:27.2350166Z ##[warning]Type of "body" is Any (reportAny)
+2026-09-20T19:59:27.2351102Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:104:16 - warning: Type of "read_bytes" is Any (reportAny)
+2026-09-20T19:59:27.2352230Z ##[warning]Type of "read_bytes" is Any (reportAny)
+2026-09-20T19:59:27.2353166Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:105:16 - warning: Argument type is Any
+2026-09-20T19:59:27.2353944Z   Argument corresponds to parameter "obj" in function "len" (reportAny)
+2026-09-20T19:59:27.2355087Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "obj" in function "len" (reportAny)
+2026-09-20T19:59:27.2356181Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:105:45 - warning: Argument type is Any
+2026-09-20T19:59:27.2356847Z   Argument corresponds to parameter "body" in function "sha" (reportAny)
+2026-09-20T19:59:27.2357958Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "body" in function "sha" (reportAny)
+2026-09-20T19:59:27.2359026Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:107:29 - warning: Argument type is Any
+2026-09-20T19:59:27.2359737Z   Argument corresponds to parameter "string" in function "openssl_sha1" (reportAny)
+2026-09-20T19:59:27.2360957Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "string" in function "openssl_sha1" (reportAny)
+2026-09-20T19:59:27.2362180Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:107:48 - warning: Argument type is Any
+2026-09-20T19:59:27.2362968Z   Argument corresponds to parameter "obj" in function "len" (reportAny)
+2026-09-20T19:59:27.2364130Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "obj" in function "len" (reportAny)
+2026-09-20T19:59:27.2365214Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:108:64 - warning: Argument type is Any
+2026-09-20T19:59:27.2365880Z   Argument corresponds to parameter "args" in function "git" (reportAny)
+2026-09-20T19:59:27.2366993Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "args" in function "git" (reportAny)
+2026-09-20T19:59:27.2368116Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:110:9 - warning: Type of "append" is partially unknown
+2026-09-20T19:59:27.2368853Z   Type of "append" is "(object: Unknown, /) -> None" (reportUnknownMemberType)
+2026-09-20T19:59:27.2370107Z ##[warning]Type of "append" is partially unknown
+  Type of "append" is "(object: Unknown, /) -> None" (reportUnknownMemberType)
+2026-09-20T19:59:27.2371545Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:111:5 - warning: Result of call expression is of type "str" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2373520Z ##[warning]Result of call expression is of type "str" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2374859Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:112:12 - warning: Return type, "list[Unknown]", is partially unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2376147Z ##[warning]Return type, "list[Unknown]", is partially unknown (reportUnknownVariableType)
+2026-09-20T19:59:27.2377203Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:132:5 - warning: Type of "contract" is Any (reportAny)
+2026-09-20T19:59:27.2378162Z ##[warning]Type of "contract" is Any (reportAny)
+2026-09-20T19:59:27.2379287Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:133:23 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2380383Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2381344Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:165:46 - warning: Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2382495Z ##[warning]Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2383515Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:168:37 - warning: Argument type is Any
+2026-09-20T19:59:27.2384254Z   Argument corresponds to parameter "iterable" in function "sorted" (reportAny)
+2026-09-20T19:59:27.2385454Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "iterable" in function "sorted" (reportAny)
+2026-09-20T19:59:27.2386552Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:170:35 - warning: Argument type is Any
+2026-09-20T19:59:27.2387248Z   Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2388406Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2389515Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:190:34 - warning: Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2390442Z ##[warning]Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2391333Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:210:47 - warning: Argument type is Any
+2026-09-20T19:59:27.2392193Z   Argument corresponds to parameter "expected" in function "verify_junit" (reportAny)
+2026-09-20T19:59:27.2393476Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "expected" in function "verify_junit" (reportAny)
+2026-09-20T19:59:27.2394945Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:212:9 - warning: Result of call expression is of type "list[dict[str, Any]]" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2396898Z ##[warning]Result of call expression is of type "list[dict[str, Any]]" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2398103Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:212:26 - warning: Argument type is Any
+2026-09-20T19:59:27.2398800Z   Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2399966Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2401083Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:229:9 - warning: Type of "document" is Any (reportAny)
+2026-09-20T19:59:27.2402037Z ##[warning]Type of "document" is Any (reportAny)
+2026-09-20T19:59:27.2403164Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:233:32 - warning: Argument type is Any
+2026-09-20T19:59:27.2403881Z   Argument corresponds to parameter "names" in function "admit_result" (reportAny)
+2026-09-20T19:59:27.2405112Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "names" in function "admit_result" (reportAny)
+2026-09-20T19:59:27.2406466Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:240:38 - warning: Argument type is Any
+2026-09-20T19:59:27.2407177Z   Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2408363Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "rows" in function "snapshot" (reportAny)
+2026-09-20T19:59:27.2409773Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:252:5 - warning: Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2411725Z ##[warning]Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2413419Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:253:5 - warning: Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2415239Z ##[warning]Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2416756Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:254:5 - warning: Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2418457Z ##[warning]Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2419915Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:255:5 - warning: Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2421589Z ##[warning]Result of call expression is of type "Action" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2422849Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:21 - warning: Type of "source" is Any (reportAny)
+2026-09-20T19:59:27.2423788Z ##[warning]Type of "source" is Any (reportAny)
+2026-09-20T19:59:27.2424715Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:21 - warning: Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2425660Z ##[warning]Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2426557Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:21 - warning: Argument type is Any
+2026-09-20T19:59:27.2427278Z   Argument corresponds to parameter "source" in function "run" (reportAny)
+2026-09-20T19:59:27.2428420Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "source" in function "run" (reportAny)
+2026-09-20T19:59:27.2429533Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:44 - warning: Type of "driver" is Any (reportAny)
+2026-09-20T19:59:27.2430483Z ##[warning]Type of "driver" is Any (reportAny)
+2026-09-20T19:59:27.2431440Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:44 - warning: Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2432464Z ##[warning]Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2433365Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:44 - warning: Argument type is Any
+2026-09-20T19:59:27.2434045Z   Argument corresponds to parameter "driver" in function "run" (reportAny)
+2026-09-20T19:59:27.2435227Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "driver" in function "run" (reportAny)
+2026-09-20T19:59:27.2436335Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:67 - warning: Type of "output" is Any (reportAny)
+2026-09-20T19:59:27.2437281Z ##[warning]Type of "output" is Any (reportAny)
+2026-09-20T19:59:27.2438213Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:67 - warning: Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2439147Z ##[warning]Type of "resolve" is Any (reportAny)
+2026-09-20T19:59:27.2440031Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:67 - warning: Argument type is Any
+2026-09-20T19:59:27.2440706Z   Argument corresponds to parameter "output" in function "run" (reportAny)
+2026-09-20T19:59:27.2441840Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "output" in function "run" (reportAny)
+2026-09-20T19:59:27.2443281Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:90 - warning: Type of "source_sha" is Any (reportAny)
+2026-09-20T19:59:27.2444249Z ##[warning]Type of "source_sha" is Any (reportAny)
+2026-09-20T19:59:27.2445162Z /home/runner/work/hol-guard/hol-guard/driver/scripts/ci/verify_kernel_cpu_controls.py:257:90 - warning: Argument type is Any
+2026-09-20T19:59:27.2445854Z   Argument corresponds to parameter "source_sha" in function "run" (reportAny)
+2026-09-20T19:59:27.2447025Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "source_sha" in function "run" (reportAny)
+2026-09-20T19:59:27.2448171Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:17:29 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2449188Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2450156Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:40:5 - warning: Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2451136Z ##[warning]Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2452182Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:57:75 - warning: Type of parameter "value" is Any (reportAny)
+2026-09-20T19:59:27.2453309Z ##[warning]Type of parameter "value" is Any (reportAny)
+2026-09-20T19:59:27.2454320Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:57:82 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2455320Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2456277Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:61:9 - warning: Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2457235Z ##[warning]Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2458180Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:67:5 - warning: Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2459092Z ##[warning]Type of "row" is Any (reportAny)
+2026-09-20T19:59:27.2460007Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:77:9 - warning: Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2460958Z ##[warning]Type of "admit_result" is Any (reportAny)
+2026-09-20T19:59:27.2462239Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:83:5 - warning: Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2463942Z ##[warning]Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2465156Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:90:13 - warning: Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2466125Z ##[warning]Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2467072Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:92:9 - warning: Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2468026Z ##[warning]Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2468978Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:94:13 - warning: Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2469951Z ##[warning]Type of "verify_junit" is Any (reportAny)
+2026-09-20T19:59:27.2471157Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:99:5 - warning: Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2472892Z ##[warning]Result of call expression is of type "int" and is not used; assign to variable "_" if this is intentional (reportUnusedCallResult)
+2026-09-20T19:59:27.2474283Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:101:9 - warning: Type of "read_json" is Any (reportAny)
+2026-09-20T19:59:27.2475250Z ##[warning]Type of "read_json" is Any (reportAny)
+2026-09-20T19:59:27.2476198Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:104:9 - warning: Type of "write" is Any (reportAny)
+2026-09-20T19:59:27.2477136Z ##[warning]Type of "write" is Any (reportAny)
+2026-09-20T19:59:27.2478105Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:113:17 - warning: Type of parameter "_args" is Any (reportAny)
+2026-09-20T19:59:27.2479100Z ##[warning]Type of parameter "_args" is Any (reportAny)
+2026-09-20T19:59:27.2480082Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:113:24 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2481089Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2482156Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:113:31 - warning: Type of parameter "_kwargs" is Any (reportAny)
+2026-09-20T19:59:27.2483173Z ##[warning]Type of parameter "_kwargs" is Any (reportAny)
+2026-09-20T19:59:27.2484169Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:113:40 - warning: Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2485176Z ##[warning]Type `Any` is not allowed (reportExplicitAny)
+2026-09-20T19:59:27.2486153Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:116:25 - warning: Type of "subprocess" is Any (reportAny)
+2026-09-20T19:59:27.2487117Z ##[warning]Type of "subprocess" is Any (reportAny)
+2026-09-20T19:59:27.2488027Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:116:25 - warning: Argument type is Any
+2026-09-20T19:59:27.2488749Z   Argument corresponds to parameter "target" in function "setattr" (reportAny)
+2026-09-20T19:59:27.2489945Z ##[warning]Argument type is Any
+  Argument corresponds to parameter "target" in function "setattr" (reportAny)
+2026-09-20T19:59:27.2491079Z /home/runner/work/hol-guard/hol-guard/driver/tests/test_verify_kernel_cpu_controls.py:118:9 - warning: Type of "command" is Any (reportAny)
+2026-09-20T19:59:27.2492109Z ##[warning]Type of "command" is Any (reportAny)
+2026-09-20T19:59:27.2492867Z 0 errors, 93 warnings, 0 notes
+2026-09-20T19:59:32.5223704Z ..................                                                       [100%]
+2026-09-20T19:59:32.5224297Z 18 passed in 0.37s
+2026-09-20T19:59:32.6952379Z ##[group]Run source/.venv/bin/python -I driver/scripts/ci/verify_kernel_cpu_controls.py \
+2026-09-20T19:59:32.6952994Z [36;1msource/.venv/bin/python -I driver/scripts/ci/verify_kernel_cpu_controls.py \[0m
+2026-09-20T19:59:32.6953585Z [36;1m  --source source --driver driver --source-sha "8ba371b2b4b0cadbfe23392b81a64743233d8b2c" \[0m
+2026-09-20T19:59:32.6954050Z [36;1m  --output kernel-cpu-evidence[0m
+2026-09-20T19:59:32.6974827Z shell: /usr/bin/bash -e {0}
+2026-09-20T19:59:32.6975075Z env:
+2026-09-20T19:59:32.6975352Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T19:59:32.6975666Z ##[endgroup]
+2026-09-20T19:59:40.4618333Z ##[error]Process completed with exit code 1.
+2026-09-20T19:59:40.4663797Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T19:59:40.4664178Z with:
+2026-09-20T19:59:40.4664401Z   name: finite-kernel-cpu-controls
+2026-09-20T19:59:40.4664705Z   path: kernel-cpu-evidence/
+driver-controls.xml
+
+2026-09-20T19:59:40.4665012Z   if-no-files-found: error
+2026-09-20T19:59:40.4665249Z   retention-days: 14
+2026-09-20T19:59:40.4665458Z   compression-level: 6
+2026-09-20T19:59:40.4665664Z   overwrite: false
+2026-09-20T19:59:40.4665872Z   include-hidden-files: false
+2026-09-20T19:59:40.4666100Z   archive: true
+2026-09-20T19:59:40.4666284Z env:
+2026-09-20T19:59:40.4666728Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T19:59:40.4667041Z ##[endgroup]
+2026-09-20T19:59:40.6074716Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T19:59:40.6076415Z The least common ancestor is /home/runner/work/hol-guard/hol-guard. This will be the root directory of the artifact
+2026-09-20T19:59:40.6077266Z With the provided path, there will be 27 files uploaded
+2026-09-20T19:59:40.6080274Z Artifact name is valid!
+2026-09-20T19:59:40.6080946Z Root directory input is valid!
+2026-09-20T19:59:40.9382895Z Uploading artifact: finite-kernel-cpu-controls.zip
+2026-09-20T19:59:40.9420843Z Beginning upload of artifact content to blob storage
+2026-09-20T19:59:41.2908355Z Uploaded bytes 16884
+2026-09-20T19:59:41.3555864Z Finished uploading artifact content to blob storage!
+2026-09-20T19:59:41.3556959Z SHA256 digest of uploaded artifact is a4c38f8cc8763a3115fa0b5deca143bb372c35afb0d8b156a3f06e17eda0092a
+2026-09-20T19:59:41.3557962Z Finalizing artifact upload
+2026-09-20T19:59:41.7118236Z Artifact finite-kernel-cpu-controls successfully finalized. Artifact ID 10612432493
+2026-09-20T19:59:41.7119155Z Artifact finite-kernel-cpu-controls has been successfully uploaded! Final size is 16884 bytes. Artifact ID is 10612432493
+2026-09-20T19:59:41.7124309Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35534051177/artifacts/10612432493
+2026-09-20T19:59:41.7312759Z Post job cleanup.
+2026-09-20T19:59:41.8106962Z [command]/usr/bin/git version
+2026-09-20T19:59:41.8140776Z git version 2.55.0
+2026-09-20T19:59:41.8176597Z Temporarily overriding HOME='/home/runner/work/_temp/44bc1c2e-7924-42e4-b916-a79719f0b8ab' before making global git config changes
+2026-09-20T19:59:41.8177873Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:59:41.8181753Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/source
+2026-09-20T19:59:41.8207869Z Removing SSH command configuration
+2026-09-20T19:59:41.8214700Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:41.8243483Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:41.8421127Z Removing HTTP extra header
+2026-09-20T19:59:41.8426229Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:41.8452680Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:41.8623102Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:41.8629429Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:41.8655021Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:41.8940621Z Post job cleanup.
+2026-09-20T19:59:41.9788743Z [command]/usr/bin/git version
+2026-09-20T19:59:41.9822471Z git version 2.55.0
+2026-09-20T19:59:41.9859496Z Temporarily overriding HOME='/home/runner/work/_temp/c707a557-c824-4abe-94d7-fd7a7200d8bd' before making global git config changes
+2026-09-20T19:59:41.9860975Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T19:59:41.9865071Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard/driver
+2026-09-20T19:59:41.9891170Z Removing SSH command configuration
+2026-09-20T19:59:41.9897720Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T19:59:41.9927353Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T19:59:42.0108427Z Removing HTTP extra header
+2026-09-20T19:59:42.0114014Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T19:59:42.0143346Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T19:59:42.0322648Z Removing includeIf entries pointing to credentials config files
+2026-09-20T19:59:42.0328782Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T19:59:42.0355864Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T19:59:42.0655199Z Cleaning up orphan processes

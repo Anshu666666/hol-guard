@@ -1,0 +1,33 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_unknown_traceback_code_is_never_hashed_or_compared ____________
+
+    def test_unknown_traceback_code_is_never_hashed_or_compared():
+        touched = []
+    
+        class PrivateConstant:
+            def __hash__(self):
+                touched.append("hash")
+                raise RuntimeError("private constant hash must not execute")
+    
+            def __eq__(self, other):
+                touched.append("equality")
+                raise RuntimeError("private constant equality must not execute")
+    
+        changed = _raised.__code__.replace(co_consts=(*_raised.__code__.co_consts, PrivateConstant()))
+        unknown = FunctionType(changed, globals())
+        error = ValueError("private original")
+        writer, scopes = _fixture()
+        with SQLiteFailureCapture(writer, scopes=scopes, sites={}) as capture:
+            returned, caught = _call(writer, lambda: unknown(error))
+        assert returned == "unchanged" and caught is error
+>       assert touched == []
+E       AssertionError: assert ['hash'] == []
+E         
+E         Left contains one more item: 'hash'
+E         Use -v to get more diff
+
+tests/test_sqlite_failure_capture.py:137: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_sqlite_failure_capture.py::test_unknown_traceback_code_is_never_hashed_or_compared
+1 failed in 0.25s

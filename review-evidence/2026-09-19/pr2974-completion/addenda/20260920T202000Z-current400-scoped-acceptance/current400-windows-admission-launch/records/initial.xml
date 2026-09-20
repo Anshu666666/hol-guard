@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="19" time="0.389" timestamp="2026-09-20T16:26:11.789627-03:00" hostname="localhost"><testcase classname="tests.test_admission_observation" name="test_roster_exactly_matches_original_ownership_routes" time="0.003" /><testcase classname="tests.test_admission_observation" name="test_all_original_calls_and_aggregate_snapshots_without_mode_population" time="0.002"><failure message="assert (False)">def test_all_original_calls_and_aggregate_snapshots_without_mode_population():
+        probe, routes, daemon, calls, token = fixture()
+        original = routes._installed_hook_request
+        with AdmissionCapture(probe, routes) as capture:
+            assert probe.bind_corpus(daemon) is token
+            for index in range(21):
+                assert deliver(routes, daemon, index)["decision"] == "allow"
+            stats = daemon._server.hook_worker.metrics.snapshot()
+            assert probe.observe_corpus(daemon, stats) is token
+            # Original mode-invariant call forwards but cannot enter the 21-case record.
+            deliver(routes, daemon, 0)
+            assert probe.end_corpus(daemon, stats, receipts()) is token
+        assert routes._installed_hook_request is original and len(calls) == 22
+        report = capture.report()
+&gt;       assert report["observation_complete"] and report["callbacks_restored"]
+E       assert (False)
+
+tests/test_admission_observation.py:87: AssertionError</failure></testcase><testcase classname="tests.test_admission_observation" name="test_exact_argument_and_return_object_forwarding" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_original_exception_identity_and_one_call[error0]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_original_exception_identity_and_one_call[error1]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_original_exception_identity_and_one_call[error2]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_recording_failure_does_not_replace_return_or_invoke_extra_call" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_existing_scheduler_deadline_rejection_is_observed_without_another_acquire" time="0.001"><failure message="KeyError: 'values'">def test_existing_scheduler_deadline_rejection_is_observed_without_another_acquire():
+        probe, routes, daemon, calls, _ = fixture()
+        server = daemon._server
+        before = values.snapshot(server)
+        admission = server.runtime_hook_scheduler.acquire(
+            harness="omp", client_key="private", lane="content-security", payload_bytes=1, deadline=0.0
+        )
+        assert admission.permit is None and admission.reason_code == "daemon_hook_deadline_exhausted"
+        with server.hook_capacity_lock:
+            server.rejected_hook_requests += 1
+            server.hook_harness_rejected["omp"] = 1
+        after = values.snapshot(server)
+        assert before["scheduler"]["values"]["rejected"] == {}
+        assert after["scheduler"]["values"]["rejected"] == {"daemon_hook_deadline_exhausted": 1}
+        assert after["admission"]["values"]["per_harness_rejected"] == {"omp": 1}
+&gt;       assert after["metrics"]["values"]["routes"] == {} and not calls
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'values'
+
+tests/test_admission_observation.py:156: KeyError</failure></testcase><testcase classname="tests.test_admission_observation" name="test_busy_lock_is_nonblocking_and_remains_owned" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_illegal_counter_values_are_unavailable_without_retaining_them[True]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_illegal_counter_values_are_unavailable_without_retaining_them[-1]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_illegal_counter_values_are_unavailable_without_retaining_them[9223372036854775808]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_illegal_counter_values_are_unavailable_without_retaining_them[private]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_illegal_counter_values_are_unavailable_without_retaining_them[value4]" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_unknown_response_objects_and_keys_cannot_export_or_execute_hooks" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_failure_stage_buckets_omit_original_exception_names" time="0.001" /><testcase classname="tests.test_admission_observation" name="test_wrong_order_overflow_and_unrelated_later_alias_remain_failed" time="0.003"><failure message="AssertionError: assert {'alias_owner...t_incomplete'} == {'alias_owner...ery_overflow'}&#10;  &#10;  Extra items in the left set:&#10;  'snapshot_incomplete'&#10;  Use -v to get more diff">def test_wrong_order_overflow_and_unrelated_later_alias_remain_failed():
+        probe, routes, daemon, calls, _ = fixture()
+        with AdmissionCapture(probe, routes) as capture:
+            probe.bind_corpus(daemon)
+            deliver(routes, daemon, 1)
+            for index in range(21):
+                deliver(routes, daemon, index)
+            deliver(routes, daemon, 0)
+            later = lambda *args, **kwargs: None
+            routes._installed_hook_request = later
+        assert len(calls) == 23 and routes._installed_hook_request is later
+&gt;       assert set(capture.report()["faults"]) == {"delivery_contract_changed", "delivery_overflow", "alias_ownership_lost"}
+E       AssertionError: assert {'alias_owner...t_incomplete'} == {'alias_owner...ery_overflow'}
+E         
+E         Extra items in the left set:
+E         'snapshot_incomplete'
+E         Use -v to get more diff
+
+tests/test_admission_observation.py:217: AssertionError</failure></testcase><testcase classname="tests.test_admission_observation" name="test_partial_alias_install_preserves_original_exception_and_restores_prior_slots" time="0.002" /><testcase classname="tests.test_admission_observation" name="test_original_boundary_callback_error_is_not_replaced" time="0.002" /></testsuite></testsuites>

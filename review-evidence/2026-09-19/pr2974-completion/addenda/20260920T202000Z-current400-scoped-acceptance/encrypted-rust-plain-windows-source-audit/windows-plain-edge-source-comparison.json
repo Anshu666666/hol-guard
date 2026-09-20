@@ -1,0 +1,53 @@
+{
+  "schema": "pr2974.windows-plain-edge.source-comparison.v1",
+  "source": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "tree": "7a328609488ffefecd3cdd12a9c7adba6a591e97",
+  "sole_parent": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "commit_parent_tree_readback_verified": true,
+  "source_blobs": {
+    "before_edge": "8ed8e9e51bd2ae5bad19283fc98c1b946b420bfa",
+    "after_edge": "f6625901e0979787f005c24149c69d8e6899fbbf",
+    "after_encrypted": "8b740bd6b33651e0f6bc5d06ec21619ebda412eb"
+  },
+  "exact_reversal": {
+    "a5fd_blob": "8ed8e9e51bd2ae5bad19283fc98c1b946b420bfa",
+    "candidate_blob": "f6625901e0979787f005c24149c69d8e6899fbbf",
+    "five_exact_substitutions_restore_old_bytes": true,
+    "substitutions": [
+      [
+        "#[path = \"edge_encrypted.rs\"]\nmod encrypted;\n",
+        ""
+      ],
+      [
+        "    let inner_payload = if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {\n        if event_name != \"PostToolUse\" || !matches!(harness.as_str(), \"pi\" | \"omp\") {\n            return Err(\"native_hook_encrypted_payload_unsupported\".to_owned());\n        }\n        Some(encrypted::hydrate(&envelope.raw_payload, deadline)?)\n    } else {\n        None\n    };",
+        "    if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {\n        return Err(\"native_hook_encrypted_payload_unsupported\".to_owned());\n    }"
+      ],
+      [
+        "            // Classify authenticated inner content for the existing policy join;\n            // the public receipt still commits to the original outer reference.\n            let payload_kind = match inner_payload.as_ref() {\n                Some(payload) => payload_kind(payload)?,\n                None => kind.clone(),\n            };",
+        "            let payload_kind = kind.clone();"
+      ],
+      [
+        "payload: inner_payload.unwrap_or_else(|| std::mem::take(&mut envelope.raw_payload)),",
+        "payload: std::mem::take(&mut envelope.raw_payload),"
+      ],
+      [
+        "            if kind != GuardHookPayloadKindV2::EncryptedPayloadRef {\n                envelope.raw_payload = request.payload;\n            }",
+        "            envelope.raw_payload = request.payload;"
+      ]
+    ]
+  },
+  "findings": [
+    "payload_kind is byte-identical. A raw object lacking guard_payload_ref does not select EncryptedPayloadRef; inline and source-reference calls set new inner_payload toNone and never call hydrate.",
+    "PreToolUse evaluation, policy join, pre-result validation and receipt construction are unchanged for those calls.",
+    "For PostToolUse with inner_payloadNone, the new kind match returns the original kind.clone; unwrap_or_else executes the same mem::take of the already-bound outer payload; the same native review and post-policy join run with the same request/deadline. The new restoration guard istrue, so request.payload is restored before the unchanged receipt.",
+    "No added file/OS/network operation or clock call occurs on that unencrypted branch. The existing absolute deadline check remains in the same logical place after payload-kind admission.",
+    "The cfg(not(unix)) hydrate path still refuses encrypted reference input. That function is not reached for a plain inline input, so that unsupported path is not a source explanation for an actually inline request's missing route."
+  ],
+  "limits": [
+    "No actual failed route/request/worker phase is assigned by this source comparison.",
+    "No executable equivalence, latency equivalence, compiler result, native workload or new test execution is claimed.",
+    "No inference that the lazy daemon initializer is a cause or that all normal probe payloads reached this edge; the Windows owner separately verifies original probe inputs/counters.",
+    "The conditional handling of encrypted deadline failures is outside this plain-input comparison."
+  ],
+  "execution_performed": false
+}

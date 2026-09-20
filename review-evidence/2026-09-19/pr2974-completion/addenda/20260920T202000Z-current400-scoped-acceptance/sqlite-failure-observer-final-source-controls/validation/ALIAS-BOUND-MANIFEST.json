@@ -1,0 +1,56 @@
+{
+  "schema": "pr2974.sqlite-failure-observer-preparation.v1",
+  "source_parent": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "source_parent_tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+  "source_changes": "Exactly three diagnostic/test additions; no product/workload/config/dependency change.",
+  "files": [
+    {
+      "path": "ci/native_runtime/sqlite_failure_capture.py",
+      "bytes": 7759,
+      "lines": 199,
+      "sha256": "c689f46bd665a36a4d594bc6eab8b2c43100cfdca200cf320b23c4a12b4e586f",
+      "git_blob": "03bf9e4e0c4a47a1dba2dc3c6c4c9ed676438ce2"
+    },
+    {
+      "path": "ci/native_runtime/sqlite_failure_binding.py",
+      "bytes": 4395,
+      "lines": 100,
+      "sha256": "6e5a9a3ae49e8f9a864d4ec6c12dcdc123313e3b41f42b3408db5e4e4bd32995",
+      "git_blob": "19ab26a1b18d33990492e50d26b28cdf20cafb7f"
+    },
+    {
+      "path": "tests/test_sqlite_failure_capture.py",
+      "bytes": 12941,
+      "lines": 313,
+      "sha256": "36a3da4c744aa6cd28ab615aa1f676d5b283e1f265cfd4920491132e86aa055a",
+      "git_blob": "549e79bcbeea47bdaed890bc161f1c672bcc5cab"
+    }
+  ],
+  "validation": {
+    "python": "Python 3.12.14",
+    "controls": 24,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.86,
+    "type_errors": 0,
+    "type_warnings": 204,
+    "ruff": "format/check passed",
+    "diff_check": true
+  },
+  "preserved_initial_failures": [
+    "Initial14pass/1failed fixture closed its connection after commit, so original total_changes access failed before the intended wake read. The failed output is retained; control changed to the real SQLite authorizer denying the postcommit read.",
+    "Initial one fixture ModuleType attribute type error repaired by explicit Any binding; no runtime operation changed."
+  ],
+  "scope": [
+    "Existing original real receipt lock/drain and after_commit/single_ack/batch_ack controls are invoked unchanged. Their current assertions remain authoritative.",
+    "Real SQLite authorizer faults distinguish transaction_commit from a subsequent wake_schema_read; the latter control independently verifies the stored row.",
+    "The post_commit_path_proven field records reaching the exact helper path after its commit call returned; it is not a general independent durable-commit certificate.",
+    "Terminal callback count is not failed-record count; explicit unacknowledged codes bypass the classifier and are not synthesized.",
+    "Unknown innermost frame, source/code mismatch, recorder/classifier/restoration failure and overflow stay failed or incomplete.",
+    "No Windows execution, installed wheel workload, performance qualification or new corpus invocation. Root requires future attachment to an independently necessary original qualification population after source/operational peer."
+  ],
+  "prior_plan_tree": "787e011bf8e9e9039498a75b34862256cbc8b8cd",
+  "predecessor_preparation_tree": "46a960e088840468466bd31e644adcf06bc714b0",
+  "correction": "Before attachment, verify the live writer classifier alias is exactly the original source-bound diagnostics function, rejecting an existing wrapper. One source-admission control added; capture code unchanged."
+}

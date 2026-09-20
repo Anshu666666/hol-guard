@@ -1,0 +1,336 @@
+"""Shared validation, credential, and row helpers for extension-control authority."""
+
+# pyright: reportAttributeAccessIssue=false, reportPrivateUsage=false, reportUnknownMemberType=false, reportUninitializedInstanceVariable=false
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import sqlite3
+import sys
+from collections.abc import Generator, Mapping
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import cast
+
+from .edge_events import build_policy_event
+from .extension_control_events import extension_control_change_payload
+from .runtime.extension_control_authority import (
+    AuthorityAnchor,
+    AuthorityHealth,
+    ExtensionControlAuthorityError,
+    ExtensionControlAuthorityView,
+    anchor_from_json,
+    anchor_to_json,
+    layers_from_json,
+)
+from .runtime.extension_control_contract import (
+    ControlLayerKind,
+    ControlState,
+    ExtensionControl,
+    ExtensionControlLayer,
+)
+from .runtime.extension_control_resolver import compose_control_layers
+from .store_base import (
+    EncryptedFileSecretStore,
+    MigratingFallbackSecretStore,
+    SecretStore,
+    SystemKeyringSecretStore,
+)
+from .store_extension_control_authority_schema import ensure_extension_control_authority_schema
+
+_KEY_REF_SUFFIX = ":authentication-key"
+_ANCHOR_REF_SUFFIX = ":anchor"
+_MAX_TRANSITION_ID_LENGTH = 256
+_MAX_CONTROLS_PER_LAYER = 512
+_MAX_SERIALIZED_LAYERS_BYTES = 256 * 1024
+
+
+def preserve_migrated_extension_control(
+    control: ExtensionControl,
+    *,
+    previous_manifest: Mapping[str, str],
+    current_manifest: Mapping[str, str],
+) -> bool:
+    """Keep disabled controls and unchanged/unknown enabled allows across catalog upgrades."""
+
+    key_name = f"{control.target.kind.value}:{control.target.target_id}"
+    if key_name not in current_manifest:
+        return False
+    previous_fingerprint = previous_manifest.get(key_name)
+    return control.state is ControlState.DISABLED or previous_fingerprint in {None, current_manifest[key_name]}
+
+
+def preserve_managed_extension_control(
+    control: ExtensionControl,
+    *,
+    previous_manifest: Mapping[str, str],
+    current_manifest: Mapping[str, str],
+) -> bool:
+    """Keep managed state only with an authenticated prior contract match.
+
+    Unlike local-admin migration, a missing previous manifest is intentionally
+    treated as no match so an enabled cloud allow fails closed until refreshed.
+    """
+
+    key_name = f"{control.target.kind.value}:{control.target.target_id}"
+    current_fingerprint = current_manifest.get(key_name)
+    if current_fingerprint is None:
+        # Keep unknown targets visible so the resolver emits its fail-closed error.
+        return True
+    if control.state is ControlState.DISABLED:
+        return True
+    return previous_manifest.get(key_name) == current_fingerprint
+
+
+class _ExtensionControlAuthoritySupportMixin:
+    def _invalidate_native_extension_control_policy(self, *, explicit_recovery: bool = False) -> None:
+        """Close local native readiness before a durable control mutation.
+
+        Mutation callers hold the authority lock. The asynchronous publisher
+        must acquire that lock to verify committed controls, and its epoch
+        check rejects any older publication already in flight. No ACK wait is
+        performed under store locks; failed/rolled-back mutations are safely
+        republished from their authenticated committed state.
+        """
+
+        from .native_command_control_authority_io import require_command_control_mutation_lease
+        from .native_command_control_authority_store import begin_native_command_control_mutation
+        from .native_policy_snapshot import notify_native_policy_mutation
+        from .store import GuardStore
+
+        require_command_control_mutation_lease(cast(Path, self.guard_home))
+        notify_native_policy_mutation(cast(Path, self.guard_home))
+        begin_native_command_control_mutation(cast(GuardStore, self), explicit_recovery=explicit_recovery)
+
+    def _require_compatible_extension_control_schema(self) -> None:
+        with self._connect() as connection:
+            ensure_extension_control_authority_schema(connection)
+
+    def read_persisted_extension_control_authority(self) -> ExtensionControlAuthorityView:
+        """Read the authenticated authority using its persisted catalog identity."""
+
+        catalog_digest = self._extension_control_last_catalog_digest
+        try:
+            with self._extension_control_authority_lock():
+                self._require_compatible_extension_control_schema()
+                with self._connect() as connection:
+                    row = connection.execute(
+                        "select catalog_digest from extension_control_authority_snapshot where singleton = 1"
+                    ).fetchone()
+                if row is not None:
+                    catalog_digest = _row_str(row, "catalog_digest")
+                return self._read_extension_control_authority_locked(catalog_digest)
+        except ExtensionControlAuthorityError:
+            return self._tampered_view(catalog_digest)
+        except Exception:
+            return self._degraded_view(catalog_digest)
+
+    def _authority_key(self, *, required: bool) -> bytes | None:
+        try:
+            value = self._secret_store().get_secret(self._key_ref())
+        except Exception as exc:
+            raise ExtensionControlAuthorityError("extension control credential store unavailable") from exc
+        if value is None:
+            if required:
+                raise ExtensionControlAuthorityError("extension control authentication key missing")
+            return None
+        try:
+            key = base64.urlsafe_b64decode(value.encode("ascii"))
+        except (ValueError, UnicodeEncodeError) as exc:
+            raise ExtensionControlAuthorityError("invalid extension control authentication key") from exc
+        if len(key) != 32:
+            raise ExtensionControlAuthorityError("invalid extension control authentication key")
+        return key
+
+    def _read_anchor(self, *, key: bytes) -> AuthorityAnchor | None:
+        value = self._secret_store().get_secret(self._anchor_ref())
+        return None if value is None else anchor_from_json(value, key=key)
+
+    def _write_and_verify_anchor(self, anchor: AuthorityAnchor, *, key: bytes) -> None:
+        encoded = anchor_to_json(anchor, key=key)
+        self._secret_store().set_secret(self._anchor_ref(), encoded)
+        observed = self._secret_store().get_secret(self._anchor_ref())
+        if observed != encoded:
+            raise ExtensionControlAuthorityError("extension control anchor read-back mismatch")
+
+    def _secret_store(self) -> SecretStore:
+        current = self._extension_control_authority_secret_store
+        if current is None:
+            fallback = EncryptedFileSecretStore(cast(Path, self.guard_home))
+            system = SystemKeyringSecretStore(service_name="hol-guard.extension-control-authority")
+            if sys.platform == "darwin" and not bool(getattr(self, "_allow_system_keyring", False)):
+                # Passive macOS reads must never trigger Keychain UI. Explicit account
+                # actions opt in to the migrating wrapper below.
+                current = fallback
+            else:
+                # Persist every new authority secret in Guard's owner-only vault while
+                # retaining the OS keyring as a best-effort legacy source. This makes
+                # daemon, hook, and terminal processes converge on one prompt-free copy
+                # instead of flapping when a session keyring is temporarily unavailable.
+                current = MigratingFallbackSecretStore(system, fallback)
+            self._extension_control_authority_secret_store = current
+        return current
+
+    def legacy_extension_control_authority_secret_migration_required(self) -> bool:
+        """Return whether an authority row lacks its local vault material."""
+
+        if sys.platform != "darwin":
+            return False
+        with self._connect() as connection:
+            ensure_extension_control_authority_schema(connection)
+            snapshot_exists = (
+                connection.execute("select 1 from extension_control_authority_snapshot where singleton = 1").fetchone()
+                is not None
+            )
+        if not snapshot_exists:
+            return False
+        store = EncryptedFileSecretStore(cast(Path, self.guard_home))
+        return any(store.get_secret(secret_ref) is None for secret_ref in (self._key_ref(), self._anchor_ref()))
+
+    def migrate_legacy_extension_control_authority_secrets(self, *, allow_interactive: bool = True) -> bool:
+        """Mirror legacy Keychain authority material during an explicit action."""
+
+        if not bool(getattr(self, "_allow_system_keyring", False)):
+            return False
+        if not self.legacy_extension_control_authority_secret_migration_required():
+            return False
+        store = self._secret_store()
+        if not isinstance(store, MigratingFallbackSecretStore):
+            return False
+        migrated = False
+        allow_interactive_read = allow_interactive
+        for secret_ref in (self._key_ref(), self._anchor_ref()):
+            if store.fallback.get_secret(secret_ref) is not None:
+                continue
+            value = store.get_secret(secret_ref) if allow_interactive_read else store.get_secret_no_ui(secret_ref)
+            allow_interactive_read = False
+            if value is None:
+                return False
+            migrated = True
+        return migrated
+
+    def _authority_ref_prefix(self) -> str:
+        home = str(cast(Path, self.guard_home).resolve())
+        return "extension-control:" + hashlib.sha256(home.encode("utf-8")).hexdigest()[:20]
+
+    def _key_ref(self) -> str:
+        return self._authority_ref_prefix() + _KEY_REF_SUFFIX
+
+    def _anchor_ref(self) -> str:
+        return self._authority_ref_prefix() + _ANCHOR_REF_SUFFIX
+
+    @contextmanager
+    def _extension_control_authority_lock(self, *, shared: bool = False) -> Generator[None, None, None]:
+        from .native_command_control_authority_io import hold_command_control_authority_lock
+
+        with hold_command_control_authority_lock(cast(Path, self.guard_home), shared=shared):
+            yield
+
+    @staticmethod
+    def _validate_layers(layers: tuple[ExtensionControlLayer, ...], catalog_digest: str) -> None:
+        if len(layers) > len(ControlLayerKind):
+            raise ExtensionControlAuthorityError("too many extension control layers")
+        if any(len(layer.controls) > _MAX_CONTROLS_PER_LAYER for layer in layers):
+            raise ExtensionControlAuthorityError("too many extension controls in layer")
+        if any(layer.catalog_digest != catalog_digest for layer in layers):
+            raise ExtensionControlAuthorityError("extension control catalog digest mismatch")
+        composed = compose_control_layers(layers)
+        if composed.failures:
+            raise ExtensionControlAuthorityError("invalid extension control layers")
+        if len({layer.kind for layer in layers}) != len(layers):
+            raise ExtensionControlAuthorityError("duplicate extension control layer")
+        if any(layer.kind not in {ControlLayerKind.LOCAL_ADMIN, ControlLayerKind.SIGNED_CLOUD} for layer in layers):
+            raise ExtensionControlAuthorityError("invalid extension control layer kind")
+
+    @classmethod
+    def _validate_commit_input(
+        cls,
+        layers: tuple[ExtensionControlLayer, ...],
+        *,
+        catalog_digest: str,
+        actor_id: str,
+        expected_revision: int,
+        idempotency_key: str,
+        nonce: str,
+    ) -> None:
+        cls._validate_layers(layers, catalog_digest)
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ExtensionControlAuthorityError("invalid expected authority revision")
+        identities = (actor_id, idempotency_key, nonce)
+        if any(not value.strip() or len(value) > _MAX_TRANSITION_ID_LENGTH for value in identities):
+            raise ExtensionControlAuthorityError("invalid extension control transition identity")
+
+    @staticmethod
+    def _validate_serialized_layers(layers_json: str) -> None:
+        if len(layers_json.encode("utf-8")) > _MAX_SERIALIZED_LAYERS_BYTES:
+            raise ExtensionControlAuthorityError("extension control layers exceed storage limit")
+
+    def _queue_extension_control_change_event(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        revision: int,
+        previous_revision: int,
+        layers_json: str,
+        occurred_at: str,
+    ) -> None:
+        layers = layers_from_json(layers_json)
+        self._add_guard_event_v1(
+            connection,
+            build_policy_event(
+                policy_key=f"extension-controls:{revision}",
+                occurred_at=occurred_at,
+                device_id=None,
+                workspace_id=self._cloud_workspace_id_from_connection(connection),
+                payload=extension_control_change_payload(
+                    revision=revision,
+                    previous_revision=previous_revision,
+                    layers=layers,
+                ),
+            ),
+        )
+
+    def _degraded_view(self, catalog_digest: str) -> ExtensionControlAuthorityView:
+        health = (
+            AuthorityHealth.DEGRADED_ACKNOWLEDGED
+            if self._extension_control_degraded_acknowledged
+            else AuthorityHealth.DEGRADED_UNACKNOWLEDGED
+        )
+        return ExtensionControlAuthorityView(health, 0, catalog_digest, ())
+
+    @staticmethod
+    def _tampered_view(catalog_digest: str) -> ExtensionControlAuthorityView:
+        return ExtensionControlAuthorityView(AuthorityHealth.TAMPERED, 0, catalog_digest, ())
+
+
+def _row_str(row: sqlite3.Row, name: str) -> str:
+    value = cast(object, row[name])
+    if not isinstance(value, str):
+        raise ExtensionControlAuthorityError("invalid extension control authority row")
+    return value
+
+
+def _row_optional_str(row: sqlite3.Row, name: str) -> str | None:
+    value = cast(object, row[name])
+    if value is not None and not isinstance(value, str):
+        raise ExtensionControlAuthorityError("invalid extension control authority row")
+    return value
+
+
+def _row_int(row: sqlite3.Row, name: str) -> int:
+    value = cast(object, row[name])
+    if type(value) is not int:
+        raise ExtensionControlAuthorityError("invalid extension control authority row")
+    return value
+
+
+def _private_hash(value: str, *, key: bytes, purpose: str) -> str:
+    framed = b"hol-guard.extension-control.private-ref.v1\x00" + purpose.encode("ascii")
+    return hmac.new(key, framed + b"\x00" + value.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()

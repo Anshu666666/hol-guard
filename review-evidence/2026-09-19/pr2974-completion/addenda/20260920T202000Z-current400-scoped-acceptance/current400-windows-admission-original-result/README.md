@@ -1,0 +1,11 @@
+# One Windows admission diagnostic, exact400 fresh build
+
+Run35533705972/job106138831185 completed successfully. The original34 Windows diagnostic controls passed with no skips, typing returned0errors468warnings, and one original default-auto invocation returned0 with21 native routes plus21 accepted/processed receipts. Both original persistence error maps are empty. All21 observed delivery windows have a native route increment and admission increment; no scheduler/server rejection or worker failure-stage delta was observed.
+
+The original historical400 normal run35531198716/job106131976672 remains failed20/21. Its executable was not retained. This new wheel/runtime are independently hash-verified, built directly from exact400, and explicitly different provenance: runtimeSHA db31d47606e701df45c62b6e1e3b48e6200a99be5eaa912a6457a630caef3375 versus historical reported19d9ee51b0713712c3548faa06a691c40edd053eb35d0c5632b7e06d5f6771f5. This successful instrumented population is a non-reproduction, not a historical cause or repair.
+
+The measured Pi pre window has completed delta0 and active/bytes retained; the following Pi post window has completed delta2 and releases that active/byte state. These are separate non-atomic boundary snapshots. They cannot independently assign each completion to one request. The original source/driver budgets, decisions, assertions, route ordering and cleanup remain unchanged; no uninstrumented timing or full qualification claim.
+
+The data-only verifier checks the originalZIP/all18 members, actual newly built wheel/native members,22 source guards and source/dependency before-after bindings, exact34 ordered JUnit cases, original21 row identities, original receipt/native counts, source/build/driver identities and full original outcomes. It imports no application module and launches no workload. Inputs are copied immutable source/reference records, not executable product imports.
+
+Raw text is retained verbatim. BinaryZIP and wheel are retained locally and by the original GitHub artifact10611323937 (14-day workflow retention); the Git evidence tree includes their sizes/hashes rather than binary copies. No signed download URL is included. The complete original job log is GitHub's decoded log response; its hash identifies that decoded text.

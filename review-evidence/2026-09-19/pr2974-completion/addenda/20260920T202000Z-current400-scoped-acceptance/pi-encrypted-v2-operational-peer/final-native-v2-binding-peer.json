@@ -1,0 +1,107 @@
+{
+  "schema": "hol-guard.encrypted-native-v2-final-binding-peer.v1",
+  "observed_at_utc": "2026-09-20 18:42:14 UTC",
+  "verdict": "clear_final_operational_binding",
+  "source_commit": "5e8dd7465be6223ee633a927cb907604a3c4f655",
+  "source_tree": "7a33b3b5feaff3d27dae7ca70ab034ca5d5c8f63",
+  "sole_parent": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "driver_tree": "4ba3f66927b75e89133b0e34835d1d8ac2c27026",
+  "prior_semantic_peer": "98710e8d46badab6335f55f7c420820535590554",
+  "format_result_tree": "ddb490ba293c826bfeead4007719f176cf92f4d1",
+  "driver_delta": [
+    {
+      "path": ".github/workflows/pr2974-encrypted-post-source.yml",
+      "before": null,
+      "after": "e389e38623edf48d44512e2b47ff77ccc45da216"
+    },
+    {
+      "path": "encrypted-validation/input-contract.json",
+      "before": null,
+      "after": "9d67a595513c7e698d684781cfe372b982abc5b9"
+    },
+    {
+      "path": "encrypted-validation/run.py",
+      "before": null,
+      "after": "61df478fcdcdebf513a976e9840a76104c600b32"
+    },
+    {
+      "path": "encrypted-validation/test_runner.py",
+      "before": null,
+      "after": "30c69a4056be45107dce7a3a827d4527d16003ff"
+    }
+  ],
+  "verified_members": [
+    {
+      "path": "rust/crates/guard-runtime/src/edge.rs",
+      "bytes": 15060,
+      "sha256": "879fbed4817a7da3b6cc4fc1384500fb595fea00d001366f84e09360c1a1a78a",
+      "git_blob": "f6625901e0979787f005c24149c69d8e6899fbbf"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_encrypted.rs",
+      "bytes": 5829,
+      "sha256": "3efae3b925f03e1dffa413f5b361e4f1776522270a94939949c83e5a1541403c",
+      "git_blob": "8b740bd6b33651e0f6bc5d06ec21619ebda412eb"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_encrypted_file.rs",
+      "bytes": 6961,
+      "sha256": "b08c49346acf2bcb422624084e35661a3847053191ea0cb758998df7921381fd",
+      "git_blob": "f619c00a250cb86f3197d7eb130b3d44a4ec6d20"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_encrypted_file_tests.rs",
+      "bytes": 6974,
+      "sha256": "3c035aac54f93951276fc3f2829253fabf30fb1849991fc68392c93551fe52c0",
+      "git_blob": "fbd91a781867860743a11369f9725983cd68dea4"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_encrypted_tests.rs",
+      "bytes": 16870,
+      "sha256": "ba95dcaad5051c6473b8afa87ed22147dd71d837399ed2727d1d84f5f9fc1f45",
+      "git_blob": "bca02f80519d1626cce0c60e76521c100ce3174e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_tests.rs",
+      "bytes": 11864,
+      "sha256": "c77d7213d69503e4d45caa54060bbe22a83444007af10f0c8890a7804a05f114",
+      "git_blob": "f4e0adecdeade564225cb74b8fb888a387a271db"
+    },
+    {
+      "path": "rust/Cargo.toml",
+      "bytes": 1017,
+      "sha256": "73bb63b12d2f54b641ea3cf43cf8c065fac0238c7d5759a721da575fb088c869",
+      "git_blob": "a4782eafffedc8a1dfae59db03740fe74937b9df"
+    },
+    {
+      "path": "rust/Cargo.lock",
+      "bytes": 23842,
+      "sha256": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+      "git_blob": "afa8eb8ec869ec9c9ade8b9ee21f6593cd9d363d"
+    },
+    {
+      "path": "rust/crates/guard-runtime/Cargo.toml",
+      "bytes": 1421,
+      "sha256": "7fde37d8b47a3d259f96880db19c39676da6a6af46f67c0718840df8a87eea7e",
+      "git_blob": "21a086a49d5863df525a4fbda09b8d21ed66bccc"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/edge_allocation_diagnostic.rs",
+      "bytes": 8555,
+      "sha256": "1412358c082094a4fee1fe1cd06b67ee178bec5d4f0d2321de6a26729354545b",
+      "git_blob": "de7e66557aacf60bb150f314819a32bf3af1fd17"
+    }
+  ],
+  "findings": [
+    "Read exact source commit and full recursive source/driver trees; source is sole e440 child, driver has exactly four new paths and preserves every source leaf.",
+    "Runner and tests remain exact peered 61df478f/30c69a40; workflow reverses exactly two concrete source SHA substitutions to peered fdd5065d template.",
+    "Contract differs only source SHA/tree, returned fixture descriptor, and source-peer/actual-format/selector-peer provenance. All ten bound source/Cargo/diagnostic bodies independently hash to the full source tree and contract.",
+    "The unchanged strict selection preserves all 23 mandatory functional controls, equal collection/execution exclusion of the pre-existing inactive allocation diagnostic, exact passed roster and zero failed/ignored selected cases.",
+    "Final commit/ref absence/parent readbacks remain publisher responsibilities; no PR or evidence refs changed by peer."
+  ],
+  "limits": [
+    "No compiler, native control, installed or timing workload by peer.",
+    "Returned fixture semantics/formatting source peer is separately owned by partition; this receipt checks operational rebind and hashes.",
+    "First actual source-validation failure remains intact; original ignored diagnostic has no passing credit."
+  ]
+}

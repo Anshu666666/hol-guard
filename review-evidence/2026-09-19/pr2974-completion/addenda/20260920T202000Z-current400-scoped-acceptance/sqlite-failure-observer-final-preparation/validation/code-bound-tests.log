@@ -1,0 +1,360 @@
+FFFF..........FF.........F                                               [100%]
+=================================== FAILURES ===================================
+_ test_existing_real_receipt_lock_drain_with_original_timeout_and_database_assertions _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_existing_real_receipt_loc0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff043962960>
+
+    def test_existing_real_receipt_lock_drain_with_original_timeout_and_database_assertions(tmp_path, monkeypatch):
+>       with _bound() as capture:
+             ^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_sqlite_failure_capture.py:24: in _bound
+    writer, scopes, sites, proof = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+____ test_existing_postcommit_ack_retry_contract_is_unchanged[after_commit] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_existing_postcommit_ack_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff0439becf0>
+failure = 'after_commit'
+
+    @pytest.mark.parametrize("failure", ["after_commit", "single_ack", "batch_ack"])
+    def test_existing_postcommit_ack_retry_contract_is_unchanged(tmp_path, monkeypatch, failure):
+>       with _bound() as capture:
+             ^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_sqlite_failure_capture.py:24: in _bound
+    writer, scopes, sites, proof = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+_____ test_existing_postcommit_ack_retry_contract_is_unchanged[single_ack] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_existing_postcommit_ack_r1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff0439bcfe0>
+failure = 'single_ack'
+
+    @pytest.mark.parametrize("failure", ["after_commit", "single_ack", "batch_ack"])
+    def test_existing_postcommit_ack_retry_contract_is_unchanged(tmp_path, monkeypatch, failure):
+>       with _bound() as capture:
+             ^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_sqlite_failure_capture.py:24: in _bound
+    writer, scopes, sites, proof = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+_____ test_existing_postcommit_ack_retry_contract_is_unchanged[batch_ack] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_existing_postcommit_ack_r2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff0439bcd70>
+failure = 'batch_ack'
+
+    @pytest.mark.parametrize("failure", ["after_commit", "single_ack", "batch_ack"])
+    def test_existing_postcommit_ack_retry_contract_is_unchanged(tmp_path, monkeypatch, failure):
+>       with _bound() as capture:
+             ^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_sqlite_failure_capture.py:24: in _bound
+    writer, scopes, sites, proof = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+_______ test_real_commit_succeeded_before_actual_postcommit_read_failure _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_real_commit_succeeded_bef0')
+
+    def test_real_commit_succeeded_before_actual_postcommit_read_failure(tmp_path):
+        class DenyReadAfterCommit(sqlite3.Connection):
+            def commit(self):
+                super().commit()
+                self.set_authorizer(lambda *args: sqlite3.SQLITE_DENY)
+    
+        path = tmp_path / "database.db"
+        connection = sqlite3.connect(path, factory=DenyReadAfterCommit)
+        connection.execute("create table sample(value integer)")
+        connection.execute("insert into sample values(1)")
+        writer, scopes = _fixture()
+>       _, _, sites, _ = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+___________ test_real_commit_error_is_distinct_from_postcommit_read ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_real_commit_error_is_dist0')
+
+    def test_real_commit_error_is_distinct_from_postcommit_read(tmp_path):
+        path = tmp_path / "database.db"
+        connection = sqlite3.connect(path)
+        connection.execute("create table sample(value integer)")
+        connection.execute("insert into sample values(1)")
+        connection.set_authorizer(lambda *args: sqlite3.SQLITE_DENY)
+        writer, scopes = _fixture()
+>       _, _, sites, _ = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+__ test_postcommit_expression_does_not_claim_the_generation_reader_was_called __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-490/test_postcommit_expression_doe0')
+
+    def test_postcommit_expression_does_not_claim_the_generation_reader_was_called(tmp_path):
+        class CloseAfterCommit(sqlite3.Connection):
+            def commit(self):
+                super().commit()
+                self.close()
+    
+        path = tmp_path / "database.db"
+        connection = sqlite3.connect(path, factory=CloseAfterCommit)
+        connection.execute("create table sample(value integer)")
+        connection.execute("insert into sample values(1)")
+        writer, scopes = _fixture()
+>       _, _, sites, _ = verified_registry(Path(str(codex_plugin_scanner.__file__)).parent)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_sqlite_failure_capture.py:333: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ci/native_runtime/sqlite_failure_binding.py:105: in verified_registry
+    sites = {code_of(modules[name], function): dict(lines) for (name, function), lines in SITES.items()}
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+module = <module 'codex_plugin_scanner.guard.store_connection_schema' from '/workspace/scratch/745337b67ff9/windows-sqlite-observer-a5fd/src/codex_plugin_scanner/guard/store_connection_schema.py'>
+dotted = 'StoreConnectionSchemaMixin._connect_once'
+
+    def code_of(module: ModuleType, dotted: str) -> CodeType:
+        function: Any = module
+        for part in dotted.split("."):
+            function = getattr(function, part)
+        function = getattr(function, "__wrapped__", function)
+        code = function.__code__
+        if (
+            type(code) is not CodeType
+            or code.co_name != dotted.split(".")[-1]
+            or Path(code.co_filename).resolve() != Path(str(module.__file__)).resolve()
+        ):
+            raise RuntimeError("sqlite_observer_code_mismatch")
+        expected = compile(
+            sources[module.__name__], code.co_filename, "exec", dont_inherit=True, optimize=sys.flags.optimize
+        )
+        for part in dotted.split("."):
+            matches = [child for child in expected.co_consts if type(child) is CodeType and child.co_name == part]
+            if len(matches) != 1:
+                raise RuntimeError("sqlite_observer_compiled_identity_ambiguous")
+            expected = matches[0]
+        if marshal.dumps(code) != marshal.dumps(expected):
+>           raise RuntimeError("sqlite_observer_code_body_mismatch")
+E           RuntimeError: sqlite_observer_code_body_mismatch
+
+ci/native_runtime/sqlite_failure_binding.py:102: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_sqlite_failure_capture.py::test_existing_real_receipt_lock_drain_with_original_timeout_and_database_assertions
+FAILED tests/test_sqlite_failure_capture.py::test_existing_postcommit_ack_retry_contract_is_unchanged[after_commit]
+FAILED tests/test_sqlite_failure_capture.py::test_existing_postcommit_ack_retry_contract_is_unchanged[single_ack]
+FAILED tests/test_sqlite_failure_capture.py::test_existing_postcommit_ack_retry_contract_is_unchanged[batch_ack]
+FAILED tests/test_sqlite_failure_capture.py::test_real_commit_succeeded_before_actual_postcommit_read_failure
+FAILED tests/test_sqlite_failure_capture.py::test_real_commit_error_is_distinct_from_postcommit_read
+FAILED tests/test_sqlite_failure_capture.py::test_postcommit_expression_does_not_claim_the_generation_reader_was_called
+7 failed, 19 passed in 0.38s

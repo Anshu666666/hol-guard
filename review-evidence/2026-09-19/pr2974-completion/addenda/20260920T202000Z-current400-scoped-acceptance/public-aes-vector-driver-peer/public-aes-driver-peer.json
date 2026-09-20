@@ -1,0 +1,64 @@
+{
+  "schema": "pr2974.public-aes-vector-driver-peer.v1",
+  "verdict": "clear for the isolated one-node source validation after the owner's final driver commit/ref guards",
+  "source": {
+    "sha": "c10030cc93490ec436537e89b3b489921c872ea4",
+    "tree": "3719581a3d6b6396731364c21b0eb5635643474e",
+    "sole_parent": "4001185e4f39cad51fd5eab314bf02b86b8a1674"
+  },
+  "driver_tree": "466605985145982e68189227d7d4ac9877a339fe",
+  "source_peer_tree": "86bfd3973bc76c8a6d96ea0fb69dd654ef654584",
+  "composition": {
+    "source_leaves": 4800,
+    "driver_leaves": 4803,
+    "paths": [
+      ".github/workflows/pr2974-public-aes-vector.yml",
+      "public-aes-validation/input-contract.json",
+      "public-aes-validation/run.py"
+    ]
+  },
+  "files": [
+    {
+      "path": "public-aes-validation/run.py",
+      "git_blob": "520244dc63fd466254a9330be6ad7e3ece8c1c2f",
+      "sha256": "01f8565cd2ac43783038d5610935c1f10f5c64ac87e3004f7d0a3f2537a02c04",
+      "bytes": 13924
+    },
+    {
+      "path": "public-aes-validation/input-contract.json",
+      "git_blob": "c0f8697bd67e631e0e0a38ba24bd6ffd1cc6cde0",
+      "sha256": "bd2291bd948307e26135c6e47f586e3224ffc4a9b5cc90e3ced97dc4c107c45e",
+      "bytes": 1788
+    },
+    {
+      "path": ".github/workflows/pr2974-public-aes-vector.yml",
+      "git_blob": "5a174f70ae64b15c1db0d338fff40c4c867a847e",
+      "sha256": "0430dc4cebe48f87d0c029ddf1a4b0feec867776cea7375bc57f81802b2f0168",
+      "bytes": 1789
+    }
+  ],
+  "independent_read": [
+    "Full runner, contract and workflow read; three remote blob bodies fetched, local byte/hash identities independently recomputed.",
+    "Untruncated source/driver tree censuses show only the declared three additions; source commit has sole current400 parent.",
+    "AST comparison against pi-encrypted-validation-prep/run.py independently confirms command, retire, group_exists, limits, snapshot, git and test_gate are unchanged.",
+    "Strict source HEAD/tree/parent/clean state, exact changed paths and six member hashes are checked before and after; driver HEAD uses GITHUB_SHA and parent/source plus exact added path census.",
+    "Pinned Rust1.88 and actual compiler host/tool file hashes precede immutable cargo fmt --check. Locked all-features runtime test compilation and exact one-node listing must succeed before execution.",
+    "The only admitted node is edge::encrypted::tests::decrypts_actual_node_aes_gcm_known_answer_and_js_utf16_length. Exact collected and passed identities, zero failed/ignored summary and command return0 are required.",
+    "Finite original streams, timeout/overflow/process-group failure flags remain admission gates. Always-upload preserves outputs after failures.",
+    "Workflow uses Ubuntu24.04 and Python3.12.14 with the existing pinned actions; isolated unique push branch only."
+  ],
+  "scope": {
+    "peer_executed_native_tests": false,
+    "peer_repeated_local_controls": false,
+    "owner_reported_local_data_controls": "2 positive, 6 refused",
+    "owner_reported_types": "0 errors, 69 warnings",
+    "clippy_or_broad_runtime_campaign": false,
+    "installed_or_timing_workload": false,
+    "source_test_success_pending": true,
+    "prior_scanner_failure_retained": true
+  },
+  "limits": [
+    "The source test/formatter have not run on this tuple yet. This review does not transfer the prior encrypted-source controls as validation of the changed fixture.",
+    "Existing command retirement checks are preserved; a timeout or leftover process group cannot become a passing preparation."
+  ]
+}

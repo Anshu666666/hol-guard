@@ -1,0 +1,37 @@
+{
+  "schema": "pr2974.finite-cpu-admission-v2-root-peer.v1",
+  "verdict": "CLEAR for closed refusal-retention source delta; operational tuple reviewed separately",
+  "packet": "bd65840d4b1b3724763cce2f0cef94b6efa49162",
+  "source_delta_files": 3,
+  "actual_api_bodies_equal_local": true,
+  "all_named_unchanged_functions_ast": {
+    "scripts/ci/qualification_cpu_controller.py": [
+      "duplicate_free",
+      "admit_facts",
+      "drop_worker_identity",
+      "collect",
+      "kill_group",
+      "group_empty",
+      "stream_evidence",
+      "main"
+    ],
+    "scripts/ci/qualification_cpu_worker.py": [
+      "_child",
+      "exited_child_and_grandchild",
+      "only_worker_live",
+      "await_only_worker",
+      "orphan_new_session",
+      "migration_refusal",
+      "lost_handle",
+      "partial_tail",
+      "main"
+    ]
+  },
+  "closed_core_literals": 22,
+  "generic_class_labels": 2,
+  "all74_unique_original_local_controls_pass": true,
+  "local_xml_sha256": "59b85f850340b42793372c15ab7a439468fd140630e2855bde7c71a37f8ccd4f",
+  "review": "Root read full three-file delta and full plan. Projection adds versioned fixed refusal reason and retains only schema-validated false/empty failed report before the same strict admitted check. Actual core predicates, syscalls, process placement/drop, finite operations, cleanup, stream caps and original timeouts are unchanged. Arbitrary exception strings/objects cannot enter output; unknown error classes use fixed generic labels.",
+  "original_failure": "390484dae8cd8af7ba53524cfeab69a2e002b55e; original106stdoutbytes unavailable, only original length/hash and source-defined candidate join. No predicate or five-control pass inferred.",
+  "scope": "At most one finite-only successor after exact parent/tree/source/driver and independent operational rebind. No original benchmark or current production performance claim."
+}

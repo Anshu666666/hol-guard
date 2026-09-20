@@ -1,0 +1,163 @@
+name: Windows exact400 per-delivery admission diagnostic
+
+on:
+  push:
+    branches: ["codex/pr2974-windows400-admission-observation-20260920"]
+
+permissions:
+  contents: read
+
+jobs:
+  windows-admission-observation:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      DIAGNOSTIC_SOURCE_SHA: "cae549421ecaea55715adcad32afd7d9043a172c"
+      DIAGNOSTIC_SOURCE_TREE: "48e237aa34fb80b27f3b11ab609c8705cc96c3e1"
+      PRODUCT_SOURCE_SHA: "4001185e4f39cad51fd5eab314bf02b86b8a1674"
+      PRODUCT_SOURCE_TREE: "7a328609488ffefecd3cdd12a9c7adba6a591e97"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "cae549421ecaea55715adcad32afd7d9043a172c"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "4001185e4f39cad51fd5eab314bf02b86b8a1674"
+          path: product
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Bind independent source, build checkout and driver
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          $product = (git -C product rev-parse HEAD).Trim()
+          $productTree = (git -C product rev-parse 'HEAD^{tree}').Trim()
+          if ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $product -ne $env:PRODUCT_SOURCE_SHA -or $productTree -ne $env:PRODUCT_SOURCE_TREE) { throw 'checkout_identity_mismatch' }
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; product=$product; product_tree=$productTree; historical_failed_executable=$false; new_isolated_build=$true} | ConvertTo-Json | Set-Content evidence/checkouts-before.json
+      - name: Prepare frozen diagnostic control environment
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate observer before build or original workload
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @('ci/native_runtime/admission_observation_values.py', 'ci/native_runtime/admission_observation_capture.py', 'ci/native_runtime/admission_observation_binding.py', 'ci/native_runtime/admission_observation_run.py', 'tests/test_admission_observation.py', 'tests/test_admission_observation_runner.py')
+          & .venv/Scripts/ruff.exe check @files *> ../evidence/ruff.log
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/ruff.log; exit $LASTEXITCODE }
+          & .venv/Scripts/ruff.exe format --check @files *> ../evidence/format.log
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/format.log; exit $LASTEXITCODE }
+          & .venv/Scripts/basedpyright.exe --pythonversion 3.12 --pythonplatform Windows --outputjson @files > ../evidence/types.json
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/types.json; exit $LASTEXITCODE }
+          & .venv/Scripts/python.exe -m pytest tests/test_admission_observation.py tests/test_admission_observation_runner.py -q --tb=short --junitxml=../evidence/controls.xml *> ../evidence/controls.log
+          $code = $LASTEXITCODE
+          Get-Content ../evidence/controls.log
+          if ($code -ne 0) { exit $code }
+          [xml]$xml = Get-Content -Raw ../evidence/controls.xml
+          $cases = @($xml.testsuites.testsuite.testcase)
+          $names = @($cases | ForEach-Object { $_.classname + '::' + $_.name })
+          if ($cases.Count -ne 34 -or @($names | Select-Object -Unique).Count -ne 34 -or [int]$xml.testsuites.testsuite.failures -ne 0 -or [int]$xml.testsuites.testsuite.errors -ne 0 -or [int]$xml.testsuites.testsuite.skipped -ne 0) { throw 'diagnostic_control_gate_failed' }
+      - name: Install original pinned Rust compiler
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup default 1.88.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version --verbose > evidence/rustc.txt
+      - name: Build exact400 pure and native artifacts once
+        working-directory: product
+        shell: pwsh
+        env:
+          HOL_GUARD_BUILD_SHA: "4001185e4f39cad51fd5eab314bf02b86b8a1674"
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ../candidate/.venv/Scripts/python.exe -m build --wheel --outdir pure-dist
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $version = (& ../candidate/.venv/Scripts/python.exe scripts/sync_repo_version.py --check).Trim()
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:HOL_GUARD_PACKAGE_VERSION = $version
+          cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./rust/target/release/hol-guard-runtime.exe self-test --json > ../evidence/build-self-test.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./rust/target/release/hol-guard-runtime.exe capabilities --json > ../evidence/build-capabilities.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $caps = Get-Content -Raw ../evidence/build-capabilities.json | ConvertFrom-Json
+          & ../candidate/.venv/Scripts/python.exe scripts/build_native_hol_guard_wheel.py --wheel "pure-dist/hol_guard-$version-py3-none-any.whl" --runtime rust/target/release/hol-guard-runtime.exe --output-dir native-dist --version $version --platform-tag win_amd64 --target x86_64-pc-windows-msvc --source-sha $env:PRODUCT_SOURCE_SHA --rule-digest $caps.rule_digest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install the newly built exact400 wheel
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $wheels = @(Get-ChildItem ../product/native-dist/*.whl)
+          if ($wheels.Count -ne 1) { throw 'exactly_one_new_wheel_required' }
+          uv pip uninstall --python .venv/Scripts/python.exe hol-guard
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip install --python .venv/Scripts/python.exe --no-deps --force-reinstall $wheels[0].FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Observe the original default-auto corpus once
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $names = @('HOL_GUARD_NATIVE','HOL_GUARD_NATIVE_BINARY','HOL_GUARD_HOOK_FAST_PATH','HOL_GUARD_NATIVE_MODE','HOL_GUARD_NATIVE_ORACLE','HOL_GUARD_NATIVE_DIAGNOSTIC','HOL_GUARD_HOOK_FAST_PATH_SHADOW','HOL_GUARD_HOOK_SOURCE_REF','HOL_GUARD_HOOK_BINARY','HOL_GUARD_FAST_PATH','HOL_GUARD_BINARY','HOL_GUARD_ORACLE','HOL_GUARD_DIAGNOSTIC','HOL_GUARD_TEST_MODE','HOL_GUARD_PYTHON_ORACLE','HOL_GUARD_TEST_KEYRING_FILE','HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST','GUARD_NATIVE','GUARD_NATIVE_BINARY','GUARD_NATIVE_MODE','GUARD_NATIVE_ORACLE','GUARD_NATIVE_DIAGNOSTIC','GUARD_HOOK_FAST_PATH','GUARD_HOOK_FAST_PATH_SHADOW','GUARD_HOOK_SOURCE_REF','GUARD_HOOK_BINARY','GUARD_FAST_PATH','GUARD_BINARY','GUARD_ORACLE','GUARD_DIAGNOSTIC','GUARD_TEST_MODE','GUARD_TEST_KEYRING_FILE','GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','GUARD_PYTEST_DURATION_OUTPUT','PYTEST_CURRENT_TEST','PYTEST_ADDOPTS','PYTEST_PLUGINS','PYTHONPATH')
+          foreach ($name in $names) { Remove-Item "Env:$name" -ErrorAction SilentlyContinue }
+          $wheels = @(Get-ChildItem ../product/native-dist/*.whl)
+          if ($wheels.Count -ne 1) { throw 'exactly_one_new_wheel_required' }
+          & .venv/Scripts/python.exe ci/native_runtime/admission_observation_run.py --wheel $wheels[0].FullName --output ../evidence *> ../evidence/original-probe.log
+          $code = $LASTEXITCODE
+          @{driver_invocations=1; returncode=$code; instrumented_diagnostic=$true; timing_qualification=$false; historical_failed_executable=$false} | ConvertTo-Json | Set-Content ../evidence/original-probe-exit.json
+          Get-Content ../evidence/original-probe.log
+          exit $code
+      - name: Admit observation completeness independently of original probe outcome
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $report = Get-Content -Raw evidence/admission-observation.json | ConvertFrom-Json
+          $binding = Get-Content -Raw evidence/binding-comparison.json | ConvertFrom-Json
+          if ($report.observation_complete -ne $true -or $report.callbacks_restored -ne $true -or $report.original_probe_invocations -ne 1 -or @($report.deliveries).Count -ne 21 -or $binding.equal -ne $true) { throw 'admission_observation_incomplete' }
+      - name: Retain final three-checkout identity
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          $product = (git -C product rev-parse HEAD).Trim()
+          $productTree = (git -C product rev-parse 'HEAD^{tree}').Trim()
+          $dirty = @(git -C candidate diff --name-only) + @(git -C candidate diff --cached --name-only) + @(git -C driver diff --name-only) + @(git -C driver diff --cached --name-only) + @(git -C product diff --name-only) + @(git -C product diff --cached --name-only)
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; product=$product; product_tree=$productTree; tracked_changes=$dirty} | ConvertTo-Json | Set-Content evidence/checkouts-after.json
+          if ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $product -ne $env:PRODUCT_SOURCE_SHA -or $productTree -ne $env:PRODUCT_SOURCE_TREE -or $dirty.Count -ne 0) { throw 'final_checkout_binding_failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: windows-exact400-admission-observation
+          path: |
+            evidence/
+            product/native-dist/*.whl
+          if-no-files-found: error
+          retention-days: 14

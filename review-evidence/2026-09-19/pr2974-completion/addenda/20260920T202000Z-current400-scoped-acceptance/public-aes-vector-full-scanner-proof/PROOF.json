@@ -1,0 +1,55 @@
+{
+  "schema": "pr2974.synthetic-public-AES-vector-remediation.v1",
+  "base": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+  "candidate": "b222318cca2811ac7ae90c7364e2ec6d0a10651f",
+  "candidate_tree": "ef0c0b8abb8144ed010b4c23c05a2dc70f20c354",
+  "paths": [
+    ".gitleaksignore",
+    "rust/crates/guard-runtime/src/edge_encrypted_tests.rs"
+  ],
+  "finding": {
+    "rule": "generic-api-key",
+    "path": "rust/crates/guard-runtime/src/edge_encrypted_tests.rs",
+    "line": 95,
+    "commit": "4001185e4f39cad51fd5eab314bf02b86b8a1674",
+    "fingerprint": "4001185e4f39cad51fd5eab314bf02b86b8a1674:rust/crates/guard-runtime/src/edge_encrypted_tests.rs:generic-api-key:95",
+    "classification": "Public deterministic known-answer key, exact sequential32bytes0through31. Not a credential. Introduced by400."
+  },
+  "change": "Build the exact original key from0..32 and the existing base64url encoder; assert decoded32bytes equal the exact sequence. Preserve ciphertext/nonce/payload/assertions. Append only the original historical commit:path:rule:line fingerprint with documentation; old ignore prefix preserved.",
+  "scanner": {
+    "version": "8.24.2",
+    "binary_sha256": "64805175c8f88959587ba6afc58210401088206a27ba582cfbb98791137d6208",
+    "original_complete_range_findings": 1,
+    "unformatted_candidate_complete_range_findings": 0,
+    "formatted_candidate_complete_range_findings": 0,
+    "base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "same_vector_new_commit_same_path_detected": true,
+    "same_vector_new_path_detected": true,
+    "original_failure_not_reclassified_as_pass": true
+  },
+  "prior_rust_validation": {
+    "run": 35533988403,
+    "packet": "6639c2296a501e7adbb45aa0ae86098ea37657ab",
+    "stage": "rustfmt",
+    "compilation_or_test_executed": false,
+    "correction": "Only exact returned assertion wrap."
+  },
+  "current_rust_validation": {
+    "driver": "7a8702cbb91dd9cdbc5469865c23cfd269e37ac8",
+    "tree": "66817ee5fe36c1a6240c6f11fdb084633ca6b53a",
+    "branch": "codex/pr2974-public-aes-vector-20260920-v2",
+    "status": "launched, result pending"
+  },
+  "peers": {
+    "source": "86bfd3973bc76c8a6d96ea0fb69dd654ef654584",
+    "driver": "82eb5b7fbcb43a0486e3e0501fc9ae68fa4f04cc",
+    "format": "786751caeb1d3ce566ee4b8b05b91fc8efdb5bfd",
+    "final_rebind": "d8c290eb44e8daeabd503496ad5b32edf7aa1639"
+  },
+  "limits": [
+    "No production source or runtime semantics changed.",
+    "No original normal job rerun, PR ref update or history rewrite.",
+    "No broad rule, pattern, directory or commit exemption.",
+    "All actual earlier setup refusals are retained; the first shallow-range scan is explicitly invalid as full-range evidence."
+  ]
+}

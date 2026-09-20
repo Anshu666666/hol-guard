@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "reviewed_packet": "e5203afcdccc95d4ec31fc8f7d49005ba3fc54df",
+  "verdict": "source-peer-clear",
+  "files": {
+    "process_test": "906e09e6ae3be34995d91fb2fcca15d7f4a08a50",
+    "manager_test": "d3d3657a6c0b8ffdd878d9745da40ae07b00bb12",
+    "workflow": "5b9e1cf3039f597c34f95495b3825ce62cdec7ac",
+    "documentation": "905ba2bb3fa13f6b52a6d8830ac0850c12549031"
+  },
+  "findings": [
+    "Each CRT-held destination arm now asserts its observed API-specific native error (original5/candidate32); raw reports remain intact and exact parityfalse is retained.",
+    "Only the winerror field is excluded from the declared semantic comparison, after separate exact API-specific assertions. Other failure/success cases retain exact parity and expectations.",
+    "The original manager selector still forwards real os.replace; admitted Windows replace_once is additionally observed with its unchanged arguments and return/error behavior. Exactly2replacements, same directory, distinct temporary and both destinations remain asserted.",
+    "The normal Windows workflow adds the existing manager selector only. No product runtime byte is changed by this correction.",
+    "The new documentation discloses original failed comparisons, API raw-code difference, inspected internal caller scope, native admission limits and absence of an added Windows owner/DACL proof."
+  ],
+  "static_limits": [
+    "Expanded legacy manager typing retains seven baseline errors; no clean legacy-module type claim.",
+    "Actual Windows successor execution remains pending. Source review does not reclassify previous failures."
+  ],
+  "collector_composition": {
+    "original_windows": "f606f7d527dc408ab08b4c257ef4236cfd731ef1",
+    "prior_combined": "613f960b943be4d54776d46be14ab31918f9e69e",
+    "successor_windows": "5b9e1cf3039f597c34f95495b3825ce62cdec7ac",
+    "method": "Apply the sole additive existing-manager-selector line to the prior combined image. No collector body or other workflow command changes."
+  }
+}

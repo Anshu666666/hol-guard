@@ -1,0 +1,45 @@
+{
+  "schema": "native-inactive-resident-namespace-source-peer.v1",
+  "verdict": "No source/security blocker for scoped controls; candidate controls and installed behavior remain unexecuted at this review.",
+  "base": "124472b8949805e0dd36052df6894b335d8b519d",
+  "proposal_tree": "3c9a19c02e4b748c2d7623dfe2477adc5d81fa8d",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+      "git_blob": "d3b18fde5034f1006c76d65b14dc468cd0677842",
+      "bytes": 8599,
+      "sha256": "df512f734d30dfdaa246ee1457e0968f46302ef3be2a853a854f2336d8b0edc0"
+    },
+    {
+      "path": "tests/test_native_policy_snapshot_inactive_namespace.py",
+      "git_blob": "ff65201c2b90bb20f780074df984e1732152fc06",
+      "bytes": 9383,
+      "sha256": "4b001da8edd5c702f908fb441ac8a5e2fd573d14eac6f68af20df44089e6ede3"
+    }
+  ],
+  "reviewed": [
+    "Full production diff, full proposed tests, original publisher publication/epoch/authority commit boundary and both input-fingerprint callers.",
+    "The resident fingerprint keeps its three-element row shape. Additional root '.' and scope '/.' rows bind directory device/inode; ordinary directory/generation rows retain mtime/size for final commit checks. The separate private directory-fingerprint helper intentionally expands to include device/inode, and its only production caller forwards the opaque tuple.",
+    "Directory scans use lstat and reject non-directories, symlinks, invalid generation filenames and nonregular generation entries. Both root and scope enumeration are bracketed by device/inode/mtime/ctime/size snapshots. OSError and partially consumed iteration produce an explicit nonempty unknown sentinel, which confirmation rejects on either side.",
+    "Only a complete generation-free before snapshot may take the new initial-generation branch. Existing retained scope identity sets must be equal after publication; when no scope existed, root identity must remain equal. At least one valid generation must then be present.",
+    "Any before snapshot containing a generation bypasses the new exception and keeps the original unequal-before/after rejection. Newest-generation ACK matching, final root identity/mtime/size comparison and sampled path checks remain mandatory.",
+    "Root/scope replacement is refused even when mtime is restored. Added scope identity rows complement rather than replace the original path metadata checks. Genuine missing runtime directory retains the prior explicit no-state/test-double path; permission errors are not treated as absence.",
+    "The original publisher still binds transport ACKs, publication epoch, current command authority, snapshot assignment and readiness. No authentication, lease, signed payload, timeout, retry, generation write, or benchmark code changes."
+  ],
+  "controls_reviewed": [
+    "Retired empty directory first-generation acceptance and new-scope compatibility.",
+    "Stable live generation positive, live-generation mutation and wrong newest generation negatives.",
+    "Root/scope failed and partial enumeration, before/after namespace replacement, late generation, malformed generation and symlink refusal.",
+    "Actual publisher uses existing signed-snapshot producer with an explicitly identified ACK double; it is not native-authentication or installed-performance evidence."
+  ],
+  "followup_controls_requested": [
+    "Direct mutation during root and scope enumeration to exercise bracketed-snapshot rejection.",
+    "Root initial-lstat PermissionError distinguished from genuine absence."
+  ],
+  "limitations": [
+    "Source peer only; no controls, native workload or performance run by reviewer.",
+    "The original actual-filesystem proof demonstrates the source behavior; it does not establish the exact retained namespace of a historical hosted failure.",
+    "This preserves the existing sampled-metadata model. It does not claim a new all-ancestor namespace proof or resistance to arbitrary same-user metadata restoration.",
+    "Final controls, source types, combined-source integration, and installed current-source readiness remain separate gates."
+  ]
+}

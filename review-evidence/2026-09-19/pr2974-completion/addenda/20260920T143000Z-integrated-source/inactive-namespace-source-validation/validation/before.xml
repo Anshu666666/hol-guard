@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.527" timestamp="2026-09-20T11:15:09.993861-03:00" hostname="localhost"><testcase classname="tests.test_native_policy_snapshot_inactive_namespace" name="test_retired_directory_accepts_first_new_generation" time="0.011"><failure message="AssertionError: assert None == (('resident-v3-owned', 1789913710164387557, 4096), ('resident-v3-owned/generation-00000000000000000002.json', 1789913710164387557, 2))&#10; +  where None = _confirm(&lt;codex_plugin_scanner.guard.native_policy_snapshot_resident_inputs.NativePolicySnapshotResidentInputsMixin object at 0x7f73d421ae10&gt;, (('resident-v3-owned', 1789913710164291201, 4096),), 2)&#10; +  and   (('resident-v3-owned', 1789913710164387557, 4096), ('resident-v3-owned/generation-00000000000000000002.json', 1789913710164387557, 2)) = _current_resident_fingerprint()&#10; +    where _current_resident_fingerprint = &lt;codex_plugin_scanner.guard.native_policy_snapshot_resident_inputs.NativePolicySnapshotResidentInputsMixin object at 0x7f73d421ae10&gt;._current_resident_fingerprint">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-50/test_retired_directory_accepts0')
+
+    def test_retired_directory_accepts_first_new_generation(tmp_path: Path) -&gt; None:
+        observer, _state, scope = _namespace(tmp_path)
+        retired = _generation(scope, 1)
+        retired.unlink()
+        before = observer._current_resident_fingerprint()
+        _generation(scope, 2)
+&gt;       assert _confirm(observer, before, 2) == observer._current_resident_fingerprint()
+E       AssertionError: assert None == (('resident-v3-owned', 1789913710164387557, 4096), ('resident-v3-owned/generation-00000000000000000002.json', 1789913710164387557, 2))
+E        +  where None = _confirm(&lt;codex_plugin_scanner.guard.native_policy_snapshot_resident_inputs.NativePolicySnapshotResidentInputsMixin object at 0x7f73d421ae10&gt;, (('resident-v3-owned', 1789913710164291201, 4096),), 2)
+E        +  and   (('resident-v3-owned', 1789913710164387557, 4096), ('resident-v3-owned/generation-00000000000000000002.json', 1789913710164387557, 2)) = _current_resident_fingerprint()
+E        +    where _current_resident_fingerprint = &lt;codex_plugin_scanner.guard.native_policy_snapshot_resident_inputs.NativePolicySnapshotResidentInputsMixin object at 0x7f73d421ae10&gt;._current_resident_fingerprint
+
+tests/test_native_policy_snapshot_inactive_namespace.py:51: AssertionError</failure></testcase><testcase classname="tests.test_native_policy_snapshot_inactive_namespace" name="test_publisher_accepts_retained_empty_scope_after_one_push" time="0.297"><failure message="assert False&#10; +  where False = is_ready()&#10; +    where is_ready = &lt;codex_plugin_scanner.guard.native_policy_snapshot_publisher.NativePolicySnapshotPublisher object at 0x7f73d491aff0&gt;.is_ready">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-50/test_publisher_accepts_retaine0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f73d3673b90&gt;
+
+    def test_publisher_accepts_retained_empty_scope_after_one_push(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+        store = GuardStore(tmp_path / "guard-home")
+        monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (b"v" * 32, "master-id"))
+        scope = store.guard_home / "native-runtime" / "resident-v3-owned"
+        scope.parent.mkdir(mode=0o700)
+        scope.mkdir(mode=0o700)
+        _generation(scope, 1).unlink()
+        calls: list[bytes] = []
+    
+        def acknowledge(**kwargs: Any) -&gt; bytes:
+            payload = kwargs["payload"]
+            assert isinstance(payload, bytes)
+            calls.append(payload)
+            _generation(scope, 1)
+            return _ack(payload)
+    
+        publisher = NativePolicySnapshotPublisher(store=store, status_provider=_status, client_request=acknowledge)
+        try:
+            publisher._publish_once()
+            assert len(calls) == 1, publisher.last_error
+&gt;           assert publisher.is_ready()
+E           assert False
+E            +  where False = is_ready()
+E            +    where is_ready = &lt;codex_plugin_scanner.guard.native_policy_snapshot_publisher.NativePolicySnapshotPublisher object at 0x7f73d491aff0&gt;.is_ready
+
+tests/test_native_policy_snapshot_inactive_namespace.py:269: AssertionError</failure></testcase></testsuite></testsuites>

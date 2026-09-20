@@ -1,0 +1,177 @@
+{
+  "schema": "priority-phase-installed-v2-original-data-verification.v1",
+  "run": 35515446609,
+  "job": 106090496910,
+  "artifact": 10606906557,
+  "archive_sha256": "d6801f2d23e31470f20b613807cb2be0902dec670ecc687b6a3731d0f7a537cc",
+  "raw_tree": "73f220d045133b6b63f9007935ed0e05eeeb7308",
+  "independent_data_checks_passed": true,
+  "source_sha": "50b39d7e7a4722c2773d94da0ea4c2482f055ef5",
+  "driver_sha": "65aeb291d8dfffbd23a1c80a96baad2403703b08",
+  "producer_completed": true,
+  "original_launches": 88,
+  "allow": 84,
+  "deny": 4,
+  "failed_observer_checks": {
+    "input_unchanged_within_handler": 88,
+    "worker_entry_match": 88
+  },
+  "daemon_capture_faults": 88,
+  "observation_complete": false,
+  "qualification_eligible": false,
+  "original_sample_minima_met": false,
+  "original_thresholds_ms": {
+    "c16_p99": 200,
+    "serial_p95": 50,
+    "serial_p99": 100
+  },
+  "original_route_measurements": [
+    {
+      "c16": {
+        "count": 16,
+        "max_ms": 1145.1,
+        "p50_ms": 1061.514,
+        "p95_ms": 1145.1,
+        "p99_ms": 1145.1
+      },
+      "cases_validated": [
+        "benign",
+        "block"
+      ],
+      "cold_launcher": {
+        "count": 2,
+        "max_ms": 165.104,
+        "p50_ms": 161.761,
+        "p95_ms": 165.104,
+        "p99_ms": 165.104
+      },
+      "configuration": "registered_argv_and_env",
+      "event": "PreToolUse",
+      "harness": "claude-code",
+      "registration_sha256": "bb95b303cb1a1db806b902559501577bda68dc57129738b898b37ddf5536040e",
+      "route_attribution": "isolated_batch_counter_conservation",
+      "serial": {
+        "count": 2,
+        "max_ms": 156.404,
+        "p50_ms": 154.977,
+        "p95_ms": 156.404,
+        "p99_ms": 156.404
+      }
+    },
+    {
+      "c16": {
+        "count": 16,
+        "max_ms": 993.135,
+        "p50_ms": 908.537,
+        "p95_ms": 993.135,
+        "p99_ms": 993.135
+      },
+      "cases_validated": [
+        "benign",
+        "block"
+      ],
+      "cold_launcher": {
+        "count": 2,
+        "max_ms": 204.232,
+        "p50_ms": 201.566,
+        "p95_ms": 204.232,
+        "p99_ms": 204.232
+      },
+      "configuration": "registered_argv_and_env",
+      "event": "PostToolUse",
+      "harness": "claude-code",
+      "registration_sha256": "c37f69b57f5d7b62f73423fa3f1c092b4235dea04a6b5840c8dd1e51a7e5bf5a",
+      "route_attribution": "isolated_batch_counter_conservation",
+      "serial": {
+        "count": 2,
+        "max_ms": 169.039,
+        "p50_ms": 163.065,
+        "p95_ms": 169.039,
+        "p99_ms": 169.039
+      }
+    },
+    {
+      "c16": {
+        "count": 16,
+        "max_ms": 1140.846,
+        "p50_ms": 1095.292,
+        "p95_ms": 1140.846,
+        "p99_ms": 1140.846
+      },
+      "cases_validated": [
+        "benign",
+        "block"
+      ],
+      "cold_launcher": {
+        "count": 2,
+        "max_ms": 172.297,
+        "p50_ms": 170.655,
+        "p95_ms": 172.297,
+        "p99_ms": 172.297
+      },
+      "configuration": "registered_argv_and_env",
+      "event": "PreToolUse",
+      "harness": "codex",
+      "registration_sha256": "9b5cfb8062561d0a32ac44dda019024257ecf8ad08d904f25e67fa37017ae3db",
+      "route_attribution": "isolated_batch_counter_conservation",
+      "serial": {
+        "count": 2,
+        "max_ms": 177.919,
+        "p50_ms": 173.243,
+        "p95_ms": 177.919,
+        "p99_ms": 177.919
+      }
+    },
+    {
+      "c16": {
+        "count": 16,
+        "max_ms": 1072.809,
+        "p50_ms": 1025.951,
+        "p95_ms": 1072.809,
+        "p99_ms": 1072.809
+      },
+      "cases_validated": [
+        "benign",
+        "block"
+      ],
+      "cold_launcher": {
+        "count": 2,
+        "max_ms": 187.583,
+        "p50_ms": 187.089,
+        "p95_ms": 187.583,
+        "p99_ms": 187.583
+      },
+      "configuration": "registered_argv_and_env",
+      "event": "PostToolUse",
+      "harness": "codex",
+      "registration_sha256": "8f7b2c10c1e9d8a0d76696d3acef1bead4e84accb255ea04c99da8c568d75cc8",
+      "route_attribution": "isolated_batch_counter_conservation",
+      "serial": {
+        "count": 2,
+        "max_ms": 184.203,
+        "p50_ms": 181.043,
+        "p95_ms": 184.203,
+        "p99_ms": 184.203
+      }
+    }
+  ],
+  "cleanup": {
+    "authenticated_stop_observed": true,
+    "direct_fixture_child_reaped": true,
+    "fixture_cleanup_returned": true,
+    "fixture_reader_threads_stopped": true,
+    "escaped_descendant_coverage": "not_established"
+  },
+  "cause": "The selected handler's original _runtime_hook_remaining_hint consumes top-level guard_remaining_ms. The observer incorrectly required that field again at worker/exit. This is an observer projection failure; the original 88 returned contracts remain distinct.",
+  "cause_helper_git_blob": "7f2c92ae9f262ab90737d79d9946e44146dc5bf6",
+  "cause_helper_sha256": "b6f0f2c9f3efb4f114d1d8bf49626b862b0fe62e66fd55f6d180e98a11cfc293",
+  "cause_peer_tree": "ca3b8b19459689abff1d3db37c19be01c81e85a1",
+  "limitations": [
+    "No original operation replayed by this reader.",
+    "Old rows are not retroactively admitted as complete joins.",
+    "Inclusive instrumented phase durations are not causal attribution or a cross-process residual.",
+    "Two serial and sixteen concurrent samples per route are diagnostic, below original qualification minima.",
+    "All four routes' original serial 50/100 and c16 200 ms ceilings remain missed.",
+    "Physical I/O, asynchronous SQLite, child imports and discovery/auth are unmeasured."
+  ]
+}

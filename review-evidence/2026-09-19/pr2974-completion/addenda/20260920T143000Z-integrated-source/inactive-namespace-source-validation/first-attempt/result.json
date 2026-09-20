@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "exit_code": 1,
+  "passed": 35,
+  "failed": 1,
+  "failed_test": "test_publisher_accepts_retained_empty_scope_after_one_push",
+  "observed_assertion": "len(calls) == 1; actual0",
+  "console_output_scope": "Retained tool-result facts; full first stdout was not redirected to file.",
+  "separate_exact_setup_reproduction": {
+    "calls": 0,
+    "last_error": "native_policy_runtime_state_not_private",
+    "ready": false
+  },
+  "cause": "New fixture created native-runtime through mkdir(parents=True), giving the parent a nonprivate default mode. Product guard refused before client.",
+  "test_only_correction": "Create parent explicitly mode0700, then scope mode0700; include last_error in assertion.",
+  "production_changed_after_this_failure": false
+}

@@ -1,0 +1,63 @@
+{
+  "schema": "native-inactive-resident-namespace-final-peer.v1",
+  "verdict": "clear for root integration and subsequent combined-source validation",
+  "proposal_tree": "8009019426c2ea710c2a4491e9760de45df8639f",
+  "source_tree": "819853f43cbc560f40c1056bc7325dc27faeec22",
+  "base": "124472b8949805e0dd36052df6894b335d8b519d",
+  "prior_source_security_peer": "e82811785d4855bf77d4094c88f614f52e990e67",
+  "production": {
+    "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "git_blob": "d3b18fde5034f1006c76d65b14dc468cd0677842",
+    "sha256": "df512f734d30dfdaa246ee1457e0968f46302ef3be2a853a854f2336d8b0edc0",
+    "unchanged_since_source_peer": true
+  },
+  "final_test": {
+    "path": "tests/test_native_policy_snapshot_inactive_namespace.py",
+    "git_blob": "bb804026bd355e1bca00929e406f0dc197704496",
+    "sha256": "c5a75c08cf50965ed1292ad89fdb5d99ab99ea23d78daa7444111466bc97da6e",
+    "bytes": 10889
+  },
+  "reviewed_changes": [
+    "Three requested completeness controls: root-lstat PermissionError is not absence; mutation during root enumeration and mutation during scope enumeration must return an unusable snapshot.",
+    "The signed-publisher fixture creates the native-runtime directory explicitly at 0700, fixing its own original setup refusal. It still requires exactly one actual signed-snapshot push, successful readiness/current snapshot and no publisher error using an explicit ACK double.",
+    "Production source is byte-identical to the previously reviewed security tuple."
+  ],
+  "independently_parsed_records": {
+    "candidate_junit": {
+      "git_blob": "f7cb8647af2e52797dc91123c98a8d19d514ae23",
+      "sha256": "343e97789d0083538e94902c2dbb2eb95c10a468207d37970fc8339216a25bf6",
+      "cases": 110,
+      "passed": 107,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 3,
+      "new_controls": 27
+    },
+    "original_source_junit": {
+      "git_blob": "8c7e7ee66c3521ec3ef51f722d6b69336b7cc919",
+      "sha256": "740ef6761fab75169d126d871685c009f5c7098d151899fd547d05654512f5c5",
+      "cases": 2,
+      "passed": 0,
+      "failed": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    "types": {
+      "filesAnalyzed": 2,
+      "errorCount": 0,
+      "warningCount": 71,
+      "informationCount": 0
+    }
+  },
+  "skips": [
+    "Existing Windows path alias identity control.",
+    "Existing actual Windows directory-replacement handoff control.",
+    "Existing actual Windows atomic replacement with overlapping parent handles control."
+  ],
+  "limits": [
+    "No new control, native process or performance workload executed by this reviewer.",
+    "The two red controls fail at intended confirmation/readiness assertions on original124 source, rather than an import or setup error. The first candidate fixture failure remains retained separately.",
+    "No current installed readiness, original400ms target, historical hosted cause, full platform qualification or task promotion is established by this source/control packet.",
+    "Final combined source and actual Windows coverage remain separate validation scopes."
+  ]
+}

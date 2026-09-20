@@ -1,0 +1,47 @@
+{
+  "schema": "hol-guard.retained-inactive-resident-validation.v1",
+  "base_sha": "124472b8949805e0dd36052df6894b335d8b519d",
+  "candidate_tree": "819853f43cbc560f40c1056bc7325dc27faeec22",
+  "source_paths": [
+    "src/codex_plugin_scanner/guard/native_policy_snapshot_resident_inputs.py",
+    "tests/test_native_policy_snapshot_inactive_namespace.py"
+  ],
+  "before_expected_red": {
+    "passed": 0,
+    "failed": 2,
+    "errors": 0,
+    "skipped": 0,
+    "source_product_unchanged": true
+  },
+  "candidate": {
+    "passed": 107,
+    "skipped": 3,
+    "failed": 0,
+    "errors": 0,
+    "new_controls_passed": 27,
+    "rust_or_native_workload_executed": false,
+    "installed_readiness_or_performance_claim": false
+  },
+  "checks": {
+    "ruff": "passed",
+    "format": "passed",
+    "types": {
+      "filesAnalyzed": 2,
+      "errorCount": 0,
+      "warningCount": 71,
+      "informationCount": 0,
+      "timeInSec": 0.942
+    },
+    "diff_check": "passed"
+  },
+  "source_security_peer_tree": "e82811785d4855bf77d4094c88f614f52e990e67",
+  "additional_controls_since_peer": [
+    "root lstat PermissionError vs genuine absence",
+    "root mutation during enumeration",
+    "scope mutation during enumeration"
+  ],
+  "first_fixture_failure_preserved": true,
+  "qualification_complete": false,
+  "unchanged_source_proof": "45d33171e756fe03910f848db0f5d47db9554b15",
+  "scope": "Avoid one redundant first ACK rejection only for a complete inactive retained namespace; preserve original400ms and all native/auth/policy/deadline/retry contracts. It does not explain initial setup gaps."
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "priority-phase-deadline-hint-source-peer.v1",
+  "source": "50b39d7e7a4722c2773d94da0ea4c2482f055ef5",
+  "run": 35515446609,
+  "scope": "Read-only source and retained JSON audit; no source correction, new imports, controls, producer run, or passing reclassification.",
+  "daemon_report": {
+    "bytes": 454268,
+    "sha256": "a1a81d19ea03dca6562ca00851897f5285eed40abc3e54134595997b9f3d6530"
+  },
+  "observations": {
+    "rows": 88,
+    "capture_faults": 88,
+    "worker_entry_match_false": 88,
+    "exit_projection_invalid": 88,
+    "mutation_detected": 88,
+    "exit_hash_equals_entry_semantic_hash": 66,
+    "other_exit_hash_rows": 22,
+    "other_coordinates": {
+      "codex/PreToolUse": 22
+    },
+    "other_browser_fields_present": true
+  },
+  "source_evidence": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/server_handler_hook_admission.py",
+      "bytes": 13142,
+      "sha256": "1136578ff934cbebc76424121ff46008e15b31c0cfdbaca36b74531389204020",
+      "git_blob": "33c3f2499252f546f428a696bc31af304aebf220"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/server_helpers_values.py",
+      "bytes": 3350,
+      "sha256": "b6f0f2c9f3efb4f114d1d8bf49626b862b0fe62e66fd55f6d180e98a11cfc293",
+      "git_blob": "7f2c92ae9f262ab90737d79d9946e44146dc5bf6"
+    }
+  ],
+  "finding": "The unchanged handler calls _runtime_hook_remaining_hint before worker dispatch. That helper pops guard_remaining_ms from the actual input dict. The observer requires guard_remaining_ms in freeze_input at handler entry, worker entry and exit, so normal deadline consumption causes worker capture failure and invalid exit projection. Original forwarding returns are preserved by the capture guard.",
+  "repair_constraints": [
+    "Retain immutable entry snapshots and the observed mutation flag; explicitly distinguish required entry hint from its source-declared consumed state.",
+    "Require exact unchanged semantic contents and permitted browser fields; do not silently remove arbitrary transformed fields or permit unknown nested mutation.",
+    "Bind server_helpers_values.py explicitly: it is the cause-defining helper and is not in the current 36-file provider list.",
+    "Exercise the actual remaining-hint helper, stage transitions and malformed/semantic/browser mutation refusal with bounded controls.",
+    "Keep the 88 failed observer rows, first zero-row admission failure, and diagnostic overhead scope unchanged; no old-row success or latency qualification follows."
+  ]
+}

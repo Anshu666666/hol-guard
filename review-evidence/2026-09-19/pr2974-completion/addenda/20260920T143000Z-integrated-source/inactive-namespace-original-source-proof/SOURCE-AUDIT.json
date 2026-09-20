@@ -1,0 +1,58 @@
+{
+  "schema": "hol-guard.workspace-publication-source-audit.v1",
+  "terminal_packet": "2c55b8f3d528afd8c44eaada86451a4a60766532",
+  "before": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "current": "124472b8949805e0dd36052df6894b335d8b519d",
+  "scope": "Read-only source audit plus one untimed actual-filesystem metadata proof; no product edits or native execution",
+  "findings": [
+    {
+      "id": "unchanged-publisher",
+      "status": "verified_bytes",
+      "detail": "All inspected publisher/config-cache/generation/storage/key/Python-client and original lifecycle source bytes are unchanged from8f to124. Current retirement fix affects the separate poststart diagnostic exitcode read; Rust absolute-deadline changes are separate."
+    },
+    {
+      "id": "unattributed-publication-gap",
+      "status": "measured_enclosing_interval_only",
+      "detail": "671.573598ms lies between current-input fingerprint return and next fingerprint entry. The enclosed code builds/reuses signed snapshot under generation lock, provisions/verifies key, validates command binding, recovers snapshot transaction, reads/verifies cache, possibly fsyncs pending/cache/generation state, encodes request, acquires/starts persistent client, sends/receives and validates ACK; one documented new-generation recovery iteration can also occur. Original records do not tell which subpath was taken or allocate its time."
+    },
+    {
+      "id": "compiler-cache-reuse",
+      "status": "observed_partial_service_cell",
+      "detail": "Original service_restart publication observer records101 config loads on first cold compile and0 on second. The second compile still recaptures source identities and merges policies; caching does not mean zero work. Its22.518551ms instrumented compile is already outside the service push2.687293ms. No cache repair between8f and124 accounts for this."
+    },
+    {
+      "id": "post-ack-metadata-reconciliation",
+      "status": "candidate_not_assigned_root_cause",
+      "detail": "Publication preserves old configuration metadata half of _input_fingerprint. Next run loop can observe inputs already captured by publication and force republish for any non-database/non-authority-marker path, even if verified policy fingerprint is unchanged. Captured first_admission setup shows changed_hint_count2 and ACK withdrawal before the observed compile; exact changed paths are not exported. Updating metadata wholesale would risk hiding concurrent changes and is not justified by the retained count alone."
+    },
+    {
+      "id": "retained-empty-resident-directory",
+      "status": "source_behavior_reproduced_untimed",
+      "detail": "Rust retire_state removes matching generation file but retains scope directory. Python fingerprint includes directory metadata; confirmation rejects any nonempty before!=observed before checking returned generation. Actual-filesystem proof shows empty retained directory→new generation is rejected, absent directory→same new generation admitted, stable generation admitted, changed existing generation rejected. This source distinction can force a redundant first-ACK rejection on a verified cold home. Captured service_restart before_present/unequal reaches exactly this early rejection branch, but its before row roster is not retained, so the observed before state is not independently proved empty."
+    },
+    {
+      "id": "absence-proof-required",
+      "status": "repair_constraint",
+      "detail": "Current scanner catches directory-iteration OSError and treats it as zero children. A fix cannot infer verified emptiness from directory-only tuple alone. It must preserve explicit unknown/incomplete scan refusal and retain malformed generation, live generation change, newest-generation binding, directory/path metadata and final commit fences."
+    },
+    {
+      "id": "authority-reverification",
+      "status": "required_guard_not_optimization",
+      "detail": "Re-read of command authority after transport detects another process's concurrent control commit. Final resident checks prevent using an ACK from a different resident. Generation/cache transaction writes and fsync retain antirollback/durability semantics. These cannot be deleted solely to shorten the observed interval."
+    },
+    {
+      "id": "distinct-budgets",
+      "status": "source_contract",
+      "detail": "Linux publisher snapshot-materialization and client calls use existing2s limits. The fixture caller has its original400ms readiness gate. A publication completing after the caller gives up is compatible with those distinct budgets and is not itself proof of an RPC deadline-extension defect."
+    }
+  ],
+  "next_steps": [
+    "Retain the initial setup failures and observer loss unchanged; do not rerun old8f to seek a pass.",
+    "Prepare a narrow current-source cold-directory admission repair only with explicit complete-absence evidence and meaningful unreadable/malformed/live-generation mutation controls. No product edit is included in this audit.",
+    "Run a final combined-source100-workspace original lifecycle check after the final source is frozen, preserving all5 lifecycle scenarios, original400ms, real enforced decisions and secondary scope. Treat the100subset separately from the15cell matrix; its CLI full-matrix status remains false.",
+    "If current initial setup still misses and a further diagnostic is justified, divide the existing unwrapped publication seam into snapshot materialization, request encoding, actual client invocation and ACK decoding with exact forwarding and no new probes/retries. Until then, do not infer native or filesystem cause."
+  ],
+  "product_fix_applied": false,
+  "installed_current_readiness_validated": false,
+  "qualification_complete": false
+}

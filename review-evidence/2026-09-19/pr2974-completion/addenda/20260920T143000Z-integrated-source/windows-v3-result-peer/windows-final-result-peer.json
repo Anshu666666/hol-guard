@@ -1,0 +1,92 @@
+{
+  "schema": "pr2974.windows-final-result-peer.v1",
+  "reviewer": "partition_regression",
+  "producer_packet": "c4a97544d8d0fca2f1fa313cc2c3ce696bb3d566",
+  "independent_data_only": true,
+  "new_execution": false,
+  "rows": [
+    {
+      "artifact_id": "10606777257",
+      "archive_sha256": "8b2c347b324b5c59b569f9f924a6ac241b91e23f5a074d3855451b7a76952cbc",
+      "xml_sha256": "72de0602491e9b3ab152972323449f8e0879b4bccd416b3c3023d81e4e5550dc",
+      "source_sha": "f4d25b32205e4b18a29a2bb596de9a9492ac4fe0",
+      "source_tree": "245ec6ef182acb0346a324dad0e6ed1a95e09b7e",
+      "driver_sha": "c64bf1104119a1184d1c67c806a7b00bcc33a573",
+      "driver_tree": "a79fc38e46f20ad30d302f23c06fab4931d7869a",
+      "source_bindings_verified": 22,
+      "python": "3.10.11",
+      "total": 152,
+      "passed": 149,
+      "skipped": 3,
+      "failed": 0,
+      "errors": 0,
+      "mandatory_windows_passed": 53,
+      "raw_child_frames_verified": 90,
+      "wtext_parity_pairs": 18,
+      "original_atomic_selector_passed": true,
+      "native_error_difference": {
+        "original": {
+          "errno": 13,
+          "kind": "PermissionError",
+          "winerror": 5
+        },
+        "candidate": {
+          "errno": 13,
+          "kind": "PermissionError",
+          "winerror": 32
+        },
+        "exact_raw_parity": false,
+        "compatibility_assertion": true,
+        "single_attempt_both": true,
+        "cleanup_both": true
+      }
+    },
+    {
+      "artifact_id": "10607010453",
+      "archive_sha256": "553d29f9ab9846e68a35e5547dfd38ee9fad819fb262d52389eeb49315ea214a",
+      "xml_sha256": "0babd5c3069c89b13820d012a785713787e1cb69bc7e52d73b80c39423ee184c",
+      "source_sha": "f4d25b32205e4b18a29a2bb596de9a9492ac4fe0",
+      "source_tree": "245ec6ef182acb0346a324dad0e6ed1a95e09b7e",
+      "driver_sha": "c64bf1104119a1184d1c67c806a7b00bcc33a573",
+      "driver_tree": "a79fc38e46f20ad30d302f23c06fab4931d7869a",
+      "source_bindings_verified": 22,
+      "python": "3.12.10",
+      "total": 152,
+      "passed": 149,
+      "skipped": 3,
+      "failed": 0,
+      "errors": 0,
+      "mandatory_windows_passed": 53,
+      "raw_child_frames_verified": 90,
+      "wtext_parity_pairs": 18,
+      "original_atomic_selector_passed": true,
+      "native_error_difference": {
+        "original": {
+          "errno": 13,
+          "kind": "PermissionError",
+          "winerror": 5
+        },
+        "candidate": {
+          "errno": 13,
+          "kind": "PermissionError",
+          "winerror": 32
+        },
+        "exact_raw_parity": false,
+        "compatibility_assertion": true,
+        "single_attempt_both": true,
+        "cleanup_both": true
+      }
+    }
+  ],
+  "verdict": "clear for the bounded source-control result claims",
+  "limits": [
+    "No installed artifact, performance or release qualification.",
+    "Python executable hashes are producer-recorded; executable bytes were not uploaded.",
+    "MoveFileExW 5 versus FileRenameInfoEx 32 is an explicit observable compatibility difference, not exact raw-code parity.",
+    "All prior failed runs remain failed."
+  ],
+  "preparation_correction": {
+    "superseded_tree": "f9587af7053d2d432c8f50075a39278591951e5e",
+    "reason": "An internal parser assertion failed and its 89-byte traceback was accidentally saved as a blob; it was never sent as a successful result. This checked parser and receipt replace that failed preparation."
+  }
+}

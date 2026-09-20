@@ -1,0 +1,32 @@
+{
+  "schema": "hol-guard.inactive-namespace-portability-review.v1",
+  "source_commit": "124472b8949805e0dd36052df6894b335d8b519d",
+  "candidate_tree": "819853f43cbc560f40c1056bc7325dc27faeec22",
+  "production_blob": "d3b18fde5034f1006c76d65b14dc468cd0677842",
+  "test_blob": "bb804026bd355e1bca00929e406f0dc197704496",
+  "scope": "Read-only portability review of 27 new controls before normal Linux/macOS/Windows native-wheel selection.",
+  "facts": [
+    "26 cases do not require symlink creation or POSIX permission denial; permission and iteration failures are explicit monkeypatched exceptions.",
+    "Mutation controls write actual files and set a deliberate 1 ms directory mtime difference, rather than relying on scheduler timing.",
+    "Directory replacement controls close ordinary file writes before rename and retain the old directory, preventing immediate file-ID reuse in the owned fixture.",
+    "The actual signed publisher control explicitly creates POSIX runtime directory with 0700; on Windows the production private-state binding handles its private directory repair and validation.",
+    "The symlink refusal control already catches OSError from owned symlink creation and skips. A runner lacking symlink privilege therefore may execute only 26 new controls, which must remain explicit."
+  ],
+  "limitations": [
+    "No Windows or macOS execution was performed in this review.",
+    "No assertion or skip was changed.",
+    "A skipped symlink control is not cross-platform proof of the symlink rejection path.",
+    "The publisher control uses an explicit ACK double; it does not authenticate a real native process or prove installed readiness."
+  ],
+  "validation_reference": {
+    "tree": "8009019426c2ea710c2a4491e9760de45df8639f",
+    "combined_passed": 107,
+    "existing_windows_only_skips": 3,
+    "new_controls_passed_linux": 27
+  },
+  "final_independent_peer": {
+    "tree": "5144fbca7c343f7cea9c436e46946978f76d3ba1",
+    "receipt": "f36e2a1f5d8662e1fdf8e7953af60209f79173da"
+  },
+  "source_changed": false
+}

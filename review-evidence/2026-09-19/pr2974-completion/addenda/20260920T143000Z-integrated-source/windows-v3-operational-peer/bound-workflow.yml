@@ -1,0 +1,86 @@
+name: Windows private authority compatibility
+on:
+  push:
+    branches: ["codex/pr2974-private-authority-validation-20260920-v3"]
+    paths: [".github/workflows/windows-private-authority-validation.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: windows-private-authority-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source-compatibility:
+    name: ${{ matrix.platform }} Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: Windows
+            python: "3.12.10"
+          - os: windows-latest
+            platform: Windows
+            python: "3.10.11"
+    env:
+      CANDIDATE_SOURCE: "f4d25b32205e4b18a29a2bb596de9a9492ac4fe0"
+      CANDIDATE_TREE: "245ec6ef182acb0346a324dad0e6ed1a95e09b7e"
+      CONTROL_PYTHON: ${{ matrix.python }}
+      CONTROL_PLATFORM: ${{ matrix.platform }}
+    steps:
+      - name: Check out bound driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - name: Check out immutable candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "f4d25b32205e4b18a29a2bb596de9a9492ac4fe0"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.8.15"
+      - name: Install unchanged frozen source dependencies
+        working-directory: candidate
+        shell: bash
+        run: |
+          unset PYTHONPATH PYTHONHOME
+          uv sync --frozen --extra dev --python "$CONTROL_PYTHON"
+      - name: Bind source, imports, dependencies and driver
+        id: binding
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then python=candidate/.venv/Scripts/python.exe; else python=candidate/.venv/bin/python; fi
+          "$python" driver/scripts/ci/validate_windows_private_authority.py --source candidate --driver driver --output private-authority-evidence --source-sha "$CANDIDATE_SOURCE" --source-tree "$CANDIDATE_TREE" --expected-python "$CONTROL_PYTHON" --expected-platform "$CONTROL_PLATFORM" --phase before
+      - name: Check source style and types without modifications
+        id: static
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then python=candidate/.venv/Scripts/python.exe; else python=candidate/.venv/bin/python; fi
+          "$python" driver/scripts/ci/validate_windows_private_authority.py --source candidate --driver driver --output private-authority-evidence --source-sha "$CANDIDATE_SOURCE" --source-tree "$CANDIDATE_TREE" --expected-python "$CONTROL_PYTHON" --expected-platform "$CONTROL_PLATFORM" --phase static
+      - name: Execute declared source controls once
+        if: ${{ !cancelled() && steps.binding.outcome == 'success' && steps.static.outcome == 'success' }}
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then python=candidate/.venv/Scripts/python.exe; else python=candidate/.venv/bin/python; fi
+          "$python" driver/scripts/ci/validate_windows_private_authority.py --source candidate --driver driver --output private-authority-evidence --source-sha "$CANDIDATE_SOURCE" --source-tree "$CANDIDATE_TREE" --expected-python "$CONTROL_PYTHON" --expected-platform "$CONTROL_PLATFORM" --phase controls
+      - name: Verify source and driver after the one attempt
+        if: always()
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then python=candidate/.venv/Scripts/python.exe; else python=candidate/.venv/bin/python; fi
+          "$python" driver/scripts/ci/validate_windows_private_authority.py --source candidate --driver driver --output private-authority-evidence --source-sha "$CANDIDATE_SOURCE" --source-tree "$CANDIDATE_TREE" --expected-python "$CONTROL_PYTHON" --expected-platform "$CONTROL_PLATFORM" --phase after
+      - name: Retain original outcomes, diagnostics and cleanup
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: private-authority-${{ matrix.platform }}-${{ matrix.python }}-${{ github.run_attempt }}
+          path: private-authority-evidence/
+          if-no-files-found: error

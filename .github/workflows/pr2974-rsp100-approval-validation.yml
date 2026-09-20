@@ -1,0 +1,58 @@
+name: PR2974 RSP100 combined Python validation
+
+on:
+  push:
+    branches: [codex/pr2974-rsp100-combined-python-validation-20260920-v4]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: linux-x64
+            runner: ubuntu-latest
+            python: "3.14"
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 45
+    env:
+      RSP100_EVIDENCE_DIR: rsp100-approval-evidence
+      UV_NO_PROGRESS: "1"
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: "false"
+      RSP100_PLATFORM_CELL: ${{ matrix.cell }}
+      RSP100_PYTHON_VERSION: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 3
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Verify bound source before dependency installation
+        run: python scripts/ci/validate_pr2974_rsp100_approval.py --bind-only
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          enable-cache: false
+      - name: Install frozen development dependencies
+        timeout-minutes: 10
+        run: uv sync --frozen --extra dev --python '${{ matrix.python }}'
+      - name: Import, prove positive admission, and run bounded controls
+        if: always()
+        run: python scripts/ci/validate_pr2974_rsp100_approval.py
+      - name: Preserve all source, result and failure records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rsp100-combined-${{ matrix.cell }}-python${{ matrix.python }}
+          path: rsp100-approval-evidence/
+          if-no-files-found: error

@@ -327,9 +327,20 @@ pub(crate) fn send_request_for_digest_detailed(
     let deadline = Instant::now()
         .checked_add(timeout)
         .ok_or_else(|| ResidentClientError::fatal("native_client_deadline_invalid".to_owned()))?;
-    if timeout.is_zero() {
-        return Err("native_client_deadline_exceeded".to_owned().into());
-    }
+    send_request_for_digest_at_deadline_detailed(
+        transport, endpoint, token, payload, deadline, identity,
+    )
+}
+
+pub(crate) fn send_request_for_digest_at_deadline_detailed(
+    transport: &str,
+    endpoint: &str,
+    token: &[u8],
+    payload: &[u8],
+    deadline: Instant,
+    identity: &ExpectedProcessIdentity<'_>,
+) -> Result<Vec<u8>, ResidentClientError> {
+    let _ = connect_remaining(deadline).map_err(ResidentClientError::fatal)?;
     let mut stream = crate::observe_native_phase!(
         ClientConnect,
         connect(transport, endpoint, deadline, identity)

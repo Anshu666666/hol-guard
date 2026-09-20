@@ -2,10 +2,11 @@ name: PR2974 original workspace 100-scope cause diagnostic
 
 on:
   push:
-    branches: [codex/pr2974-workspace-cause-8f-20260920]
+    branches: [codex/pr2974-workspace-cause-8f-20260920-v2]
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: pr2974-workspace-cause-8f-${{ github.ref }}
@@ -47,6 +48,13 @@ jobs:
           sudo apt-get install --yes musl-tools
           rustup toolchain install 1.88.0 --profile minimal
           rustup target add x86_64-unknown-linux-musl --toolchain 1.88.0
+      - name: Download the exact retained original wheel archive
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --method GET /repos/hashgraph-online/hol-guard/actions/artifacts/10606006587/zip
+          > "$RUNNER_TEMP/pr2974-workspace-first.zip"
       - name: Validate exact controls then run original three cells once
         shell: bash
         run: >-
@@ -54,7 +62,7 @@ jobs:
           --source "$GITHUB_WORKSPACE/original-source"
           --driver "$GITHUB_WORKSPACE/diagnostic-driver"
           --driver-sha "$GITHUB_SHA"
-          --manifest-sha256 "db6e8a3cb30ad72f24cf482a6bf5b5b592465466fb59410b7bbd47f2b7b5c5df"
+          --manifest-sha256 "67198b191bc3e7da74025bbedd9f1fd590e35ae70b45b7640bbf37add9a1d0d9"
           --output "$RUNNER_TEMP/pr2974-workspace-cause"
       - name: Preserve finite raw log projection
         if: always()

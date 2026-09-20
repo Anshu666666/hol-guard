@@ -10,6 +10,7 @@ from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
+
 import run_workload as workload
 
 

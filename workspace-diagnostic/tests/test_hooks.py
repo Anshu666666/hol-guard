@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pytest
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NATIVE_RUNTIME_STATE_DIRECTORY
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+
 from workspace_cause.capture import Capture
 from workspace_cause.hooks import OwnedHooks
 

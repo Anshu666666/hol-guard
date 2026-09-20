@@ -11,6 +11,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+
 from workspace_cause import child
 from workspace_cause.capture import Capture
 from workspace_cause.parent import FixtureForwarding

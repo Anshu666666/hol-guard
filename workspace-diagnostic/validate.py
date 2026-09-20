@@ -249,7 +249,7 @@ def main() -> int:
         if (output / "commands/python-version.stdout").read_text(encoding="utf-8").strip() != "Python 3.12.14":
             raise RuntimeError("python_version")
         run(
-            "build-default-wheel",
+            "prepare-retained-wheel",
             [sys.executable, str(driver / "build.py"), "--source", str(source), "--output", str(output)],
             cwd=driver,
             output=output,

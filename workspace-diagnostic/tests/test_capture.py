@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
 from workspace_cause.capture import MAX_ROWS, Capture, current_capture
 
 

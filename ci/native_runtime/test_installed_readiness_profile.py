@@ -406,7 +406,16 @@ def test_child_timeout_stops_remaining_trials_without_retry(monkeypatch: pytest.
     monkeypatch.setattr(probe.subprocess, "run", timeout)
     report = probe.run_trials(_original(), _SOURCE)
     assert calls == 1
-    assert report["trials"] == [{"trial": "control", "outcome": "trial_unavailable", "cleanup": "unverified"}]
+    assert report["trials"] == [
+        {
+            "trial": "control",
+            "outcome": "trial_unavailable",
+            "cleanup": "unverified",
+            "unavailable_reason": "process_timeout",
+            "last_entered_phase": "unavailable",
+            "phase_semantics": "last_entered_boundary_without_duration",
+        }
+    ]
     assert "synthetic-private" not in json.dumps(report)
 
 
@@ -429,3 +438,127 @@ def test_failure_only_workflow_keeps_original_platform_gates() -> None:
         assert "installed-readiness-profile.json" in platform
         assert "probe_installed_scoped_policy.py" in platform
         assert "probe_installed_managed_floors.py" in platform
+
+
+def test_actual_child_exit_retains_only_fixed_checkpoint_and_stops(monkeypatch: pytest.MonkeyPatch) -> None:
+    real_run = subprocess.run
+    calls = 0
+
+    def launch(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        nonlocal calls
+        calls += 1
+        assert kwargs["timeout"] == 30
+        checkpoint = command[command.index("--checkpoint") + 1]
+        child = (
+            "import json,sys; from pathlib import Path; "
+            "Path(sys.argv[1]).write_text(json.dumps({"
+            "'schema':'guard.installed-readiness-trial-checkpoint.v1',"
+            "'trial':'control','source_sha':sys.argv[2],'runtime_sha256':sys.argv[3],"
+            "'phase':'fixture_setup'}),encoding='utf-8'); "
+            "print('synthetic-private-child-output'); "
+            "print('synthetic-private-child-error',file=sys.stderr); sys.exit(17)"
+        )
+        return real_run([sys.executable, "-I", "-c", child, checkpoint, _SOURCE, _RUNTIME], **kwargs)
+
+    monkeypatch.setattr(probe.subprocess, "run", launch)
+    report = probe.run_trials(_original(), _SOURCE)
+    results = cast(list[dict[str, Any]], report["trials"])
+    assert calls == 1 and len(results) == 1
+    assert results[0]["outcome"] == "trial_unavailable"
+    assert results[0]["cleanup"] == "unverified"
+    assert results[0]["unavailable_reason"] == "process_exit_failed"
+    assert results[0]["last_entered_phase"] == "fixture_setup"
+    assert report["acceptance_claim"] is False
+    assert "synthetic-private" not in json.dumps(report)
+
+
+def test_checkpoint_admission_is_bounded_exact_and_does_not_export_unknown_values(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    probe.write_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME, "resident_cleanup")
+    original = checkpoint.read_text(encoding="utf-8")
+    assert probe.read_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME) == "resident_cleanup"
+    for field, value in (
+        ("schema", "synthetic-private-schema"),
+        ("trial", "start"),
+        ("source_sha", "3" * 40),
+        ("runtime_sha256", "4" * 64),
+        ("phase", "synthetic-private-phase"),
+        ("phase", []),
+    ):
+        changed = json.loads(original)
+        changed[field] = value
+        checkpoint.write_text(json.dumps(changed), encoding="utf-8")
+        assert probe.read_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME) == "unavailable"
+    checkpoint.write_bytes(b" " * (probe._CHECKPOINT_LIMIT + 1))
+    assert probe.read_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME) == "unavailable"
+    for payload in ("[1]", "{"):
+        checkpoint.write_text(payload, encoding="utf-8")
+        assert probe.read_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME) == "unavailable"
+    checkpoint.unlink()
+    assert probe.read_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME) == "unavailable"
+    probe.write_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME, "synthetic-private-phase")
+    probe.write_checkpoint(checkpoint, "control", "synthetic-private-source", _RUNTIME, "fixture_setup")
+    assert not checkpoint.exists()
+
+
+@pytest.mark.parametrize("invalid", ["missing", "identity"])
+def test_child_report_refusal_keeps_checkpoint_without_retry(monkeypatch: pytest.MonkeyPatch, invalid: str) -> None:
+    calls = 0
+
+    def launch(command: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        nonlocal calls
+        calls += 1
+        checkpoint = Path(command[command.index("--checkpoint") + 1])
+        probe.write_checkpoint(checkpoint, "control", _SOURCE, _RUNTIME, "report_write")
+        if invalid == "identity":
+            Path(command[command.index("--json") + 1]).write_text(
+                json.dumps(
+                    {
+                        "schema": "guard.installed-readiness-profile-trial.v1",
+                        "trial": "control",
+                        "source_sha": "3" * 40,
+                        "runtime_sha256": _RUNTIME,
+                        "acceptance_claim": False,
+                        "private": "synthetic-private-report",
+                    }
+                ),
+                encoding="utf-8",
+            )
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(probe.subprocess, "run", launch)
+    report = probe.run_trials(_original(), _SOURCE)
+    results = cast(list[dict[str, Any]], report["trials"])
+    assert calls == 1 and len(results) == 1
+    assert results[0]["unavailable_reason"] == (
+        "trial_report_unavailable" if invalid == "missing" else "trial_report_rejected"
+    )
+    assert results[0]["last_entered_phase"] == "report_write"
+    assert results[0]["cleanup"] == "unverified"
+    assert "synthetic-private" not in json.dumps(report)
+
+
+def test_checkpoint_write_failure_is_best_effort(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def unavailable(*_args: Any, **_kwargs: Any) -> None:
+        raise OSError("synthetic-private-filesystem-error")
+
+    monkeypatch.setattr(Path, "write_text", unavailable)
+    probe.write_checkpoint(tmp_path / "checkpoint.json", "control", _SOURCE, _RUNTIME, "fixture_setup")
+
+
+def test_child_launch_failure_stops_without_exposing_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = 0
+
+    def launch(*_args: Any, **_kwargs: Any) -> None:
+        nonlocal calls
+        calls += 1
+        raise OSError("synthetic-private-process-path")
+
+    monkeypatch.setattr(probe.subprocess, "run", launch)
+    report = probe.run_trials(_original(), _SOURCE)
+    results = cast(list[dict[str, Any]], report["trials"])
+    assert calls == 1 and len(results) == 1
+    assert results[0]["unavailable_reason"] == "process_launch_failed"
+    assert results[0]["last_entered_phase"] == "unavailable"
+    assert results[0]["cleanup"] == "unverified"
+    assert "synthetic-private" not in json.dumps(report)

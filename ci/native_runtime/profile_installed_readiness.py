@@ -38,6 +38,72 @@ _REPORT_LIMIT = 32_768
 _TRIALS = ("control", "start", "publication")
 _PROCESS_LIMIT_SECONDS = 30
 
+_CHECKPOINT_LIMIT = 2_048
+_PHASES = frozenset(
+    {
+        "trial_entry",
+        "identity_check",
+        "fixture_setup",
+        "publisher_setup",
+        "target_resolution",
+        "readiness_call",
+        "publisher_cleanup",
+        "resident_cleanup",
+        "fixture_cleanup",
+        "temporary_cleanup",
+        "report_write",
+    }
+)
+
+
+def write_checkpoint(path: Path | None, mode: str, source: str, runtime: str, phase: str) -> None:
+    """Retain only a fixed last-entered boundary, without timing or error text."""
+    if (
+        path is None
+        or phase not in _PHASES
+        or mode not in _TRIALS
+        or not isinstance(source, str)
+        or re.fullmatch(r"[0-9a-f]{40}", source) is None
+        or not isinstance(runtime, str)
+        or re.fullmatch(r"[0-9a-f]{64}", runtime) is None
+    ):
+        return
+    record = {
+        "schema": "guard.installed-readiness-trial-checkpoint.v1",
+        "trial": mode,
+        "source_sha": source,
+        "runtime_sha256": runtime,
+        "phase": phase,
+    }
+    try:
+        path.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+
+def read_checkpoint(path: Path, mode: str, source: str, runtime: str) -> str:
+    try:
+        with path.open("rb") as handle:
+            payload = handle.read(_CHECKPOINT_LIMIT + 1)
+        if len(payload) > _CHECKPOINT_LIMIT:
+            return "unavailable"
+        value = json.loads(payload)
+        if not isinstance(value, dict):
+            return "unavailable"
+        phase = value.get("phase")
+        if (
+            value.get("schema") != "guard.installed-readiness-trial-checkpoint.v1"
+            or value.get("trial") != mode
+            or value.get("source_sha") != source
+            or value.get("runtime_sha256") != runtime
+            or not isinstance(phase, str)
+            or phase not in _PHASES
+        ):
+            return "unavailable"
+        return phase
+    except (OSError, ValueError, UnicodeError):
+        return "unavailable"
+
 
 def read_report(path: Path) -> dict[str, Any] | None:
     try:
@@ -68,7 +134,7 @@ def original_failure(report: object, expected_source: str) -> str | None:
     return runtime
 
 
-def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
+def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path | None = None) -> dict[str, object]:
     report: dict[str, object] = {
         "schema": "guard.installed-readiness-profile-trial.v1",
         "trial": mode,
@@ -79,10 +145,12 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
         "outcome": "setup_failed",
         "cleanup": "unverified",
     }
+    write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "trial_entry")
     require(mode in _TRIALS, "trial_invalid")
     require("site-packages" in Path(codex_plugin_scanner.__file__).resolve().parts, "not_installed_package")
     require(environment_is_clean(os.environ) and native_mode() == "auto", "native_environment_override")
     require(os.environ.get("HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT") == "1", "canonical_lane_disabled")
+    write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "identity_check")
     status = native_runtime_status()
     identity, capabilities = status.identity, status.capabilities
     if (
@@ -108,11 +176,13 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
             runtime_cleanup_attempted = True
             failed = False
             if publisher is not None:
+                write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "publisher_cleanup")
                 try:
                     publisher.close()
                 except BaseException:
                     failed = True
             if fixture is not None:
+                write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "resident_cleanup")
                 try:
                     stopped = stop_native_resident(identity.path, fixture.store.guard_home, write_diagnostic=False)
                     failed = failed or not stopped.contained
@@ -121,9 +191,12 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
                 report["cleanup"] = "failed" if failed else "contained"
 
         try:
+            write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "fixture_setup")
             fixture = SignedPolicyFixture(Path(temporary).resolve())
             os.environ["SSL_CERT_FILE"] = str(fixture.ca_file)
+            write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "publisher_setup")
             publisher = get_native_policy_snapshot_publisher(fixture.store)
+            write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "target_resolution")
             observation = ReadinessProfile(
                 publisher_targets(publisher),
                 enabled=mode != "control",
@@ -131,6 +204,7 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
             )
             with observation.attach(publisher):
                 try:
+                    write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "readiness_call")
                     started = time.monotonic()
                     try:
                         require_initial_readiness(publisher, fixture.workspace)
@@ -151,6 +225,7 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
         finally:
             cleanup_runtime()
             if fixture is not None:
+                write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "fixture_cleanup")
                 try:
                     fixture.close()
                 except BaseException:
@@ -161,6 +236,7 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
                 os.environ["SSL_CERT_FILE"] = previous_ca
             if observation is not None:
                 report["profile"] = observation.snapshot()
+            write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "temporary_cleanup")
     return report
 
 
@@ -183,9 +259,21 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
         return report
     report["runtime_sha256"] = runtime
     results: list[dict[str, Any]] = []
+
+    def unavailable(mode: str, checkpoint: Path, reason: str) -> dict[str, object]:
+        return {
+            "trial": mode,
+            "outcome": "trial_unavailable",
+            "cleanup": "unverified",
+            "unavailable_reason": reason,
+            "last_entered_phase": read_checkpoint(checkpoint, mode, expected_source, runtime),
+            "phase_semantics": "last_entered_boundary_without_duration",
+        }
+
     with tempfile.TemporaryDirectory(prefix="hg-readiness-reports-") as temporary:
         for mode in _TRIALS:
             output = Path(temporary) / (mode + ".json")
+            checkpoint = Path(temporary) / (mode + ".checkpoint.json")
             try:
                 completed = subprocess.run(
                     [
@@ -200,29 +288,38 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
                         runtime,
                         "--json",
                         str(output),
+                        "--checkpoint",
+                        str(checkpoint),
                     ],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     check=False,
                     timeout=_PROCESS_LIMIT_SECONDS,
                 )
+                if completed.returncode != 0:
+                    results.append(unavailable(mode, checkpoint, "process_exit_failed"))
+                    break
                 result = read_report(output)
+                if result is None:
+                    results.append(unavailable(mode, checkpoint, "trial_report_unavailable"))
+                    break
                 if (
-                    completed.returncode != 0
-                    or result is None
-                    or result.get("schema") != "guard.installed-readiness-profile-trial.v1"
+                    result.get("schema") != "guard.installed-readiness-profile-trial.v1"
                     or result.get("source_sha") != expected_source
                     or result.get("runtime_sha256") != runtime
                     or result.get("trial") != mode
                     or result.get("acceptance_claim") is not False
                 ):
-                    results.append({"trial": mode, "outcome": "trial_unavailable", "cleanup": "unverified"})
+                    results.append(unavailable(mode, checkpoint, "trial_report_rejected"))
                     break
                 results.append(result)
                 if result.get("cleanup") != "contained":
                     break
-            except (OSError, subprocess.TimeoutExpired):
-                results.append({"trial": mode, "outcome": "trial_unavailable", "cleanup": "unverified"})
+            except subprocess.TimeoutExpired:
+                results.append(unavailable(mode, checkpoint, "process_timeout"))
+                break
+            except OSError:
+                results.append(unavailable(mode, checkpoint, "process_launch_failed"))
                 break
     report["trials"] = results
     report["disposition"] = "diagnostic_only"
@@ -236,6 +333,7 @@ def main() -> int:
     parser.add_argument("--original-report", type=Path)
     parser.add_argument("--trial", choices=_TRIALS)
     parser.add_argument("--expected-runtime-sha256")
+    parser.add_argument("--checkpoint", type=Path)
     args = parser.parse_args()
     result: dict[str, object]
     try:
@@ -246,7 +344,9 @@ def main() -> int:
                 and re.fullmatch(r"[0-9a-f]{64}", args.expected_runtime_sha256) is not None,
                 "trial_identity_invalid",
             )
-            result = trial(args.trial, args.expected_source_sha, args.expected_runtime_sha256)
+            result = trial(
+                args.trial, args.expected_source_sha, args.expected_runtime_sha256, checkpoint=args.checkpoint
+            )
         else:
             result = run_trials(
                 read_report(args.original_report) if args.original_report else None, args.expected_source_sha
@@ -256,6 +356,10 @@ def main() -> int:
             raise ValueError("profile_report_limit")
     except BaseException:
         payload = '{"schema":"guard.installed-readiness-profile-error.v1","acceptance_claim":false}\n'
+    if args.trial:
+        write_checkpoint(
+            args.checkpoint, args.trial, args.expected_source_sha, args.expected_runtime_sha256, "report_write"
+        )
     args.json.write_text(payload, encoding="utf-8")
     if not args.trial:
         print(payload, end="")

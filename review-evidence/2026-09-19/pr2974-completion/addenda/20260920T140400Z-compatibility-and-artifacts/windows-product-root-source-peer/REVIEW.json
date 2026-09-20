@@ -1,0 +1,97 @@
+{
+  "schema": "pr2974.windows-coherent-product-root-peer.v1",
+  "reviewed_at": "2026-09-20T12:03:07Z",
+  "proposal_tree": "c1ec5b4f7e220e5a4915619819d0aa6f20ba97f8",
+  "product_base": "124472b8949805e0dd36052df6894b335d8b519d",
+  "reviewer": "root",
+  "scope": "Read-only source review of exactly the five attached images. The complete candidate tree was independently hash-verified; other candidate bodies were not reread by this peer.",
+  "files": [
+    {
+      "path": "candidate/src/codex_plugin_scanner/guard/windows_replaceable_file.py",
+      "git_blob": "210f41752b878e5f88f68d4a50f6107cbdbe163a",
+      "bytes": 9520,
+      "sha256": "ccc6b88c70dac5bc80c340b0bc4712e0ae588a123623b4bc3e34616d9b684fb9"
+    },
+    {
+      "path": "candidate/src/codex_plugin_scanner/guard/windows_atomic_replace.py",
+      "git_blob": "978725de689d1ef454c1fa9fc60ebceaf184c9b2",
+      "bytes": 9456,
+      "sha256": "2edc1358db92ac6a12d41edd5221ebdf9ea2dc96ec9792ee12c4eda90d0bb323"
+    },
+    {
+      "path": "candidate/src/codex_plugin_scanner/guard/daemon/manager_pending_launch.py",
+      "git_blob": "db6df0d6f94973649b73e0d3996b68b02ddbde71",
+      "bytes": 8665,
+      "sha256": "c28714bb8c71764b7eb0cafe03091ad83bb1c5dc59b4c85b2ae775934ff233aa"
+    },
+    {
+      "path": "candidate/tests/test_windows_atomic_replace.py",
+      "git_blob": "957310ee89645172d0f3b67a354efa1df6f9914e",
+      "bytes": 11471,
+      "sha256": "23453111536eea3234e219b39ca06f51966acf667b0990907704464f03f134eb"
+    },
+    {
+      "path": "candidate/tests/test_windows_atomic_replace_process.py",
+      "git_blob": "a9fbedc61ac0382796fa8453e60a4f49c8c4f539",
+      "bytes": 14461,
+      "sha256": "df4c7860fce799a284076b7e27400ebd06b705ca016d8e964493ab736373ee5e"
+    }
+  ],
+  "previous_proposal_tree": "f08895fb091536c3bf4685891046cc65aa1b93d0",
+  "findings": [
+    {
+      "id": "PY310_PRIMARY_EXCEPTION",
+      "previous": "Direct BaseException.add_note calls fail on supported Python3.10 and a failing custom note hook can mask the retained primary exception.",
+      "current": "A shared best-effort helper tolerates missing/noncallable/failing note hooks, including BaseException from custom attachment. Reader restore/native-close and writer close paths retain the original primary object.",
+      "state": "addressed in source; actual declared Python3.10 controls pending"
+    },
+    {
+      "id": "LIVE_REPLACEMENT_FACADE",
+      "previous": "Capturing manager.os.replace before descriptor close can preserve a stale facade if the close callback rebinds it.",
+      "current": "Closures resolve manager.os.close and manager.os.replace at invocation. The actual manager writer control rebinds replacement inside the real close and checks the rebound replacement runs once.",
+      "state": "addressed in source; actual control pending"
+    }
+  ],
+  "verified_boundaries": [
+    "Original flushed descriptor supplies exact-handle filesystem capability and source identity before its single owned close; no new temporary content is manufactured for admission.",
+    "Only a positive Windows RS1-or-later check, available APIs and exact-handle FILE_SUPPORTS_POSIX_UNLINK_RENAME select Ex. Unsupported/missing/query-unavailable cases preselect the legacy operation; a failed attempted Ex never retries through legacy.",
+    "Actual one-shot Ex preserves the original os.rename audit before extra native opens, parent/source type and noninheritability checks, original source identity plus parent-volume check, one native mutation and first-error-preserving closure of both handles.",
+    "The writer keeps original same-directory temporary creation, write/flush/fsync, final mode call and temporary unlink. Windows explicitly transfers close ownership; failed close is not blindly retried by the outer finally. This is a deliberate first-error/ownership correction, not proof that every original failure path is byte-identical.",
+    "WTEXT retains original UCRT BOM/translation/sharing and thread-local invalid-parameter-handler restoration. It does not acquire delete sharing.",
+    "New portable controls exercise positive and unavailable capability, selected single mutation, failure identity/no retry, simultaneous preparation/close failure, absent/failing notes and actual writer facade rebinding.",
+    "Native source controls compare original and candidate destination/audit outcomes and distinguish committed rename from subsequent close failure. These controls are still unexecuted at this review."
+  ],
+  "specific_unproved_assertion": "The native CRT-destination comparison asserts original os.replace WinError32. Earlier Ex-only WinError32 does not establish that original result. Preserve actual original output and assess observable parity if this assertion fails; do not infer evidence from the old mechanism test.",
+  "primary_sources": [
+    {
+      "url": "https://github.com/microsoft/win32metadata/blob/5c5efbc01d4c87f6830ec304d42777991d533154/generation/WinSDK/RecompiledIdlHeaders/um/minwinbase.h",
+      "git_blob": "5618686f073915edfd39b0fb81b754160e6c3ac8",
+      "claim": "FileRenameInfoEx is gated by NTDDI_WIN10_RS1 in this exact public SDK header."
+    },
+    {
+      "url": "https://github.com/microsoft/win32metadata/blob/5c5efbc01d4c87f6830ec304d42777991d533154/generation/WinSDK/RecompiledIdlHeaders/shared/sdkddkver.h",
+      "git_blob": "9efa994f593f7dfa50ce24d7bba4bb33fc2deef0",
+      "claim": "Exact SDK definition of NTDDI_WIN10_RS1."
+    },
+    {
+      "url": "https://docs.python.org/3/library/exceptions.html#BaseException.add_note",
+      "claim": "add_note was introduced in Python3.11."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getvolumeinformationbyhandlew",
+      "claim": "Volume query uses an open file handle; failed or unavailable query is not positive capability."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_fs_attribute_information",
+      "claim": "FILE_SUPPORTS_POSIX_UNLINK_RENAME is0x00000400."
+    }
+  ],
+  "limits": [
+    "No product import, formatter, test, installed package, workload or native build was executed by this peer.",
+    "No guarantee for every filesystem, remote share, path namespace or ancestor. Absolute destination is not anchored through the held parent handle.",
+    "No historical WinError87 cause or historical holder attribution.",
+    "The declared151/52-case admission, real Windows3.10/3.12/Linux3.10 execution, original error outcomes and permanent CI validation remain pending.",
+    "This is technical source review, not eligible CODEOWNER/last-push approval."
+  ],
+  "outcome": "No additional source blocker in the five read images. Preserve the explicit CRT-original assertion uncertainty and complete actual declared validation before product integration."
+}

@@ -1,0 +1,5 @@
+# Four-platform native artifact aggregation
+
+The frozen collector candidate aa6c42cfe17b8ed229c5e6200287de7044fad6bd passed one offline admission of the four exact original normal-CI archives from run35505324310/build50b39d7e7a4722c2773d94da0ea4c2482f055ef5. All archive and member sizes/hashes were verified, all three pure-wheel copies were compared before staging, and the existing validator admitted four native targets plus one pure wheel with no Windows waiver. The original build identity is distinct from the collector source.
+
+The preparation packet286caf93fa0473dc66688ee49ec24b8927430904 contains the exact three product afterimages, original input contract, data-only driver,21 passing controls and all static output. Qualification's independent peer c7819d00c1caa9d3b6b8934c2cf3c4ab5ee2959a cleared the source and driver before this single admission. No native binary was built, installed or executed. This result does not prove hosted download-action execution, signing, full release distribution, installed lifecycle or performance acceptance. The final permanent aggregation job will be exercised by combined product normal CI.

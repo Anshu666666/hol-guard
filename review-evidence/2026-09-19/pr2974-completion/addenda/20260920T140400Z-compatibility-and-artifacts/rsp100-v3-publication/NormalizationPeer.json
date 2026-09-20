@@ -1,0 +1,19 @@
+{
+  "schema": "pr2974.risk-opcode-final-normalization-peer.v1",
+  "reviewer": "partition_regression",
+  "source_tree": "945cb8cf0b0448c361ecf79f0752c45fca213b7d",
+  "prior_source_peer_tree": "521468956e8ed70525402734d69d72a39d49bdee",
+  "normalization_tree": "3de0dad74fd47c2425854582d1d58712f4532531",
+  "normalization_report": "4223271b1a6355006722ff53aa0e018a64c01882",
+  "driver_tree": "afe002bfb7e39a3420e6f4ed8ceb82dd5b0e1fc1",
+  "conclusion": "Final normalized source is byte-identical to the three reviewed opcode/control images. The source-body peer remains applicable without a semantic delta.",
+  "checks": [
+    "All three before/after blob identities and byte counts match the prior reviewed source; all three diff blobs are empty.",
+    "The read-back formatter record reports all three AST comparisons true, Ruff lint zero and format check zero.",
+    "Full untruncated driver tree comparison adds exactly the three known one-off driver paths above the reviewed source; no source deletion or unreviewed source leaf was found."
+  ],
+  "limits": [
+    "Driver body and operational contract review are independently owned by CI; this narrow receipt does not replace that review.",
+    "No candidate imports, tests, hosted run or other workload was executed by this peer. The owner's original failed Python3.14 admission and later actual candidate results remain separate evidence."
+  ]
+}

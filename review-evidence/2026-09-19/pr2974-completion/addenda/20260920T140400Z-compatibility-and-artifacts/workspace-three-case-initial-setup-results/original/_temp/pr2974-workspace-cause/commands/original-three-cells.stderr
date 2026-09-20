@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/runner/work/hol-guard/hol-guard/diagnostic-driver/workspace-diagnostic/run_workload.py", line 196, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/hol-guard/hol-guard/diagnostic-driver/workspace-diagnostic/run_workload.py", line 127, in main
+    report = read_cell(observations / f"{index:02d}.json", scenario)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/hol-guard/hol-guard/diagnostic-driver/workspace-diagnostic/workspace_cause/reader.py", line 117, in read_cell
+    return validate_cell(report, scenario)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/hol-guard/hol-guard/diagnostic-driver/workspace-diagnostic/workspace_cause/reader.py", line 209, in validate_cell
+    require(observation[key] is True, "workspace_diagnostic_incomplete")
+  File "/home/runner/work/hol-guard/hol-guard/diagnostic-driver/workspace-diagnostic/workspace_cause/reader.py", line 81, in require
+    raise ValueError(code)
+ValueError: workspace_diagnostic_incomplete

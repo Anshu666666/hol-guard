@@ -1,0 +1,495 @@
+{
+  "base_commit": "124472b8949805e0dd36052df6894b335d8b519d",
+  "base_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+  "driver_changes": [
+    ".github/workflows/pr2974-rsp100-approval-validation.yml",
+    "scripts/ci/pr2974_rsp100_approval_validation.json",
+    "scripts/ci/validate_pr2974_rsp100_approval.py"
+  ],
+  "driver_commit": "5c7bea089aa2949e7f9e92b1bdf3c2c05e205dbf",
+  "driver_files": [
+    {
+      "bytes": 2581,
+      "git_blob_sha": "13a054637d49998fd5dbbfe7bc6f284d33308618",
+      "path": ".github/workflows/pr2974-rsp100-approval-validation.yml",
+      "sha256": "ae9f62db2a58d763c2ecf192bc7af5cc02c8eb217e40ad1df1a137ace43b2fed"
+    },
+    {
+      "bytes": 19706,
+      "git_blob_sha": "fd7eed11f672d1dbc64e11e15e665bd101b5bca7",
+      "path": "scripts/ci/validate_pr2974_rsp100_approval.py",
+      "sha256": "4b3041ffac587175c4c2b2e1c03f88b812f5c41da2e25aad6d335a8a0482ddba"
+    },
+    {
+      "bytes": 11215,
+      "git_blob_sha": "0729e8b448e1f9c39c2c11c723263c18574e4c5b",
+      "path": "scripts/ci/pr2974_rsp100_approval_validation.json",
+      "sha256": "2049b313bea2af909f45d3805fd5268880ebf844d2c68ef8951b1a0072f12166"
+    }
+  ],
+  "driver_tree": "afe002bfb7e39a3420e6f4ed8ceb82dd5b0e1fc1",
+  "expected": {
+    "RSP100_complete": false,
+    "additional_required_nodes": [
+      "test_real_unreadable_launch_identities_are_not_reused_or_masked",
+      "test_live_stdlib_producers_have_bound_state"
+    ],
+    "approval_declared_cases": 49,
+    "approval_positive_nodes": [
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[zero]",
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[single]",
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[multiple]",
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[browser]",
+      "test_real_stdio_review_queues_and_records_without_forwarding_or_rederiving",
+      "test_path_constructor_namespace_is_available_from_exact_class_dictionary"
+    ],
+    "base_diff_vs_reviewed": [
+      {
+        "new": "ebec0062c854d508a27bc163beec0d0fcdd547e7",
+        "old": "5726f25f54751f785530f7046d04247219b2bae9",
+        "path": "rust/crates/guard-runtime/src/managed_resident.rs"
+      },
+      {
+        "new": "190f6238a9aba72628b71b1174ecdbbde5b227f8",
+        "old": null,
+        "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs"
+      },
+      {
+        "new": "176c1f69c0ca3a996dacd07c476b5e8bfef42386",
+        "old": null,
+        "path": "rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs"
+      },
+      {
+        "new": "3335e81202562e3ec767543175b1bdd270366c3a",
+        "old": "7af7627235fa59880625dd7cc51a6cb1b93f30ea",
+        "path": "rust/crates/guard-runtime/src/resident_client.rs"
+      },
+      {
+        "new": "aeefcd362da3f2316c681c8c84629154223ef8f1",
+        "old": null,
+        "path": "rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs"
+      },
+      {
+        "new": "4d8760cabd6756719357a864447e5f021acf92b4",
+        "old": "23d4ae366bcdfcf5aa84f0f4d8cf1b2b52b960ba",
+        "path": "scripts/native_slo_workspace_poststart_session.py"
+      },
+      {
+        "new": "f4075cdee56f4a4e608427e16638558590a4e6b7",
+        "old": "008cc88a1c705a545592c8aca3f4bdfe41e711aa",
+        "path": "tests/test_native_slo_workspace_poststart_session.py"
+      }
+    ],
+    "classification": "bounded_unexecuted_combined_RSP100_declared_python_validation",
+    "format_evidence_tree": "3de0dad74fd47c2425854582d1d58712f4532531",
+    "old_campaigns_authorized": false,
+    "platform_python_versions": {
+      "linux-x64": [
+        "3.10",
+        "3.11",
+        "3.12",
+        "3.13",
+        "3.14"
+      ],
+      "mac-arm64": [
+        "3.12"
+      ],
+      "mac-intel": [
+        "3.12"
+      ],
+      "windows-x64": [
+        "3.12"
+      ]
+    },
+    "platforms": {
+      "linux-x64": [
+        [
+          "Linux",
+          "x86_64"
+        ]
+      ],
+      "mac-arm64": [
+        [
+          "Darwin",
+          "arm64"
+        ]
+      ],
+      "mac-intel": [
+        [
+          "Darwin",
+          "x86_64"
+        ]
+      ],
+      "windows-x64": [
+        [
+          "Windows",
+          "AMD64"
+        ],
+        [
+          "Windows",
+          "x86_64"
+        ]
+      ]
+    },
+    "previous_stdlib_matrix": {
+      "correction": "Admit only LOAD_CONST/LOAD_SMALL_INT exact integer zero, preserving all other cached from-import guards; extend real unsupported imports and forged-producer refusals.",
+      "driver_commit": "64b14408ddd149dd219b5f3e67cfbe800da79d0c",
+      "evidence_tree": "e415bdbb1515238d4550d56a1e16d96bf2e4a449",
+      "failed_cell": "linux-x64-py3.14",
+      "failure": "Pair registry rejects actual local-import level opcode LOAD_SMALL_INT0; no tests ran on3.14.",
+      "local_actual_instruction_observation": "9b97b469c102a7085ac63de3cc76de106ed30c20",
+      "local_original_bind_import_evidence": "3b194cd3c93d86ca6aec393d1d6e4cae6bd571d9",
+      "overall_passed": false,
+      "run_id": 35510231853,
+      "source_commit": "c38ef0f40ec62d9000e4f3bb2076c7ae40a67aa9",
+      "source_tree": "991bda77f2ced84f80e5cde8870f50446644db16",
+      "success_below_python313": {
+        "passed": 332,
+        "skipped": 11
+      },
+      "success_python313": {
+        "passed": 343,
+        "skipped": 0
+      },
+      "successful_cells": 7
+    },
+    "prior_declared_python_matrix": {
+      "correction": "Finite exact immutable attrgetter identity and exact retained re singleton with current aliases, class and instance state; no broad callable/int subclass admission.",
+      "driver_commit": "6e67c94bde9bbdc5789a45d90f6a4c25fc3bf02a",
+      "evidence_tree": "a135943ace2a3dbd51f052db9231554863381c3b",
+      "failed_cells": {
+        "linux-x64-py3.10": "unsupported exact operator.attrgetter from Path properties; no tests ran",
+        "linux-x64-py3.11": "unsupported exact operator.attrgetter from Path properties; no tests ran",
+        "linux-x64-py3.13": "unsupported exact re._ZeroSentinel keyword default; no tests ran",
+        "linux-x64-py3.14": "unsupported exact re._ZeroSentinel keyword default; no tests ran"
+      },
+      "overall_passed": false,
+      "run_id": 35508294630,
+      "source_commit": "3285394d8ea67879c69e6c969c87582bb42f02b0",
+      "source_tree": "67f58473d42c9f7649030b8417921a4eb3d31a53",
+      "success_cells": [
+        "linux-x64-py3.12",
+        "mac-arm64-py3.12",
+        "mac-intel-py3.12",
+        "windows-x64-py3.12"
+      ],
+      "success_result_each": {
+        "approval_passed": 49,
+        "mandatory_positives_passed": 12,
+        "passed": 326,
+        "skipped": 1
+      }
+    },
+    "prior_python312_matrix": {
+      "correction": "Test-only same-captured-authority original parity; short parameter IDs retain original large value; real missing executable witness preserves original fresh nonces.",
+      "driver_commit": "6c835281fa62ee26c07aef59616a2d16c7b4c9d6",
+      "failed_cell": "windows-x64",
+      "failure_evidence_trees": [
+        "a7e673467ebad49c0679492c37215aa1f669b3c3",
+        "9996bac79bbc07b043d6141a69600997cb15ab09",
+        "b5c8d787c4590f4b7a22cca7f4201b88b6f7bad4"
+      ],
+      "overall_passed": false,
+      "run_id": 35505884164,
+      "source_commit": "afd7717dc8916469880a69a6a250c97c3aa3fb7a",
+      "source_tree": "ea5849e45aeecc6e149bb8ef3886acdbde871bd9",
+      "success_cells": [
+        "linux-x64",
+        "mac-arm64",
+        "mac-intel"
+      ],
+      "windows_pytest": {
+        "approval_cases_passed": 49,
+        "errors": 2,
+        "failed": 8,
+        "passed": 316,
+        "skipped": 1
+      }
+    },
+    "product_base": "124472b8949805e0dd36052df6894b335d8b519d",
+    "product_base_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+    "proposal_tree": "945cb8cf0b0448c361ecf79f0752c45fca213b7d",
+    "qualification_complete": false,
+    "reviewed_before_commit": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "reviewed_before_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+    "schema_version": 1,
+    "scope": {
+      "linux_declared_interpreters": "3.10\u20133.14",
+      "other_platforms": "Python 3.12",
+      "performance_qualification": false,
+      "timeout_policy": "Stop after a timed-out stage; preserve original output and direct-process cleanup status.",
+      "windows_descendant_retirement_proven": false
+    },
+    "source_files": [
+      {
+        "bytes": 3347,
+        "git_blob_sha": "7913ff8b3f4fbde4b307a44b41a0df59b11dbecb",
+        "path": ".github/workflows/mcp-risk-reuse.yml"
+      },
+      {
+        "bytes": 3388,
+        "git_blob_sha": "f74d629330f3e200b33a908579c3b84de7f0ddb6",
+        "path": "scripts/ci/mcp_risk_reuse_results.py"
+      },
+      {
+        "bytes": 3055,
+        "git_blob_sha": "ab514d060093a02b049058a1328e921247d3876b",
+        "path": "scripts/ci/mcp_risk_reuse_validation.json"
+      },
+      {
+        "bytes": 18281,
+        "git_blob_sha": "b4a09bb279906bfa7590ffba6894a7a66922dc20",
+        "path": "scripts/ci/validate_mcp_risk_reuse.py"
+      },
+      {
+        "bytes": 13278,
+        "git_blob_sha": "ec4d6bd1fdcef5b7e44de98d4f26d770db47e101",
+        "path": "src/codex_plugin_scanner/guard/mcp_approval_risk.py"
+      },
+      {
+        "bytes": 6153,
+        "git_blob_sha": "8ed8ff6c9a98e9f222e52205fab4f6d837da64fb",
+        "path": "src/codex_plugin_scanner/guard/mcp_request_risk.py"
+      },
+      {
+        "bytes": 20864,
+        "git_blob_sha": "f753f4f8f0e92b321884af90597e0f0736405821",
+        "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py"
+      },
+      {
+        "bytes": 2905,
+        "git_blob_sha": "776d873cbf0e6e1131ef26923ea953c38a1e3152",
+        "path": "src/codex_plugin_scanner/guard/mcp_risk_stdlib.py"
+      },
+      {
+        "bytes": 74693,
+        "git_blob_sha": "4adf61131ced5e9383b72066882262ddbaf831ee",
+        "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py"
+      },
+      {
+        "bytes": 201022,
+        "git_blob_sha": "b05f1ced27d0df64bc8bee43059db942f1baf43f",
+        "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+      },
+      {
+        "bytes": 17109,
+        "git_blob_sha": "f9ca4639edd285d02f8b134315d153a07aaa1a87",
+        "path": "tests/test_mcp_approval_risk_projection.py"
+      },
+      {
+        "bytes": 9047,
+        "git_blob_sha": "ece0adc89418195500511689f9c631e896297221",
+        "path": "tests/test_mcp_approval_risk_projection_guards.py"
+      },
+      {
+        "bytes": 1669,
+        "git_blob_sha": "c9cfc1bfbd895373d33857915dffb00c1958c4ad",
+        "path": "tests/test_mcp_invocation_risk_identity.py"
+      },
+      {
+        "bytes": 18776,
+        "git_blob_sha": "c97a605c75593f105c5d02a5c9d6fa5b6f097b62",
+        "path": "tests/test_mcp_invocation_risk_pair.py"
+      },
+      {
+        "bytes": 18666,
+        "git_blob_sha": "057d1b6c5b1d5c18f497597befd53782f5dc8793",
+        "path": "tests/test_mcp_request_risk_facts.py"
+      },
+      {
+        "bytes": 15742,
+        "git_blob_sha": "49b943dee36d27b991f26b8c839230790157691c",
+        "path": "tests/test_mcp_risk_dependencies.py"
+      },
+      {
+        "bytes": 7560,
+        "git_blob_sha": "bb81eea849eb85089faf67250db6219025b3103e",
+        "path": "tests/test_mcp_risk_prefilter.py"
+      },
+      {
+        "bytes": 7574,
+        "git_blob_sha": "e4a7e86c6a1a7cce44813414cf7459f960ef80a3",
+        "path": "tests/test_mcp_risk_stdlib.py"
+      }
+    ],
+    "source_peer_trees": [
+      "98c8661bac851348f634cf2515d6279cc32fbf7e",
+      "fe46d0112c97740d9278215ad3c5cf595c24f992",
+      "887d8518caf9b32d18ccde0aed304baf2d99d604",
+      "4a54c421a09edc82cc611077765ba85e1715682a",
+      "fa17f642791e7b81b20dd1b9af03b3d5519f01d6",
+      "428e8f020d6a2e26a7ac3f0e4d877be78aaf9d65",
+      "bae20aa75489e0d23f9a0594a179fc852a33e889",
+      "0eb712e3ef96897019ca602d2ef0b8cfd39dac98",
+      "e41295fa9fb3ae8a519f1796d88f007bfe324548",
+      "23d6bc5ec57a0c5b3a8e8fa7485eea2e93761b3b",
+      "4bdced32bb6d70b2f7cf30627ad559e3979879db",
+      "521468956e8ed70525402734d69d72a39d49bdee",
+      "efda3c7f6aa7f9ff67e110af80d67a71ce99ffff",
+      "093e8d0e2957b18cabed38b55b51b116df761e3c"
+    ],
+    "task_status": "OPEN",
+    "tests": [
+      "tests/test_mcp_risk_dependencies.py",
+      "tests/test_mcp_invocation_risk_pair.py",
+      "tests/test_mcp_request_risk_facts.py",
+      "tests/test_runtime_mcp_authority_callbacks.py",
+      "tests/test_runtime_mcp_tool_call_binding.py",
+      "tests/test_guard_browser_mcp_intent.py",
+      "tests/test_mcp_risk_prefilter.py",
+      "tests/test_mcp_package_drain_authority_review.py",
+      "tests/test_mcp_approval_risk_projection.py",
+      "tests/test_mcp_approval_risk_projection_guards.py",
+      "tests/test_mcp_invocation_risk_identity.py",
+      "tests/test_mcp_risk_stdlib.py"
+    ],
+    "unchanged_dependency_proof": "Complete tree comparison: only these five Rust deadline and two workspace poststart retirement paths differ from4d; all reviewed MCP beforeimages are unchanged."
+  },
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "platform_identity": {
+    "cell": "linux-x64",
+    "machine": "x86_64",
+    "python": "3.13",
+    "requested_python": "3.13",
+    "system": "Linux"
+  },
+  "python_driver": "3.13.15 (main, Sep  1 2026, 14:18:08) [Clang 22.1.3 ]",
+  "run_attempt": "1",
+  "run_id": "local-preflight-v3",
+  "source_blobs_match": true,
+  "source_changes": [
+    ".github/workflows/mcp-risk-reuse.yml",
+    "scripts/ci/mcp_risk_reuse_results.py",
+    "scripts/ci/mcp_risk_reuse_validation.json",
+    "scripts/ci/validate_mcp_risk_reuse.py",
+    "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+    "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+    "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+    "src/codex_plugin_scanner/guard/mcp_risk_stdlib.py",
+    "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+    "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+    "tests/test_mcp_approval_risk_projection.py",
+    "tests/test_mcp_approval_risk_projection_guards.py",
+    "tests/test_mcp_invocation_risk_identity.py",
+    "tests/test_mcp_invocation_risk_pair.py",
+    "tests/test_mcp_request_risk_facts.py",
+    "tests/test_mcp_risk_dependencies.py",
+    "tests/test_mcp_risk_prefilter.py",
+    "tests/test_mcp_risk_stdlib.py"
+  ],
+  "source_commit": "09057f18f074ceb1b7535b47293f5e5a9afbfd3d",
+  "source_files": [
+    {
+      "bytes": 3347,
+      "git_blob_sha": "7913ff8b3f4fbde4b307a44b41a0df59b11dbecb",
+      "path": ".github/workflows/mcp-risk-reuse.yml",
+      "sha256": "a2e44949afb5ebe2842cdf183713d13e2254c7a67654b5856bba68894abaf150"
+    },
+    {
+      "bytes": 3388,
+      "git_blob_sha": "f74d629330f3e200b33a908579c3b84de7f0ddb6",
+      "path": "scripts/ci/mcp_risk_reuse_results.py",
+      "sha256": "2cf1af982778e423d3ed29b5905d2d017b47d268e4ccf1ae60b714cdd07652b1"
+    },
+    {
+      "bytes": 3055,
+      "git_blob_sha": "ab514d060093a02b049058a1328e921247d3876b",
+      "path": "scripts/ci/mcp_risk_reuse_validation.json",
+      "sha256": "db86ac9bfb696d5ac226a7ff319c17b545cb2bd95552cdb2c23672e0a2fbbff7"
+    },
+    {
+      "bytes": 18281,
+      "git_blob_sha": "b4a09bb279906bfa7590ffba6894a7a66922dc20",
+      "path": "scripts/ci/validate_mcp_risk_reuse.py",
+      "sha256": "d2f3bb7d999e814297118816e90093f58c7d0f060428400676697858555918a8"
+    },
+    {
+      "bytes": 13278,
+      "git_blob_sha": "ec4d6bd1fdcef5b7e44de98d4f26d770db47e101",
+      "path": "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+      "sha256": "2e4069d3cf17dad484953b9c7f349f74f40dd60b897453dea1d0a81dbe9cc3c2"
+    },
+    {
+      "bytes": 6153,
+      "git_blob_sha": "8ed8ff6c9a98e9f222e52205fab4f6d837da64fb",
+      "path": "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+      "sha256": "5cd433e2ae7af30a2fc98f2887947a1283f162a2fbb58544d9fb389f8ef2d798"
+    },
+    {
+      "bytes": 20864,
+      "git_blob_sha": "f753f4f8f0e92b321884af90597e0f0736405821",
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+      "sha256": "a6d81e569e781db0cf2566d167405e491a89433cb69c5e57bb4c5702d360917a"
+    },
+    {
+      "bytes": 2905,
+      "git_blob_sha": "776d873cbf0e6e1131ef26923ea953c38a1e3152",
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_stdlib.py",
+      "sha256": "201b5a1678709e4245089860eb7dad362ecf1dd12bc0547caf96195887ec8c82"
+    },
+    {
+      "bytes": 74693,
+      "git_blob_sha": "4adf61131ced5e9383b72066882262ddbaf831ee",
+      "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+      "sha256": "a14073cceccd296e80d8ecf6ad4b68ac50562e4bae44ee22f9afc41a6dc31ce7"
+    },
+    {
+      "bytes": 201022,
+      "git_blob_sha": "b05f1ced27d0df64bc8bee43059db942f1baf43f",
+      "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+      "sha256": "eb03b4423ddfac5b0de122dffa1d1a15152becb44eae4eac2363c883b22b7289"
+    },
+    {
+      "bytes": 17109,
+      "git_blob_sha": "f9ca4639edd285d02f8b134315d153a07aaa1a87",
+      "path": "tests/test_mcp_approval_risk_projection.py",
+      "sha256": "5a936ac30209c548206738a856406c3c78d9b1c20d07eaf184e455cf94e978fc"
+    },
+    {
+      "bytes": 9047,
+      "git_blob_sha": "ece0adc89418195500511689f9c631e896297221",
+      "path": "tests/test_mcp_approval_risk_projection_guards.py",
+      "sha256": "1898bfcf2ca6f10dd9af348ae2a37700efcccb56becf815f3eb30a4c8985f7bc"
+    },
+    {
+      "bytes": 1669,
+      "git_blob_sha": "c9cfc1bfbd895373d33857915dffb00c1958c4ad",
+      "path": "tests/test_mcp_invocation_risk_identity.py",
+      "sha256": "266cd647faf75a564d712e79ea32192288968dc902826f51d1fbe3cf624833c2"
+    },
+    {
+      "bytes": 18776,
+      "git_blob_sha": "c97a605c75593f105c5d02a5c9d6fa5b6f097b62",
+      "path": "tests/test_mcp_invocation_risk_pair.py",
+      "sha256": "8154af1dd00b37adb3737c80a979f38784ffa859e86fdd04ded1e688b1321a3c"
+    },
+    {
+      "bytes": 18666,
+      "git_blob_sha": "057d1b6c5b1d5c18f497597befd53782f5dc8793",
+      "path": "tests/test_mcp_request_risk_facts.py",
+      "sha256": "7d0190c014e840d943d0e02cebbe32ccdba30cb95acfac678b4b2aa863b24d2f"
+    },
+    {
+      "bytes": 15742,
+      "git_blob_sha": "49b943dee36d27b991f26b8c839230790157691c",
+      "path": "tests/test_mcp_risk_dependencies.py",
+      "sha256": "8dfc10be5d548933ba6e36e6b3a55c5370c48f963ef377000adc51d94d0b16fc"
+    },
+    {
+      "bytes": 7560,
+      "git_blob_sha": "bb81eea849eb85089faf67250db6219025b3103e",
+      "path": "tests/test_mcp_risk_prefilter.py",
+      "sha256": "f10f900a581c0df5577b1b89995540234e14a079c3f24dca4a8a088dfa41a6f7"
+    },
+    {
+      "bytes": 7574,
+      "git_blob_sha": "e4a7e86c6a1a7cce44813414cf7459f960ef80a3",
+      "path": "tests/test_mcp_risk_stdlib.py",
+      "sha256": "ad9b62c374a1455eaea38fb7ebf528ed056c44ae1d05c4fdc66b9445df80aacc"
+    }
+  ],
+  "source_tree": "945cb8cf0b0448c361ecf79f0752c45fca213b7d",
+  "tracked_files_unchanged": true,
+  "verified": true,
+  "workflow_sha": "5c7bea089aa2949e7f9e92b1bdf3c2c05e205dbf"
+}

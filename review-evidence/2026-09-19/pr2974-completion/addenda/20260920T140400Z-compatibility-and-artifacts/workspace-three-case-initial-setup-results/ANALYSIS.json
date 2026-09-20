@@ -1,0 +1,174 @@
+{
+  "schema": "hol-guard.workspace-cause-terminal-analysis.v1",
+  "run_id": 35514266112,
+  "job_id": 106087427490,
+  "conclusion": "failure",
+  "source_sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "driver_sha": "09dfbafdc308c4194826c376a8092665ec9283ef",
+  "original_function_calls": 1,
+  "original_readiness_ms": 400,
+  "counts": [
+    100
+  ],
+  "controls": {
+    "collected": 29,
+    "passed": 29,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "types_errors": 0,
+    "types_warnings": 808
+  },
+  "original_cells": [
+    {
+      "scenario": "key_rotation",
+      "passed": false,
+      "failed_boundary": "initial setup await_ack before key mutation",
+      "original_failure_source_line": 73,
+      "lifecycle_clock_count": 0,
+      "observed_await_ms": [
+        174.889802,
+        575.045565
+      ],
+      "original_deadline_in_dispatch_origin_ms": 574.854339,
+      "observation_complete": true
+    },
+    {
+      "scenario": "first_admission_fault",
+      "passed": false,
+      "failed_boundary": "initial setup await_ack before fault/replacement",
+      "original_failure_source_line": 73,
+      "lifecycle_clock_count": 0,
+      "observed_await_ms": [
+        11.235459,
+        425.272706
+      ],
+      "original_deadline_in_dispatch_origin_ms": 411.208361,
+      "observation_complete": true
+    },
+    {
+      "scenario": "service_restart",
+      "passed": true,
+      "accept_to_ack_ms": 375.13010800000757,
+      "request_and_secondary_workspace_checks_passed": true,
+      "observation_complete": false,
+      "observed_missing_state_samples": [
+        {
+          "row": 275,
+          "stage": "publisher_start",
+          "side": "after"
+        },
+        {
+          "row": 279,
+          "stage": "wait_ready",
+          "side": "before"
+        }
+      ],
+      "observation_rows": 391,
+      "overflow": false,
+      "calls_in_flight": 0
+    }
+  ],
+  "interpretation": [
+    "The first two failures occur at initial setup, before the selected mutation/fault. They do not reproduce the prior post-acceptance key/fault failures.",
+    "The service_restart original verdict remains passed; the separate diagnostic admission remains failed because observation_lost is true. The 391 retained rows are partial evidence.",
+    "The two null samples correspond to nonblocking condition-lock acquisition refusal in the exact Capture._state source. This proves two skipped state samples; the aggregate flag does not prove these are the only possible loss events.",
+    "Observed ready state timestamps are intervals after reading state, not precise internal ACK-commit times. No exact transition instant or continuous readiness is inferred.",
+    "The subset is not the full15 lifecycle matrix and does not establish full qualification or uninstrumented performance."
+  ],
+  "key_setup_publication": {
+    "observed_publication_ms": [
+      175.134755,
+      948.272426
+    ],
+    "context_ms": [
+      175.147564,
+      250.934466
+    ],
+    "configuration_compile_ms": [
+      183.726592,
+      215.63721
+    ],
+    "command_authority_ms": [
+      215.668066,
+      250.915451
+    ],
+    "pre_fingerprint_return_ms": 254.011268,
+    "post_fingerprint_enter_ms": 925.584866,
+    "enclosing_publication_segment_ms": 671.573598,
+    "segment_scope": "Python snapshot generation/key/cache/durable materialization, encoding, persistent client admission/spawn/exchange, ACK decode, scheduling and instrumentation; native-only attribution unavailable",
+    "close_during_publication_ms": [
+      575.450737,
+      948.448765
+    ]
+  },
+  "first_admission_setup": {
+    "publication_ms": [
+      11.452699,
+      411.267187
+    ],
+    "ready_state_sample_ms": [
+      411.270396,
+      411.272271
+    ],
+    "preceding_resident_confirm_false_acked_sample_ms": [
+      411.199025,
+      411.19949
+    ],
+    "deadline_ms": 411.208361,
+    "interpretation": "The unobserved internal commit can lie on either side of the deadline; the late caller result still fails original readiness.",
+    "following_reconcile_ms": [
+      415.153761,
+      462.106998
+    ],
+    "changed_hint_count": 2,
+    "observed_acked_change": "true to false",
+    "precise_changed_paths_exported": false
+  },
+  "service_restart": {
+    "constructor_ms": [
+      1037.19904,
+      1401.007234
+    ],
+    "hook_worker_constructor_ms": [
+      1038.458161,
+      1365.73388
+    ],
+    "first_cold_publication_ms": [
+      1045.989668,
+      1290.052034
+    ],
+    "first_resident_confirmation": "None; native_policy_snapshot_resident_changed; no ACK admitted",
+    "second_publication_ms": [
+      1293.286714,
+      1365.338135
+    ],
+    "recovered_await_ms": [
+      1407.990191,
+      1415.206111
+    ],
+    "daemon_start_ms_in_separate_lifecycle_origin": [
+      1401.979993999987,
+      2994.8949500000026
+    ],
+    "origins_not_interchangeable": true,
+    "full_startup_is_not_ack_readiness": true
+  },
+  "provenance": {
+    "artifact_id": 10606616024,
+    "archive_bytes": 8759994,
+    "archive_sha256": "bcaa42a76c021fb09755a10718567f3fad3f71cc415f3ea6df0a176b08f14592",
+    "all_members_verified": 34,
+    "text_members_retained": 33,
+    "wheel_bytes_retained_here": false,
+    "reused_first_attempt_wheel_sha256": "bbe3d933bf255c0a1ee82c421468479647856b8c1726a86d2623fa3613222102",
+    "runtime_sha256": "418e381f74a3d84d4d1f0aa8148ff62aa048997fd72e1fe47faf912bbec00fe0",
+    "no_new_native_build": true,
+    "first_failed_attempt_packet": "7e2faadc3a3306d5f88ba89d33370fe5f8084c48",
+    "preparation_packet": "e7830f0132f511087b1304c9a9dce74d8d5a6575",
+    "publication_receipt": "3c39e4d3272bc0a5fb806bc8fc9325e154f84a2e",
+    "source_runtime_driver_preserved": true,
+    "archive_and_log_read_only": true,
+    "no_replayed_workload": true
+  }
+}

@@ -1,0 +1,22 @@
+--- a/.github/workflows/native-wheel-ci.yml
++++ b/.github/workflows/native-wheel-ci.yml
+@@ -430,10 +430,18 @@
+           path: |
+             native-dist/*.whl
+             native-default-auto.json
+-            windows-private-authority-controls.xml
+             native-installed-identity.json
+             native-installed-control-lock.json
+           if-no-files-found: error
++
++      - name: Retain Windows private authority control results
++        if: always()
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
++        with:
++          name: windows-private-authority-controls
++          path: windows-private-authority-controls.xml
++          if-no-files-found: warn
++          retention-days: 14
+ 
+       - name: Retain bounded default-auto failure evidence
+         if: always()

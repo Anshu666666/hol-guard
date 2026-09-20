@@ -1,0 +1,38 @@
+{
+  "schema": "pr2974.windows-native-error-contract-peer.v1",
+  "review_date": "2026-09-20",
+  "scope": "Read-only original requirement, current caller and native exception contract review; no execution or product change.",
+  "originals": {
+    "prd": "39d27bfa693117f8df3816d44b106921ca8efc94",
+    "todo": "6f464adb27477ebaaceaf7ecb25083d6cfe37d06"
+  },
+  "reviewed_test_successor": {
+    "packet": "c5ffc89c0f60f818d302fcda816d15341ab441e8",
+    "test": "1e57d50474ec6dbf9a3a5526bf8220bfd6fee4bc",
+    "prior_source_peer": "cf199b20446cc462d308a25d2961154e5a26c471"
+  },
+  "conclusions": [
+    "The original PRD/TODO do not specify equal WinError values across replacement APIs.",
+    "Current daemon manager callers do not inspect winerror. They propagate errors or catch OSError, sometimes with RuntimeError/ValueError.",
+    "Full result-dictionary equality, including WinError, was introduced by this new fixture. Its actual failed result must remain preserved.",
+    "Original MoveFileEx WinError5 versus candidate FileRenameInfoEx WinError32 is an observable API difference. Both observed errors are PermissionError with errno13; these actual observations are reported by the owner, not reexecuted by this peer.",
+    "Capture and retain each API's actual raw native error. Compare only justified semantic invariants; explicitly document the API difference. No error translation, retry, extra probe or product mutation is justified by the stronger fixture comparison.",
+    "The current helper captures GetLastError before formatting/cleanup, preserves source/destination filenames and raises the saved original failure after cleanup. Cleanup failure notes do not replace it."
+  ],
+  "recommended_test_scope": [
+    "Both actual APIs execute once in their declared arms.",
+    "Actual raw errors and their native API identities remain recorded separately.",
+    "Required class/errno, filesystem contents, audit event and path identity, single mutation attempt and cleanup invariants remain asserted.",
+    "Any exact-code expectations are API-specific observations, not cross-API equivalence."
+  ],
+  "limits": [
+    "No universal external-caller compatibility claim.",
+    "No new Windows execution, product promotion, or reinterpretation of failed runs as passes.",
+    "This review does not relax ownership, ACL, reparse, atomicity, audit, cleanup or no-retry requirements."
+  ],
+  "primary_sources": [
+    "https://docs.python.org/3.12/library/exceptions.html#OSError.winerror",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw"
+  ]
+}

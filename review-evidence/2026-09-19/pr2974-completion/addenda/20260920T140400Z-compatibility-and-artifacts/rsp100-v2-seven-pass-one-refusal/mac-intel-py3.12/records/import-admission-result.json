@@ -1,0 +1,26 @@
+{
+  "actual_process_returncode": 0,
+  "command": [
+    "/Users/runner/work/hol-guard/hol-guard/.venv/bin/python",
+    "-c",
+    "\nimport hashlib, importlib, json, os, sys\nfrom pathlib import Path\nvenv = Path(\".venv\").absolute()\nexecutable = venv / (\"Scripts/python.exe\" if os.name == \"nt\" else \"bin/python\")\nconfig_path = venv / \"pyvenv.cfg\"\nconfig_bytes = config_path.read_bytes() if config_path.is_file() else None\nenvironment = {\n    \"classification\": \"child_virtualenv_identity_before_product_import\",\n    \"python\": sys.version,\n    \"executable\": str(Path(sys.executable).absolute()),\n    \"executable_resolved\": str(Path(sys.executable).resolve()),\n    \"prefix\": str(Path(sys.prefix).absolute()),\n    \"base_prefix\": str(Path(sys.base_prefix).absolute()),\n    \"expected_executable\": str(executable),\n    \"expected_prefix\": str(venv),\n    \"expected_python\": os.environ[\"RSP100_PYTHON_VERSION\"],\n    \"pyvenv_config_path\": str(config_path),\n    \"pyvenv_config_bytes\": len(config_bytes) if config_bytes is not None else None,\n    \"pyvenv_config_sha256\": hashlib.sha256(config_bytes).hexdigest() if config_bytes is not None else None,\n}\nenvironment[\"verified\"] = (\n    environment[\"executable\"] == str(executable)\n    and environment[\"prefix\"] == str(venv)\n    and environment[\"prefix\"] != environment[\"base_prefix\"]\n    and config_bytes is not None\n)\nprint(json.dumps(environment, sort_keys=True, allow_nan=False), flush=True)\nif not environment[\"verified\"]:\n    raise SystemExit(1)\nexpected = [\n    [\n        \"codex_plugin_scanner.guard.mcp_approval_risk\",\n        \"src/codex_plugin_scanner/guard/mcp_approval_risk.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_request_risk\",\n        \"src/codex_plugin_scanner/guard/mcp_request_risk.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_risk_dependencies\",\n        \"src/codex_plugin_scanner/guard/mcp_risk_dependencies.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_risk_stdlib\",\n        \"src/codex_plugin_scanner/guard/mcp_risk_stdlib.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_tool_calls\",\n        \"src/codex_plugin_scanner/guard/mcp_tool_calls.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.proxy.runtime_mcp\",\n        \"src/codex_plugin_scanner/guard/proxy/runtime_mcp.py\"\n    ]\n]\nloaded = []\nfor name, path in expected:\n    module = importlib.import_module(name)\n    actual = Path(module.__file__).resolve()\n    wanted = Path(path).resolve()\n    loaded.append({\"module\": name, \"actual\": str(actual), \"expected\": str(wanted), \"matches\": actual == wanted})\nfrom codex_plugin_scanner.guard import mcp_tool_calls as calls\nfrom codex_plugin_scanner.guard.proxy import runtime_mcp\nreport = {\n    \"python\": sys.version,\n    \"environment\": environment,\n    \"modules\": loaded,\n    \"all_import_paths_match\": all(item[\"matches\"] for item in loaded),\n    \"available\": calls._RISK_PAIR_HELPERS.available,\n    \"refusal_reason\": calls._RISK_PAIR_HELPERS.refusal_reason,\n    \"binding_count\": len(calls._RISK_PAIR_HELPERS._bindings),\n    \"approval_defaults_available\": runtime_mcp._APPROVAL_RISK_DEFAULTS.available,\n}\nprint(json.dumps(report, sort_keys=True, allow_nan=False))\nraise SystemExit(0 if report[\"available\"] and report[\"approval_defaults_available\"]\n                 and report[\"all_import_paths_match\"]\n                 and sys.version_info[:2] == tuple(map(int, os.environ[\"RSP100_PYTHON_VERSION\"].split(\".\"))) else 1)\n"
+  ],
+  "configured_timeout_s": 180,
+  "containment_scope": "driver_process_group_only",
+  "direct_process_retired": true,
+  "effective_timeout_s": 180,
+  "elapsed_s": 5.205049,
+  "escaped_descendant_containment_proven": false,
+  "exit_code": 0,
+  "group_signal": null,
+  "name": "import-admission",
+  "process_group_retired": true,
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 3703,
+  "stdout_sha256": "5db8d097595ae7589255b244e84e3c92831ca3490c5c7e2b5eb7fd7774134be8",
+  "timed_out": false,
+  "validation_budget_exhausted": false,
+  "windows_descendant_retirement_proven": null,
+  "windows_taskkill_attempt": null
+}

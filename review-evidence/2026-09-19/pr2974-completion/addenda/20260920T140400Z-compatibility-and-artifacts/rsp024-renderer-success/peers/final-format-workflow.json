@@ -1,0 +1,58 @@
+{
+  "schema": "pr2974-rsp024-final-format-and-env-peer.v1",
+  "verdict": "clear",
+  "scope": "Final formatting readback and narrow workflow-only expression-scope correction. Earlier source gates are not re-executed.",
+  "prior_operational_peer_tree": "fbfe512e1c87c9dfb466bbb488c00eeec1fd7e0b",
+  "source": {
+    "commit": "e32312ef43e1b4680361a133cb24eb0fd29efe72",
+    "tree": "bf17840af5147dfc96eef5d68911e7b80330332e",
+    "sole_parent": "124472b8949805e0dd36052df6894b335d8b519d"
+  },
+  "formatter": {
+    "packet": "1adc80120910fd1fb8fee66aae838ba91d27b0df",
+    "result_blob": "4b74183a7f6dc55c9e3f6413137a599db5c6e577",
+    "helper": {
+      "bytes": 16431,
+      "sha256": "5dd9ad851da9913c71d97a02f33d5a6f95ea606ff05d615ee9a69f9c2bb3cd2b",
+      "git_blob": "30cebd673e5a3687d264588e418f4a6d07c7d69b"
+    },
+    "owner_ast_equal": true,
+    "owner_ruff_format_lint_zero": true,
+    "review": "Only statement/argument wrapping and raw JSON literal quote normalization; embedded JSON bytes, evaluation order, commands and result gates preserved."
+  },
+  "original_driver": {
+    "commit": "b08f2b6bc345272b80e205e894a71f2f7c9380aa",
+    "tree": "e4de6ed44d38c013ace12e01631857a4fcf5691e",
+    "sole_parent": "e32312ef43e1b4680361a133cb24eb0fd29efe72",
+    "workflow_blob": "d7d2dc6d0f71a0b685f7011bfe0904e621e9f79e"
+  },
+  "first_attempt": {
+    "run_id": 35509120152,
+    "reported_jobs": 0,
+    "status": "failed before job creation",
+    "exact_annotation_unavailable": true,
+    "source_supported_defect": "runner.temp was used in job-level env, outside that expression context.",
+    "earlier_operational_peer_missed_context": true
+  },
+  "corrected_workflow": {
+    "bytes": 1701,
+    "sha256": "3c8df19a3ab790181265ceab03eeb492e7f44652e8a160620f1f8ff08b819a6f",
+    "git_blob": "156c9cf2fd8b287256b60354ee70a17f63071e3f",
+    "prepared_tree": "c3daedfe613c1b5863353aa08efe0fac938d230d",
+    "exact_reversal": true,
+    "changes": [
+      "unique branch v1 to v2",
+      "remove invalid job-level RSP024_EVIDENCE_DIR expression",
+      "first shell step writes RSP024_EVIDENCE_DIR=$RUNNER_TEMP/rsp024-evidence to GITHUB_ENV after allocation"
+    ]
+  },
+  "preserved": [
+    "same source and helper bytes",
+    "same RUNNER_TEMP evidence directory",
+    "same 46 mandatory renderer cases and five existing cohorts",
+    "same actual venv checks, fixed commands and timeout/failure gates",
+    "same full original logs/JUnit and always-upload",
+    "no native build or qualification claim"
+  ],
+  "execution_by_peer": false
+}

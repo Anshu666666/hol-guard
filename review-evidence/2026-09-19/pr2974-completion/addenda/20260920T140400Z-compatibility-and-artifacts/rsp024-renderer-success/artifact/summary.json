@@ -1,0 +1,153 @@
+{
+  "junit": {
+    "bytes": 18737,
+    "cohorts": {
+      "test_guard_native_qualification_corpus": 25,
+      "test_hook_availability_policy": 27,
+      "test_hook_worker_native_post_tool_watch": 9,
+      "test_native_route_receipt": 3,
+      "test_native_runtime_delivery_contract": 46,
+      "test_rust_hardening_contracts": 8
+    },
+    "failures": [],
+    "renderer_all46_passed": true,
+    "renderer_case_counts": {
+      "test_cursor_unavailable_and_malformed_input_keep_distinct_contracts": 2,
+      "test_integrity_rejection_still_denies_in_both_postures": 12,
+      "test_permission_availability_does_not_invent_an_approval": 4,
+      "test_posttool_unavailability_and_completed_block_are_different": 3,
+      "test_unavailability_warns_without_creating_native_success": 24,
+      "test_watch_copy_does_not_rewrite_the_native_block": 1
+    },
+    "sha256": "9cb2375767b49e0e497d2676f34d0130d60ec438c05ed143b64a0634517bb252",
+    "skipped": [],
+    "total": 118,
+    "verified": true
+  },
+  "native_execution_qualified": false,
+  "passed": true,
+  "rsp024_complete": false,
+  "runtime_behavior_changed": false,
+  "stages": [
+    {
+      "actual_process_returncode": 0,
+      "command": [
+        "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+        "/home/runner/work/hol-guard/hol-guard/scripts/ci/validate_pr2974_rsp024_delivery.py",
+        "--environment-only"
+      ],
+      "containment_scope": "owned_process_group_only",
+      "direct_process_retired": true,
+      "elapsed_s": 2.0168823959999997,
+      "escaped_descendants_proven_retired": false,
+      "exit_code": 0,
+      "process_group_retired": true,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 2519,
+      "stdout_sha256": "c329360414c857bae9174e767c2084651a2a675af99e4fbb6a938500381fd134",
+      "timed_out": false,
+      "timeout_s": 90
+    },
+    {
+      "actual_process_returncode": 0,
+      "command": [
+        "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_native_runtime_delivery_contract.py",
+        "tests/test_rust_hardening_contracts.py",
+        "tests/test_hook_availability_policy.py",
+        "tests/test_hook_worker_native_post_tool_watch.py",
+        "tests/test_native_route_receipt.py",
+        "tests/test_guard_native_qualification_corpus.py",
+        "-q",
+        "--tb=short",
+        "--junitxml",
+        "/home/runner/work/_temp/rsp024-evidence/pytest.xml"
+      ],
+      "containment_scope": "owned_process_group_only",
+      "direct_process_retired": true,
+      "elapsed_s": 6.035625759999995,
+      "escaped_descendants_proven_retired": false,
+      "exit_code": 0,
+      "process_group_retired": true,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 180,
+      "stdout_sha256": "d90207780e6b251954f0978b98cc2b956bcdbba2d3869aa14b67a5bf28ef1f84",
+      "timed_out": false,
+      "timeout_s": 600
+    },
+    {
+      "actual_process_returncode": 0,
+      "command": [
+        "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "tests/test_native_runtime_delivery_contract.py",
+        "tests/test_rust_hardening_contracts.py",
+        "scripts/ci/validate_pr2974_rsp024_delivery.py"
+      ],
+      "containment_scope": "owned_process_group_only",
+      "direct_process_retired": true,
+      "elapsed_s": 0.029547065000002704,
+      "escaped_descendants_proven_retired": false,
+      "exit_code": 0,
+      "process_group_retired": true,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 19,
+      "stdout_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "timed_out": false,
+      "timeout_s": 180
+    },
+    {
+      "actual_process_returncode": 0,
+      "command": [
+        "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "tests/test_native_runtime_delivery_contract.py",
+        "tests/test_rust_hardening_contracts.py",
+        "scripts/ci/validate_pr2974_rsp024_delivery.py"
+      ],
+      "containment_scope": "owned_process_group_only",
+      "direct_process_retired": true,
+      "elapsed_s": 0.026786633000000393,
+      "escaped_descendants_proven_retired": false,
+      "exit_code": 0,
+      "process_group_retired": true,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 26,
+      "stdout_sha256": "eee76f865de5a9f2456950f710ae5d5f9b5bd0ea02aa54f614c5eed6642a0bfd",
+      "timed_out": false,
+      "timeout_s": 180
+    },
+    {
+      "actual_process_returncode": 0,
+      "command": [
+        "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+        "-m",
+        "basedpyright",
+        "tests/test_native_runtime_delivery_contract.py"
+      ],
+      "containment_scope": "owned_process_group_only",
+      "direct_process_retired": true,
+      "elapsed_s": 0.7238359360000004,
+      "escaped_descendants_proven_retired": false,
+      "exit_code": 0,
+      "process_group_retired": true,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 14607,
+      "stdout_sha256": "6ab84019286caad2b5a69f5a70a18e76f3847b9853a3cc93fd19aa2c9054f18b",
+      "timed_out": false,
+      "timeout_s": 180
+    }
+  ]
+}

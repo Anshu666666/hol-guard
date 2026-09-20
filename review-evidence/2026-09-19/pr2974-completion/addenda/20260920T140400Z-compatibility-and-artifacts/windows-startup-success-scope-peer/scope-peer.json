@@ -1,0 +1,56 @@
+{
+  "schema": "pr2974.windows-startup-v3-terminal-scope-peer.v1",
+  "reviewed_packet_tree": "60d46a939c5319acfed103cdaee43b0cdc570612",
+  "reviewed_blobs": [
+    {
+      "path": "AUDIT.md",
+      "git_blob": "89afee8340dfef89f1a221dc3ffd3f23209fc782",
+      "bytes": 3154
+    },
+    {
+      "path": "VERIFIED-RESULT.json",
+      "git_blob": "8aaab81ee32e7d7a98635593c8759780629b3241",
+      "bytes": 8011
+    },
+    {
+      "path": "original/binding-comparison.json",
+      "git_blob": "3ad6a9ba0d1c94ae07df482e0ed14592121fb80f",
+      "bytes": 521
+    },
+    {
+      "path": "original/original-capture.json",
+      "git_blob": "a5a5629e4709c659b56417ab0cc3a17448544e57",
+      "bytes": 4469
+    },
+    {
+      "path": "original/original-selector-gate.json",
+      "git_blob": "5156aebb8d371d3c0daa8f9d40283b589bb62ada",
+      "bytes": 4514
+    },
+    {
+      "path": "original/original-selector.xml",
+      "git_blob": "6c174236d1e477e88fabcd5600754da027c48581",
+      "bytes": 414
+    },
+    {
+      "path": "original/rust-control-gate.json",
+      "git_blob": "7262bc6f782769dc7aa987a76baf66ba94b6bb57",
+      "bytes": 3006
+    }
+  ],
+  "verdict": "clear within bounded terminal interpretation review",
+  "independent_read_findings": [
+    "Original capture records exactly one matching 52-byte call; returned stdout is the expected 58-byte nonretryable native_request_invalid_json response, with code0; JUnit records the same sole selector passing without failure/error/skip.",
+    "Original stop is observed once with code0 and empty output; this is not a complete-descendant census or child observation.",
+    "Parent observation has original750000us budget, elapsed292295us, remaining457704us, no loss/overflow and all recorded retry counters zero. Repeated phase first/last timestamps are not individual call durations.",
+    "Reviewed Rust gate explicitly joins collected and passed3default/9diagnostic names. The59 Python result count and full archive/member checks remain owner verification; this bounded peer did not independently recount all raw control/JUnit rows or redownload archive.",
+    "Source/driver/dependency comparison record says unchanged. Published source is the prior reviewed diagnostic-only child of4afa, not a repaired product authority claim.",
+    "AUDIT and result retain both prior setup failures and explicitly deny historical timeout reproduction, resolved cause, default-artifact timing, child observation, full cleanup and qualification."
+  ],
+  "scope_limits": {
+    "native_execution_by_peer": false,
+    "archive_redownload_by_peer": false,
+    "complete_raw_row_reconciliation_by_peer": false,
+    "new_cause_or_repair_proven": false
+  }
+}

@@ -1,0 +1,74 @@
+diff --git a/.github/workflows/native-wheel-ci.yml b/.github/workflows/native-wheel-ci.yml
+index cae400e..4232b76 100644
+--- a/.github/workflows/native-wheel-ci.yml
++++ b/.github/workflows/native-wheel-ci.yml
+@@ -18,6 +18,8 @@ jobs:
+   linux-x64:
+     runs-on: ubuntu-latest
+     timeout-minutes: 45
++    outputs:
++      rule_digest: ${{ steps.native-wheel.outputs.rule_digest }}
+     steps:
+       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+         with:
+@@ -62,12 +64,14 @@ jobs:
+           fi
+           "$runtime" self-test --json
+       - name: Assemble and install native wheel
++        id: native-wheel
+         env:
+           SOURCE_SHA: ${{ github.sha }}
+         run: |
+           VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+           runtime="rust/target/x86_64-unknown-linux-musl/release/hol-guard-runtime"
+           RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
++          printf 'rule_digest=%s\n' "$RULE_DIGEST" >> "$GITHUB_OUTPUT"
+           uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
+             --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \
+             --runtime "$runtime" \
+@@ -426,3 +430,45 @@ jobs:
+           path: native-default-auto-failure.json
+           if-no-files-found: warn
+           retention-days: 14
++
++  native-artifact-matrix:
++    needs: [linux-x64, macos, windows-x64]
++    runs-on: ubuntu-latest
++    timeout-minutes: 10
++    steps:
++      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
++        with:
++          persist-credentials: false
++      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
++        with:
++          python-version: "3.12"
++      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
++        with:
++          version: "0.9.26"
++          enable-cache: true
++      - run: uv sync --frozen --extra dev --python 3.12
++      - name: Verify native artifact collection contracts
++        run: uv run --no-sync python -m pytest tests/test_aggregate_native_wheel_artifacts.py tests/test_validate_release_artifacts.py --tb=short
++      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
++        with:
++          pattern: hol-guard-native-wheel-*
++          path: native-matrix-input
++          merge-multiple: false
++      - name: Admit all four native targets without a Windows waiver
++        env:
++          SOURCE_SHA: ${{ github.sha }}
++          RULE_DIGEST: ${{ needs.linux-x64.outputs.rule_digest }}
++        run: |
++          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
++          uv run --no-sync python -m scripts.ci.aggregate_native_wheel_artifacts \
++            --artifacts-dir native-matrix-input \
++            --version "$VERSION" \
++            --source-sha "$SOURCE_SHA" \
++            --rule-digest "$RULE_DIGEST" \
++            --output native-matrix-evidence.json
++      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
++        if: always()
++        with:
++          name: native-wheel-matrix-admission
++          path: native-matrix-evidence.json
++          if-no-files-found: error

@@ -1,0 +1,77 @@
+{
+  "schema": "pr2974-native-matrix-admission-source-operational-peer.v1",
+  "decision": "clear",
+  "reviewed_tree": "286caf93fa0473dc66688ee49ec24b8927430904",
+  "base_source": "124472b8949805e0dd36052df6894b335d8b519d",
+  "candidate_tree": "aa6c42cfe17b8ed229c5e6200287de7044fad6bd",
+  "files": [
+    {
+      "path": "MANIFEST.json",
+      "bytes": 2278,
+      "sha256": "dd8fe814d0cc7eb9f35d11df62786bbafa42bbc0a3908c9c4f5695558c893697",
+      "git_blob": "44bd730654d62995b2933df8f900aa487311ddd5"
+    },
+    {
+      "path": "PLAN.json",
+      "bytes": 1069,
+      "sha256": "2e9123c6558fba4755a523bf3ca255d54cfed31ec8b214b3a2bf86b4deb58369",
+      "git_blob": "601e323efd0f13d470d1ae8a0805f6eeb417193d"
+    },
+    {
+      "path": "validate_existing_artifacts.py",
+      "bytes": 7692,
+      "sha256": "54ac36d3f23c9d9dfe2f07f291582eb6b1d269d80382b1973dd4e096dc9bfb0c",
+      "git_blob": "f057af6a9b9fe9d248bdeb7339005bbd918df9c6"
+    },
+    {
+      "path": "input-contract.json",
+      "bytes": 9515,
+      "sha256": "2a485b0fd59d4684cf4b430eb4cb72da0ccaddacf86734e47c5c34b8c9dea3b8",
+      "git_blob": "902fdbb3f53de9b853c2c3dc7baf595310185217"
+    },
+    {
+      "path": "source/scripts/ci/aggregate_native_wheel_artifacts.py",
+      "bytes": 6313,
+      "sha256": "641aad968a4dca9591bdb5ab0b0f87ce3cda141a686e0185bfb7905d58f773f5",
+      "git_blob": "be4b110bb5511a5da8ac3ca65c5d4ca93289177c"
+    },
+    {
+      "path": "source/tests/test_aggregate_native_wheel_artifacts.py",
+      "bytes": 5979,
+      "sha256": "fd6ebcd1190bc35740e42e6d10a51b1b00d67be06c3f94cd4562e868cda45ada",
+      "git_blob": "4c94dee142b44aafaa74a5f78e412275793bcb40"
+    },
+    {
+      "path": "combined-native-wheel-ci.yml",
+      "bytes": 26446,
+      "sha256": "d6a2896771a7c0777a853a8ace9636178289990d802239a911642785a3d6aae2",
+      "git_blob": "613f960b943be4d54776d46be14ab31918f9e69e"
+    },
+    {
+      "path": "additive-workflow.patch",
+      "bytes": 3261,
+      "sha256": "90f2031cbb0d08a03aced4ff3b1dfc9dddf06b01ad3f1019a64b8dd3f16bb035",
+      "git_blob": "e69e26be7a12ed2ca3be7044999f940d498c1c9a"
+    }
+  ],
+  "source_review": [
+    "Exactly four named matrix artifact directories are required; wheel membership is closed per platform, Windows included. Symlink/nonregular and out-of-bound top-level wheel/file entries are rejected.",
+    "All three pure-wheel copies must compare byte-for-byte before any shared staging. Each selected wheel's collected digest must match the staged copy, with a second source/copy comparison. The copy-boundary mutation regression exercises this behavior.",
+    "The existing validate_wheel_set is called for the full EXPECTED_PLATFORMS set with no Windows waiver. Its existing canonical package version, native source/rule/runtime manifest and archive checks remain intact.",
+    "The additive normal workflow retains all existing build/install/probe steps. It exposes only the Linux runtime rule digest and adds a dependent collector job, preserves artifact subdirectories with merge-multiple false, and supplies current github.sha/canonical version/digest.",
+    "The combined workflow preserves the separately owned Windows additions before applying this collector delta. No signing/publish/registered-launch path or workload threshold is changed."
+  ],
+  "offline_driver_review": [
+    "The fixed input contract binds four existing original archives from run35505324310/build50b39d7e7a4722c2773d94da0ea4c2482f055ef5, distinct from source124472 and the new collector tree.",
+    "Read-only source/base/diff scope checks precede the operation. Archive SHA/size, closed member names/counts and every streamed member SHA/size are verified before the helper is invoked once.",
+    "The original archive bodies are extracted into a fresh owned temporary tree. Output directory creation is exclusive. No wheel is installed and no bundled native program or workload is executed.",
+    "The helper is invoked by its module path from the selected source directory with original build source/rule/version expectations. Success requires four validated native platforms plus one pure wheel, seven collection rows and two identical duplicates; source hashes are rechecked afterward.",
+    "Original failures and timeout output are retained as failure records. A subprocess timeout is direct-child handling, not proof of arbitrary descendant retirement; this data-only helper is not a descendant-creating native workload."
+  ],
+  "limits": [
+    "No original archive admission or hosted workflow action was executed by this peer. The owner's21 controls/type results are retained separately and not recounted here.",
+    "This is offline artifact identity admission. Existing validator semantics do not independently establish full Python content equivalence, signing/freezing, installed rollout/rollback, performance or final distribution acceptance.",
+    "The isolated local original-archive admission cannot claim that the new GitHub download-artifact job has executed. Its exact workflow behavior remains for later normal CI."
+  ],
+  "blocking_findings": []
+}

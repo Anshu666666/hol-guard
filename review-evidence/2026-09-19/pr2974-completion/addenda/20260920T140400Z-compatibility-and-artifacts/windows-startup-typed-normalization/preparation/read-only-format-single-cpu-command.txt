@@ -1,0 +1,27 @@
+python3 - <<'PY_STARTUP_FORMAT_CHECK'
+import hashlib,json,os,pathlib,resource,signal,subprocess,time
+root=pathlib.Path('/workspace/scratch/745337b67ff9/windows-startup-driver-types-v2-primary')
+ruff='/workspace/scratch/745337b67ff9/windows-product-124472-format/tools/bin/ruff'
+paths=['startup-diagnostic/observe_startup.py','startup-diagnostic/retain_results.py']
+def dig(b):return {'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
+available_cpus=sorted(os.sched_getaffinity(0)); selected_cpu=available_cpus[0]
+def limits():
+ os.sched_setaffinity(0,{selected_cpu})
+ resource.setrlimit(resource.RLIMIT_AS,(128*1024*1024,128*1024*1024));resource.setrlimit(resource.RLIMIT_CPU,(25,25));resource.setrlimit(resource.RLIMIT_FSIZE,(1024*1024,1024*1024))
+before={p:dig((root/'after'/p).read_bytes()) for p in paths}
+argv=[ruff,'format','--check',*paths]
+start=time.monotonic();timeout=False
+p=subprocess.Popen(argv,cwd=root/'after',stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True,preexec_fn=limits)
+try: out,err=p.communicate(timeout=30)
+except subprocess.TimeoutExpired:
+ timeout=True
+ try: os.killpg(p.pid,signal.SIGKILL)
+ except ProcessLookupError: pass
+ out,err=p.communicate(timeout=5)
+(root/'records/format-check-single-cpu.stdout').write_bytes(out);(root/'records/format-check-single-cpu.stderr').write_bytes(err)
+after={q:dig((root/'after'/q).read_bytes()) for q in paths}
+r={'schema':'pr2974-startup-readonly-format-single-cpu.v1','formatter_cpu_affinity':[selected_cpu],'parent_cpu_count':len(available_cpus),'argv':argv,'returncode':p.returncode,'timed_out':timeout,'elapsed_seconds':time.monotonic()-start,'stdout':dig(out),'stderr':dig(err),'before':before,'after':after,'source_unchanged':before==after,'prior_format_check_timeout_and_allocation_failure_preserved':True,'type_tests_native_or_original_selector_executed':False}
+(root/'format-check-single-cpu.json').write_text(json.dumps(r,indent=2,sort_keys=True)+'\n')
+print(json.dumps(r))
+raise SystemExit(0 if p.returncode==0 and not timeout and before==after else 1)
+PY_STARTUP_FORMAT_CHECK

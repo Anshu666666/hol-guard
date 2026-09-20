@@ -1,0 +1,97 @@
+..s...s...s............................................................. [ 47%]
+...................................................................F.... [ 95%]
+.......                                                                  [100%]
+================================== FAILURES ===================================
+__ test_actual_writer_matches_original_destination_outcomes[crt_destination] __
+
+tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_actual_writer_matches_ori2')
+record_property = <function record_property.<locals>.append_property at 0x0000022A1513CAE0>
+probe_child = None, case = 'crt_destination'
+
+    @pytest.mark.parametrize(
+        "case", ["unheld", "missing", "crt_destination", "readonly_destination", "directory_destination"]
+    )
+    def test_actual_writer_matches_original_destination_outcomes(tmp_path, record_property, probe_child, case):
+        results = []
+        for candidate in (False, True):
+            home = tmp_path / ("candidate" if candidate else "original")
+            manager._ensure_private_directory(home)
+            target = home / "daemon-auth-token"
+            if case == "directory_destination":
+                target.mkdir()
+            elif case != "missing":
+                manager._write_private_atomic_text(target, original._OLD)
+            held = None
+            if case == "crt_destination":
+                held = os.open(target, os.O_RDONLY)
+            if case == "readonly_destination":
+                target.chmod(stat.S_IREAD)
+            label = "candidate" if candidate else "original"
+            try:
+                extra = [] if candidate else ["--original-writer"]
+                code, report = original._run_child(
+                    target, "--operation", "writer", *extra, record_property=record_property, label=label
+                )
+                assert isinstance(report, dict)
+                record_property(f"{label}_writer_report", json.dumps(report, sort_keys=True))
+                record_property(f"{label}_writer_exit_code", code)
+                assert report["writer_calls"] == report["replace_calls"] == 1
+                assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+                assert report["temporary_siblings_removed"]
+                assert report["original_exception_identity_preserved"]
+                assert report["reference_writer"] is not candidate
+                native = report["probe"]
+                assert native["writer_snapshot_taken"] is candidate
+                assert native["owned_handles_remaining"] == 0
+                assert native["volume_queries"] == int(candidate)
+                assert native["opens"] == native["closes"] == (2 if candidate else 0)
+                assert native["rename_calls"] == int(candidate)
+                if candidate:
+                    assert native["volume_query_succeeded"] is True and native["volume_flags"] & 0x400
+                if case in ("unheld", "missing"):
+                    assert code == 0
+                    assert report["replace_returned"] and native["rename_returned"] is candidate
+                    assert report["error"] is None
+                    assert target.read_text(encoding="utf-8") == original._NEW
+                else:
+                    assert code == 1
+                    assert report["replace_returned"] is native["rename_returned"] is False
+>                   assert report["error"] == {
+                        "kind": "PermissionError",
+                        "errno": 13,
+                        "winerror": 32 if case == "crt_destination" else 5,
+                    }
+E                   AssertionError: assert {'errno': 13,...'winerror': 5} == {'errno': 13,...winerror': 32}
+E                     
+E                     Omitting 2 identical items, use -vv to show
+E                     Differing items:
+E                     {'winerror': 5} != {'winerror': 32}
+E                     
+E                     Full diff:
+E                       {
+E                           'errno': 13,
+E                           'kind': 'PermissionError',
+E                     -     'winerror': 32,
+E                     ?                 ^^
+E                     +     'winerror': 5,
+E                     ?                 ^
+E                       }
+
+tests\test_windows_atomic_replace_process.py:155: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[crt_destination] - AssertionError: assert {'errno': 13,...'winerror': 5} == {'errno': 13,...winerror': 32}
+  
+  Omitting 2 identical items, use -vv to show
+  Differing items:
+  {'winerror': 5} != {'winerror': 32}
+  
+  Full diff:
+    {
+        'errno': 13,
+        'kind': 'PermissionError',
+  -     'winerror': 32,
+  ?                 ^^
+  +     'winerror': 5,
+  ?                 ^
+    }
+1 failed, 147 passed, 3 skipped in 16.99s

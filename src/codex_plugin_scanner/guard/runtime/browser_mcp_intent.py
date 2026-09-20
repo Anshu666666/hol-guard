@@ -22,6 +22,7 @@ from typing import Literal
 from urllib.parse import urlparse, urlunparse
 
 from ..models import GuardArtifact
+from ..mcp_risk_pair_regex import observed_risk_regex_value, unsupported_risk_regex_route
 
 BrowserIntent = Literal[
     "browser.navigation",
@@ -444,7 +445,7 @@ def is_browser_mcp_server(artifact: GuardArtifact) -> bool:
 
     # Check server name patterns
     for pattern in _BROWSER_SERVER_NAME_PATTERNS:
-        if re.search(pattern, combined, re.IGNORECASE):
+        if re.search(pattern, observed_risk_regex_value("search", re, pattern, combined, flags=re.IGNORECASE), re.IGNORECASE):
             return True
 
     # Check package name from server identity metadata
@@ -452,7 +453,7 @@ def is_browser_mcp_server(artifact: GuardArtifact) -> bool:
     if isinstance(server_identity, Mapping):
         package_name = str(server_identity.get("package_name", "")).lower()
         for pattern in _BROWSER_PACKAGE_PATTERNS:
-            if re.search(pattern, package_name, re.IGNORECASE):
+            if re.search(pattern, observed_risk_regex_value("search", re, pattern, package_name, flags=re.IGNORECASE), re.IGNORECASE):
                 return True
 
     # Check tool identity metadata for browser hints
@@ -479,6 +480,7 @@ def normalize_browser_mcp_intent(
     """
     if not is_browser_mcp_server(artifact):
         return None
+    unsupported_risk_regex_route()
 
     server_name = str(artifact.metadata.get("server_name", ""))
     operation = _extract_tool_operation(artifact)

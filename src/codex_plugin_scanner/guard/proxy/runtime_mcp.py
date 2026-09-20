@@ -54,6 +54,9 @@ from ..mcp_authority_binding import (
     proxy_authority_scope,
     use_mcp_authority_check,
 )
+from ..mcp_risk_pair import arm_risk_pair_policy, use_risk_pair
+from ..mcp_risk_pair_regex import use_risk_regex_witness
+from ..mcp_risk_pair_profile import initialize_risk_pair_profile
 from ..mcp_tool_calls import (
     ApprovalReuseClaimDisposition,
     ToolCallDecision,
@@ -68,6 +71,7 @@ from ..mcp_tool_calls import (
     tool_call_risk_categories,
     tool_call_risk_summary,
 )
+from ..mcp_risk_pair_admission import make_risk_pair_admission
 from ..models import GuardAction, GuardArtifact, HarnessDetection
 from ..package_execution_context import build_package_execution_context
 from ..policy.engine import build_decision_v2
@@ -1342,31 +1346,39 @@ class RuntimeMcpGuardProxy:
     def _evaluate_tool_call_authority(
         self, *, artifact: GuardArtifact, arguments: object, config: GuardConfig
     ) -> tuple[GuardArtifact, str, ToolCallDecision]:
-        """Retain the measured Python default; optional pilots override privately."""
+        """Reuse facts only within an admitted, unchanged private consumer pair."""
 
         self._check_tool_call_preparation()
         check_current_mcp_authority()
-        artifact_hash = build_tool_call_hash(
-            artifact,
-            arguments,
-            workspace=self.context.workspace_dir or Path.cwd(),
-            config=config,
-        )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        decision = self._disable_saved_allow_without_complete_catalog(
-            evaluate_tool_call(
-                store=self.store,
+        admission = make_risk_pair_admission(self, artifact, arguments, config)
+        with use_risk_pair(
+            admission, artifact, arguments,
+            on_retire=None if admission is None else admission.regex.retire,
+        ), use_risk_regex_witness(
+            None if admission is None else admission.regex
+        ):
+            artifact_hash = build_tool_call_hash(
+                artifact,
+                arguments,
+                workspace=self.context.workspace_dir or Path.cwd(),
                 config=config,
-                artifact=artifact,
-                artifact_hash=artifact_hash,
-                arguments=arguments,
-                claim_saved_approval=False,
             )
-        )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        return artifact, artifact_hash, decision
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            arm_risk_pair_policy()
+            decision = self._disable_saved_allow_without_complete_catalog(
+                evaluate_tool_call(
+                    store=self.store,
+                    config=config,
+                    artifact=artifact,
+                    artifact_hash=artifact_hash,
+                    arguments=arguments,
+                    claim_saved_approval=False,
+                )
+            )
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            return artifact, artifact_hash, decision
 
     def _handle_message(
         self,
@@ -4493,3 +4505,7 @@ __all__ = [
     "OpenCodeMcpGuardProxy",
     "RuntimeMcpGuardProxy",
 ]
+
+
+# Resolve the fixed source graph after every runtime import and class is ready.
+initialize_risk_pair_profile()

@@ -7,7 +7,6 @@ import math
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, fields, replace
-from functools import lru_cache
 from hashlib import sha256
 from ipaddress import ip_address
 from pathlib import Path, PurePath
@@ -19,6 +18,9 @@ from .collections_support import dedupe_preserving_order
 from .config import DEFAULT_SECURITY_LEVEL, GuardConfig, resolve_risk_action
 from .local_cli_trust import apply_local_mcp_extension_decision
 from .mcp_authority_binding import AuthorityCheck, check_current_mcp_authority, use_mcp_authority_check
+from .mcp_literal_pattern_cache import string_literal_lru
+from .mcp_risk_pair import categories_for_current_policy, categories_for_hash, risk_pair_policy_scope
+from .mcp_risk_pair_regex import observed_risk_regex_value
 from .models import GuardAction, GuardArtifact, GuardReceipt, PolicyDecision
 from .receipts import build_receipt
 from .runtime.approval_context import (
@@ -507,7 +509,9 @@ def _build_tool_call_hash_for_categories(
         content=content_hash,
         capabilities={
             "risk_categories": list(
-                risk_categories if risk_categories is not None else tool_call_risk_categories(artifact, arguments)
+                risk_categories
+                if risk_categories is not None
+                else categories_for_hash(artifact, arguments, lambda: tool_call_risk_categories(artifact, arguments))
             ),
             "server_identity": artifact.metadata.get("mcp_server_identity"),
             "tool_catalog_fingerprint": tool_catalog_fingerprint,
@@ -967,28 +971,31 @@ def _evaluate_current_tool_call(
 ) -> ToolCallDecision:
     """Evaluate current configuration and call shape without saved state."""
 
-    configured_override = config.resolve_action_override(
-        artifact.harness,
-        artifact.artifact_id,
-        artifact.publisher,
-    )
-    check_current_mcp_authority()
-    current_config_action = configured_override if configured_override is not None else config.default_action
+    with risk_pair_policy_scope():
+        configured_override = config.resolve_action_override(
+            artifact.harness,
+            artifact.artifact_id,
+            artifact.publisher,
+        )
+        check_current_mcp_authority()
+        current_config_action = configured_override if configured_override is not None else config.default_action
 
-    # Resolve current policy before the public matching/owned-copy boundary.
-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
-    if matching_snapshot is not None and risk_facts is not None:
-        artifact, arguments = matching_snapshot
-        risk_categories = risk_facts.categories
-    else:
-        risk_categories = tool_call_risk_categories(artifact, arguments)
-    return _evaluate_current_tool_call_for_categories(
-        config=config,
-        artifact=artifact,
-        arguments=arguments,
-        current_config_action=current_config_action,
-        risk_categories=risk_categories,
-    )
+        # Resolve current policy before the public matching/owned-copy boundary.
+        matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+        if matching_snapshot is not None and risk_facts is not None:
+            artifact, arguments = matching_snapshot
+            risk_categories = risk_facts.categories
+        else:
+            risk_categories = categories_for_current_policy(
+                artifact, arguments, lambda: tool_call_risk_categories(artifact, arguments)
+            )
+        return _evaluate_current_tool_call_for_categories(
+            config=config,
+            artifact=artifact,
+            arguments=arguments,
+            current_config_action=current_config_action,
+            risk_categories=risk_categories,
+        )
 
 
 def _evaluate_current_tool_call_for_categories(
@@ -1340,7 +1347,11 @@ def _contains_ip_address(value: str) -> bool:
     # existing candidate extraction and ip_address validation.
     if "." not in value and "::" not in value and value.count(":") < 7:
         return False
-    for match in re.finditer(r"(?<![0-9a-z])\[?([0-9a-f:.]{3,})\]?(?![0-9a-z])", value, flags=re.IGNORECASE):
+    for match in re.finditer(
+        r"(?<![0-9a-z])\[?([0-9a-f:.]{3,})\]?(?![0-9a-z])",
+        observed_risk_regex_value("finditer", re, r"(?<![0-9a-z])\[?([0-9a-f:.]{3,})\]?(?![0-9a-z])", value, flags=re.IGNORECASE),
+        flags=re.IGNORECASE,
+    ):
         candidate = match.group(1)
         if candidate.count(":") == 1 and "." in candidate:
             candidate = candidate.partition(":")[0]
@@ -1358,7 +1369,7 @@ class _LiteralRiskPattern:
     expression: str
 
 
-@lru_cache(maxsize=128)
+@string_literal_lru(maxsize=128)
 def _literal_pattern(*tokens: str, prefix: str = "", suffix: str = "") -> _LiteralRiskPattern:
     # Both the fast necessary-condition check and the authoritative regex
     # derive from these same literal alternatives. Adding an alternative
@@ -1375,7 +1386,7 @@ def _matches_any(value: str, patterns: tuple[str | _LiteralRiskPattern, ...]) ->
             expression = pattern.expression
         else:
             expression = pattern
-        if re.search(expression, value) is not None:
+        if re.search(expression, observed_risk_regex_value("search", re, expression, value)) is not None:
             return True
     return False
 
@@ -1664,7 +1675,10 @@ def _tool_schema_understates_name(tool_name_tokens: set[str], schema_categories:
 
 
 def _normalized_argument_key(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", _risk_match_text(value))
+    return re.sub(
+        r"[^a-z0-9]", "",
+        observed_risk_regex_value("sub", re, r"[^a-z0-9]", _risk_match_text(value), replacement=""),
+    )
 
 
 def tool_call_risk_summary(artifact: GuardArtifact, arguments: object) -> str:
@@ -1858,7 +1872,9 @@ _dedupe = dedupe_preserving_order
 
 def _tool_name_tokens(tool_name: str) -> tuple[str, ...]:
     camel_normalized = _camel_token_normalized(tool_name)
-    return tuple(token for token in re.findall(r"[a-z0-9]+", camel_normalized.lower()) if token)
+    return tuple(token for token in re.findall(
+        r"[a-z0-9]+", observed_risk_regex_value("findall", re, r"[a-z0-9]+", camel_normalized.lower())
+    ) if token)
 
 
 def _risk_match_text(value: str) -> str:
@@ -1868,4 +1884,7 @@ def _risk_match_text(value: str) -> str:
 def _camel_token_normalized(value: str) -> str:
     if value.islower():
         return value
-    return re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", value)
+    return re.sub(
+        r"([a-z0-9])([A-Z])", r"\1 \2",
+        observed_risk_regex_value("sub", re, r"([a-z0-9])([A-Z])", value, replacement=r"\1 \2"),
+    )

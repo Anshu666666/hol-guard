@@ -1,0 +1,170 @@
+name: Windows command authority concurrent open controls
+run-name: Exact 017f Windows command authority source controls
+'on':
+  push:
+    branches:
+      - codex/pr2974-windows-command-open-controls-20260920
+    paths:
+      - .github/workflows/native-windows-command-lock-controls.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-windows-command-lock-controls-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-command-lock-controls:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CONTROL_SOURCE_SHA: 6f5cd352bb28e9b409e59c544a6b24d4300e510f
+      CONTROL_SOURCE_TREE: f5edd6f19f9187400c17fa782696c6c82fef1407
+      CONTROL_DRIVER_BRANCH: codex/pr2974-windows-command-open-controls-20260920
+      HOL_GUARD_BUILD_SHA: 6f5cd352bb28e9b409e59c544a6b24d4300e510f
+      CARGO_TARGET_DIR: ${{ github.workspace }}/control-src/rust/target
+    defaults:
+      run:
+        working-directory: control-src
+        shell: bash
+    steps:
+      - name: Check out exact workflow driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: workflow-src
+          persist-credentials: false
+      - name: Check out exact test-only source overlay
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 6f5cd352bb28e9b409e59c544a6b24d4300e510f
+          path: control-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - name: Bind source and driver before build
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          def binding(root):
+              def git(*args):
+                  return subprocess.check_output(['git', '-C', root, *args], text=True).strip()
+              return {'sha': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}'),
+                      'tracked_clean': not git('status', '--porcelain', '--untracked-files=no')}
+          source, driver = binding('.'), binding('../workflow-src')
+          assert source['sha'] == os.environ['CONTROL_SOURCE_SHA']
+          assert source['tree'] == os.environ['CONTROL_SOURCE_TREE'] and source['tracked_clean']
+          assert driver['sha'] == os.environ['GITHUB_SHA'] and driver['tracked_clean']
+          pathlib.Path('command-lock-evidence').mkdir()
+          pathlib.Path('command-lock-evidence/source-before.json').write_text(json.dumps(
+              {'source': source, 'driver': driver, 'original_product_source': '017f1244f1861bc4a74620a669557b78beb6d176',
+               'source_controls_only': True, 'installed_qualification': False}, sort_keys=True) + '\n')
+          PY
+      - name: Install pinned Windows Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+          rustup target add x86_64-pc-windows-msvc
+      - name: Build the exact original and added Windows control cohort
+        run: |
+          cargo test --manifest-path rust/Cargo.toml --locked --target x86_64-pc-windows-msvc \
+            -p hol-guard-runtime --bin hol-guard-runtime --no-run --message-format=json \
+            > command-lock-evidence/build.jsonl 2> command-lock-evidence/build.log
+      - name: Execute the eight source controls once
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          root = pathlib.Path('command-lock-evidence')
+          targets = []
+          for line in (root / 'build.jsonl').read_text().splitlines():
+              value = json.loads(line)
+              if (value.get('reason') == 'compiler-artifact' and value.get('profile', {}).get('test')
+                      and value.get('target', {}).get('name') == 'hol-guard-runtime' and value.get('executable')):
+                  targets.append(pathlib.Path(value['executable']).resolve(strict=True))
+          assert len(targets) == 1
+          executable = targets[0]
+          assert executable.is_relative_to(pathlib.Path(os.environ['CARGO_TARGET_DIR']).resolve())
+          def identity():
+              value = executable.read_bytes()
+              return {'sha256': hashlib.sha256(value).hexdigest(), 'bytes': len(value), 'name': executable.name}
+          before = identity()
+          report = {'schema': 'hol-guard.windows-command-lock-source-controls.v1',
+                    'source_sha': os.environ['CONTROL_SOURCE_SHA'], 'source_tree': os.environ['CONTROL_SOURCE_TREE'],
+                    'original_product_source': '017f1244f1861bc4a74620a669557b78beb6d176',
+                    'target': 'x86_64-pc-windows-msvc', 'rust_toolchain': '1.88.0',
+                    'test_binary_before': before, 'original_control_count': 4, 'added_control_count': 4,
+                    'new_handle_contract': {'access': 3221487616, 'sharing': 7, 'open_reparse_point': 2097152},
+                    'holder': 'Rust model of existing Python handle access/sharing/owner-private ACL',
+                    'holder_lock': 'fs2 whole-file range overlaps the existing Python byte-zero range',
+                    'actual_python_process_executed': False, 'full_contract_corpus_executed': False,
+                    'runtime_permissions_deadlines_or_retries_changed': False,
+                    'installed_qualification': False, 'headline_timing_eligible': False,
+                    'process_timeout_seconds': 180, 'timed_out': False, 'passed': False}
+          output = b''
+          try:
+              completed = subprocess.run([str(executable), 'policy_store::tests::command_authority_tests::',
+                                          '--nocapture', '--test-threads=1'], stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT, timeout=180, check=False)
+              output = completed.stdout
+              report['process_returncode'] = completed.returncode
+          except subprocess.TimeoutExpired as error:
+              output = error.stdout or b''
+              report['timed_out'] = True
+          finally:
+              (root / 'controls.log').write_bytes(output)
+              report['test_binary_after'] = identity()
+              report['test_binary_unchanged'] = report['test_binary_after'] == before
+              text = output.decode('utf-8', errors='replace')
+              receipts = []
+              report['control_receipt_parse_failed'] = False
+              prefix = 'HOL_GUARD_WINDOWS_COMMAND_LOCK_CONTROL '
+              for line in text.splitlines():
+                  if prefix in line:
+                      try:
+                          value = json.loads(line.split(prefix, 1)[1])
+                          assert type(value) is dict and type(value.get('result')) is dict
+                          assert len(receipts) < 32
+                          receipts.append(value)
+                      except (ValueError, AssertionError):
+                          report['control_receipt_parse_failed'] = True
+              report['control_receipts'] = receipts
+              finished = [row['result'] for row in receipts if row.get('stage') == 'fixture_finished']
+              expected = {'existing-write-open', 'shared-overlap', 'exclusive-contention', 'native-shared-first'}
+              report['four_added_controls_completed'] = (len(finished) == 4
+                  and {row.get('case') for row in finished} == expected
+                  and all(row.get('operation_succeeded') and row.get('cleanup_succeeded') for row in finished))
+              report['eight_controls_passed'] = bool(re.search(
+                  r'test result: ok\. 8 passed; 0 failed; 0 ignored; 0 measured;', text))
+              report['passed'] = (report.get('process_returncode') == 0 and not report['timed_out']
+                  and report['test_binary_unchanged'] and report['four_added_controls_completed']
+                  and report['eight_controls_passed'] and not report['control_receipt_parse_failed'])
+              (root / 'result.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
+          raise SystemExit(0 if report['passed'] else 1)
+          PY
+      - name: Verify source and driver remain unchanged
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          def binding(root):
+              def git(*args):
+                  return subprocess.check_output(['git', '-C', root, *args], text=True).strip()
+              return {'sha': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}'),
+                      'tracked_clean': not git('status', '--porcelain', '--untracked-files=no')}
+          source, driver = binding('.'), binding('../workflow-src')
+          pathlib.Path('command-lock-evidence').mkdir(exist_ok=True)
+          pathlib.Path('command-lock-evidence/source-after.json').write_text(json.dumps(
+              {'source': source, 'driver': driver, 'source_controls_only': True,
+               'installed_qualification': False}, sort_keys=True) + '\n')
+          assert source['sha'] == os.environ['CONTROL_SOURCE_SHA']
+          assert source['tree'] == os.environ['CONTROL_SOURCE_TREE'] and source['tracked_clean']
+          assert driver['sha'] == os.environ['GITHUB_SHA'] and driver['tracked_clean']
+          PY
+      - name: Retain original build, control, and binding evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-windows-command-lock-controls-attempt-${{ github.run_attempt }}
+          path: control-src/command-lock-evidence/**
+          if-no-files-found: warn
+          retention-days: 30

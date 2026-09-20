@@ -1,5 +1,5 @@
 {
-  "schema": "pr2974.deadline-validation-driver-bound.v1",
+  "schema": "pr2974.deadline-validation-platform-setup-repair.v1",
   "base_commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
   "before_tree": "6b475533a908af127c1ada892e8cd50a00a3157a",
   "candidate_tree": "86d2a8b585e76bc87f0ecfa815fbf3ef2743607d",
@@ -41,10 +41,10 @@
     },
     {
       "path": ".github/workflows/pr2974-absolute-deadline-validation.yml",
-      "bytes": 3588,
-      "lines": 101,
-      "sha256": "96dad19b1bbc7de106ad7bccef32d434b2b4314359e2c93f8c54a492d78c4a2c",
-      "git_blob": "53629691635f3a1b0086a440890eb97f3019de02"
+      "bytes": 3475,
+      "lines": 98,
+      "sha256": "f0184c416be966db7b30f051673789ce62216e9814f661d0a4432da2282d89cb",
+      "git_blob": "4d7d24066c055186482c14c4448c3566a09d98d7"
     }
   ],
   "placeholder_occurrences": {
@@ -73,13 +73,27 @@
   "dispatched": false,
   "preparation_tree": "90cdde3f32095f440f22728dce4fd54f99a09209",
   "bindings": {
-    "__DEADLINE_VALIDATION_BRANCH__": "codex/pr2974-absolute-deadline-validation-20260920",
+    "__DEADLINE_VALIDATION_BRANCH__": "codex/pr2974-absolute-deadline-validation-20260920-v2",
     "__DEADLINE_BEFORE_SHA__": "a8297fe9868322616c92084d9a2fbb712a0907d0",
     "__DEADLINE_CANDIDATE_SHA__": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee"
   },
   "driver_parents": [
-    "54fff0b48d3ce7a7becb03698f91aed63e55c1ee",
-    "a8297fe9868322616c92084d9a2fbb712a0907d0"
+    "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826"
   ],
-  "placeholder_occurrences_after_binding": 0
+  "placeholder_occurrences_after_binding": 0,
+  "supersedes_driver": "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826",
+  "first_run": 35500586815,
+  "selected_platforms": [
+    "macos-x86_64",
+    "macos-arm64",
+    "windows-x86_64"
+  ],
+  "python_version": "3.12.10",
+  "availability_manifest": {
+    "repository": "actions/python-versions",
+    "git_blob": "9a26f094b8b111d3297e3c6a370ff8f576784974",
+    "sha256": "fbfbfe5d1edb027242bbbfa2ca9601e3a63144e986bdcc0477c0ea2e2ad95d16"
+  },
+  "repair_scope": "Workflow setup only; original before/candidate source, runner, expectations and verifier bytes unchanged. Linux remains solely in first run.",
+  "prior_run_status_at_preparation": "Three Python setup failures; Linux validation in progress. No native controls executed on the three selected platforms."
 }

@@ -244,11 +244,14 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
     monkeypatch.setattr(
         store, "_policy_integrity_secret_material", lambda *, create, connection=None: (master, "master-id")
     )
+    calls: list[bytes] = []
 
     def client_request(**kwargs: object) -> bytes:
         payload = kwargs["payload"]
         assert isinstance(payload, bytes)
+        calls.append(payload)
         snapshot = json.loads(payload)["request"]["snapshot"]
+        assert snapshot["policy_digest"] != "c" * 64
         return json.dumps(
             {
                 "status": "accepted",
@@ -265,11 +268,18 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
         client_request=client_request,
         poll_interval_seconds=0.05,
     )
-    publisher.start()
+    # Complete one real publication attempt before inspecting its diagnostic.
+    # The asynchronous loop may still be capturing inputs or may have cleared
+    # the prior diagnostic for a new attempt when a readiness wait expires.
+    publisher.request_publish()
     try:
+        assert not publisher.is_ready()
+        publisher._publish_once()
+        assert len(calls) == 1
         assert not publisher.wait_until_ready(time.monotonic() + 0.5)
         assert publisher.last_error == "native_policy_snapshot_ack_mismatch"
         assert not publisher.is_ready()
+        assert publisher.current_snapshot() is None
     finally:
         publisher.close()
 

@@ -37,6 +37,7 @@ def _daemon(store: GuardStore, *, home: Path | None = None, workspace: Path | No
     # unrelated dashboard listener or starting the other daemon workers.
     daemon = cast(Any, object.__new__(server.GuardDaemonServer))
     daemon._server = SimpleNamespace(store=store)
+    daemon._diagnostics = SimpleNamespace(record=lambda _event, **_kwargs: True)
     daemon._aibom_home_dir = home
     daemon._aibom_workspace_dir = workspace
     daemon._aibom_context_source = store.capture_oauth_connection() if workspace is not None else None

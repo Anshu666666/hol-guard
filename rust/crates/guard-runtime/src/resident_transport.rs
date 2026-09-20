@@ -6,6 +6,10 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(all(test, any(target_os = "linux", target_os = "macos")))]
+#[path = "resident_transport_peer_identity_tests.rs"]
+mod peer_identity_tests;
+
 use sha2::{Digest, Sha256};
 #[cfg(unix)]
 use std::os::unix::net::UnixStream;

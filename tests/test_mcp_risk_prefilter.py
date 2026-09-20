@@ -122,7 +122,9 @@ def test_ip_shape_prefilter_matches_exact_previous_validator():
 
 
 @pytest.mark.parametrize(
-    "text", ["", "123", "camelCase", "HTTPGet", "lowerCaseURL", "lower-words", "éÉ Σσ ıİ", "x" * 131072]
+    "text",
+    ["", "123", "camelCase", "HTTPGet", "lowerCaseURL", "lower-words", "éÉ Σσ ıİ", "x" * 131072],
+    ids=["empty", "digits", "camel", "acronym", "mixed-url", "lower-words", "unicode", "long-lowercase"],
 )
 def test_lowercase_shortcut_preserves_camel_normalization(text):
     assert calls._camel_token_normalized(text) == _unfiltered_camel(text)

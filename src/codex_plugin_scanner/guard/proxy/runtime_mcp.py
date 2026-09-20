@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import IO, Any, Literal, TextIO, cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from .. import mcp_authority_binding as _risk_authority
+from .. import mcp_request_risk as _request_risk
 from ..action_lattice import (
     GuardActionNormalization,
     most_restrictive_guard_action,
@@ -43,6 +45,7 @@ from ..local_supply_chain import (
     compose_current_package_policy_action,
     package_request_policy_hash,
 )
+from ..mcp_approval_risk import ApprovalRiskSourceDefaults, BoundApprovalRiskAnalysis, function_namespace
 from ..mcp_authority_binding import (
     AuthorityCheck,
     UnsupportedAuthorityValueError,
@@ -58,6 +61,8 @@ from ..mcp_tool_calls import (
     ApprovalReuseClaimDisposition,
     ToolCallDecision,
     _normalized_tool_call_workspace,
+    _tool_call_risk_pair,
+    _tool_call_summary_for_signals,
     allow_tool_call,
     block_tool_call,
     build_tool_call_artifact,
@@ -89,6 +94,7 @@ from ..runtime.surface_server import GuardSurfaceRuntime
 from ..store import GuardStore
 from ..tool_decision_evidence import tool_decision_scanner_evidence as _tool_decision_scanner_evidence
 from . import framing
+from . import tool_call_binding as _risk_request_binding
 from ._env import _build_scrubbed_env
 from .framing import (
     IO_FAILURES,
@@ -596,6 +602,7 @@ class _ToolCallAuthority:
     catalog_state: _ToolCatalogState
     catalog_fingerprint: str
     authority_check: AuthorityCheck | None = field(default=None, repr=False, compare=False)
+    risk_analysis: BoundApprovalRiskAnalysis | None = field(default=None, repr=False, compare=False)
 
 
 class RuntimeMcpGuardProxy:
@@ -1100,7 +1107,9 @@ class RuntimeMcpGuardProxy:
                 risk_categories=fresh_decision.risk_categories,
                 scanner_evidence=evidence,
             )
-        return self._queue_approval_center_response(
+        return _queue_approval_with_risk_analysis(
+            self,
+            fresh_authority.risk_analysis,
             message_id=message_id,
             artifact=fresh_authority.artifact,
             artifact_hash=fresh_authority.artifact_hash,
@@ -1316,10 +1325,20 @@ class RuntimeMcpGuardProxy:
         )
         authority_check, artifact_digest = self._bind_tool_call_artifact(artifact, authority_check)
         original_artifact = artifact
+        risk_analysis_out: list[BoundApprovalRiskAnalysis] = []
         with use_mcp_authority_check(authority_check):
-            artifact, artifact_hash, decision = self._evaluate_tool_call_authority(
-                artifact=artifact, arguments=arguments, config=authority_config
-            )
+            evaluator = self._evaluate_tool_call_authority
+            if _APPROVAL_RISK_DEFAULTS.method_supported(self, "_evaluate_tool_call_authority", evaluator):
+                artifact, artifact_hash, decision = evaluator(
+                    artifact=artifact,
+                    arguments=arguments,
+                    config=authority_config,
+                    _risk_analysis_out=risk_analysis_out,
+                )
+            else:
+                artifact, artifact_hash, decision = evaluator(
+                    artifact=artifact, arguments=arguments, config=authority_config
+                )
             check_current_mcp_authority()
         if artifact is not original_artifact:
             # A private evaluator may return an owned copy. Bind the object
@@ -1337,36 +1356,85 @@ class RuntimeMcpGuardProxy:
             catalog_state=catalog_state,
             catalog_fingerprint=catalog_fingerprint,
             authority_check=authority_check,
+            risk_analysis=(
+                risk_analysis_out[0] if len(risk_analysis_out) == 1 and artifact is original_artifact else None
+            ),
         )
 
     def _evaluate_tool_call_authority(
-        self, *, artifact: GuardArtifact, arguments: object, config: GuardConfig
+        self,
+        *,
+        artifact: GuardArtifact,
+        arguments: object,
+        config: GuardConfig,
+        _risk_analysis_out: list[BoundApprovalRiskAnalysis] | None = None,
     ) -> tuple[GuardArtifact, str, ToolCallDecision]:
-        """Retain the measured Python default; optional pilots override privately."""
+        """Share pure categories within one already bound authority evaluation."""
 
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        artifact_hash = build_tool_call_hash(
-            artifact,
-            arguments,
-            workspace=self.context.workspace_dir or Path.cwd(),
-            config=config,
+        binding = current_tool_call_binding()
+        owned_params = binding.owned_message.get("params") if binding is not None else None
+        admitted = (
+            inside_proxy_authority_scope()
+            and (arguments is None or type(arguments) is dict)
+            and type(owned_params) is dict
+            and arguments is owned_params.get("arguments")
         )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        decision = self._disable_saved_allow_without_complete_catalog(
-            evaluate_tool_call(
-                store=self.store,
-                config=config,
-                artifact=artifact,
-                artifact_hash=artifact_hash,
-                arguments=arguments,
-                claim_saved_approval=False,
-            )
-        )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        return artifact, artifact_hash, decision
+        with _tool_call_risk_pair(
+            artifact=artifact, arguments=arguments, config=config, aliases=globals(), admitted=admitted
+        ) as facts:
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            if facts is not None and facts.supported():
+                artifact_hash = build_tool_call_hash(
+                    artifact,
+                    arguments,
+                    workspace=self.context.workspace_dir or Path.cwd(),
+                    config=config,
+                    risk_facts=facts,
+                )
+            else:
+                artifact_hash = build_tool_call_hash(
+                    artifact,
+                    arguments,
+                    workspace=self.context.workspace_dir or Path.cwd(),
+                    config=config,
+                )
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            if facts is not None and facts.supported():
+                current_decision = evaluate_tool_call(
+                    store=self.store,
+                    config=config,
+                    artifact=artifact,
+                    artifact_hash=artifact_hash,
+                    arguments=arguments,
+                    claim_saved_approval=False,
+                    risk_facts=facts,
+                )
+            else:
+                current_decision = evaluate_tool_call(
+                    store=self.store,
+                    config=config,
+                    artifact=artifact,
+                    artifact_hash=artifact_hash,
+                    arguments=arguments,
+                    claim_saved_approval=False,
+                )
+            decision = self._disable_saved_allow_without_complete_catalog(current_decision)
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            if facts is not None and _risk_analysis_out is not None:
+                projection = facts.export_analysis(
+                    observation_supported=lambda: _approval_observation_supported(self),
+                    owner_check=lambda: (
+                        binding is not None
+                        and current_tool_call_binding() is binding
+                        and inside_proxy_authority_scope()
+                    ),
+                )
+                if projection is not None:
+                    _risk_analysis_out.append(projection)
+            return artifact, artifact_hash, decision
 
     def _handle_message(
         self,
@@ -1591,6 +1659,7 @@ class RuntimeMcpGuardProxy:
         tool_name = str(params.get("name") or "unknown")
         arguments = params.get("arguments")
         authority = self._resolve_tool_call_authority(tool_name=tool_name, arguments=arguments)
+        queued_risk_analysis = authority.risk_analysis
         artifact = authority.artifact
         tool_artifact_hash = authority.artifact_hash
         package_artifact = self._package_request_artifact(tool_name=tool_name, arguments=arguments)
@@ -1716,6 +1785,7 @@ class RuntimeMcpGuardProxy:
                 )
                 return response, package_event
             if self._inline_prompt_available and approval_callback is not None:
+                queued_risk_analysis = None
                 approval_result = approval_callback(self._inline_approval_request(tool_name, decision.summary))
                 if _approval_allows(approval_result):
                     invalidated = self._inline_catalog_invalidation_response(
@@ -1805,7 +1875,9 @@ class RuntimeMcpGuardProxy:
                     authority_check=authority.authority_check,
                 )
                 return response, package_event
-            response, queued_event = self._queue_approval_center_response(
+            response, queued_event = _queue_approval_with_risk_analysis(
+                self,
+                queued_risk_analysis,
                 message_id=message.get("id"),
                 artifact=artifact,
                 artifact_hash=tool_artifact_hash,
@@ -1861,6 +1933,7 @@ class RuntimeMcpGuardProxy:
                 authority_check=authority.authority_check,
             )
         if self._inline_prompt_available and approval_callback is not None:
+            queued_risk_analysis = None
             approval_result = approval_callback(self._inline_approval_request(tool_name, decision.summary))
             if _approval_allows(approval_result):
                 invalidated = self._inline_catalog_invalidation_response(
@@ -1973,7 +2046,9 @@ class RuntimeMcpGuardProxy:
             if observe_override:
                 final_observe_event["observed_policy_action"] = fresh_policy_action
             return response, final_observe_event
-        response, queued_event = self._queue_approval_center_response(
+        response, queued_event = _queue_approval_with_risk_analysis(
+            self,
+            queued_risk_analysis,
             message_id=message.get("id"),
             artifact=artifact,
             artifact_hash=tool_artifact_hash,
@@ -2358,7 +2433,9 @@ class RuntimeMcpGuardProxy:
             )
         if not is_execution_permitted(authoritative_action):
             if not is_execution_permitted(tool_action):
-                return self._queue_approval_center_response(
+                return _queue_approval_with_risk_analysis(
+                    self,
+                    fresh_tool_authority.risk_analysis,
                     message_id=message.get("id"),
                     artifact=tool_artifact,
                     artifact_hash=tool_artifact_hash,
@@ -2501,7 +2578,9 @@ class RuntimeMcpGuardProxy:
                     scanner_evidence=postclaim_tool_evidence,
                 )
             if postclaim_package_artifact is None:
-                return self._queue_approval_center_response(
+                return _queue_approval_with_risk_analysis(
+                    self,
+                    postclaim_tool_authority.risk_analysis,
                     message_id=message.get("id"),
                     artifact=postclaim_tool_authority.artifact,
                     artifact_hash=postclaim_tool_authority.artifact_hash,
@@ -2584,7 +2663,9 @@ class RuntimeMcpGuardProxy:
                 or postclaim_tool_action == "require-reapproval"
                 or (postclaim_tool_action == "review" and not tool_claim_authorizes_review)
             ):
-                response = self._queue_approval_center_response(
+                response = _queue_approval_with_risk_analysis(
+                    self,
+                    postclaim_tool_authority.risk_analysis,
                     message_id=message.get("id"),
                     artifact=postclaim_tool_authority.artifact,
                     artifact_hash=postclaim_tool_authority.artifact_hash,
@@ -3340,7 +3421,9 @@ class RuntimeMcpGuardProxy:
                 or fresh_action == "require-reapproval"
                 or (fresh_action == "review" and not claim_authorizes_review)
             ):
-                return self._queue_approval_center_response(
+                return _queue_approval_with_risk_analysis(
+                    self,
+                    fresh_authority.risk_analysis,
                     message_id=message.get("id"),
                     artifact=fresh_authority.artifact,
                     artifact_hash=fresh_authority.artifact_hash,
@@ -3949,6 +4032,7 @@ class RuntimeMcpGuardProxy:
         *,
         policy_action: str = "require-reapproval",
         scanner_evidence: tuple[dict[str, object], ...] = (),
+        _risk_analysis: BoundApprovalRiskAnalysis | None = None,
     ) -> dict[str, Any]:
         """Build the artifact payload for approval center queueing.
 
@@ -3976,7 +4060,7 @@ class RuntimeMcpGuardProxy:
             "changed_fields": changed_fields,
             "policy_action": policy_action,
             "launch_target": launch_target,
-            "risk_summary": tool_call_risk_summary(artifact, arguments),
+            "risk_summary": _approval_risk_summary(_risk_analysis, artifact, arguments),
             "risk_signals": list(signals),
         }
         if browser_intent_dict is not None:
@@ -3996,6 +4080,7 @@ class RuntimeMcpGuardProxy:
         params: dict[str, Any],
         scanner_evidence: tuple[dict[str, object], ...] = (),
         policy_action: GuardAction = "require-reapproval",
+        _risk_analysis: BoundApprovalRiskAnalysis | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         approval_center_url = ensure_guard_daemon(self.context.guard_home)
         queued = queue_blocked_approvals(
@@ -4009,7 +4094,9 @@ class RuntimeMcpGuardProxy:
             ),
             evaluation={
                 "artifacts": [
-                    self._build_artifact_payload(
+                    _build_approval_payload_with_risk_analysis(
+                        self,
+                        _risk_analysis,
                         artifact,
                         artifact_hash,
                         tool_name,
@@ -4031,7 +4118,7 @@ class RuntimeMcpGuardProxy:
             decision_source="approval-center-pending",
             now=_now(),
             signals=signals,
-            risk_categories=tool_call_risk_categories(artifact, params.get("arguments")),
+            risk_categories=_approval_risk_categories(_risk_analysis, artifact, params.get("arguments")),
             arguments=_safe_mcp_arguments(params.get("arguments")),
             additional_scanner_evidence=scanner_evidence,
             policy_action=policy_action,
@@ -4484,6 +4571,218 @@ def _optional_text(value: object) -> str | None:
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+
+def _approval_observation_supported(proxy: RuntimeMcpGuardProxy) -> bool:
+    return all(
+        _APPROVAL_RISK_DEFAULTS.method_owned(proxy, name)
+        for name in (
+            "_capture_tool_call_authority",
+            "_bind_tool_call_artifact",
+            "_evaluate_tool_call_authority",
+            "_resolve_tool_call_authority",
+        )
+    )
+
+
+def _queue_approval_with_risk_analysis(
+    proxy: RuntimeMcpGuardProxy,
+    analysis: BoundApprovalRiskAnalysis | None,
+    **kwargs: Any,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    queue = proxy._queue_approval_center_response
+    if analysis is not None and _APPROVAL_RISK_DEFAULTS.method_supported(
+        proxy, "_queue_approval_center_response", queue
+    ):
+        return queue(**kwargs, _risk_analysis=analysis)
+    return queue(**kwargs)
+
+
+def _build_approval_payload_with_risk_analysis(
+    proxy: RuntimeMcpGuardProxy,
+    analysis: BoundApprovalRiskAnalysis | None,
+    artifact: Any,
+    artifact_hash: str,
+    tool_name: str,
+    params: dict[str, Any],
+    signals: tuple[str, ...],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    payload = proxy._build_artifact_payload
+    if analysis is not None and _APPROVAL_RISK_DEFAULTS.method_supported(proxy, "_build_artifact_payload", payload):
+        return payload(artifact, artifact_hash, tool_name, params, signals, **kwargs, _risk_analysis=analysis)
+    return payload(artifact, artifact_hash, tool_name, params, signals, **kwargs)
+
+
+def _approval_risk_summary(
+    analysis: BoundApprovalRiskAnalysis | None,
+    artifact: GuardArtifact,
+    arguments: object,
+) -> str:
+    if type(analysis) is BoundApprovalRiskAnalysis and analysis.observe(artifact, arguments, consumer="summary"):
+        return _tool_call_summary_for_signals(analysis.signals)
+    return tool_call_risk_summary(artifact, arguments)
+
+
+def _approval_risk_categories(
+    analysis: BoundApprovalRiskAnalysis | None,
+    artifact: GuardArtifact,
+    arguments: object,
+) -> tuple[str, ...]:
+    if type(analysis) is BoundApprovalRiskAnalysis and analysis.observe(artifact, arguments, consumer="receipt"):
+        return analysis.categories
+    return tool_call_risk_categories(artifact, arguments)
+
+
+def _capture_approval_risk_defaults() -> ApprovalRiskSourceDefaults:
+    # Unsupported import-time interfaces refuse sharing without breaking import.
+    try:
+        return ApprovalRiskSourceDefaults(
+            aliases=(
+                *(
+                    (globals(), name)
+                    for name in (
+                        "_normalized_tool_call_workspace",
+                        "tool_call_risk_summary",
+                        "tool_call_risk_categories",
+                        "_tool_call_summary_for_signals",
+                        "current_tool_call_binding",
+                        "inside_proxy_authority_scope",
+                        "Path",
+                        "GuardConfig",
+                        "exact_authority_digest",
+                        "capture_authority_binding",
+                        "changed_tool_call",
+                        "BoundApprovalRiskAnalysis",
+                        "_approval_observation_supported",
+                        "_approval_risk_summary",
+                        "_approval_risk_categories",
+                        "_queue_approval_with_risk_analysis",
+                        "_build_approval_payload_with_risk_analysis",
+                    )
+                ),
+                *(
+                    (_request_risk.__dict__, name)
+                    for name in (
+                        "invocation_categories",
+                        "invocation_risk_facts",
+                        "issue_approval_risk_analysis",
+                    )
+                ),
+                *(
+                    (_request_risk.InvocationRiskFacts.__dict__, name)
+                    for name in (
+                        "supported",
+                        "categories",
+                        "record_signals",
+                        "export_analysis",
+                        "close",
+                        "__getattribute__",
+                        "__getattr__",
+                    )
+                ),
+                *(
+                    (function_namespace(Path.__dict__.get("__new__")), name)
+                    for name in (
+                        "PosixPath",
+                        "WindowsPath",
+                        "PurePosixPath",
+                        "PureWindowsPath",
+                    )
+                ),
+                *(
+                    (HarnessContext.__dict__, name)
+                    for name in (
+                        "__getattribute__",
+                        "__getattr__",
+                        "home_dir",
+                        "workspace_dir",
+                        "guard_home",
+                        "executable_overrides",
+                        "home_override_explicit",
+                        "workspace_override_explicit",
+                    )
+                ),
+                *(
+                    (_risk_authority.__dict__, name)
+                    for name in (
+                        "exact_authority_digest",
+                        "capture_authority_binding",
+                        "ExactAuthorityBinding",
+                        "fields",
+                        "sha256",
+                        "math",
+                    )
+                ),
+                *(
+                    (_risk_request_binding.__dict__, name)
+                    for name in (
+                        "ToolCallBinding",
+                        "_matches_frame",
+                        "_json_parts",
+                        "changed_tool_call",
+                        "json",
+                        "math",
+                        "framing",
+                    )
+                ),
+                (_risk_authority.math.__dict__, "isfinite"),
+                (_risk_request_binding.json.__dict__, "dumps"),
+                (_risk_request_binding.framing.__dict__, "MAX_LINE_BYTES"),
+                (_risk_request_binding.framing.__dict__, "ProxyIoLimitError"),
+                (function_namespace(function_namespace), "_record_state"),
+                *(
+                    (ToolCatalog.__dict__, name)
+                    for name in (
+                        "_definitions",
+                        "__getattribute__",
+                        "__getattr__",
+                    )
+                ),
+                (function_namespace(_normalized_tool_call_workspace), "Path"),
+                (function_namespace(_normalized_tool_call_workspace), "_normalized_tool_call_workspace"),
+                (function_namespace(Path.__dict__.get("resolve")), "os"),
+                (os.__dict__, "path"),
+                (os.__dict__, "getcwd"),
+                *((os.path.__dict__, name) for name in ("realpath", "expanduser", "abspath")),
+            ),
+            owner_type=RuntimeMcpGuardProxy,
+            identities=(
+                (globals(), "ToolCatalog"),
+                (_risk_authority.__dict__, "_PROXY_SCOPE"),
+                (_risk_request_binding.__dict__, "_CURRENT"),
+                *((_risk_authority.fields.__globals__, name) for name in ("_FIELDS", "_FIELD")),
+            ),
+            type_collections=tuple((_risk_authority.__dict__, name) for name in ("_RECORD_TYPES", "_PATH_TYPES")),
+            record_types=_risk_authority._RECORD_TYPES,
+            authority_functions=(
+                RuntimeMcpGuardProxy._capture_tool_call_authority,
+                RuntimeMcpGuardProxy._bind_tool_call_artifact,
+                _risk_authority.ExactAuthorityBinding.check,
+                _risk_authority.exact_authority_digest,
+                _risk_request_binding.ToolCallBinding.check,
+                _risk_request_binding._matches_frame,
+                _risk_request_binding._json_parts,
+                _risk_request_binding.changed_tool_call,
+            ),
+            methods=(
+                "_capture_tool_call_authority",
+                "_bind_tool_call_artifact",
+                "_evaluate_tool_call_authority",
+                "_resolve_tool_call_authority",
+                "_queue_approval_center_response",
+                "_build_artifact_payload",
+            ),
+        )
+
+    except (AttributeError, KeyError, TypeError, ValueError, RuntimeError, OSError):
+        return ApprovalRiskSourceDefaults(
+            aliases=((None, "unsupported"),),
+            owner_type=RuntimeMcpGuardProxy,
+            methods=(),
+        )
+
+
+_APPROVAL_RISK_DEFAULTS = _capture_approval_risk_defaults()
 
 __all__ = [
     "CodexMcpGuardProxy",

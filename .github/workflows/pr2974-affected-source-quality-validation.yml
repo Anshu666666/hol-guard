@@ -1,0 +1,161 @@
+name: PR2974 affected capture-open validation
+
+on:
+  push:
+    branches: [codex/pr2974-affected-capture-open-validation-20260920]
+    paths:
+      - '.github/workflows/pr2974-affected-source-quality-validation.yml'
+      - 'ci/pr2974_incoming_integration_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-current-integration-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  native-phases:
+    name: Affected collection, Python, writer and C controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-current-integration-validation/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-current-integration-validation/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': 'd1ba4265ab15c23db37655999b44d58a0b2d1c74',
+                     'source_tree': '20652d3f1f300309c0ec95f4a56a69a3225689e3',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False,
+                     'headline_timing_eligible': False, 'overall_qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout the immutable additive harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the exact immutable corrected source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 'd1ba4265ab15c23db37655999b44d58a0b2d1c74'
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the exact fresh validation Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up the exact frozen-lock installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Validate the exact current integration and preserve every outcome
+        id: validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_incoming_integration_validation/validate.py"
+      - name: Preserve actual driver and checkout outcomes before retention
+        id: outcomes
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          names = ['HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME']
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in names}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['pre_retention_driver_passed'] = passed
+          value['headline_timing_eligible'] = False
+          value['overall_qualification_complete'] = False
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'pre_retention_driver_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          PY
+      - name: Emit complete checksum-framed reports and failure snapshots
+        id: projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_incoming_integration_validation/report_projection.py"
+      - name: Retain complete original snapshots, JUnit, reports and failure logs
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-affected-source-quality-validation-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-current-integration-validation/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain the actual C fixture artifacts
+        id: binaries
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-affected-retention-c-artifacts-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-current-integration-validation/scratch/native-binaries/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Gate the actual finite result after all retention steps
+        if: always()
+        env:
+          OUTCOME_RETENTION: ${{ steps.outcomes.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.artifact.outcome }}
+          BINARY_ARTIFACT_OUTCOME: ${{ steps.binaries.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          value = json.loads((Path(os.environ['VALIDATION_REPORT']) / 'job-outcome.json').read_text())
+          retention = {name: os.environ[name] for name in ['OUTCOME_RETENTION', 'PROJECTION_OUTCOME', 'ARTIFACT_OUTCOME', 'BINARY_ARTIFACT_OUTCOME']}
+          passed = (value.get('status') == 'finished' and value.get('passed') is True
+                    and value.get('pre_retention_driver_passed') is True
+                    and value.get('headline_timing_eligible') is False
+                    and value.get('overall_qualification_complete') is False
+                    and value.get('all_original_owned_groups_retired') is True
+                    and all(outcome == 'success' for outcome in retention.values()))
+          print(json.dumps({'finite_workflow_gate_passed': passed, 'retention_outcomes': retention,
+                            'headline_timing_eligible': False, 'qualification_complete': False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

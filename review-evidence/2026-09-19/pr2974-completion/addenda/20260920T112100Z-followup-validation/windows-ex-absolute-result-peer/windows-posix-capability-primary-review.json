@@ -1,0 +1,36 @@
+{
+  "schema": "pr2974.windows-posix-capability-primary-review.v1",
+  "scope": "Primary-source design input only; not runtime admission implementation or execution.",
+  "sdk_commit": "5c5efbc01d4c87f6830ec304d42777991d533154",
+  "sdk_minwinbase": {
+    "bytes": 13500,
+    "sha256": "22126bf6a3de1023936c5e17098aad374e8f49d7c88c2907e800dd0b28c5e637",
+    "git_blob": "5618686f073915edfd39b0fb81b754160e6c3ac8"
+  },
+  "sdk_sdkddkver": {
+    "bytes": 11245,
+    "sha256": "ec65bdc6f79708f5b31c5959e489773fabd2e5c0cc9dbd9700b868f6f6c122c6",
+    "git_blob": "9efa994f593f7dfa50ce24d7bba4bb33fc2deef0"
+  },
+  "sources": [
+    {
+      "url": "https://github.com/microsoft/win32metadata/blob/5c5efbc01d4c87f6830ec304d42777991d533154/generation/WinSDK/RecompiledIdlHeaders/um/minwinbase.h",
+      "finding": "FileDispositionInfoEx and FileRenameInfoEx are compiled under NTDDI_WIN10_RS1; this supports a separate OS-version admission."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_fs_attribute_information",
+      "finding": "FILE_SUPPORTS_POSIX_UNLINK_RENAME is filesystem flag0x400 for POSIX-style delete/rename support."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getvolumeinformationbyhandlew",
+      "finding": "The API queries the supplied existing file handle's volume, is documented sinceVista, returns zero on failure, and documents unsupported SMB volume-management queries."
+    }
+  ],
+  "design_constraints": [
+    "A positive exact-handle volume flag is a filesystem property, not by itself the Win32 OS-version contract or permission to bypass read-only/access/sharing errors.",
+    "Unsupported/unavailable capability may select the original writer path before any mutation; it must not trigger a fallback after Ex was attempted.",
+    "Retain existing source identity, original same-directory/full-name resolution, audit-before-mutation, original first error and cleanup. No all-ancestor namespace requirement is introduced.",
+    "Source headers/documentation do not prove all filesystems/old Windows builds or explain the prior relative-root87 beyond the actual argument-form experiment."
+  ],
+  "runtime_tests_executed": false
+}

@@ -1,0 +1,14 @@
+--- before/ci/native_runtime/windows_wtext_acceptance_probe.py
++++ after/ci/native_runtime/windows_wtext_acceptance_probe.py
+@@ -83,7 +83,10 @@
+         raise RuntimeError("probe_synthetic_input_mismatch")
+     sys.path.insert(0, str(source / "src"))
+     reader = importlib.import_module("codex_plugin_scanner.guard.windows_replaceable_file")
+-    if Path(cast(str, reader.__file__)).resolve() != source / "src/codex_plugin_scanner/guard/windows_replaceable_file.py":
++    if (
++        Path(cast(str, reader.__file__)).resolve()
++        != source / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
++    ):
+         raise RuntimeError("probe_reader_source_mismatch")
+     api = reader._crt_api()
+     api._set_fmode.argtypes = [ctypes.c_int]

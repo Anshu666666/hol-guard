@@ -1,0 +1,84 @@
+name: Native runtime identity
+
+on:
+  pull_request:
+    paths:
+      - "src/codex_plugin_scanner/guard/native_runtime.py"
+      - "ci/native_runtime/test_native_runtime_manifest.py"
+      - "scripts/build_native_hol_guard_wheel.py"
+      - ".github/workflows/rust-native-identity.yml"
+      - "rust/**"
+      - "src/codex_plugin_scanner/guard/native_*.py"
+      - "scripts/*native*.py"
+      - "scripts/release/**"
+      - "ci/native_runtime/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "tests/conftest.py"
+      - "tests/package_offline.py"
+      - "tests/native_*support.py"
+      - "tests/test_native_runtime_live_identity.py"
+      - "tests/test_native_runtime_unsupported_inspection.py"
+      - "tests/test_installed_runtime_identity_probe.py"
+  push:
+    branches: [main, release/3.2]
+    paths:
+      - "src/codex_plugin_scanner/guard/native_runtime.py"
+      - "ci/native_runtime/test_native_runtime_manifest.py"
+      - "scripts/build_native_hol_guard_wheel.py"
+      - ".github/workflows/rust-native-identity.yml"
+      - "rust/**"
+      - "src/codex_plugin_scanner/guard/native_*.py"
+      - "scripts/*native*.py"
+      - "scripts/release/**"
+      - "ci/native_runtime/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "tests/conftest.py"
+      - "tests/package_offline.py"
+      - "tests/native_*support.py"
+      - "tests/test_native_runtime_live_identity.py"
+      - "tests/test_native_runtime_unsupported_inspection.py"
+      - "tests/test_installed_runtime_identity_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-native-identity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  identity-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Lint native identity boundary
+        run: |
+          uv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_identity.py ci/native_runtime/test_native_runtime_manifest.py ci/native_runtime/probe_installed_runtime_identity.py tests/test_native_runtime_live_identity.py tests/test_native_runtime_unsupported_inspection.py tests/test_installed_runtime_identity_probe.py
+          uv run --no-sync python -m ruff format --check src/codex_plugin_scanner/guard/native_runtime.py src/codex_plugin_scanner/guard/native_runtime_identity.py
+      - name: Run manifest and live Linux identity contracts
+        run: >-
+          uv run --no-sync python -m pytest -p tests.package_offline
+          ci/native_runtime/test_native_runtime_manifest.py
+          tests/test_native_runtime_live_identity.py
+          tests/test_native_runtime_unsupported_inspection.py
+          tests/test_installed_runtime_identity_probe.py
+          --tb=short
+      - name: Verify actual ownership transition on a disposable executable
+        run: >-
+          sudo .venv/bin/python -m pytest -p tests.package_offline
+          tests/test_native_runtime_live_identity.py::test_executable_ownership_change_retires_the_live_proof
+          --tb=short

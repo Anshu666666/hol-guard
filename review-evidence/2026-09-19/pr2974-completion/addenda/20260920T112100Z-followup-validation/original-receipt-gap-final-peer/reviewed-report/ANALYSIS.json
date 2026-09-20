@@ -1,0 +1,193 @@
+{
+  "schema": "hol-guard.original-8f-receipt-gap-analysis.v1",
+  "source_commit": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "source_tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf",
+  "driver_commit": "3ffa573bd4b91fc0d5c44511f19f2dfbd6cfcb22",
+  "driver_tree": "b3052c1ac2558d8b276b337db5272e935b9219ba",
+  "workflow_run_id": 35491537211,
+  "job_id": 106027206739,
+  "raw_recovery_tree": "7988590bf140cd9ef4a529647100cb04ee455d61",
+  "original_artifact": {
+    "id": 10599581007,
+    "bytes": 22575317,
+    "sha256": "693aab90fd15e90619994c54a50675b7c8ac2d5501b44d97f29bfadb92d4ce57",
+    "zip_hash_verified": true,
+    "archive_members": 54,
+    "decompressed_members": 2,
+    "binaries_excluded": true
+  },
+  "outcome": "two original completed load hooks have no native receipt join; observed receipt persistence is intact",
+  "missing_attempts": [
+    {
+      "attempt": "mixed-load-313",
+      "harness": "claude-code",
+      "event": "PreToolUse",
+      "size": "1k",
+      "delivered_action": "warn",
+      "delivered_decision": "allow",
+      "generator_state": "completed",
+      "offer_line": 719,
+      "terminal_line": 721,
+      "actual_native_request_identity": null,
+      "actual_native_decision_identity": null,
+      "actual_policy_binding": null,
+      "failure_reason_code": null,
+      "native_failure_phase": null,
+      "unknown_reason": "The original terminal and missing-receipt counter did not retain these per-attempt fields."
+    },
+    {
+      "attempt": "mixed-load-321",
+      "harness": "claude-code",
+      "event": "PostToolUse",
+      "size": "1k",
+      "delivered_action": "allow",
+      "delivered_decision": "allow",
+      "generator_state": "completed",
+      "offer_line": 733,
+      "terminal_line": 734,
+      "actual_native_request_identity": null,
+      "actual_native_decision_identity": null,
+      "actual_policy_binding": null,
+      "failure_reason_code": null,
+      "native_failure_phase": null,
+      "unknown_reason": "The original terminal and missing-receipt counter did not retain these per-attempt fields."
+    }
+  ],
+  "reconciled_population": {
+    "load_calls": 600,
+    "control_hook_probes": 5,
+    "hook_calls": 605,
+    "scheduler_admissions": 604,
+    "scheduler_completions": 604,
+    "normal_native_returns_with_valid_observed_receipt": 603,
+    "normal_native_returns_without_receipt": 1,
+    "load_receipt_joins": 598,
+    "control_receipt_joins": 5,
+    "observed_receipts_writer_admitted": 603,
+    "observed_receipts_committed": 603,
+    "observed_receipts_commit_binding_valid": 603,
+    "writer_command_activity": 604,
+    "source_supported_aggregate_inference": "The fixed fixture and scheduler path support one completed HTTP hook outside scheduler admission and one normal native None return. The evidence cannot assign either boundary to mixed-load-313 versus mixed-load-321.",
+    "inference_is_per_attempt_attribution": false,
+    "scheduler_completion_means_native_success": false
+  },
+  "source_findings": [
+    {
+      "kind": "fixture evidence loss",
+      "path": "scripts/native_slo_mixed_load.py",
+      "function": "MixedLoad._worker",
+      "lines": [
+        192,
+        203
+      ],
+      "finding": "The terminal keeps mechanical allow/deny/action and timing fields but drops the actual response reason code, raw-result class and native route."
+    },
+    {
+      "kind": "fixture evidence loss",
+      "path": "scripts/native_slo_mixed_witness.py",
+      "function": "ReceiptWitness.observe / observed_review",
+      "lines": [
+        110,
+        139,
+        155,
+        158
+      ],
+      "finding": "A missing receipt increments an aggregate counter and discards the attempt. The wrapper runs observe only after a normal native-review return; no entry/exception or earlier policy-admission event is retained."
+    },
+    {
+      "kind": "source interpretation",
+      "path": "src/codex_plugin_scanner/guard/native_hook_edge.py",
+      "function": "review_raw_hook_native",
+      "lines": [
+        272,
+        355
+      ],
+      "finding": "Under the unchanged exact-source provider, a normal return is a validated receipt-bearing dictionary or None. The route helper returns its input unchanged. Therefore the aggregate one missing-receipt return is a normal None, without a recorded leaf cause."
+    },
+    {
+      "kind": "source interpretation",
+      "path": "src/codex_plugin_scanner/guard/daemon/server_handler_hook_admission.py",
+      "function": "_handle_runtime_hook",
+      "lines": [
+        61,
+        94,
+        123
+      ],
+      "finding": "Policy preparation can return before scheduler reservation/admission. Multiple such paths and other pre-admission responses exist; the retained result shape does not select one."
+    },
+    {
+      "kind": "source interpretation",
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_scheduler.py",
+      "function": "_dispatch / release_permit",
+      "lines": [
+        312,
+        474
+      ],
+      "finding": "Admitted increments on dispatch and completed on permit release. These counters do not assert successful native evaluation."
+    },
+    {
+      "kind": "clock limitation",
+      "path": "scripts/native_slo_mixed_server.py",
+      "function": "restart / _probe",
+      "lines": [
+        210,
+        281
+      ],
+      "finding": "The first matching decision may belong to a request offered before restart. The observed mixed-load-312 was offered at ledger 715, before restart offer 718; its 22.361675999945874 ms is not proof of replacement-resident evaluation or a post-containment request start."
+    }
+  ],
+  "recovery_order": {
+    "clock_scope": "ledger write order only; receipt and generator clock origins differ",
+    "prior_first_decision_offer_line": 715,
+    "restart_offer_line": 718,
+    "missing_313_terminal_line": 721,
+    "restart_result_line": 730,
+    "missing_321_offer_line": 733,
+    "missing_321_terminal_line": 734,
+    "first_receipt_reconciliation_line": 1379
+  },
+  "clock_limits": [
+    "Ledger line order is serialized write order, not an exact child stop, new-resident ACK or syscall clock.",
+    "ReceiptWitness starts during mixed_start; MixedLoad starts later after the control returns. No shared monotonic_origin is supplied in this original run.",
+    "Receipt native_finished_ms and generator timestamps cannot be subtracted without a retained origin translation.",
+    "Receipt rows are emitted during final reconciliation after all load terminal rows, not at native execution.",
+    "Separate diagnostic native-phase work cannot supply an absent per-attempt phase for this default-runtime mixed workload."
+  ],
+  "persistence_conclusion": "All 603 observed unique receipts were admitted by the writer and read back committed with valid bindings. This contains no SQLite loss evidence among observed receipts; it does not establish native evaluation or receipt production for the two missing hooks.",
+  "product_root_cause_proven": false,
+  "product_repair_applied": false,
+  "next_bounded_action": {
+    "scope": "owned diagnostic fixture and untimed controls; existing accepted priority phase plan is coordinated separately",
+    "record": "Retain handler entry, original policy-preparation result, raw-native entry, normal-return/None/exception and receipt-submission outcome under the same finite attempt context.",
+    "preserve": [
+      "identical objects and arguments",
+      "original return and exception identity",
+      "original deadlines and admission rules",
+      "exactly one original call",
+      "strict missing-receipt gate",
+      "no replay",
+      "no raw payload/path/token export"
+    ],
+    "join": "Capture only a bounded validated semantic entry projection and existing closed fixture coordinates; keep actual request/receipt identity domains distinct and report unjoined entries explicitly.",
+    "qualification_transfer": false,
+    "status": "Observation boundaries are already covered by the separately authorized phase-plan implementation; no implementation or new execution is claimed by this packet."
+  },
+  "validation": {
+    "data_only_reconciliation": true,
+    "synthetic_reader_refusal_controls": 8,
+    "native_controls_executed": 0,
+    "workload_replays": 0,
+    "source_edits": 0,
+    "reader_imports_product": false
+  },
+  "privacy": {
+    "original_members": "Owned finite synthetic fixture records, including existing owned temporary paths and diagnostic IDs; unchanged original bytes.",
+    "new_analysis": "No signed URLs, payload content, secrets or reconstructed opaque native identifiers.",
+    "source": "Public exact8f source only."
+  },
+  "limits": [
+    "Runtime and wheel binary bodies are not included in this analysis packet.",
+    "The raw recovery admits two original members only, not restoration of the unavailable historical 49-text-member selection.",
+    "Full original RSP131 qualification and workload receipt-integrity gates remain failed."
+  ]
+}

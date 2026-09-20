@@ -1,0 +1,23 @@
+# Terminal normal CI for `124472b8`
+
+At 2026-09-20 11:16:31 UTC, PR #2974 still pointed to `124472b8949805e0dd36052df6894b335d8b519d` (tree `a0c139c4e02535545c5b0e602c240a38affde5fe`). All 187 check runs were terminal: **168 succeeded, 19 were skipped, none failed**. The skipped checks retain their original status. The normal native run [35505324310](https://github.com/hashgraph-online/hol-guard/actions/runs/35505324310) built test-merge `50b39d7e7a4722c2773d94da0ea4c2482f055ef5`; GitHub confirms that its tree exactly equals the product source tree. The two commit identities remain distinct.
+
+All four normal native jobs succeeded. Each installed identity probe records 16 passing cases and the expected `live_replacement = replaced` case. Every default-auto corpus has 21 resident decisions and 21 accepted/processed receipts, with zero failures, drops or pending receipts and both evidence-failure maps empty. Windows additionally passed its 13 source storage controls and four installed command-control-lock cases. Windows has no standalone Pi-output probe or installed SLO step in this workflow; its Pi evidence is limited to cells inside default-auto. Linux and both Macs ran the standalone Pi probe and their ordinary installed SLO smoke.
+
+| Normal lane | c16 p99 (ms) | Recovery p95 (ms) | Readiness p95 (ms) | c64 route accounting |
+| --- | ---: | ---: | ---: | --- |
+| Linux | 578.019 | 173.598 | 0.045 | 38 resident; 26 overload bypasses |
+| Mac Intel | 675.182 | 350.256 | 0.110 | 32 resident; 32 overload bypasses |
+| Mac ARM | 345.969 | 237.181 | 0.037 | 32 resident; 32 overload bypasses |
+
+All 14 ordinary smoke gates pass on these three lanes. Those reports apply 1,000 ms to c16 and recovery, and 400 ms to readiness. The original PRD c16 gate is 200 ms; this ordinary green result does not establish that gate. The c64 reports explicitly have no latency ceiling and retain the bypass counts. Each Unix smoke measures only two registered Claude PostToolUse launches; the other installed launcher routes are unmeasured. Every smoke report keeps `qualification_complete = false`.
+
+The Linux normal soak completed naturally with **100,000 requests, 100,000 responses and 250,000 receipts**, zero errors, and 20,811 health checks with zero failures or transient failures. Its PID stayed stable and the report counted one daemon. RSS rose from 610,103,296 to 627,011,584 bytes: **2.771381%**, recomputed from the original byte counters. The report rounds this to 0.027714. This long-soak gate allows 50%; the separate mixed-workload gate remains 12%. Soak p95 is 529.79 ms and maximum is 590.86 ms under its recorded 4,500 ms hook limit. The reported start/ready/stopped lifecycle is not a certificate covering every escaped descendant.
+
+The complete normal Windows transport file passed all 15 original controls in 37.27 seconds (job 106064032818), including the selector that failed on historical `4afa20cf`. That fresh pass does not explain the earlier startup timeout. The separately instrumented historical-source diagnostic is outside this packet.
+
+Gitleaks scanned the full `4b89e0d2d496a85f04922b2e019a4aea15326bb9..124472b8949805e0dd36052df6894b335d8b519d` range: 1,350 commits and 69,187,546 bytes in 27.7 seconds, with no leaks reported. Both CodeQL checks succeeded; the PR check reports no new alerts in changed code. SonarCloud reports a passing quality gate, zero new issues, zero security hotspots, 83.4% new-code coverage and 0.0% new-code duplication. The Sonar workflow/guard, Kilo and quality checks also succeeded.
+
+At the separate 11:05 UTC review read, all 59 review threads were resolved and none of the 51 formal reviews was an approval. The PR requested `deep-purple-boots`; it remained mergeable but blocked. The active ruleset that explicitly includes `release/3.2` requires the quality check, one approval, code-owner review, approval of the last push and resolved threads. The other status-check ruleset targets only the default branch (`main`), so its list is not attributed to this release target.
+
+This packet preserves original job logs, all extracted JSON reports, the two complete check pages, source/merge commits, review and ruleset snapshots, and all four artifact metadata records. The Linux/Mac native-artifact-evidence reports retain the original source/version/rule and wheel identity fields. **Archive, wheel and runtime bytes were not downloaded or independently rehashed for this packet.** Binary hashes remain runner-reported facts; GitHub archive digests remain metadata. Signing and cross-release upgrade/rollback qualification were not exercised. No original task status, frozen baseline, stopped campaign or full qualification gate is promoted by these results.

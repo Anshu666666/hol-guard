@@ -1,0 +1,22 @@
+{
+  "schema": "pr2974.workspace-clock-authority-peer.v1",
+  "reviewer": "partition_regression",
+  "reviewed_tree": "a6084ebd037cf60c3486cc2b7c4b261f5ac89620",
+  "analysis_blob": "14890f9972c13581df78fc6da4dd727883c93e5c",
+  "analysis_sha256": "75e087a4f6312568a3a31abf7a6fdcc2b705432fa34cbc46bf3afd69a02f7e28",
+  "source": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "original_run": 35491537211,
+  "conclusion": "The additive v2 interpretation resolves the identified observation-clock and cleanup-order overclaims without changing original data or verdicts.",
+  "findings": [
+    "PublicationObserver reads ready/binding under the publisher condition and timestamps the retained row afterward. The row is a sampled observation, not an exact internal ACK/barrier commit instant.",
+    "The service-restart +419.290400ms ready row cannot by itself prove the commit crossed400ms. Constructor and await-entry lower bounds461.916738ms/474.475488ms independently retain the actual caller-readiness miss.",
+    "First-admission-fault readiness observed386.753012ms does not satisfy the original caller deadline when constructor and await-entry lower bounds428.411641ms/441.258657ms exceed400ms.",
+    "The key-rotation ready=false row at476.483356ms can reflect publisher.close during finally. No specific pre-deadline authority invalidation/epoch/expiry cause is assigned. Original full authenticated/current await failure remains.",
+    "Separate LifecycleClocks origin is used only for conservative within-clock lower bounds; no cross-origin timestamp is manufactured. Original15cells/12passed/3failed and zero recovered hooks for the failed cells remain.",
+    "Same-process service replacement is not Python-process restart; generated command-key recovery is not policy-integrity migration. Retained publisher-row completeness is not whole platform qualification."
+  ],
+  "limits": [
+    "Read-only source/data interpretation; no workload, source tests, decoder or native execution repeated by this peer.",
+    "Fixture-only proposed future diagnostics and their actual results require separate review. No production repair, deadline extension, additional native probe or qualification credit follows."
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "schema": "pr2974.actual-artifact-qualification-entrypoint-review.v1",
+  "source_commit": "124472b8949805e0dd36052df6894b335d8b519d",
+  "source_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+  "reviewer": "root",
+  "scope": "Read-only existing workflow and artifact-validator review; no artifacts built, downloaded, signed, uploaded, installed or qualified by this review.",
+  "original_requirements": {
+    "tasks": [
+      "RSP-001",
+      "RSP-029",
+      "RSP-081",
+      "RSP-084",
+      "RSP-135",
+      "RSP-136",
+      "RSP-139",
+      "RSP-143"
+    ],
+    "frozen_original_source": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+    "acceptance_changed": false,
+    "selected_platforms": [
+      "Linux x64",
+      "macOS x64",
+      "macOS arm64",
+      "Windows x64"
+    ],
+    "final_selected_source_frozen": false
+  },
+  "ordinary_native_wheel": {
+    "trigger": "Unconditional pull_request and push on main/release3.2 plus manual dispatch",
+    "platforms": 4,
+    "python": "3.12",
+    "identity": "All four install a built wheel, clear development overrides and run actual bundled-runtime identity plus default-auto checks.",
+    "identity_probe_limit": "Own docstring and result explicitly say cross_release_upgrade_rollback and signing_qualification not_exercised. Same artifact is restored after local mutation; not a distinct release rollback.",
+    "unix_only": "Linux and both Macs run the standalone installed Pi-output and small installed-SLO wave. They run validate_release_artifacts on their own platform with explicit Windows omission text.",
+    "windows": "Identity, installed command-control-lock and default-auto probes; Pi cases are inside default-auto only. No standalone Pi-output probe, Unix-style artifact-validator JSON or installed SLO wave.",
+    "archive_limit": "Normal CI logs may report wheel/runtime/source/version/rule digests; independent downloaded-byte verification must be separately recorded."
+  },
+  "existing_local_admission": {
+    "script": "scripts/ci/validate_release_artifacts.py",
+    "actual_checks": [
+      "Explicit canonical version and full lower-hex source/rule identity",
+      "Bounded regular wheel/archive metadata and exact native manifest key set",
+      "Exact platform-to-target map, package/source/rule equality and actual member digest/size",
+      "Pure hol-guard wheel plus exactly the explicitly requested native platform set",
+      "Windows omission requires explicit text; a validated Windows wheel forbids that waiver"
+    ],
+    "all_platform_use": "Pass all four --platform values; do not use three-platform default or waiver to claim four-platform acceptance.",
+    "optional_records": "Policy identity, SBOM and provenance arguments are optional. validate_provenance parses bounded JSON/JSONL records and checks expected structural keys; that alone does not cryptographically verify signer, subject/source binding or provenance.",
+    "exact_aggregate": "scripts/verify_native_runtime_release.py validate-local checks the exact four-native target set and its manifests/runtime hashes. Existing --artifact-set full additionally checks the complete Guard distribution set; neither command publishes."
+  },
+  "publishing_workflows": {
+    "native_build_selection": [
+      "Same-repo PR with publish-testpypi-canary label and canary channel",
+      "Authorized release3.0 alpha event",
+      "Stable main push"
+    ],
+    "canary": "Installed PR canary additionally requires PR_CANARY_PUBLISHING_ENABLED and depends on actual TestPyPI publication. It is an external publication route, not necessary to execute offline wheel admission.",
+    "release_attestation": "Main/alpha release jobs use actions/attest-build-provenance and materialize a bundle. These jobs are conditional release paths with write/OIDC/attestation permissions; normal PR success does not mean they ran.",
+    "current_authorization": "No publish workflow, release label, external registry upload, branch authority change or release dispatch is performed by this review."
+  },
+  "frozen_sidecars": {
+    "desktop": "Existing signed Core route is macOS ARM only, trusted main, protected core-alpha-desktop environment, actual configured Apple signing/notarization and an already published stable Core source/wheel.",
+    "pipeline": [
+      "Verify the published wheel provenance/source before staging native runtime and manifest",
+      "Sign native runtime and refresh manifest runtime hash/size",
+      "Build PyInstaller sidecar, reseal packaged native manifest, sign outer executable",
+      "Verify archived runtime digest/size and signing identity; notarize and verify final exported asset"
+    ],
+    "limits": [
+      "The observed frozen verifier validates embedded schema/runtime hash/size and optional TeamIdentifier; final package/source/version/rule linkage still needs retained admitted input and transformation records.",
+      "Unsigned MDM fixture workflow covers macOS/Windows packaging and explicitly expects unhealthy unsigned status; it is not a signed candidate or native rollout proof.",
+      "No signing credentials or protected environment configuration were inspected by this review; available authority is not inferred from workflow names."
+    ]
+  },
+  "concrete_remaining": [
+    {
+      "order": 1,
+      "action": "Complete reviewed combined implementation and scope-appropriate validation, then freeze its exact source and declare selected artifact versions and targets."
+    },
+    {
+      "order": 2,
+      "action": "Build exact baseline and candidate wheels with locked dependencies and declared toolchains; retain actual artifact bytes/digests, native capabilities and manifest/source/rule/version links. Verify the complete four-platform set offline without a Windows waiver."
+    },
+    {
+      "order": 3,
+      "action": "Use each actual installed wheel interpreter and bundled runtime for no-environment launcher, aliases/source references, Watch/availability and approval controls. Keep original registered executable/argv proof separate from HTTP adapters."
+    },
+    {
+      "order": 4,
+      "action": "For each selected signed/frozen distribution, retain pre-sign, signed and packaged identities and execute the relevant existing refresh/seal/verify paths with actual authorized signing context. Do not substitute an unsigned fixture."
+    },
+    {
+      "order": 5,
+      "action": "Run original version/generation update/downgrade/rollback and in-progress-request controls using distinct actual artifacts, then original complete performance/resource/receipt/recovery qualification and concrete canary evidence."
+    }
+  ],
+  "no_task_promotion": true,
+  "qualification_complete": false,
+  "release_ready": false,
+  "source_manifest": [
+    {
+      "path": "scripts/ci/validate_release_artifacts.py",
+      "sha": "2a1674341ef598abe1cb8ea5f7f0994ab495ea63",
+      "size": 18146,
+      "sha256": "7c193280f87dcdfd414b8babc8072049c3c997b541cbae4c463483666d71f08e"
+    },
+    {
+      "path": "scripts/verify_native_runtime_release.py",
+      "sha": "f5202a10948efdfe3dc7c607382990eaed22547e",
+      "size": 19214,
+      "sha256": "9cdb13e8373bedcf59362f751a1bdbb6bbd2b2f4c04cc071fd140cc4809a2111"
+    },
+    {
+      "path": "scripts/build_native_hol_guard_wheel.py",
+      "sha": "5ece449c233fd43043ef83e4df2a7e6ebb529824",
+      "size": 19800,
+      "sha256": "1ce90e6724af019556be94624db543f679e0f17885c223fc55392f4da4d9f7c6"
+    },
+    {
+      "path": "scripts/release/stage_native_runtime_for_desktop_core.py",
+      "sha": "cad082b51a8c3cc77cb8795ae770aa6765db43d8",
+      "size": 9662,
+      "sha256": "c26d8ba36ff093834a2a4e5a7135ba88cd477e755f38d33f12b80361b6363926"
+    },
+    {
+      "path": "scripts/release/seal_pyinstaller_native_manifest.py",
+      "sha": "11db3b7c474285b52f5b636f7d6ae64e3586da8b",
+      "size": 6752,
+      "sha256": "b8c90e671e26eff3a61ec523f3895a0d5001c818144e5e4675d3dc1d58ab3a4a"
+    },
+    {
+      "path": "scripts/release/verify_pyinstaller_native_runtime.py",
+      "sha": "e613e31713b319b5a1e488cd6738a016efcfca87",
+      "size": 4309,
+      "sha256": "da0bc4c961de8358c892248694189518e4e7d1bc6b247717fc2af64b4d252b1b"
+    },
+    {
+      "path": "ci/native_runtime/probe_installed_runtime_identity.py",
+      "sha": "cbc2b324f770c39ae7a863599a9d150ccba53618",
+      "size": 13420,
+      "sha256": "72da3feb3b7bd647130638133a548484e198c743144521e7e3fda9f004e90a60"
+    },
+    {
+      "path": "ci/native_runtime/probe_native_default_auto.py",
+      "sha": "9d4e11d4f5b4affcfc4e07289d5b8f03a2bcabd9",
+      "size": 20221,
+      "sha256": "552db3dc5699068cd849d4ba9201cc7f5d293ffc6d57ae576d55364f3907e316"
+    },
+    {
+      "path": "ci/native_runtime/probe_installed_pi_output.py",
+      "sha": "2351b319b4874c20f0b52b0ec53b9d1e9c4d9c4a",
+      "size": 12444,
+      "sha256": "649afc8be47f24aca89aa3e40c87c1ea245d3064cf9d44d5adf00b08a924c5b2"
+    },
+    {
+      "path": ".github/workflows/native-wheel-ci.yml",
+      "sha": "cae400ef9a00fb8983d50f96086e490689618515",
+      "size": 23781,
+      "sha256": "4fde268386a8be5d11d9bf6d9ac85c9aff5271b4e2d9e90bef3c6598a201c339"
+    },
+    {
+      "path": ".github/workflows/native-release-contract.yml",
+      "sha": "587e8d6dd3836179e1ebcde744641cd5968addcf",
+      "size": 2063,
+      "sha256": "3ddb30d16e002a449ddf2b1d05677837de5cfe1e65d42e103475b96434ce9874"
+    },
+    {
+      "path": ".github/workflows/publish.yml",
+      "sha": "81176818383c3f631903d88933bde6c0e1995f41",
+      "size": 77935,
+      "sha256": "abcc31002ecfc098e76e01eea4ffd65376e464f373d821f025dc84e4f8b72575"
+    },
+    {
+      "path": ".github/workflows/desktop-core-alpha-feed.yml",
+      "sha": "3e25bb8dc144bafd137f463ecd71c299ed46c4be",
+      "size": 27384,
+      "sha256": "2dce0a3a443283fdc52f5f4c6318f08dd43f90011d01406155603764c17e596c"
+    },
+    {
+      "path": ".github/workflows/mdm-artifacts.yml",
+      "sha": "8ce3fa04bd30a858731588d4d246d80ab1f9cf75",
+      "size": 3205,
+      "sha256": "59c0e58e76bf16cdbc6f9241c61fa954414565494ca2001a8bfc90e52151d338"
+    }
+  ]
+}

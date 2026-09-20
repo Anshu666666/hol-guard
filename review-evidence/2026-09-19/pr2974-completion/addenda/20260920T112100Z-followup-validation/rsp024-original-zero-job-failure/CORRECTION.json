@@ -1,0 +1,44 @@
+{
+  "schema": "pr2974.rsp024.workflow-context-correction.v1",
+  "original": {
+    "run": 35509120152,
+    "source": "e32312ef43e1b4680361a133cb24eb0fd29efe72",
+    "driver": "b08f2b6bc345272b80e205e894a71f2f7c9380aa",
+    "workflow_blob": "d7d2dc6d0f71a0b685f7011bfe0904e621e9f79e",
+    "conclusion": "failure",
+    "jobs": 0,
+    "imports": 0,
+    "tests": 0
+  },
+  "cause": {
+    "status": "source-consistent diagnosis; exact workflow annotation not yet available",
+    "detail": "runner context is not permitted in jobs.<job_id>.env. The original uses runner.temp there; the authoritative availability table excludes runner for that key.",
+    "primary_source": "https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability"
+  },
+  "correction": {
+    "source_unchanged": true,
+    "runner_unchanged": "30cebd673e5a3687d264588e418f4a6d07c7d69b",
+    "driver_tree": "c3daedfe613c1b5863353aa08efe0fac938d230d",
+    "workflow_blob": "156c9cf2fd8b287256b60354ee70a17f63071e3f",
+    "bytes": 1701,
+    "sha256": "3c8df19a3ab790181265ceab03eeb492e7f44652e8a160620f1f8ff08b819a6f",
+    "changes": [
+      "Remove the job-level runner expression.",
+      "Add a first shell step that writes the allocated RUNNER_TEMP-based path to GITHUB_ENV, preserving the original evidence location for later steps.",
+      "Select a uniquev2 push branch; source/runner/commands/gates/budgets and step-level artifact path remain unchanged."
+    ]
+  },
+  "status": "unexecuted successor workflow; original failed attempt retained",
+  "api_records": [
+    {
+      "path": "run.json",
+      "bytes": 13571,
+      "sha256": "1b49d30868dacf6cfe6ea5b0090f210ac8ef866ab872df1513af3a9592acb050"
+    },
+    {
+      "path": "jobs.json",
+      "bytes": 27,
+      "sha256": "b3dab5870ff3a8209160335de7c1077b89e461d875d9041ac9d8b8ed7c1666f6"
+    }
+  ]
+}

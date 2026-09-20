@@ -1,0 +1,26 @@
+{
+  "actual_process_returncode": 0,
+  "command": [
+    "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+    "-c",
+    "\nimport json, sys\nevents = []\ndef trace(frame, event, value):\n    if event == \"exception\" and frame.f_code.co_filename.replace(\"\\\\\", \"/\").endswith(\n        (\"/mcp_risk_dependencies.py\", \"/mcp_approval_risk.py\")\n    ):\n        if len(events) < 48:\n            observed = frame.f_locals.get(\"value\")\n            observed_kind = type(observed)\n            member = frame.f_locals.get(\"name\")\n            events.append({\n                \"function\": frame.f_code.co_name, \"line\": frame.f_lineno,\n                \"exception_type\": value[0].__name__,\n                \"observed_value_type\": observed_kind.__module__ + \".\" + observed_kind.__qualname__,\n                \"member_name\": member[:160] if type(member) is str else None,\n            })\n    return trace\nsys.settrace(trace)\ntry:\n    from codex_plugin_scanner.guard import mcp_tool_calls as calls\n    from codex_plugin_scanner.guard.proxy import runtime_mcp\n    result = {\"available\": calls._RISK_PAIR_HELPERS.available,\n              \"refusal_reason\": calls._RISK_PAIR_HELPERS.refusal_reason,\n              \"approval_defaults_available\": runtime_mcp._APPROVAL_RISK_DEFAULTS.available}\nexcept BaseException as error:\n    result = {\"import_exception_type\": type(error).__name__}\nfinally:\n    sys.settrace(None)\nresult.update({\"classification\": \"diagnostic_only_traced_import\", \"events\": events})\nprint(json.dumps(result, sort_keys=True, allow_nan=False))\n"
+  ],
+  "configured_timeout_s": 180,
+  "containment_scope": "driver_process_group_only",
+  "direct_process_retired": true,
+  "effective_timeout_s": 180,
+  "elapsed_s": 1.961219,
+  "escaped_descendant_containment_proven": false,
+  "exit_code": 0,
+  "group_signal": null,
+  "name": "diagnostic-import-trace",
+  "process_group_retired": true,
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 2798,
+  "stdout_sha256": "3c5929a3eb4ec2b34e1204ad05c515970fb80f6f13dca9db502b2ff374e95dda",
+  "timed_out": false,
+  "validation_budget_exhausted": false,
+  "windows_descendant_retirement_proven": null,
+  "windows_taskkill_attempt": null
+}

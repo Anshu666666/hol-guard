@@ -1,0 +1,88 @@
+[
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 54,
+      "row": 16
+    },
+    "filename": "/home/user/pr2974-recovery/windows/ex-absolute-wtext-format/after/tests/test_windows_atomic_rename_probe.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from __future__ import annotations\n\nimport ctypes\nimport importlib.util\nimport json\nimport os\nimport stat\nfrom dataclasses import replace\nfrom pathlib import Path\nfrom types import SimpleNamespace\n\nimport pytest\nfrom ci.native_runtime.windows_atomic_rename_probe_child import _NativeCalls, _RenameOs\n\nfrom ci.native_runtime import windows_atomic_rename_probe as probe\nfrom codex_plugin_scanner.guard.daemon import manager\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 18
+          },
+          "location": {
+            "column": 1,
+            "row": 1
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 1
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 1,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "N818",
+    "end_location": {
+      "column": 21,
+      "row": 203
+    },
+    "filename": "/home/user/pr2974-recovery/windows/ex-absolute-wtext-format/after/tests/test_windows_replaceable_unicode_crt.py",
+    "fix": null,
+    "location": {
+      "column": 11,
+      "row": 203
+    },
+    "message": "Exception name `StopNative` should be named with an Error suffix",
+    "noqa_row": 203,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/error-suffix-on-exception-name"
+  },
+  {
+    "cell": null,
+    "code": "RUF021",
+    "end_location": {
+      "column": 106,
+      "row": 120
+    },
+    "filename": "/home/user/pr2974-recovery/windows/ex-absolute-wtext-format/after/tests/test_windows_wtext_acceptance_probe.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "(len(value) == 64 and all(c in \"0123456789abcdef\" for c in value))",
+          "end_location": {
+            "column": 106,
+            "row": 120
+          },
+          "location": {
+            "column": 42,
+            "row": 120
+          }
+        }
+      ],
+      "message": "Parenthesize the `and` subexpression"
+    },
+    "location": {
+      "column": 42,
+      "row": 120
+    },
+    "message": "Parenthesize `a and b` expressions when chaining `and` and `or` together, to make the precedence clear",
+    "noqa_row": 120,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/parenthesize-chained-operators"
+  }
+]

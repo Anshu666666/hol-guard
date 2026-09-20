@@ -1,0 +1,633 @@
+{
+  "schema": "pr2974-normal-124472-terminal-audit.v1",
+  "observed_at": "2026-09-20 11:16:31 UTC",
+  "source": {
+    "sha": "124472b8949805e0dd36052df6894b335d8b519d",
+    "tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+    "sole_parent": "4afa20cf014ccba918bf2fa61552dafe66767930"
+  },
+  "pr_base": {
+    "branch": "release/3.2",
+    "sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9"
+  },
+  "normal_build": {
+    "sha": "50b39d7e7a4722c2773d94da0ea4c2482f055ef5",
+    "tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+    "same_tree_verified": true,
+    "distinct_from_source_commit": true
+  },
+  "checks": {
+    "total": 187,
+    "states": {
+      "success": 168,
+      "skipped": 19
+    },
+    "failed": 0,
+    "active": 0,
+    "skips_are_not_passes": true
+  },
+  "native_run": 35505324310,
+  "platforms": {
+    "linux": {
+      "native_job": 106064032625,
+      "conclusion": "success",
+      "identity": {
+        "runtime_sha256": "47dd2ba3a71db008be3bc1f33c664501e1f26315a63d9c5824dbdcb9a6fb1a22",
+        "runtime_bytes": 12403456,
+        "case_count": 17,
+        "passed": 16,
+        "replaced": 1,
+        "signing_qualification": "not_exercised",
+        "cross_release_upgrade_rollback": "not_exercised"
+      },
+      "default_auto": {
+        "resident": 21,
+        "corpus": 21,
+        "receipts": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        },
+        "oneshot": 0,
+        "python_semantic": 0,
+        "fail_safe": 0
+      },
+      "standalone_pi_output_probe": true,
+      "installed_slo": {
+        "passed": true,
+        "evidence_class": "smoke",
+        "qualification_complete": false,
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": true,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": true,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "c16": {
+          "deadline_ms": 1000,
+          "errors": 0,
+          "latency": {
+            "count": 16,
+            "max_ms": 578.019,
+            "p50_ms": 558.584,
+            "p95_ms": 578.019,
+            "p99_ms": 578.019
+          },
+          "native_overloads": 0,
+          "overloaded": 0,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "native_resident": 16
+          }
+        },
+        "c64": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 630.56,
+            "p50_ms": 463.314,
+            "p95_ms": 611.781,
+            "p99_ms": 630.56
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 26,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 26,
+            "native_resident": 38
+          }
+        },
+        "recovery": {
+          "count": 2,
+          "max_ms": 173.598,
+          "p50_ms": 169.057,
+          "p95_ms": 173.598,
+          "p99_ms": 173.598
+        },
+        "readiness": {
+          "count": 2,
+          "max_ms": 0.045,
+          "p50_ms": 0.038,
+          "p95_ms": 0.045,
+          "p99_ms": 0.045
+        },
+        "installed_launcher": {
+          "boundary": "INSTALLED_LAUNCHER",
+          "cases_validated": [
+            "benign",
+            "redacted"
+          ],
+          "configuration": "registered_argv",
+          "event": "PostToolUse",
+          "evidence_class": "smoke",
+          "harness": "claude-code",
+          "latency": {
+            "count": 2,
+            "max_ms": 212.791,
+            "p50_ms": 207.847,
+            "p95_ms": 212.791,
+            "p99_ms": 212.791
+          },
+          "process_startup_included": true,
+          "qualification_complete": false,
+          "remaining_routes": "not_measured",
+          "stdout_and_exit_checked": true
+        }
+      },
+      "soak": {
+        "daemon_process_count": 1,
+        "database_bytes": 178491392,
+        "errors": 0,
+        "health_checks": 20811,
+        "health_failures": 0,
+        "lifecycle_events": [
+          "start_requested",
+          "ready",
+          "stopped"
+        ],
+        "max_file_descriptors": 204,
+        "max_hook_latency_ms": 4500,
+        "max_ms": 590.86,
+        "max_threads": 71,
+        "p95_ms": 529.79,
+        "passed": true,
+        "pid_stable": true,
+        "receipts": 250000,
+        "requests": 100000,
+        "responses": 100000,
+        "rss_baseline_bytes": 610103296,
+        "rss_growth": 0.027714,
+        "rss_peak_bytes": 627011584,
+        "soak_passed": true,
+        "transient_health_failures": 0
+      }
+    },
+    "windows": {
+      "native_job": 106064032716,
+      "conclusion": "success",
+      "identity": {
+        "runtime_sha256": "c14eaee3b399b21a4d2e002f3f31ef2494588ae2998394ac47a85ee7ea8bfeee",
+        "runtime_bytes": 11350528,
+        "case_count": 17,
+        "passed": 16,
+        "replaced": 1,
+        "signing_qualification": "not_exercised",
+        "cross_release_upgrade_rollback": "not_exercised"
+      },
+      "default_auto": {
+        "resident": 21,
+        "corpus": 21,
+        "receipts": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        },
+        "oneshot": 0,
+        "python_semantic": 0,
+        "fail_safe": 0
+      },
+      "standalone_pi_output_probe": false,
+      "installed_slo": null,
+      "soak": null
+    },
+    "mac_intel": {
+      "native_job": 106064032740,
+      "conclusion": "success",
+      "identity": {
+        "runtime_sha256": "97fb9e2020d08d02bd45fe3af87c19376f475c0e467d38b2d31325a00df88128",
+        "runtime_bytes": 11303428,
+        "case_count": 17,
+        "passed": 16,
+        "replaced": 1,
+        "signing_qualification": "not_exercised",
+        "cross_release_upgrade_rollback": "not_exercised"
+      },
+      "default_auto": {
+        "resident": 21,
+        "corpus": 21,
+        "receipts": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        },
+        "oneshot": 0,
+        "python_semantic": 0,
+        "fail_safe": 0
+      },
+      "standalone_pi_output_probe": true,
+      "installed_slo": {
+        "passed": true,
+        "evidence_class": "smoke",
+        "qualification_complete": false,
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": true,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": true,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "c16": {
+          "deadline_ms": 1000,
+          "errors": 0,
+          "latency": {
+            "count": 16,
+            "max_ms": 675.182,
+            "p50_ms": 640.797,
+            "p95_ms": 675.182,
+            "p99_ms": 675.182
+          },
+          "native_overloads": 0,
+          "overloaded": 0,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "native_resident": 16
+          }
+        },
+        "c64": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 1097.941,
+            "p50_ms": 542.748,
+            "p95_ms": 1092.441,
+            "p99_ms": 1097.941
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 32,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 32,
+            "native_resident": 32
+          }
+        },
+        "recovery": {
+          "count": 2,
+          "max_ms": 350.256,
+          "p50_ms": 338.045,
+          "p95_ms": 350.256,
+          "p99_ms": 350.256
+        },
+        "readiness": {
+          "count": 2,
+          "max_ms": 0.11,
+          "p50_ms": 0.091,
+          "p95_ms": 0.11,
+          "p99_ms": 0.11
+        },
+        "installed_launcher": {
+          "boundary": "INSTALLED_LAUNCHER",
+          "cases_validated": [
+            "benign",
+            "redacted"
+          ],
+          "configuration": "registered_argv",
+          "event": "PostToolUse",
+          "evidence_class": "smoke",
+          "harness": "claude-code",
+          "latency": {
+            "count": 2,
+            "max_ms": 385.695,
+            "p50_ms": 382.5,
+            "p95_ms": 385.695,
+            "p99_ms": 385.695
+          },
+          "process_startup_included": true,
+          "qualification_complete": false,
+          "remaining_routes": "not_measured",
+          "stdout_and_exit_checked": true
+        }
+      },
+      "soak": null
+    },
+    "mac_arm": {
+      "native_job": 106064032756,
+      "conclusion": "success",
+      "identity": {
+        "runtime_sha256": "3a59a8cf2c9875e3b8e4c4c79c518ccfea2c4e857405800a0d4d5a2bfbced264",
+        "runtime_bytes": 10801664,
+        "case_count": 17,
+        "passed": 16,
+        "replaced": 1,
+        "signing_qualification": "not_exercised",
+        "cross_release_upgrade_rollback": "not_exercised"
+      },
+      "default_auto": {
+        "resident": 21,
+        "corpus": 21,
+        "receipts": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        },
+        "oneshot": 0,
+        "python_semantic": 0,
+        "fail_safe": 0
+      },
+      "standalone_pi_output_probe": true,
+      "installed_slo": {
+        "passed": true,
+        "evidence_class": "smoke",
+        "qualification_complete": false,
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": true,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": true,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "c16": {
+          "deadline_ms": 1000,
+          "errors": 0,
+          "latency": {
+            "count": 16,
+            "max_ms": 345.969,
+            "p50_ms": 337.142,
+            "p95_ms": 345.969,
+            "p99_ms": 345.969
+          },
+          "native_overloads": 0,
+          "overloaded": 0,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "native_resident": 16
+          }
+        },
+        "c64": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 381.729,
+            "p50_ms": 107.42,
+            "p95_ms": 356.523,
+            "p99_ms": 381.729
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 32,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 32,
+            "native_resident": 32
+          }
+        },
+        "recovery": {
+          "count": 2,
+          "max_ms": 237.181,
+          "p50_ms": 230.404,
+          "p95_ms": 237.181,
+          "p99_ms": 237.181
+        },
+        "readiness": {
+          "count": 2,
+          "max_ms": 0.037,
+          "p50_ms": 0.035,
+          "p95_ms": 0.037,
+          "p99_ms": 0.037
+        },
+        "installed_launcher": {
+          "boundary": "INSTALLED_LAUNCHER",
+          "cases_validated": [
+            "benign",
+            "redacted"
+          ],
+          "configuration": "registered_argv",
+          "event": "PostToolUse",
+          "evidence_class": "smoke",
+          "harness": "claude-code",
+          "latency": {
+            "count": 2,
+            "max_ms": 278.844,
+            "p50_ms": 255.635,
+            "p95_ms": 278.844,
+            "p99_ms": 278.844
+          },
+          "process_startup_included": true,
+          "qualification_complete": false,
+          "remaining_routes": "not_measured",
+          "stdout_and_exit_checked": true
+        }
+      },
+      "soak": null
+    }
+  },
+  "windows_edge": {
+    "run": 35505324279,
+    "job": 106064032818,
+    "original_transport_controls": {
+      "passed": 15,
+      "seconds": 37.27
+    },
+    "preceding_python_controls": {
+      "passed": 20,
+      "seconds": 7.55
+    },
+    "runtime_block": {
+      "passed": 201,
+      "ignored": 2
+    },
+    "historical_4afa_startup_cause_resolved": false
+  },
+  "security": [
+    {
+      "id": 106065842501,
+      "name": "SonarCloud Code Analysis",
+      "conclusion": "success",
+      "url": "https://sonarcloud.io/dashboard?id=hashgraph-online_hol-guard&pullRequest=2974",
+      "title": "Quality Gate passed",
+      "summary": "Issues  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0 New issues](https://sonarcloud.io/project/issues?id=hashgraph-online_hol-guard&pullRequest=2974&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/accepted.svg '') [0 Accepted issues](https://sonarcloud.io/project/issues?id=hashgraph-online_hol-guard&pullRequest=2974&issueStatuses=ACCEPTED)\n\nMeasures  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0 Security Hotspots](https://sonarcloud.io/project/security_hotspots?id=hashgraph-online_hol-guard&pullRequest=2974&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [83.4% Coverage on New Code](https://sonarcloud.io/component_measures?id=hashgraph-online_hol-guard&pullRequest=2974&metric=new_coverage&view=list)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0.0% Duplication on New Code](https://sonarcloud.io/component_measures?id=hashgraph-online_hol-guard&pullRequest=2974&metric=new_duplicated_lines_density&view=list)  \n  \n[See analysis details on SonarQube Cloud](https://sonarcloud.io/dashboard?id=hashgraph-online_hol-guard&pullRequest=2974)\n\n"
+    },
+    {
+      "id": 106065332889,
+      "name": "sonar",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35505324332/job/106065332889",
+      "title": null,
+      "summary": null
+    },
+    {
+      "id": 106065319469,
+      "name": "sonar-guard",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35505324332/job/106065319469",
+      "title": null,
+      "summary": null
+    },
+    {
+      "id": 106064766833,
+      "name": "CodeQL",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35505324328/job/106064766833",
+      "title": null,
+      "summary": null
+    },
+    {
+      "id": 106064111279,
+      "name": "CodeQL",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/runs/106064111279",
+      "title": "No new alerts in code changed by this pull request",
+      "summary": "[View all branch alerts](/hashgraph-online/hol-guard/security/code-scanning?query=pr%3A2974+tool%3ACodeQL+is%3Aopen)."
+    },
+    {
+      "id": 106064033623,
+      "name": "Kilo Code Review",
+      "conclusion": "success",
+      "url": "https://app.kilo.ai/code-reviews/0e0c9931-b4c3-4171-988e-f6a804018de0",
+      "title": "Kilo Code Review completed",
+      "summary": "Code review completed successfully."
+    },
+    {
+      "id": 106064033373,
+      "name": "Gitleaks",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35505324366/job/106064033373",
+      "title": null,
+      "summary": null
+    },
+    {
+      "id": 106064033183,
+      "name": "quality",
+      "conclusion": "success",
+      "url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35505324332/job/106064033183",
+      "title": null,
+      "summary": null
+    }
+  ],
+  "gitleaks": {
+    "run": 35505324366,
+    "job": 106064033373,
+    "range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..124472b8949805e0dd36052df6894b335d8b519d",
+    "commits": 1350,
+    "bytes": 69187546,
+    "seconds": 27.7,
+    "leaks_reported": 0
+  },
+  "review": {
+    "observed_at": "2026-09-20T11:05Z",
+    "threads": 59,
+    "resolved": 59,
+    "unresolved": 0,
+    "formal_reviews": 51,
+    "formal_approvals": 0,
+    "all_formal_states": "COMMENTED",
+    "requested_reviewer": "deep-purple-boots",
+    "mergeable": true,
+    "mergeable_state": "blocked",
+    "target_applicable_ruleset": 14511015,
+    "required_approvals": 1,
+    "require_code_owner_review": true,
+    "require_last_push_approval": true,
+    "required_review_thread_resolution": true,
+    "required_status": "quality",
+    "main_only_ruleset": 17369060,
+    "main_only_rules_not_attributed_to_release_3_2": true
+  },
+  "artifact_byte_scope": {
+    "all_four_archives": "GitHub original metadata only; archive bytes not downloaded or independently rehashed",
+    "runtime_and_wheel_hashes": "Original runner-reported identities, not independent local binary hashing",
+    "unix_artifact_evidence": "Exact JSON printed in Linux and both Mac logs retained",
+    "windows_artifact_validator": false,
+    "windows_standalone_pi_output_probe": false,
+    "windows_pi_scope": "Pi cells inside the original 21-case default-auto corpus only",
+    "windows_installed_slo": false,
+    "signing_qualification": false,
+    "cross_release_upgrade_rollback": false
+  },
+  "qualification": {
+    "complete": false,
+    "original_baseline": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+    "original_paired_campaign_executed_by_this_normal_run": false,
+    "original_c16_p99_ms": 200,
+    "ordinary_smoke_c16_p99_ms": 1000,
+    "c64_latency_ceiling": null,
+    "registered_launcher_scope": "Only two Claude PostToolUse cases per Unix smoke; all other launcher routes remain unmeasured",
+    "normal_smoke_size_classes": "1k/250k/1m/5m; not original qualification size/sample plan",
+    "soak_rss_gate": 0.5,
+    "mixed_rss_gate": 0.12,
+    "soak_observed_fraction": 0.027713811924726925,
+    "cleanup_scope": "Original reported stopped/contained outcomes; not a complete escaped-descendant certificate",
+    "task_promotions": 0
+  }
+}

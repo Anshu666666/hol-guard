@@ -1,0 +1,223 @@
+--- before/ci/native_runtime/test_windows_startup_capture.py
++++ after/ci/native_runtime/test_windows_startup_capture.py
+@@ -24,12 +24,19 @@
+     phases[0] = [1, 1, 0, 100, 110, 0, 0]
+     return {
+         "schema": "hol-guard-native-windows-startup.v1",
+-        "parent_only": True, "child_observed": False, "complete_run": False,
+-        "headline_timing_eligible": False, "qualification_complete": False,
+-        "original_error": 0, "original_budget_us": 750000,
+-        "observed_elapsed_us": 10000, "observed_remaining_us": 740000,
+-        "phases": phases, "events": [[0] * 4 for _ in EVENTS],
+-        "retries": [0] * 5, "counter_or_clock_overflow": False,
++        "parent_only": True,
++        "child_observed": False,
++        "complete_run": False,
++        "headline_timing_eligible": False,
++        "qualification_complete": False,
++        "original_error": 0,
++        "original_budget_us": 750000,
++        "observed_elapsed_us": 10000,
++        "observed_remaining_us": 740000,
++        "phases": phases,
++        "events": [[0] * 4 for _ in EVENTS],
++        "retries": [0] * 5,
++        "counter_or_clock_overflow": False,
+         "observation_lost": False,
+     }
+ 
+@@ -40,7 +47,10 @@
+ 
+ def invocation() -> tuple[tuple[str, ...], dict[str, Any]]:
+     return ("/owned/runtime.exe", "hook-client", "--stdin", "/owned/native-runtime"), {
+-        "input": PAYLOAD, "check": False, "capture_output": True, "timeout": 3,
++        "input": PAYLOAD,
++        "check": False,
++        "capture_output": True,
++        "timeout": 3,
+     }
+ 
+ 
+@@ -59,16 +69,28 @@
+     assert not parsed["record"]["child_observed"]
+ 
+ 
+-@pytest.mark.parametrize(("field", "bad"), [
+-    ("schema", "different"),
+-    ("parent_only", False), ("child_observed", True), ("complete_run", True),
+-    ("headline_timing_eligible", True), ("qualification_complete", True),
+-    ("observation_lost", 0), ("counter_or_clock_overflow", "false"),
+-    ("original_budget_us", 751000), ("original_budget_us", True),
+-    ("observed_elapsed_us", -1), ("observed_remaining_us", 750001),
+-    ("original_error", len(CODES) + 2), ("original_error", False),
+-    ("phases", []), ("events", []), ("retries", [0, 0, 0]),
+-])
++@pytest.mark.parametrize(
++    ("field", "bad"),
++    [
++        ("schema", "different"),
++        ("parent_only", False),
++        ("child_observed", True),
++        ("complete_run", True),
++        ("headline_timing_eligible", True),
++        ("qualification_complete", True),
++        ("observation_lost", 0),
++        ("counter_or_clock_overflow", "false"),
++        ("original_budget_us", 751000),
++        ("original_budget_us", True),
++        ("observed_elapsed_us", -1),
++        ("observed_remaining_us", 750001),
++        ("original_error", len(CODES) + 2),
++        ("original_error", False),
++        ("phases", []),
++        ("events", []),
++        ("retries", [0, 0, 0]),
++    ],
++)
+ def test_reader_rejects_wrong_schema_scope_types_and_bounds(field: str, bad: Any) -> None:
+     value = record()
+     value[field] = bad
+@@ -76,15 +98,18 @@
+         parse_stderr(frame(value), 0)
+ 
+ 
+-@pytest.mark.parametrize("bad_phase", [
+-    [0, 1, 0, 0, 0, 0, 0],
+-    [1, 1, 2, 1, 2, 2, 2],
+-    [1, 1, 1, 1, 2, 0, 0],
+-    [1, 1, 0, 2, 1, 0, 0],
+-    [1, 1, 0, 1, 10001, 0, 0],
+-    [1, 0, 0, 1, 2, 0, 0],
+-    [65536, 65536, 0, 1, 2, 0, 0],
+-])
++@pytest.mark.parametrize(
++    "bad_phase",
++    [
++        [0, 1, 0, 0, 0, 0, 0],
++        [1, 1, 2, 1, 2, 2, 2],
++        [1, 1, 1, 1, 2, 0, 0],
++        [1, 1, 0, 2, 1, 0, 0],
++        [1, 1, 0, 1, 10001, 0, 0],
++        [1, 0, 0, 1, 2, 0, 0],
++        [65536, 65536, 0, 1, 2, 0, 0],
++    ],
++)
+ def test_reader_rejects_inconsistent_phase_rows(bad_phase: list[int]) -> None:
+     value = record()
+     value["phases"][0] = bad_phase
+@@ -92,11 +117,24 @@
+         parse_stderr(frame(value), 0)
+ 
+ 
+-@pytest.mark.parametrize("mutation", [
+-    "missing_field", "extra_field", "duplicate_key", "duplicate_frame",
+-    "truncated", "after_frame", "nonfinite", "too_large", "wrong_exit",
+-    "wrong_error", "bad_event", "bad_retry", "clock_mismatch",
+-])
++@pytest.mark.parametrize(
++    "mutation",
++    [
++        "missing_field",
++        "extra_field",
++        "duplicate_key",
++        "duplicate_frame",
++        "truncated",
++        "after_frame",
++        "nonfinite",
++        "too_large",
++        "wrong_exit",
++        "wrong_error",
++        "bad_event",
++        "bad_retry",
++        "clock_mismatch",
++    ],
++)
+ def test_reader_rejects_unjoinable_or_truncated_records(mutation: str) -> None:
+     value = record()
+     code = 0
+@@ -149,7 +187,9 @@
+ 
+ def test_spy_forwards_original_target_once_and_retains_result_before_assertions() -> None:
+     argv, kwargs = invocation()
+-    returned = subprocess.CompletedProcess(argv, 0, b'{"error":"native_request_invalid_json","retryable":false}', frame(record()))
++    returned = subprocess.CompletedProcess(
++        argv, 0, b'{"error":"native_request_invalid_json","retryable":false}', frame(record())
++    )
+     seen: list[tuple[Any, Any]] = []
+ 
+     def original(*args: Any, **options: Any) -> Any:
+@@ -168,10 +208,15 @@
+     assert capture.returned["returncode"] == 0
+ 
+ 
+-@pytest.mark.parametrize("error", [
+-    subprocess.TimeoutExpired(("runtime",), 3), OSError(5, "private-sentinel"),
+-    KeyboardInterrupt(), RuntimeError("private-sentinel"),
+-])
++@pytest.mark.parametrize(
++    "error",
++    [
++        subprocess.TimeoutExpired(("runtime",), 3),
++        OSError(5, "private-sentinel"),
++        KeyboardInterrupt(),
++        RuntimeError("private-sentinel"),
++    ],
++)
+ def test_spy_preserves_original_exception_identity(error: BaseException) -> None:
+     argv, kwargs = invocation()
+     calls = 0
+@@ -201,9 +246,11 @@
+     argv, kwargs = invocation()
+     calls: list[object] = []
+     returned = subprocess.CompletedProcess(argv, 0, b"{}", frame(record()))
++
+     def original(*args: Any, **options: Any) -> Any:
+         calls.append(args)
+         return returned
++
+     capture = Capture(original, argv[0])
+     capture.invoke(argv, **kwargs)
+     first = copy.deepcopy(capture.returned)
+@@ -216,8 +263,10 @@
+     argv, kwargs = invocation()
+     returned = subprocess.CompletedProcess(argv, 0, b"{}", b"")
+     capture = Capture(lambda *args, **options: returned, argv[0])
++
+     def unavailable(_result: Any) -> None:
+         raise RuntimeError("observer failure")
++
+     monkeypatch.setattr(capture, "_returned", unavailable)
+     assert capture.invoke(argv, **kwargs) is returned
+     assert capture.lost
+@@ -228,9 +277,11 @@
+     stop = (argv[0], "resident-stop", "--state-dir", argv[3])
+     returned = subprocess.CompletedProcess(stop, 2, b"", b"native_resident_stop_unavailable\n")
+     seen: list[Any] = []
++
+     def original(*args: Any, **kwargs: Any) -> Any:
+         seen.append((args, kwargs))
+         return returned
++
+     capture = Capture(original, argv[0])
+     assert capture.invoke(stop, check=False, capture_output=True, timeout=2) is returned
+     assert len(seen) == 1 and capture.target_calls == 0 and capture.stop_calls == 1
+@@ -279,9 +330,16 @@
+     finally:
+         plugin.pytest_unconfigure(None)
+ 
+-@pytest.mark.parametrize(("elapsed", "valid"), [
+-    (749999, True), (750000, True), (750001, True), (749998, False),
+-])
++
++@pytest.mark.parametrize(
++    ("elapsed", "valid"),
++    [
++        (749999, True),
++        (750000, True),
++        (750001, True),
++        (749998, False),
++    ],
++)
+ def test_zero_remaining_preserves_microsecond_flooring_boundary(elapsed: int, valid: bool) -> None:
+     value = record()
+     value["observed_elapsed_us"] = elapsed

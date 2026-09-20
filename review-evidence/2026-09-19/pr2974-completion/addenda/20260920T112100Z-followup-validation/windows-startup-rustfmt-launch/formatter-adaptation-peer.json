@@ -1,0 +1,152 @@
+{
+  "schema": "pr2974.windows-startup-rustfmt-adaptation-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "verdict": "clear_for_formatter_preparation_only",
+  "source_packet_tree": "62db1be46e8ded842ad52613bc57af55ec4422df",
+  "workflow_template_tree": "9dbe51d2502a7aa2200e4b49e784ea72189c5aaa",
+  "reviewed_files": {
+    "adaptation": {
+      "bytes": 2574,
+      "git_blob": "d5d2e45c7842217dc5eebf67704ff53eb44df9c1",
+      "sha256": "4249b88b9904599b765fe63e382c107653ddfa907385695f4b567fd6be8c16e3"
+    },
+    "runner": {
+      "bytes": 13228,
+      "git_blob": "ac5d25c98f5c9c94089ab4552fe98e93c5738b9f",
+      "sha256": "3f89122ae2a6daa93011dc44136f86a961052919c593910cd13745dba641ca32"
+    },
+    "projection": {
+      "bytes": 7141,
+      "git_blob": "fd6d124aa08693f56c52acaa201aa9594f3f0172",
+      "sha256": "d48fa6994ad27073f6137f9ee750319aa7f4e8fe2309a6885b0bbddc6b86a92c"
+    },
+    "manifest": {
+      "bytes": 3850,
+      "git_blob": "35d00d194f6bf0fc5e0545dc16713f73ff4e0904",
+      "sha256": "341a3638a59dbfaaf2f2add6091b608b520530ee68733df7d334f6ac9cdf0bc3"
+    },
+    "workflow": {
+      "bytes": 2692,
+      "git_blob": "2a327d0bc6a4ff2caeb373e293d1430a92e1433b",
+      "sha256": "3bc55c0d3ffd19e78f84d8fb1ea4f5f7453cb4c1ba8ecca26343005014607a1b"
+    }
+  },
+  "verified_transformations": {
+    "runner": "Exactly the eight source paths plus the two image/cardinality checks changed from the executed reference runner 88140fbc3a1519628f4ab10aa99fc08f11835406.",
+    "projection": "Exactly the eight source names plus maximum formatted-file count changed from f977d2185ed8e8479118d34409fbb4e8d0f6673f.",
+    "workflow": "Exactly title, unique push branch, manifest SHA-256 and artifact label changed from 37c33c477fdac0f79ed1abb5e6bbc9b0e2611810.",
+    "images": "All eight byte counts, Git blob identities and SHA-256 values match the corrected source already reviewed in f0cd350afbe6dbf668765f1e6359cdee4f07182e."
+  },
+  "preserved_invariants": [
+    "Rust 1.88.0 and the exact x86_64 Linux rustfmt binary hash remain pinned; explicit edition-2021-only configuration and stdin/emit-stdout isolate each image.",
+    "Input source and driver HEAD/tree/status checks, image/manifest hashes, original bytes after preparation, bounded formatter commands and idempotence are unchanged.",
+    "Hosted per-command bounds remain 1 GiB address space, 10 CPU seconds, 15 wall seconds and 1 MiB per stdout/stderr stream. These are hosted limits; this peer does not authorize a local asnf toolchain run.",
+    "Thirty expected successful command records plus eight source images and one original result select 39 log files, below the unchanged 64-file cap. Per-file and total projection bounds, original result-first emission and explicit incomplete failure remain unchanged.",
+    "The always-run log projection preserves actual returned images, result and described stderr; full artifact separately retains stdout and diffs. Preparation failure is never converted to success.",
+    "Only source SHA/tree placeholders remain for root's immutable commit binding. No product commit, native compilation, control, installed workload or benchmark is performed by this preparation."
+  ],
+  "limits": [
+    "No new commands, formatter, source controls or workloads were executed in this peer; comparison and hashes are data-only.",
+    "The prior component-only asnf rustfmt exit 127 caused by missing librustc_driver remains an unavailable local formatter receipt, not a passing preparation.",
+    "Returned formatted bytes must be recovered, rehashed and reviewed before a separate immutable source/control validation.",
+    "Previously documented timeout process-group cleanup race remains fail-closed preparation evidence; no descendant-containment guarantee is added."
+  ],
+  "independent_data_comparison": {
+    "runner": [
+      {
+        "from": "SOURCE_PATHS = (\n    \"rust/crates/guard-runtime/src/managed_resident.rs\",\n    \"rust/crates/guard-runtime/src/resident_client.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs\",\n    \"rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs\",\n)",
+        "to": "SOURCE_PATHS = (\n    \"rust/crates/guard-runtime/src/main.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_deadline.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident.rs\",\n    \"rust/crates/guard-runtime/src/resident_state_discovery.rs\",\n    \"rust/crates/guard-runtime/src/managed_resident_containment.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs\",\n    \"rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs\",\n)",
+        "count": 1
+      },
+      {
+        "from": "len(rows) == 5",
+        "to": "len(rows) == 8",
+        "count": 1
+      },
+      {
+        "from": "len(files) == 5",
+        "to": "len(files) == 8",
+        "count": 1
+      }
+    ],
+    "runner_exact": true,
+    "projection": [
+      {
+        "from": "SOURCE_NAMES = (\n    \"managed_resident.rs\",\n    \"resident_client.rs\",\n    \"managed_resident_deadline.rs\",\n    \"managed_resident_deadline_tests.rs\",\n    \"resident_client_connect_deadline_tests.rs\",\n)",
+        "to": "SOURCE_NAMES = (\n    \"main.rs\",\n    \"managed_resident_deadline.rs\",\n    \"managed_resident.rs\",\n    \"resident_state_discovery.rs\",\n    \"managed_resident_containment.rs\",\n    \"native_windows_startup_observation.rs\",\n    \"native_windows_startup_observation_enabled.rs\",\n    \"native_windows_startup_observation_tests.rs\",\n)",
+        "count": 1
+      },
+      {
+        "from": "len(formatted) > 5",
+        "to": "len(formatted) > 8",
+        "count": 1
+      }
+    ],
+    "projection_exact": true,
+    "workflow_diff": "...\n+name: PR2974 Windows startup rustfmt preparation\n-name: PR2974 integrated deadline rustfmt preparation\n \n on:\n   push:\n     branches:\n+      - \"codex/pr2974-windows-startup-rustfmt-20260920\"\n-      - \"codex/pr2974-integrated-deadline-rustfmt-20260920\"\n \n permissions:\n...\n       FORMAT_SOURCE_SHA: \"__FORMAT_SOURCE_SHA__\"\n       FORMAT_SOURCE_TREE: \"__FORMAT_SOURCE_TREE__\"\n+      FORMAT_MANIFEST_SHA256: \"341a3638a59dbfaaf2f2add6091b608b520530ee68733df7d334f6ac9cdf0bc3\"\n-      FORMAT_MANIFEST_SHA256: \"263b70ca64d8bd2f05042c81588da26e611221c7a072dc42c4f94bf5a7f09e44\"\n     steps:\n       - name: Checkout immutable driver\n...\n         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a\n         with:\n+          name: pr2974-windows-startup-rustfmt-${{ github.run_id }}\n-          name: pr2974-deadline-rustfmt-${{ github.run_id }}\n           if-no-files-found: error\n           retention-days: 90\n",
+    "manifest_hash": "341a3638a59dbfaaf2f2add6091b608b520530ee68733df7d334f6ac9cdf0bc3",
+    "runner_hash": "3f89122ae2a6daa93011dc44136f86a961052919c593910cd13745dba641ca32",
+    "projection_hash": "d48fa6994ad27073f6137f9ee750319aa7f4e8fe2309a6885b0bbddc6b86a92c",
+    "image_checks": [
+      {
+        "path": "rust/crates/guard-runtime/src/main.rs",
+        "bytes": 14777,
+        "git_blob": "7b01fac0a1a9a48f0ad545db4394082b30fc4458",
+        "sha256": "75e8c7c339812c735e9117b4c78e5f91f38406529594d40f49c4e78200f4e143",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+        "bytes": 1583,
+        "git_blob": "70f393c186b6933da330096c7525f56d85cbe066",
+        "sha256": "a3f91d8d11583e1f296a0fbd3a80652bf229eeec3dd1f4514f33438b8ac717c2",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+        "bytes": 18835,
+        "git_blob": "0f0ef07ee9a888cd7a4956f158a6f31320219d7e",
+        "sha256": "bc40d0e863c85658d4581b190badbe597dc563226c7b2803220d50a2bf7184e7",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+        "bytes": 5403,
+        "git_blob": "5999b5819411a3a0557cb94f7f3b5d86f01abca1",
+        "sha256": "9528535fbfe22e921afb4a245a13777186119c84a2fe95374187229e2e8ce52b",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+        "bytes": 14422,
+        "git_blob": "1bf9365c9bfeebb91578896196e65894dad55078",
+        "sha256": "58f35c3495c5aeeeb3205a4019b774c385c32851db5c1ed69539ce1578345ae3",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation.rs",
+        "bytes": 4464,
+        "git_blob": "51c604e5b27c31b2ba0e9f288f7559ba06c49890",
+        "sha256": "3b5c19530a94f81a06e6b0b229e9826859b4f08a824e413cf71113f3ae964913",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs",
+        "bytes": 8433,
+        "git_blob": "3cce673392fdb9f4ced1bd4e20f9479ca96daa52",
+        "sha256": "472af0c0316f1425e2967659d9c01483dfee65b4d5ac294fb394b4c3888ac8c0",
+        "match": true
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs",
+        "bytes": 7749,
+        "git_blob": "74c2022561d7de3615bf31b68c028aca0def4a67",
+        "sha256": "19c47378c37ad682c372311b286960beec6610c02df310b980ddf877755e1265",
+        "match": true
+      }
+    ]
+  },
+  "native_compilation_executed": false,
+  "native_controls_executed": false,
+  "workload_executed": false
+}

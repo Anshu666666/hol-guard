@@ -1,0 +1,298 @@
+--- before/src/codex_plugin_scanner/guard/windows_replaceable_file.py
++++ after/src/codex_plugin_scanner/guard/windows_replaceable_file.py
+@@ -124,7 +124,6 @@
+     binary = getattr(os, "O_BINARY", 0)
+     mode = binary if flags & binary else _default_translation_mode()
+     return os.O_RDONLY | mode | getattr(os, "O_NOINHERIT", 0)
+-
+ 
+ 
+ def _open_original_unicode_descriptor(name: str, flags: int) -> int:
+--- before/tests/test_windows_wtext_acceptance_probe.py
++++ after/tests/test_windows_wtext_acceptance_probe.py
+@@ -43,19 +43,60 @@
+ _SAFE_STRINGS = {
+     "windows-wtext-acceptance-observation.v1",
+     "single original or candidate reader boundary; not installed qualification",
+-    "bounded", "text", "bytes", "open", "r",
+-    "PermissionError", "FileNotFoundError", "UnicodeDecodeError",
+-    "OSError", "ValueError", "RuntimeError", "other", "utf-8", "utf-16-le",
++    "bounded",
++    "text",
++    "bytes",
++    "open",
++    "r",
++    "PermissionError",
++    "FileNotFoundError",
++    "UnicodeDecodeError",
++    "OSError",
++    "ValueError",
++    "RuntimeError",
++    "other",
++    "utf-8",
++    "utf-16-le",
+     *probe.PAYLOADS,
+ }
+ _SAFE_KEYS = {
+-    "schema", "scope", "candidate", "route", "payload", "input_bytes", "input_sha256",
+-    "read_bound_bytes", "reader_import_binding_verified", "initial_mode", "mode_before_call",
+-    "mode_after_call", "audit_mode", "audit_refuse", "events", "operation_calls", "result",
+-    "error", "refusal_same_object", "default_mode_restored", "cleanup_error",
+-    "observation_complete", "qualification", "setup_or_observer_error",
+-    "event", "mode", "flags", "crt_before", "crt_after", "kind", "bytes", "sha256",
+-    "errno", "winerror", "encoding", "start", "end",
++    "schema",
++    "scope",
++    "candidate",
++    "route",
++    "payload",
++    "input_bytes",
++    "input_sha256",
++    "read_bound_bytes",
++    "reader_import_binding_verified",
++    "initial_mode",
++    "mode_before_call",
++    "mode_after_call",
++    "audit_mode",
++    "audit_refuse",
++    "events",
++    "operation_calls",
++    "result",
++    "error",
++    "refusal_same_object",
++    "default_mode_restored",
++    "cleanup_error",
++    "observation_complete",
++    "qualification",
++    "setup_or_observer_error",
++    "event",
++    "mode",
++    "flags",
++    "crt_before",
++    "crt_after",
++    "kind",
++    "bytes",
++    "sha256",
++    "errno",
++    "winerror",
++    "encoding",
++    "start",
++    "end",
+ }
+ 
+ 
+@@ -80,17 +121,27 @@
+     if isinstance(value, list):
+         return len(value) <= 2 and all(_safe(item, depth + 1) for item in value)
+     return (
+-        isinstance(value, dict)
+-        and set(value) <= _SAFE_KEYS
+-        and all(_safe(item, depth + 1) for item in value.values())
++        isinstance(value, dict) and set(value) <= _SAFE_KEYS and all(_safe(item, depth + 1) for item in value.values())
+     )
+ 
+ 
+ def _child(target, payload, initial, audit_mode, route, candidate, refuse, record_property) -> dict[str, Any]:
+     command = [
+-        sys.executable, "-I", str(_CHILD), "--source-root", str(_ROOT),
+-        "--target", str(target), "--payload", payload, "--route", route,
+-        "--initial-mode", initial, "--audit-mode", audit_mode,
++        sys.executable,
++        "-I",
++        str(_CHILD),
++        "--source-root",
++        str(_ROOT),
++        "--target",
++        str(target),
++        "--payload",
++        payload,
++        "--route",
++        route,
++        "--initial-mode",
++        initial,
++        "--audit-mode",
++        audit_mode,
+     ]
+     if candidate:
+         command.append("--candidate")
+@@ -99,16 +150,21 @@
+     label = "candidate" if candidate else "original"
+     try:
+         process = subprocess.Popen(
+-            command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+-            stderr=subprocess.PIPE, close_fds=True,
++            command,
++            stdin=subprocess.DEVNULL,
++            stdout=subprocess.PIPE,
++            stderr=subprocess.PIPE,
++            close_fds=True,
+         )
+     except BaseException as error:
+         record_property(
+             f"wtext_child_{label}",
+             json.dumps(
+                 {
+-                    "spawned": False, "retired": True,
+-                    "error": probe._error(error), "qualification": False,
++                    "spawned": False,
++                    "retired": True,
++                    "error": probe._error(error),
++                    "qualification": False,
+                 },
+                 sort_keys=True,
+             ),
+@@ -125,8 +181,10 @@
+         if isinstance(error, subprocess.TimeoutExpired):
+             stdout, stderr = error.output or b"", error.stderr or b""
+             partial = {
+-                "stdout_bytes": len(stdout), "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
+-                "stderr_bytes": len(stderr), "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
++                "stdout_bytes": len(stdout),
++                "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
++                "stderr_bytes": len(stderr),
++                "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+             }
+     finally:
+         if process.poll() is None:
+@@ -157,8 +215,10 @@
+                     "kill_requested": killed,
+                     "timed_out": isinstance(failure, subprocess.TimeoutExpired),
+                     "cleanup_error": cleanup_error,
+-                    "stdout_bytes": len(stdout), "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
+-                    "stderr_bytes": len(stderr), "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
++                    "stdout_bytes": len(stdout),
++                    "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
++                    "stderr_bytes": len(stderr),
++                    "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+                     "stderr_content_retained": False,
+                     "stdout_content": stdout.decode("utf-8") if not parse_error else None,
+                     "report": report if not parse_error else None,
+@@ -265,7 +325,9 @@
+         _crt_api=lambda: api,
+     )
+     fake_sys = SimpleNamespace(
+-        flags=SimpleNamespace(isolated=1), implementation=SimpleNamespace(name="cpython"), path=[],
++        flags=SimpleNamespace(isolated=1),
++        implementation=SimpleNamespace(name="cpython"),
++        path=[],
+         addaudithook=lambda hook: state.update(audit=hook),
+     )
+ 
+@@ -282,8 +344,14 @@
+     monkeypatch.setattr(probe, "_mode", mode)
+     monkeypatch.setattr(probe, "_read", read)
+     args = argparse.Namespace(
+-        source_root=source, target=target, payload="ascii-no-bom", initial_mode="wtext",
+-        audit_mode="unchanged", refuse=False, candidate=True, route="bounded",
++        source_root=source,
++        target=target,
++        payload="ascii-no-bom",
++        initial_mode="wtext",
++        audit_mode="unchanged",
++        refuse=False,
++        candidate=True,
++        route="bounded",
+     )
+     result = probe.observe(args)
+     returned = result["result"]
+@@ -306,11 +374,25 @@
+ 
+     monkeypatch.setattr(subprocess, "Popen", spawn)
+     with pytest.raises(PermissionError) as observed:
+-        _child(Path("synthetic"), "empty", "wtext", "unchanged", "bounded", False, False,
+-               lambda name, value: records.append((name, json.loads(value))))
++        _child(
++            Path("synthetic"),
++            "empty",
++            "wtext",
++            "unchanged",
++            "bounded",
++            False,
++            False,
++            lambda name, value: records.append((name, json.loads(value))),
++        )
+     assert observed.value is failure
+-    assert records == [("wtext_child_original", {
+-        "spawned": False, "retired": True,
+-        "error": {"kind": "PermissionError", "errno": 13, "winerror": None},
+-        "qualification": False,
+-    })]
++    assert records == [
++        (
++            "wtext_child_original",
++            {
++                "spawned": False,
++                "retired": True,
++                "error": {"kind": "PermissionError", "errno": 13, "winerror": None},
++                "qualification": False,
++            },
++        )
++    ]
+--- before/scripts/ci/validate_windows_wtext_reader_acceptance.py
++++ after/scripts/ci/validate_windows_wtext_reader_acceptance.py
+@@ -50,6 +50,7 @@
+ _BASE_SHA = "6c02a664b222b9ffb0a0a923358ad08147bffd9c"
+ _BASE_TREE = "25816fdb059184e71682a5c1190129cc0ca87721"
+ _TOTAL_CASES = 71
++
+ 
+ def _json(path: Path, value: object) -> None:
+     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+@@ -243,15 +244,20 @@
+     for name, expected in modules.items():
+         assert sum(case.attrib["classname"].endswith(name) for case in cases) == expected
+     selected = [
+-        case for case in cases
++        case
++        for case in cases
+         if case.attrib["name"].startswith(
+-            ("test_supported_wtext_default_preserves_original_read",
+-             "test_original_audit_can_enter_wtext_and_refuse_before_open")
++            (
++                "test_supported_wtext_default_preserves_original_read",
++                "test_original_audit_can_enter_wtext_and_refuse_before_open",
++            )
+         )
+     ]
+     assert len(selected) == 18
+-    assert sum(case.attrib["name"].startswith("test_supported_wtext_default_preserves_original_read")
+-               for case in selected) == 16
++    assert (
++        sum(case.attrib["name"].startswith("test_supported_wtext_default_preserves_original_read") for case in selected)
++        == 16
++    )
+     joined = []
+     for case in selected:
+         values = _properties(case)
+@@ -274,12 +280,17 @@
+             assert report["reader_import_binding_verified"] and not report["qualification"]
+             assert len(report["events"]) == 1
+             reports.append(report)
+-            joined.append({
+-                "case": case.attrib["name"], "label": label,
+-                "stdout_bytes": len(content), "stdout_sha256": capture["stdout_sha256"],
+-                "return_code": capture["return_code"], "retired": capture["retired"],
+-                "original_read_error": report["error"],
+-            })
++            joined.append(
++                {
++                    "case": case.attrib["name"],
++                    "label": label,
++                    "stdout_bytes": len(content),
++                    "stdout_sha256": capture["stdout_sha256"],
++                    "return_code": capture["return_code"],
++                    "retired": capture["retired"],
++                    "original_read_error": report["error"],
++                }
++            )
+         original = {key: value for key, value in reports[0].items() if key != "candidate"}
+         candidate = {key: value for key, value in reports[1].items() if key != "candidate"}
+         assert original == candidate
+@@ -302,6 +313,7 @@
+         },
+     )
+ 
++
+ def main() -> None:
+     parser = argparse.ArgumentParser(description=__doc__)
+     parser.add_argument("--source", type=Path, required=True)

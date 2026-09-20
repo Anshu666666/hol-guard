@@ -1,0 +1,874 @@
+{
+  "schema": "pr2974.workflow-dependency-selection-review.v1",
+  "prepared_at": "2026-09-20 11:05:35 UTC",
+  "task": "RSP-133",
+  "source_commit": "124472b8949805e0dd36052df6894b335d8b519d",
+  "source_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+  "original_acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+  "original_dependencies": "RSP-006,RSP-022.",
+  "inspected_workflows": 51,
+  "source_file_count": 54,
+  "all_original_blobs_and_bytes_verified": true,
+  "findings": [
+    {
+      "id": "W133-1",
+      "classification": "trigger and collection coverage",
+      "source_files": [
+        ".github/workflows/ci.yml",
+        "scripts/ci/build_pytest_shard_plan.py",
+        "scripts/ci/pytest_shard.py"
+      ],
+      "finding": "Main CI has no path filter for pull requests targeting release/3.2. It collects the tests directory, partitions all collected nodes into 96 affinity-aware shards with explicit flattened-length and node-ID-set equality checks, and runs the shards on Ubuntu with Python3.12. Production Ruff/format and basedpyright are explicit gates.",
+      "limit": "Collection on Linux does not execute Windows-skipped cases or establish other Python versions. Inspection did not execute the planner, and new final-source node membership still requires its actual test-plan record. These checks are described as implemented; this review does not infer multiset uniqueness from length/set equality alone."
+    },
+    {
+      "id": "W133-2",
+      "classification": "four-platform native selection",
+      "source_files": [
+        ".github/workflows/native-wheel-ci.yml",
+        ".github/workflows/rust-runtime.yml"
+      ],
+      "finding": "Native wheel CI is unconditional for release/3.2 pull requests and has four platform jobs. Rust runtime matches rust/**, guard/**, ci/native_runtime/** and selected native scripts/dependency/support paths. The integrated deadline paths select these workflows.",
+      "limit": "The native-wheel fixed Python test lists are not the complete Python suite. The current PR's cumulative diff contains Rust changes; its observed workflow selection alone cannot prove future isolated Python changes are covered."
+    },
+    {
+      "id": "W133-3",
+      "classification": "permanent request-risk regression gap",
+      "source_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/native-wheel-ci.yml",
+        "pyproject.toml"
+      ],
+      "finding": "The ordinary full Python suite is Linux/Python3.12. The selected RSP100 cohorts' four-platform/declared-version proof currently comes from a temporary exact-source validation branch. Pyproject declares requires-python>=3.10 and classifiers3.10–3.14.",
+      "resolution": "Prepare scoped permanent request-risk workflow/portable runner wiring with actual host/interpreter/source admission and meaningful once-only/invalidation controls, while retaining exact candidate binding in the separate one-off driver.",
+      "status": "Concrete implementation assigned to the RSP100 owner; no source delta or passing run is claimed by this review."
+    },
+    {
+      "id": "W133-4",
+      "classification": "permanent Windows reader/writer regression gap",
+      "source_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/native-wheel-ci.yml",
+        ".github/workflows/rust-daemon-edge-hardening.yml"
+      ],
+      "finding": "Linux's general pytest collection may skip Windows-specific file behavior, and the existing native Windows lanes use fixed test lists. The successful17-case Ex mechanism remains an isolated CI probe; a coherent product path needs its original real Windows controls wired into the ordinary selected workflow.",
+      "resolution": "Include necessary permanent actual-product Windows test invocation and dependency selectors in the forthcoming coherent reader/writer proposal, preserving old success/error/sharing/audit/cleanup controls.",
+      "status": "Assigned to the Windows owner; no product mechanism or ordinary CI invocation is claimed by this review."
+    },
+    {
+      "id": "W133-5",
+      "classification": "conditional job scope",
+      "source_files": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/rust-daemon-edge-hardening.yml",
+        ".github/workflows/publish.yml"
+      ],
+      "finding": "Some scheduling-sensitive/stress jobs are schedule-or-dispatch only, and release/signing/publication jobs have additional conditions. An ordinary pull-request success cannot be credited as execution of these jobs or full installed/performance/rollback qualification.",
+      "limit": "Raw job condition expressions are retained. This source inspection does not evaluate external secrets/variables or claim their availability."
+    }
+  ],
+  "verified_unconditional_pull_request_workflows": [
+    ".github/workflows/ci.yml",
+    ".github/workflows/native-wheel-ci.yml",
+    ".github/workflows/rust-authority-ownership.yml",
+    ".github/workflows/decision-critical-io.yml"
+  ],
+  "raw_workflow_triggers_and_job_conditions": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "blob": "3ac962d1878e2126e0a6e36cf3deb60976233b6e",
+      "bytes": 29949,
+      "sha256": "7ad01076c95b1794fcdf417affd745fa7a4c37fef01426425192254e8bbc5943",
+      "header": "on:\n  push:\n    branches: [main, release/3.0, release/3.1, release/3.2]\n  pull_request:\n    branches: [main, release/3.0, release/3.2]\n  schedule:\n    - cron: \"0 5 * * 1\"\n  workflow_dispatch:\n",
+      "jobConditions": [
+        "    if: needs.tests.result == 'success'",
+        "    if: needs.sonar-guard.outputs.has-token == 'true' && vars.SONAR_CI_ENABLED == 'true'",
+        "    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
+        "    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
+        "    if: always()",
+        "    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"
+      ]
+    },
+    {
+      "path": ".github/workflows/cline-contract-ci.yml",
+      "blob": "7590bfcb511a3eee54ae26ee882ff506a48f7707",
+      "bytes": 8459,
+      "sha256": "fab2e330e32d869dc158d8381d488c85935e9ecd95c2a05d91b4e5d3c96e83fe",
+      "header": "on:\n  pull_request:\n    branches:\n      - release/3.0\n      - release/3.2\n    paths:\n      - src/codex_plugin_scanner/guard/adapters/cline*.py\n      - src/codex_plugin_scanner/guard/adapters/contracts.py\n      - src/codex_plugin_scanner/guard/adapters/__init__.py\n      - src/codex_plugin_scanner/guard/cli/install_commands.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser_local.py\n      - src/codex_plugin_scanner/guard/cli/commands_support_interaction.py\n      - src/codex_plugin_scanner/guard/product_model.py\n      - src/codex_plugin_scanner/guard/schemas/guard_product_model_v1.json\n      - tests/test_cline_*.py\n      - tests/fixtures/cline/**\n      - docs/guard/cline-local-protection-contract.md\n      - docs/guard/cline-security-closure.md\n      - docs/guard/cline-upstream-evidence.md\n      - docs/guard/harness-support.md\n      - dashboard/src/apps/app-catalog.ts\n      - dashboard/src/apps/harness-setup-target.ts\n      - .github/workflows/cline-contract-ci.yml\n  push:\n    branches:\n      - release/3.0\n    paths:\n      - src/codex_plugin_scanner/guard/adapters/cline*.py\n      - src/codex_plugin_scanner/guard/adapters/contracts.py\n      - src/codex_plugin_scanner/guard/adapters/__init__.py\n      - src/codex_plugin_scanner/guard/cli/install_commands.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser_local.py\n      - src/codex_plugin_scanner/guard/cli/commands_support_interaction.py\n      - src/codex_plugin_scanner/guard/product_model.py\n      - src/codex_plugin_scanner/guard/schemas/guard_product_model_v1.json\n      - tests/test_cline_*.py\n      - tests/fixtures/cline/**\n      - docs/guard/cline-local-protection-contract.md\n      - docs/guard/cline-security-closure.md\n      - docs/guard/cline-upstream-evidence.md\n      - docs/guard/harness-support.md\n      - dashboard/src/apps/app-catalog.ts\n      - dashboard/src/apps/harness-setup-target.ts\n      - .github/workflows/cline-contract-ci.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/cline-marketplace.yml",
+      "blob": "c244b41831baa4c48ae0ab8f7ad5837eed1c871a",
+      "bytes": 2185,
+      "sha256": "002de1814dcc7a0342f0e9f9a6d0b67edc3d50b469b8302060517621ef95cd65",
+      "header": "on:\n  pull_request:\n    branches: [release/3.0]\n    paths:\n      - llms-install.md\n      - server.json\n      - .github/workflows/cline-marketplace.yml\n  push:\n    branches: [release/3.0]\n    paths:\n      - llms-install.md\n      - server.json\n      - .github/workflows/cline-marketplace.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "blob": "181575215e10d8564671234312d0db3c26c5cf09",
+      "bytes": 1757,
+      "sha256": "0bcc7d975f143d8f8617a22d3e8d2f1c54a6507a88cb2b3bdcf954ae41f3f1d4",
+      "header": "on:\n  push:\n    branches: [main]\n  pull_request:\n  merge_group:\n  schedule:\n    - cron: \"0 4 * * 1\"\n  workflow_dispatch:\n",
+      "jobConditions": [
+        "    if: ${{ always() }}"
+      ]
+    },
+    {
+      "path": ".github/workflows/containment-ci.yml",
+      "blob": "e0aefd5808efd55faf1efb5f812ec8712b9f5ff3",
+      "bytes": 2584,
+      "sha256": "ff7e9d70c1a4a967ca4c9fad6a9a34567f3700531dac42a53fe2fd358b7d3b89",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n  push:\n    branches: [main]\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/decision-critical-io.yml",
+      "blob": "e5b1557eaae1a15cdefec63bf2c482c22a1db99a",
+      "bytes": 2584,
+      "sha256": "e9bc39b1d44ec3813d65a4716d7552ceb5de9e8b594ae0528e9abe32c0715644",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n  push:\n    branches: [main, release/3.2]\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/dependabot-uv-lock.yml",
+      "blob": "4b8b2e5d77f9d727a9a22d73472fdb4d11ef949e",
+      "bytes": 1396,
+      "sha256": "9fb2d94c07eb108252fbab8694816b61ce139c3302253d9a9bce11f541f665a5",
+      "header": "on:\n  push:\n    branches:\n      - \"dependabot/**\"\n    paths:\n      - \"pyproject.toml\"\n      - \"requirements.txt\"\n      - \"docker-requirements.txt\"\n      - \".github/dependabot.yml\"\n  workflow_dispatch:\n",
+      "jobConditions": [
+        "    if: github.actor == 'dependabot[bot]'"
+      ]
+    },
+    {
+      "path": ".github/workflows/desktop-contract-ci.yml",
+      "blob": "8ee9e478fbc42acbf7cd76dca3f3f81c2a868043",
+      "bytes": 5217,
+      "sha256": "f74919fa4d579c7b82fadf9874c2c9c4fa2aa5c3be5d185859d7bada653053fd",
+      "header": "on:\n  pull_request:\n    paths:\n      - src/codex_plugin_scanner/guard/cli/commands_dispatch_desktop.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser_desktop.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser.py\n      - src/codex_plugin_scanner/guard/cli/commands_router.py\n      - src/codex_plugin_scanner/guard/cli/commands_support.py\n      - src/codex_plugin_scanner/guard/cli/product.py\n      - src/codex_plugin_scanner/guard/store_approvals.py\n      - src/codex_plugin_scanner/guard/store_approval_facade.py\n      - src/codex_plugin_scanner/guard/store_receipts.py\n      - tests/test_guard_desktop_contract.py\n      - tests/fixtures/guard-command-corpus/decision-diff-report.json\n      - docs/guard/desktop-bootstrap-contract.md\n      - rust/**\n      - src/codex_plugin_scanner/guard/native_*.py\n      - src/codex_plugin_scanner/guard/cli/desktop_*.py\n      - src/codex_plugin_scanner/guard/presentation*.py\n      - src/codex_plugin_scanner/guard/settings_write_lock.py\n      - scripts/release/**\n      - pyproject.toml\n      - uv.lock\n      - .github/workflows/desktop-contract-ci.yml\n  push:\n    branches:\n      - release/3.0\n      - release/3.2\n    paths:\n      - src/codex_plugin_scanner/guard/cli/commands_dispatch_desktop.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser_desktop.py\n      - src/codex_plugin_scanner/guard/cli/commands_parser.py\n      - src/codex_plugin_scanner/guard/cli/commands_router.py\n      - src/codex_plugin_scanner/guard/cli/commands_support.py\n      - src/codex_plugin_scanner/guard/cli/product.py\n      - src/codex_plugin_scanner/guard/store_approvals.py\n      - src/codex_plugin_scanner/guard/store_approval_facade.py\n      - src/codex_plugin_scanner/guard/store_receipts.py\n      - tests/test_guard_desktop_contract.py\n      - tests/fixtures/guard-command-corpus/decision-diff-report.json\n      - docs/guard/desktop-bootstrap-contract.md\n      - rust/**\n      - src/codex_plugin_scanner/guard/native_*.py\n      - src/codex_plugin_scanner/guard/cli/desktop_*.py\n      - src/codex_plugin_scanner/guard/presentation*.py\n      - src/codex_plugin_scanner/guard/settings_write_lock.py\n      - scripts/release/**\n      - pyproject.toml\n      - uv.lock\n      - .github/workflows/desktop-contract-ci.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/desktop-core-alpha-feed.yml",
+      "blob": "3e25bb8dc144bafd137f463ecd71c299ed46c4be",
+      "bytes": 27384,
+      "sha256": "2dce0a3a443283fdc52f5f4c6318f08dd43f90011d01406155603764c17e596c",
+      "header": "on:\n  pull_request:\n    paths:\n      - .github/workflows/desktop-core-alpha-feed.yml\n      - tests/test_desktop_core_alpha_feed_security.py\n      - tests/test_desktop_core_alpha_feed_macos_signing.py\n      - tests/test_stage_native_runtime_for_desktop_core.py\n      - tests/test_verify_pyinstaller_native_runtime.py\n      - tests/test_seal_pyinstaller_native_manifest.py\n      - scripts/release/desktop_core_alpha_feed.py\n      - scripts/release/stage_native_runtime_for_desktop_core.py\n      - scripts/release/seal_pyinstaller_native_manifest.py\n      - scripts/release/fix_pyinstaller_macos_exe_headers.py\n      - scripts/release/verify_pyinstaller_macos_signing.py\n      - scripts/release/verify_pyinstaller_native_runtime.py\n  push:\n    branches: [main]\n    paths:\n      - .github/workflows/desktop-core-alpha-feed.yml\n      - scripts/release/desktop_core_alpha_feed.py\n      - scripts/release/stage_native_runtime_for_desktop_core.py\n      - scripts/release/seal_pyinstaller_native_manifest.py\n      - scripts/release/fix_pyinstaller_macos_exe_headers.py\n      - scripts/release/verify_pyinstaller_macos_signing.py\n      - scripts/release/verify_pyinstaller_native_runtime.py\n  schedule:\n    - cron: \"17 * * * *\"\n  workflow_dispatch:\n    inputs:\n      core_version:\n        description: Optional exact published stable Core version to backfill\n        type: string\n  workflow_run:\n    workflows: [\"Publish to PyPI\"]\n    types: [completed]\n    branches: [main]",
+      "jobConditions": [
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/devcontainer-features.yml",
+      "blob": "534b5a09bbe5b25287bd5eb7bdd4dddd72738d9d",
+      "bytes": 1801,
+      "sha256": "ebecf09ce8eb23a711e3810a87262f0f8b99f3f70c91f62411bc735507b90cad",
+      "header": "on:\n  push:\n    branches: [main]\n    paths:\n      - 'devcontainer-features/**'\n  pull_request:\n    paths:\n      - 'devcontainer-features/**'\n",
+      "jobConditions": [
+        "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
+      ]
+    },
+    {
+      "path": ".github/workflows/extension-control-center-installed-ci.yml",
+      "blob": "37ab5b2368135588fa1b32c84285b3fbc82835b5",
+      "bytes": 10724,
+      "sha256": "e204a95436d71d34953ceda1db959044d0bd04c17bb8c0d276e3255eaeeb7c2c",
+      "header": "on:\n  pull_request:\n    branches:\n      - release/3.0\n      - release/3.2\n    paths:\n      - dashboard/**\n      - src/codex_plugin_scanner/guard/daemon/**\n      - src/codex_plugin_scanner/guard/runtime/command_extensions.py\n      - src/codex_plugin_scanner/guard/runtime/command_permission_catalog.py\n      - src/codex_plugin_scanner/guard/runtime/extension_control_*.py\n      - scripts/ci/installed_extension_control_center_server.py\n      - scripts/ci/installed_extension_control_probe.py\n      - scripts/ci/verify_protection_center_artifacts.py\n      - tests/test_guard_extension_control_*.py\n      - tests/fixtures/extension-controls/**\n      - pyproject.toml\n      - uv.lock\n      - rust/**\n      - src/codex_plugin_scanner/guard/native_*.py\n      - src/codex_plugin_scanner/guard/runtime/command*.py\n      - src/codex_plugin_scanner/guard/config*.py\n      - .github/workflows/extension-control-center-installed-ci.yml\n  push:\n    branches:\n      - release/3.0\n      - release/3.2\n    paths:\n      - dashboard/**\n      - src/codex_plugin_scanner/guard/daemon/**\n      - src/codex_plugin_scanner/guard/runtime/command_extensions.py\n      - src/codex_plugin_scanner/guard/runtime/command_permission_catalog.py\n      - src/codex_plugin_scanner/guard/runtime/extension_control_*.py\n      - scripts/ci/installed_extension_control_center_server.py\n      - scripts/ci/installed_extension_control_probe.py\n      - scripts/ci/verify_protection_center_artifacts.py\n      - tests/test_guard_extension_control_*.py\n      - tests/fixtures/extension-controls/**\n      - pyproject.toml\n      - uv.lock\n      - rust/**\n      - src/codex_plugin_scanner/guard/native_*.py\n      - src/codex_plugin_scanner/guard/runtime/command*.py\n      - src/codex_plugin_scanner/guard/config*.py\n      - .github/workflows/extension-control-center-installed-ci.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/fec-source-export.yml",
+      "blob": "62396ac62085363e6a5978cc5f48bb1c6df00c91",
+      "bytes": 944,
+      "sha256": "5d4618d72acc9bc828f1527cb5b1d012a90c280783ba7c0ca43feb69a6fa0366",
+      "header": "on:\n  push:\n    branches:\n      - feat/fec-001-100-r32-remediation\n    paths:\n      - .github/workflows/fec-source-export.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/finish-extension-authority-stability.yml",
+      "blob": "fe8fd7bab7b546a43eb1490409b2ce9836338e0e",
+      "bytes": 4823,
+      "sha256": "cd56bb03d9637da2db31f52e925c76d5ab144962515088b9a63449b56ccbf2e0",
+      "header": "on:\n  push:\n    branches:\n      - fix/extension-control-authority-stability\n    paths:\n      - .github/workflows/finish-extension-authority-stability.yml\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/fleet-extension-contract-integrity.yml",
+      "blob": "d18f6342dc397465ca263105578ceb04d2f0e4b5",
+      "bytes": 4061,
+      "sha256": "86bf970070e128bc9fa3cf3be081078f32a70e70ccbd61e7319b5d615c72bcfe",
+      "header": "on:\n  pull_request:\n    branches:\n      - release/3.2\n    paths:\n      - 'contracts/managed-controls/v2/**'\n      - 'src/codex_plugin_scanner/guard/managed_controls/fleet_contracts.py'\n      - 'src/codex_plugin_scanner/guard/managed_controls/contracts/**'\n      - 'tests/managed_controls/test_fleet_contracts_v2.py'\n      - 'pyproject.toml'\n      - '.github/workflows/fleet-extension-contract-integrity.yml'\n  push:\n    branches:\n      - release/3.2\n      - feat/fec-001-100-r32-remediation\n    paths:\n      - 'contracts/managed-controls/v2/**'\n      - 'src/codex_plugin_scanner/guard/managed_controls/fleet_contracts.py'\n      - 'src/codex_plugin_scanner/guard/managed_controls/contracts/**'\n      - 'tests/managed_controls/test_fleet_contracts_v2.py'\n      - 'pyproject.toml'\n      - '.github/workflows/fleet-extension-contract-integrity.yml'\n  schedule:\n    - cron: '47 */6 * * *'\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/fuzz.yml",
+      "blob": "7e94f2e25393a2c54559596fbc557cc4a8f253b0",
+      "bytes": 1625,
+      "sha256": "027db9df3992b527757bc37209a640256eb77973bfdbcabd98606fcfe2bb0bf8",
+      "header": "on:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]\n  schedule:\n    - cron: \"0 6 * * 1\"\n",
+      "jobConditions": [
+        "    if: github.event_name == 'pull_request'",
+        "    if: github.event_name != 'pull_request'"
+      ]
+    },
+    {
+      "path": ".github/workflows/guard-gvisor-reference.yml",
+      "blob": "09c303f40f024c30a52e953935ca900254597332",
+      "bytes": 2767,
+      "sha256": "63259bf7841528260af494e4629814341644a71ad01f97cdd2d12bdd26f06906",
+      "header": "on:\n  pull_request:\n    branches: [release/3.0, release/3.2]\n    paths:\n      - \"src/codex_plugin_scanner/guard/runtime/gvisor_reference_runtime.py\"\n      - \"tests/test_guard_gvisor_reference_runtime.py\"\n      - \".github/workflows/guard-gvisor-reference.yml\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/guard-network-remediation-proof.yml",
+      "blob": "312a5511dea7271a14443e4c23b97a84097c0d93",
+      "bytes": 3875,
+      "sha256": "e1d173204c0ad5048518491d52242055aefcc373bc9ab2e6c14d575b1330892b",
+      "header": "on:\n  pull_request:\n    branches:\n      - release/3.0\n      - release/3.2\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/guarded-repository.yml",
+      "blob": "16ffdf55d9e50d466e35f15019e08b263afaf64b",
+      "bytes": 2754,
+      "sha256": "5d5a35fd9bb20935e11682713248477fce86a22f87b5fbab0b61c11c80905964",
+      "header": "on:\n  workflow_call:\n    inputs:\n      profile:\n        description: HOL Guard scanner policy profile\n        required: false\n        type: string\n        default: strict-security\n      min_score:\n        description: Minimum accepted scanner score\n        required: false\n        type: number\n        default: 0\n      fail_on_severity:\n        description: Fail when a finding reaches this severity\n        required: false\n        type: string\n        default: critical\n      upload_sarif:\n        description: Upload SARIF to GitHub code scanning\n        required: false\n        type: boolean\n        default: true\n      visibility:\n        description: Portal verification visibility, public or private\n        required: false\n        type: string\n        default: private\n    outputs:\n      score:\n        description: Scanner score\n        value: ${{ jobs.scan.outputs.score }}\n      grade:\n        description: Scanner grade\n        value: ${{ jobs.scan.outputs.grade }}\n      verification_status:\n        description: Portal verification status\n        value: ${{ jobs.scan.outputs.verification_status }}\n      verification_url:\n        description: Public verification URL when visibility is public\n        value: ${{ jobs.scan.outputs.verification_url }}\n      badge_url:\n        description: Expiring public badge URL when visibility is public\n        value: ${{ jobs.scan.outputs.badge_url }}\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/harness-smoke.yml",
+      "blob": "58c55b290af24afab1a61b9a726b32c491c30804",
+      "bytes": 3906,
+      "sha256": "d691f0eb6a7339677f3e1a0cae6c78cc7494d6950786321b113464e61a33ad57",
+      "header": "on:\n  workflow_dispatch:\n  schedule:\n    - cron: \"17 7 * * *\"\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/investigation-source-snapshot.yml",
+      "blob": "6887547131248e1dc3d0267181def40b440bc1d8",
+      "bytes": 1429,
+      "sha256": "1f731fdaad1ebba1acfed3cc4292276bcc5c3892e92464681c30d517dd39199e",
+      "header": "on:\n  push:\n    branches:\n      - fix/extension-control-authority-stability\n  pull_request:\n    branches:\n      - release/3.0\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/mdm-artifacts.yml",
+      "blob": "8ce3fa04bd30a858731588d4d246d80ab1f9cf75",
+      "bytes": 3205,
+      "sha256": "59c0e58e76bf16cdbc6f9241c61fa954414565494ca2001a8bfc90e52151d338",
+      "header": "on:\n  workflow_dispatch:\n    inputs:\n      build_id:\n        description: Immutable release build identifier\n        required: true\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/mdm-cloud-integration-lab.yml",
+      "blob": "d772c69cf44fd9d98a3a5c690c80f24a92215953",
+      "bytes": 6426,
+      "sha256": "3d2d2abe85f07db194fc5f0c3773acd90693483216337209c97619a96f8e228f",
+      "header": "on:\n  pull_request:\n    branches: [release/3.0]\n    paths:\n      - \"src/codex_plugin_scanner/guard/mdm/**\"\n      - \"scripts/mdm/**\"\n      - \"tests/test_guard_mdm_cloud_*.py\"\n      - \"docs/guard/mdm-cloud-integration-lab-*.md\"\n      - \"docs/guard/schemas/mdm-cloud-*.json\"\n      - \".github/workflows/mdm-cloud-integration-lab.yml\"\n  push:\n    branches: [release/3.0]\n    paths:\n      - \"src/codex_plugin_scanner/guard/mdm/**\"\n      - \"scripts/mdm/**\"\n      - \"tests/test_guard_mdm_cloud_*.py\"\n      - \"docs/guard/mdm-cloud-integration-lab-*.md\"\n      - \"docs/guard/schemas/mdm-cloud-*.json\"\n      - \".github/workflows/mdm-cloud-integration-lab.yml\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/mdm-local-lab.yml",
+      "blob": "6ccfd839e4c7e280d9af93b61b2fc9064d8a80a6",
+      "bytes": 1446,
+      "sha256": "3f57752ced8ed68fafd225ebd38744102d37198ae659c36f1c51455011f73255",
+      "header": "on:\n  pull_request:\n    paths:\n      - \".github/workflows/mdm-local-lab.yml\"\n      - \"scripts/mdm/**\"\n      - \"src/codex_plugin_scanner/guard/mdm/**\"\n      - \"tests/test_guard_mdm_*.py\"\n      - \"tests/test_guard_self_protection_schemas.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/native-release-contract.yml",
+      "blob": "587e8d6dd3836179e1ebcde744641cd5968addcf",
+      "bytes": 2063,
+      "sha256": "3ddb30d16e002a449ddf2b1d05677837de5cfe1e65d42e103475b96434ce9874",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \".github/workflows/publish.yml\"\n      - \".github/workflows/native-release-contract.yml\"\n      - \"scripts/verify_native_runtime_release.py\"\n      - \"ci/native_runtime/test_native_runtime_release.py\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/**\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \".github/workflows/publish.yml\"\n      - \".github/workflows/native-release-contract.yml\"\n      - \"scripts/verify_native_runtime_release.py\"\n      - \"ci/native_runtime/test_native_runtime_release.py\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/**\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/native-wheel-ci.yml",
+      "blob": "cae400ef9a00fb8983d50f96086e490689618515",
+      "bytes": 23781,
+      "sha256": "4fde268386a8be5d11d9bf6d9ac85c9aff5271b4e2d9e90bef3c6598a201c339",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n  push:\n    branches: [main, release/3.2]\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/notify-hol-guard-plugin.yml",
+      "blob": "7b5d56175a72eecc44162f3667199fdad4715ee3",
+      "bytes": 15942,
+      "sha256": "bc8d0351af18fb09dd7db697835d940e821c1477b5685731014142ec7c8e45e4",
+      "header": "on:\n  pull_request:\n    paths:\n      - \".github/workflows/notify-hol-guard-plugin.yml\"\n      - \"tests/test_notify_hol_guard_plugin_workflow.py\"\n  workflow_dispatch:\n    inputs:\n      version:\n        description: \"Exact stable HOL Guard version to notify (defaults to latest stable GitHub release)\"\n        required: false\n        type: string\n  workflow_run:\n    workflows: [\"Publish to PyPI\"]\n    types: [completed]\n    branches: [main]\n",
+      "jobConditions": [
+        "    if: github.event_name == 'pull_request'",
+        "    if: >-",
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/pr2745-source-snapshot.yml",
+      "blob": "b4cfad62036638574843836e92e7d33ba0ccba98",
+      "bytes": 2164,
+      "sha256": "1116d68ee4f2845a7bc3a71f38bd3d674221a76ca2edf3b605d1df9e5ff1356b",
+      "header": "on:\n  push:\n    branches:\n      - feat/everyday-mode-r32-final\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/publish-action-repo.yml",
+      "blob": "5c7b812b9744dbc549ad51cd059a4a4e7732a5f9",
+      "bytes": 14756,
+      "sha256": "dde5141d2cc781a3a2a38aaa267e56a4967a3d506d81399c251ff78fda471c0d",
+      "header": "on:\n  workflow_dispatch:\n    inputs:\n      scanner_version:\n        description: \"Optional plugin-scanner version to publish (defaults to latest hol-guard release)\"\n        required: false\n        default: \"\"\n  workflow_run:\n    workflows: [\"Publish to PyPI\"]\n    types: [completed]\n    branches: [main]\n",
+      "jobConditions": [
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/publish-mcp-registry.yml",
+      "blob": "0beb2708db0987434aebb3be240cd7f36bfcab18",
+      "bytes": 5243,
+      "sha256": "2d024eb023920e0cc423e0a1bad5f833886cb6b0bbf0542ddd0619c21f78c34a",
+      "header": "on:\n  push:\n    branches: [main, release/3.0]\n",
+      "jobConditions": [
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/publish-mcpb.yml",
+      "blob": "603aee556d7151f534ea1fe2ff902c63917227b1",
+      "bytes": 6034,
+      "sha256": "4704581c9e1443ab43c2a1341885d4535581fef622c9f723606297e95c502b1c",
+      "header": "on:\n  pull_request:\n    branches: [release/3.0]\n  push:\n    branches: [main, release/3.0]\n",
+      "jobConditions": [
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/publish.yml",
+      "blob": "81176818383c3f631903d88933bde6c0e1995f41",
+      "bytes": 77935,
+      "sha256": "abcc31002ecfc098e76e01eea4ffd65376e464f373d821f025dc84e4f8b72575",
+      "header": "on:\n  workflow_dispatch:\n    inputs:\n      release_channel:\n        description: \"Release channel\"\n        required: true\n        default: alpha\n        type: choice\n        options:\n          - alpha\n      release_train:\n        description: \"Authorized release train\"\n        required: true\n        type: choice\n        options:\n          - \"3.0\"\n      release_version:\n        description: \"Exact canonical release version\"\n        required: true\n        type: string\n      expected_sha:\n        description: \"Exact source commit authorized for publication\"\n        required: true\n        type: string\n  push:\n    branches: [main, release/3.0]\n  pull_request:\n    branches: [main, release/3.0, release/3.2]\n    types: [opened, synchronize, reopened, labeled]\n",
+      "jobConditions": [
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-",
+        "    if: >-"
+      ]
+    },
+    {
+      "path": ".github/workflows/r0-autofix-artifact.yml",
+      "blob": "eca16722e61e3ac5af9ead6f6d2734bc68fe00e9",
+      "bytes": 1038,
+      "sha256": "e26cf82059664bd61d66cfb24bbeb859a9093d8dee931744f0ad576c2088ff7b",
+      "header": "on:\n  pull_request:\n    branches: [release/3.0]\n    types: [opened, reopened, synchronize]\n",
+      "jobConditions": [
+        "    if: github.event.pull_request.number == 2299"
+      ]
+    },
+    {
+      "path": ".github/workflows/rust-authority-ownership.yml",
+      "blob": "29a527a8246087b708bf576c36a2a75e58a9f11a",
+      "bytes": 6566,
+      "sha256": "4dc5a0d7575ea3bedf96246c8d59023471e965f4544d449d04d9230e667b8487",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n  push:\n    branches: [main, release/3.2]\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-command-model-differential.yml",
+      "blob": "742bfbe23cafdc2615497f2c8f91e85beaee9036",
+      "bytes": 3796,
+      "sha256": "3a7ffe9730f0cc5c02949d8eb717b44f17ccc073943c69516c22f373fd9f80c6",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/Cargo.toml\"\n      - \"rust/Cargo.lock\"\n      - \"rust/crates/guard-command/**\"\n      - \"rust/crates/guard-runtime/**\"\n      - \"ci/native_runtime/test_command_model_differential.py\"\n      - \".github/workflows/rust-command-model-differential.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/Cargo.toml\"\n      - \"rust/Cargo.lock\"\n      - \"rust/crates/guard-command/**\"\n      - \"rust/crates/guard-runtime/**\"\n      - \"ci/native_runtime/test_command_model_differential.py\"\n      - \".github/workflows/rust-command-model-differential.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-command-shadow.yml",
+      "blob": "a0a043394f8f9137f0d368ec28a5bb65f11eff2e",
+      "bytes": 4443,
+      "sha256": "ca6e66ada85f69f9ebb83348d4bb5e0d1518354d32b2b05f41895300926758fe",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/crates/guard-command/**\"\n      - \"rust/crates/guard-runtime/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_support_command_activity.py\"\n      - \"ci/native_runtime/test_command_model_resident.py\"\n      - \"ci/native_runtime/test_command_shadow_activity.py\"\n      - \".github/workflows/rust-command-shadow.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/crates/guard-command/**\"\n      - \"rust/crates/guard-runtime/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_support_command_activity.py\"\n      - \"ci/native_runtime/test_command_model_resident.py\"\n      - \"ci/native_runtime/test_command_shadow_activity.py\"\n      - \".github/workflows/rust-command-shadow.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-daemon-edge-hardening.yml",
+      "blob": "605a930d3b2a038d340b33ad5321b7974256d83f",
+      "bytes": 7385,
+      "sha256": "d93defe9103bba13aeaf56cd9435e6d340b1109cc17d438adc2b68ee0040b0fa",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_dispatch_admin.py\"\n      - \"tests/test_native_runtime_admission.py\"\n      - \"tests/test_daemon_bounded_http.py\"\n      - \"tests/test_rust_daemon_edge_hardening_contracts.py\"\n      - \"ci/native_runtime/test_native_hook_client.py\"\n      - \"ci/native_runtime/native_hook_client_support.py\"\n      - \"ci/native_runtime/test_native_hook_client_transport.py\"\n      - \".github/workflows/rust-daemon-edge-hardening.yml\"\n      - \"docs/guard/rust-daemon-edge-hardening-*.md\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_dispatch_admin.py\"\n      - \"tests/test_native_runtime_admission.py\"\n      - \"tests/test_daemon_bounded_http.py\"\n      - \"tests/test_rust_daemon_edge_hardening_contracts.py\"\n      - \"ci/native_runtime/test_native_hook_client.py\"\n      - \"ci/native_runtime/native_hook_client_support.py\"\n      - \"ci/native_runtime/test_native_hook_client_transport.py\"\n      - \".github/workflows/rust-daemon-edge-hardening.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  schedule:\n    - cron: \"37 4 * * 2,5\"\n  workflow_dispatch:\n",
+      "jobConditions": [
+        "    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"
+      ]
+    },
+    {
+      "path": ".github/workflows/rust-migration-tree-hygiene.yml",
+      "blob": "cc0ad5d72e86b0638b4fe383c9c71f358b3addc8",
+      "bytes": 876,
+      "sha256": "0d71d14f4bf5fb6383231bb34d91893d67ed602045d5a2065dc7ff6451e8a852",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \".github/**\"\n      - \"scripts/ci/**\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \".github/**\"\n      - \"scripts/ci/**\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-native-identity.yml",
+      "blob": "b17b7ab0fe97dfa1e7bba3fd3a80f520779a3133",
+      "bytes": 3534,
+      "sha256": "256cf98677575e371d71c10178d9838c8d68b32b26918faf62bc3759c7cfa193",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"ci/native_runtime/test_native_runtime_manifest.py\"\n      - \"scripts/build_native_hol_guard_wheel.py\"\n      - \".github/workflows/rust-native-identity.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/**\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/package_offline.py\"\n      - \"tests/native_*support.py\"\n      - \"tests/test_native_runtime_live_identity.py\"\n      - \"tests/test_native_runtime_unsupported_inspection.py\"\n      - \"tests/test_installed_runtime_identity_probe.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"ci/native_runtime/test_native_runtime_manifest.py\"\n      - \"scripts/build_native_hol_guard_wheel.py\"\n      - \".github/workflows/rust-native-identity.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/**\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/package_offline.py\"\n      - \"tests/native_*support.py\"\n      - \"tests/test_native_runtime_live_identity.py\"\n      - \"tests/test_native_runtime_unsupported_inspection.py\"\n      - \"tests/test_installed_runtime_identity_probe.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-posttool-authority-acceptance.yml",
+      "blob": "1721c11b945d5df995fe9347e1c29bdc357cdd97",
+      "bytes": 6150,
+      "sha256": "21cf16afbe1dbe6c2998d62d40022b88f552c613be7b2f1987b2cc0f6cc0dc08",
+      "header": "on:\n  push:\n    branches: [fix/rust-authority-batch-2, release/3.2]\n    paths:\n      - \"rust/AUTHORITY_BATCH_2\"\n      - \".github/workflows/rust-posttool-authority-acceptance.yml\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"scripts/ci/rust_posttool_failclosed_integration.py\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"scripts/ci/rust_posttool_failclosed_integration.py\"\n      - \".github/workflows/rust-posttool-authority-acceptance.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-pretool-adversarial.yml",
+      "blob": "7ef3f3e789d0cd316613ad6165a8965b5eb1935c",
+      "bytes": 3368,
+      "sha256": "cf44c1d509084b2f3f95ee94607fe7dbe57f53a834bef0fa8ac075b4091fe369",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"scripts/integration/rust_pretool_adversarial.py\"\n      - \".github/workflows/rust-pretool-adversarial.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"scripts/integration/rust_pretool_adversarial.py\"\n      - \".github/workflows/rust-pretool-adversarial.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-pretool-authority-acceptance.yml",
+      "blob": "8723b4208e838590a2347a07e83a3bfe1af9ab61",
+      "bytes": 5618,
+      "sha256": "58de693a7903649f3f5ea8663e55db65fbf7cf61efb898ca35b1d69e9840e5cc",
+      "header": "on:\n  push:\n    branches: [fix/rust-authority-batch-1, release/3.2]\n    paths:\n      - \".github/workflows/rust-pretool-authority-acceptance.yml\"\n      - \"scripts/ci/rust_pretool_authority_integration.py\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"tests/test_rust_pretool_authority*.py\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \".github/workflows/rust-pretool-authority-acceptance.yml\"\n      - \"scripts/ci/rust_pretool_authority_integration.py\"\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"tests/test_rust_pretool_authority*.py\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/extension_control*.py\"\n      - \"src/codex_plugin_scanner/guard/approval*.py\"\n      - \"src/codex_plugin_scanner/guard/store_native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-differential.yml",
+      "blob": "cab4c85420364b2dec5719feacfe6cdbf078d8ad",
+      "bytes": 2967,
+      "sha256": "f262a52ca55dca5f6ebd5c7b764911fe004f5b5c41627e1eada6fa59380ebcb1",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/hook_*.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_differential.py\"\n      - \".github/workflows/rust-runtime-differential.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/hook_*.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_differential.py\"\n      - \".github/workflows/rust-runtime-differential.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-mutation-differential.yml",
+      "blob": "51ba76ea5aeafe52e238ac95c61585c9ca472bfc",
+      "bytes": 3440,
+      "sha256": "4fec7deee3b8fb5036d095b72c2d9d85eda21a22b6f1b09fca762159340f13cb",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/hook_*.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_mutation_differential.py\"\n      - \".github/workflows/rust-runtime-mutation-differential.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/hook_*.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_mutation_differential.py\"\n      - \".github/workflows/rust-runtime-mutation-differential.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-performance.yml",
+      "blob": "729d91eb5958507651f96e00fffff7cf49a59aed",
+      "bytes": 5269,
+      "sha256": "36de2c7511c20640324c00afb2f2cca98f809ceef451ba10ecf2d8e86532e792",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"scripts/bench_guard_native_full_path.py\"\n      - \"scripts/bench_guard_native_release_gate.py\"\n      - \"scripts/bench_guard_native_installed_slo.py\"\n      - \"scripts/native_slo_adapter.py\"\n      - \"scripts/native_slo_contract.py\"\n      - \"scripts/stress_guard_daemon.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_resident_client.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/server.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_process_*.py\"\n      - \".github/workflows/rust-runtime-performance.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/**\"\n      - \"contracts/extensions/**\"\n      - \"contracts/mcp-servers/**\"\n      - \"src/codex_plugin_scanner/guard/store*.py\"\n      - \"src/codex_plugin_scanner/guard/protection_posture.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/bench_guard*.py\"\n      - \"scripts/ci/*native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"tests/*native*.py\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"scripts/bench_guard_native_full_path.py\"\n      - \"scripts/bench_guard_native_release_gate.py\"\n      - \"scripts/bench_guard_native_installed_slo.py\"\n      - \"scripts/native_slo_adapter.py\"\n      - \"scripts/native_slo_contract.py\"\n      - \"scripts/stress_guard_daemon.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_resident_client.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/server.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_process_*.py\"\n      - \".github/workflows/rust-runtime-performance.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/**\"\n      - \"contracts/extensions/**\"\n      - \"contracts/mcp-servers/**\"\n      - \"src/codex_plugin_scanner/guard/store*.py\"\n      - \"src/codex_plugin_scanner/guard/protection_posture.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/bench_guard*.py\"\n      - \"scripts/ci/*native*.py\"\n      - \"ci/native_runtime/**\"\n      - \"tests/*native*.py\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-recovery.yml",
+      "blob": "1a4a3ddf08470f08ab91847e3c8567078f51c47e",
+      "bytes": 4936,
+      "sha256": "a925ed94a40f96a9e4523a26237a48bd88695566ceab244725484f341f430bac",
+      "header": "on:\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"ci/native_runtime/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py\"\n      - \"scripts/bench_guard_native_installed_slo.py\"\n      - \"scripts/native_slo_adapter.py\"\n      - \"scripts/native_slo_contract.py\"\n      - \"scripts/stress_guard_daemon.py\"\n      - \"tests/test_native_slo_contract.py\"\n      - \"tests/test_guard_native_slo_ingress.py\"\n      - \"tests/test_guard_daemon_stress_script.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/server.py\"\n      - \".github/workflows/rust-runtime-recovery.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/**\"\n      - \"contracts/extensions/**\"\n      - \"contracts/mcp-servers/**\"\n      - \"src/codex_plugin_scanner/guard/store*.py\"\n      - \"src/codex_plugin_scanner/guard/protection_posture.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/bench_guard*.py\"\n      - \"scripts/ci/*native*.py\"\n      - \"tests/*native*.py\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"ci/native_runtime/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py\"\n      - \"scripts/bench_guard_native_installed_slo.py\"\n      - \"scripts/native_slo_adapter.py\"\n      - \"scripts/native_slo_contract.py\"\n      - \"scripts/stress_guard_daemon.py\"\n      - \"tests/test_native_slo_contract.py\"\n      - \"tests/test_guard_native_slo_ingress.py\"\n      - \"tests/test_guard_daemon_stress_script.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/server.py\"\n      - \".github/workflows/rust-runtime-recovery.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/**\"\n      - \"src/codex_plugin_scanner/guard/config*.py\"\n      - \"src/codex_plugin_scanner/guard/runtime/**\"\n      - \"contracts/extensions/**\"\n      - \"contracts/mcp-servers/**\"\n      - \"src/codex_plugin_scanner/guard/store*.py\"\n      - \"src/codex_plugin_scanner/guard/protection_posture.py\"\n      - \"src/codex_plugin_scanner/guard/adapters/**\"\n      - \"src/codex_plugin_scanner/guard/cli/commands_hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"scripts/*native*.py\"\n      - \"scripts/bench_guard*.py\"\n      - \"scripts/ci/*native*.py\"\n      - \"tests/*native*.py\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-rule-contract.yml",
+      "blob": "ee895fb5fdce041f832e3abe07890aa333423229",
+      "bytes": 3263,
+      "sha256": "fac16d341628242d89a0b056ce2e342053d7f4d814f2433c942f51c3b07a0cbe",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/**\"\n      - \"ci/native_runtime/test_native_rule_contract.py\"\n      - \".github/workflows/rust-runtime-rule-contract.yml\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"ci/native_runtime/test_native_rule_contract.py\"\n      - \".github/workflows/rust-runtime-rule-contract.yml\"\n      - \"src/codex_plugin_scanner/guard/runtime/command*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime-windows-resident.yml",
+      "blob": "853f8cb1f0f37a8af1e9e38e27f148c5acda20be",
+      "bytes": 8724,
+      "sha256": "e4d979c66b413d95c9c56ff2101d6ce7e8ccbe2b85af8efa5f70f57e64699aaf",
+      "header": "on:\n  pull_request:\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_windows_resident.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_resident.py\"\n      - \".github/workflows/rust-runtime-windows-resident.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n      - \"src/codex_plugin_scanner/guard/config_source_io.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/config_read_scope.py\"\n      - \"src/codex_plugin_scanner/guard/windows_paths.py\"\n      - \"src/codex_plugin_scanner/safe_output_windows.py\"\n      - \"scripts/native_slo_failure.py\"\n      - \"tests/test_guard_config_source_io.py\"\n      - \"tests/test_daemon_config_read_scope.py\"\n      - \"tests/test_native_slo_failure.py\"\n      - \"scripts/ci/installed_transition*.py\"\n      - \"scripts/ci/installed_artifact_transition_probe.py\"\n      - \"scripts/ci/verify_installed_artifact_transitions.py\"\n      - \"tests/test_installed_transition_windows*.py\"\n      - \"tests/test_native_policy_snapshot_write_safety.py\"\n      - \"tests/test_windows_config_directory_access.py\"\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_windows_resident.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_resident.py\"\n      - \".github/workflows/rust-runtime-windows-resident.yml\"\n      - \"src/codex_plugin_scanner/guard/native_*.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook*.py\"\n      - \"src/codex_plugin_scanner/guard/*hook*.py\"\n      - \"ci/native_runtime/**\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n      - \"src/codex_plugin_scanner/guard/config_source_io.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/config_read_scope.py\"\n      - \"src/codex_plugin_scanner/guard/windows_paths.py\"\n      - \"src/codex_plugin_scanner/safe_output_windows.py\"\n      - \"scripts/native_slo_failure.py\"\n      - \"tests/test_guard_config_source_io.py\"\n      - \"tests/test_daemon_config_read_scope.py\"\n      - \"tests/test_native_slo_failure.py\"\n      - \"scripts/ci/installed_transition*.py\"\n      - \"scripts/ci/installed_artifact_transition_probe.py\"\n      - \"scripts/ci/verify_installed_artifact_transitions.py\"\n      - \"tests/test_installed_transition_windows*.py\"\n      - \"tests/test_native_policy_snapshot_write_safety.py\"\n      - \"tests/test_windows_config_directory_access.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/rust-runtime.yml",
+      "blob": "ba892459281d26c8b3bec79550403637d061058b",
+      "bytes": 8857,
+      "sha256": "1e1ea7df9c8f8167c9ae24161d16936ad6f49de9117365bcd07947be0e249d08",
+      "header": "on:\n  push:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_hook_edge.py\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_policy_snapshot.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/native_resident_client.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"tests/test_guard_native_runtime.py\"\n      - \"tests/test_native_hook_edge.py\"\n      - \"tests/test_rust_posttool_authority.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_binary.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_resident.py\"\n      - \"ci/native_runtime/test_native_hook_client.py\"\n      - \"ci/native_runtime/native_hook_client_support.py\"\n      - \"ci/native_runtime/test_native_hook_client_transport.py\"\n      - \".github/workflows/rust-runtime.yml\"\n      - \"src/codex_plugin_scanner/guard/**\"\n      - \"ci/native_runtime/**\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/*native*\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  pull_request:\n    branches: [main, release/3.2]\n    paths:\n      - \"rust/**\"\n      - \"src/codex_plugin_scanner/guard/native_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/native_hook_edge.py\"\n      - \"src/codex_plugin_scanner/guard/native_command_model.py\"\n      - \"src/codex_plugin_scanner/guard/native_policy_snapshot.py\"\n      - \"src/codex_plugin_scanner/guard/native_pretool.py\"\n      - \"src/codex_plugin_scanner/guard/native_resident_client.py\"\n      - \"src/codex_plugin_scanner/guard/native_runtime_resident.py\"\n      - \"src/codex_plugin_scanner/guard/codex_hook_launch_runtime.py\"\n      - \"src/codex_plugin_scanner/guard/daemon/hook_worker.py\"\n      - \"tests/test_guard_native_runtime.py\"\n      - \"tests/test_native_hook_edge.py\"\n      - \"tests/test_rust_posttool_authority.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_binary.py\"\n      - \"ci/native_runtime/test_guard_native_runtime_resident.py\"\n      - \"ci/native_runtime/test_native_hook_client.py\"\n      - \"ci/native_runtime/native_hook_client_support.py\"\n      - \"ci/native_runtime/test_native_hook_client_transport.py\"\n      - \".github/workflows/rust-runtime.yml\"\n      - \"src/codex_plugin_scanner/guard/**\"\n      - \"ci/native_runtime/**\"\n      - \"scripts/*native*.py\"\n      - \"scripts/release/*native*\"\n      - \"pyproject.toml\"\n      - \"uv.lock\"\n      - \"tests/conftest.py\"\n      - \"tests/native_*support.py\"\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/scorecard.yml",
+      "blob": "300a0fbbe00049244bd7221749027fbff9b7aea9",
+      "bytes": 1074,
+      "sha256": "0255c2a760ea638b812cb3de97933bf54486b3d2feaa27750031969d87536781",
+      "header": "on:\n  schedule:\n    - cron: '0 0 * * 0'\n  push:\n    branches: [main]",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/security-gates.yml",
+      "blob": "45588a52e44181fcd3792f3ccd617b8063607dc4",
+      "bytes": 6658,
+      "sha256": "a551e0207b7776aa75f28eb8fec4b1de4b70379bd4daa1bd5b61ac4e02450512",
+      "header": "on:\n  pull_request:\n  merge_group:\n  push:\n    branches: [main]\n  workflow_dispatch:\n",
+      "jobConditions": []
+    },
+    {
+      "path": ".github/workflows/wake-desktop-core-alpha-feed.yml",
+      "blob": "04aa0774a3423d451493fd4dddf47d00ad25e2dd",
+      "bytes": 3175,
+      "sha256": "8fba30eda5d91145a7d405c46c54a8e73c202af53a58b2809319ed32c3eee41b",
+      "header": "on:\n  workflow_run:\n    workflows: [\"Publish to PyPI\"]\n    types: [completed]\n  release:\n    types: [published]\n  issues:\n    types: [opened]\n  push:\n    branches:\n      - main\n    paths:\n      - .github/workflows/wake-desktop-core-alpha-feed.yml\n  pull_request:\n    paths:\n      - .github/workflows/wake-desktop-core-alpha-feed.yml\n",
+      "jobConditions": [
+        "    if: >-"
+      ]
+    }
+  ],
+  "source_manifest": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "blob": "3ac962d1878e2126e0a6e36cf3deb60976233b6e",
+      "bytes": 29949,
+      "sha256": "7ad01076c95b1794fcdf417affd745fa7a4c37fef01426425192254e8bbc5943"
+    },
+    {
+      "path": ".github/workflows/cline-contract-ci.yml",
+      "blob": "7590bfcb511a3eee54ae26ee882ff506a48f7707",
+      "bytes": 8459,
+      "sha256": "fab2e330e32d869dc158d8381d488c85935e9ecd95c2a05d91b4e5d3c96e83fe"
+    },
+    {
+      "path": ".github/workflows/cline-marketplace.yml",
+      "blob": "c244b41831baa4c48ae0ab8f7ad5837eed1c871a",
+      "bytes": 2185,
+      "sha256": "002de1814dcc7a0342f0e9f9a6d0b67edc3d50b469b8302060517621ef95cd65"
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "blob": "181575215e10d8564671234312d0db3c26c5cf09",
+      "bytes": 1757,
+      "sha256": "0bcc7d975f143d8f8617a22d3e8d2f1c54a6507a88cb2b3bdcf954ae41f3f1d4"
+    },
+    {
+      "path": ".github/workflows/containment-ci.yml",
+      "blob": "e0aefd5808efd55faf1efb5f812ec8712b9f5ff3",
+      "bytes": 2584,
+      "sha256": "ff7e9d70c1a4a967ca4c9fad6a9a34567f3700531dac42a53fe2fd358b7d3b89"
+    },
+    {
+      "path": ".github/workflows/decision-critical-io.yml",
+      "blob": "e5b1557eaae1a15cdefec63bf2c482c22a1db99a",
+      "bytes": 2584,
+      "sha256": "e9bc39b1d44ec3813d65a4716d7552ceb5de9e8b594ae0528e9abe32c0715644"
+    },
+    {
+      "path": ".github/workflows/dependabot-uv-lock.yml",
+      "blob": "4b8b2e5d77f9d727a9a22d73472fdb4d11ef949e",
+      "bytes": 1396,
+      "sha256": "9fb2d94c07eb108252fbab8694816b61ce139c3302253d9a9bce11f541f665a5"
+    },
+    {
+      "path": ".github/workflows/desktop-contract-ci.yml",
+      "blob": "8ee9e478fbc42acbf7cd76dca3f3f81c2a868043",
+      "bytes": 5217,
+      "sha256": "f74919fa4d579c7b82fadf9874c2c9c4fa2aa5c3be5d185859d7bada653053fd"
+    },
+    {
+      "path": ".github/workflows/desktop-core-alpha-feed.yml",
+      "blob": "3e25bb8dc144bafd137f463ecd71c299ed46c4be",
+      "bytes": 27384,
+      "sha256": "2dce0a3a443283fdc52f5f4c6318f08dd43f90011d01406155603764c17e596c"
+    },
+    {
+      "path": ".github/workflows/devcontainer-features.yml",
+      "blob": "534b5a09bbe5b25287bd5eb7bdd4dddd72738d9d",
+      "bytes": 1801,
+      "sha256": "ebecf09ce8eb23a711e3810a87262f0f8b99f3f70c91f62411bc735507b90cad"
+    },
+    {
+      "path": ".github/workflows/extension-control-center-installed-ci.yml",
+      "blob": "37ab5b2368135588fa1b32c84285b3fbc82835b5",
+      "bytes": 10724,
+      "sha256": "e204a95436d71d34953ceda1db959044d0bd04c17bb8c0d276e3255eaeeb7c2c"
+    },
+    {
+      "path": ".github/workflows/fec-source-export.yml",
+      "blob": "62396ac62085363e6a5978cc5f48bb1c6df00c91",
+      "bytes": 944,
+      "sha256": "5d4618d72acc9bc828f1527cb5b1d012a90c280783ba7c0ca43feb69a6fa0366"
+    },
+    {
+      "path": ".github/workflows/finish-extension-authority-stability.yml",
+      "blob": "fe8fd7bab7b546a43eb1490409b2ce9836338e0e",
+      "bytes": 4823,
+      "sha256": "cd56bb03d9637da2db31f52e925c76d5ab144962515088b9a63449b56ccbf2e0"
+    },
+    {
+      "path": ".github/workflows/fleet-extension-contract-integrity.yml",
+      "blob": "d18f6342dc397465ca263105578ceb04d2f0e4b5",
+      "bytes": 4061,
+      "sha256": "86bf970070e128bc9fa3cf3be081078f32a70e70ccbd61e7319b5d615c72bcfe"
+    },
+    {
+      "path": ".github/workflows/fuzz.yml",
+      "blob": "7e94f2e25393a2c54559596fbc557cc4a8f253b0",
+      "bytes": 1625,
+      "sha256": "027db9df3992b527757bc37209a640256eb77973bfdbcabd98606fcfe2bb0bf8"
+    },
+    {
+      "path": ".github/workflows/guard-gvisor-reference.yml",
+      "blob": "09c303f40f024c30a52e953935ca900254597332",
+      "bytes": 2767,
+      "sha256": "63259bf7841528260af494e4629814341644a71ad01f97cdd2d12bdd26f06906"
+    },
+    {
+      "path": ".github/workflows/guard-network-remediation-proof.yml",
+      "blob": "312a5511dea7271a14443e4c23b97a84097c0d93",
+      "bytes": 3875,
+      "sha256": "e1d173204c0ad5048518491d52242055aefcc373bc9ab2e6c14d575b1330892b"
+    },
+    {
+      "path": ".github/workflows/guarded-repository.yml",
+      "blob": "16ffdf55d9e50d466e35f15019e08b263afaf64b",
+      "bytes": 2754,
+      "sha256": "5d5a35fd9bb20935e11682713248477fce86a22f87b5fbab0b61c11c80905964"
+    },
+    {
+      "path": ".github/workflows/harness-smoke.yml",
+      "blob": "58c55b290af24afab1a61b9a726b32c491c30804",
+      "bytes": 3906,
+      "sha256": "d691f0eb6a7339677f3e1a0cae6c78cc7494d6950786321b113464e61a33ad57"
+    },
+    {
+      "path": ".github/workflows/investigation-source-snapshot.yml",
+      "blob": "6887547131248e1dc3d0267181def40b440bc1d8",
+      "bytes": 1429,
+      "sha256": "1f731fdaad1ebba1acfed3cc4292276bcc5c3892e92464681c30d517dd39199e"
+    },
+    {
+      "path": ".github/workflows/mdm-artifacts.yml",
+      "blob": "8ce3fa04bd30a858731588d4d246d80ab1f9cf75",
+      "bytes": 3205,
+      "sha256": "59c0e58e76bf16cdbc6f9241c61fa954414565494ca2001a8bfc90e52151d338"
+    },
+    {
+      "path": ".github/workflows/mdm-cloud-integration-lab.yml",
+      "blob": "d772c69cf44fd9d98a3a5c690c80f24a92215953",
+      "bytes": 6426,
+      "sha256": "3d2d2abe85f07db194fc5f0c3773acd90693483216337209c97619a96f8e228f"
+    },
+    {
+      "path": ".github/workflows/mdm-local-lab.yml",
+      "blob": "6ccfd839e4c7e280d9af93b61b2fc9064d8a80a6",
+      "bytes": 1446,
+      "sha256": "3f57752ced8ed68fafd225ebd38744102d37198ae659c36f1c51455011f73255"
+    },
+    {
+      "path": ".github/workflows/native-release-contract.yml",
+      "blob": "587e8d6dd3836179e1ebcde744641cd5968addcf",
+      "bytes": 2063,
+      "sha256": "3ddb30d16e002a449ddf2b1d05677837de5cfe1e65d42e103475b96434ce9874"
+    },
+    {
+      "path": ".github/workflows/native-wheel-ci.yml",
+      "blob": "cae400ef9a00fb8983d50f96086e490689618515",
+      "bytes": 23781,
+      "sha256": "4fde268386a8be5d11d9bf6d9ac85c9aff5271b4e2d9e90bef3c6598a201c339"
+    },
+    {
+      "path": ".github/workflows/notify-hol-guard-plugin.yml",
+      "blob": "7b5d56175a72eecc44162f3667199fdad4715ee3",
+      "bytes": 15942,
+      "sha256": "bc8d0351af18fb09dd7db697835d940e821c1477b5685731014142ec7c8e45e4"
+    },
+    {
+      "path": ".github/workflows/pr2745-source-snapshot.yml",
+      "blob": "b4cfad62036638574843836e92e7d33ba0ccba98",
+      "bytes": 2164,
+      "sha256": "1116d68ee4f2845a7bc3a71f38bd3d674221a76ca2edf3b605d1df9e5ff1356b"
+    },
+    {
+      "path": ".github/workflows/publish-action-repo.yml",
+      "blob": "5c7b812b9744dbc549ad51cd059a4a4e7732a5f9",
+      "bytes": 14756,
+      "sha256": "dde5141d2cc781a3a2a38aaa267e56a4967a3d506d81399c251ff78fda471c0d"
+    },
+    {
+      "path": ".github/workflows/publish-mcp-registry.yml",
+      "blob": "0beb2708db0987434aebb3be240cd7f36bfcab18",
+      "bytes": 5243,
+      "sha256": "2d024eb023920e0cc423e0a1bad5f833886cb6b0bbf0542ddd0619c21f78c34a"
+    },
+    {
+      "path": ".github/workflows/publish-mcpb.yml",
+      "blob": "603aee556d7151f534ea1fe2ff902c63917227b1",
+      "bytes": 6034,
+      "sha256": "4704581c9e1443ab43c2a1341885d4535581fef622c9f723606297e95c502b1c"
+    },
+    {
+      "path": ".github/workflows/publish.yml",
+      "blob": "81176818383c3f631903d88933bde6c0e1995f41",
+      "bytes": 77935,
+      "sha256": "abcc31002ecfc098e76e01eea4ffd65376e464f373d821f025dc84e4f8b72575"
+    },
+    {
+      "path": ".github/workflows/r0-autofix-artifact.yml",
+      "blob": "eca16722e61e3ac5af9ead6f6d2734bc68fe00e9",
+      "bytes": 1038,
+      "sha256": "e26cf82059664bd61d66cfb24bbeb859a9093d8dee931744f0ad576c2088ff7b"
+    },
+    {
+      "path": ".github/workflows/rust-authority-ownership.yml",
+      "blob": "29a527a8246087b708bf576c36a2a75e58a9f11a",
+      "bytes": 6566,
+      "sha256": "4dc5a0d7575ea3bedf96246c8d59023471e965f4544d449d04d9230e667b8487"
+    },
+    {
+      "path": ".github/workflows/rust-command-model-differential.yml",
+      "blob": "742bfbe23cafdc2615497f2c8f91e85beaee9036",
+      "bytes": 3796,
+      "sha256": "3a7ffe9730f0cc5c02949d8eb717b44f17ccc073943c69516c22f373fd9f80c6"
+    },
+    {
+      "path": ".github/workflows/rust-command-shadow.yml",
+      "blob": "a0a043394f8f9137f0d368ec28a5bb65f11eff2e",
+      "bytes": 4443,
+      "sha256": "ca6e66ada85f69f9ebb83348d4bb5e0d1518354d32b2b05f41895300926758fe"
+    },
+    {
+      "path": ".github/workflows/rust-daemon-edge-hardening.yml",
+      "blob": "605a930d3b2a038d340b33ad5321b7974256d83f",
+      "bytes": 7385,
+      "sha256": "d93defe9103bba13aeaf56cd9435e6d340b1109cc17d438adc2b68ee0040b0fa"
+    },
+    {
+      "path": ".github/workflows/rust-migration-tree-hygiene.yml",
+      "blob": "cc0ad5d72e86b0638b4fe383c9c71f358b3addc8",
+      "bytes": 876,
+      "sha256": "0d71d14f4bf5fb6383231bb34d91893d67ed602045d5a2065dc7ff6451e8a852"
+    },
+    {
+      "path": ".github/workflows/rust-native-identity.yml",
+      "blob": "b17b7ab0fe97dfa1e7bba3fd3a80f520779a3133",
+      "bytes": 3534,
+      "sha256": "256cf98677575e371d71c10178d9838c8d68b32b26918faf62bc3759c7cfa193"
+    },
+    {
+      "path": ".github/workflows/rust-posttool-authority-acceptance.yml",
+      "blob": "1721c11b945d5df995fe9347e1c29bdc357cdd97",
+      "bytes": 6150,
+      "sha256": "21cf16afbe1dbe6c2998d62d40022b88f552c613be7b2f1987b2cc0f6cc0dc08"
+    },
+    {
+      "path": ".github/workflows/rust-pretool-adversarial.yml",
+      "blob": "7ef3f3e789d0cd316613ad6165a8965b5eb1935c",
+      "bytes": 3368,
+      "sha256": "cf44c1d509084b2f3f95ee94607fe7dbe57f53a834bef0fa8ac075b4091fe369"
+    },
+    {
+      "path": ".github/workflows/rust-pretool-authority-acceptance.yml",
+      "blob": "8723b4208e838590a2347a07e83a3bfe1af9ab61",
+      "bytes": 5618,
+      "sha256": "58de693a7903649f3f5ea8663e55db65fbf7cf61efb898ca35b1d69e9840e5cc"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-differential.yml",
+      "blob": "cab4c85420364b2dec5719feacfe6cdbf078d8ad",
+      "bytes": 2967,
+      "sha256": "f262a52ca55dca5f6ebd5c7b764911fe004f5b5c41627e1eada6fa59380ebcb1"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-mutation-differential.yml",
+      "blob": "51ba76ea5aeafe52e238ac95c61585c9ca472bfc",
+      "bytes": 3440,
+      "sha256": "4fec7deee3b8fb5036d095b72c2d9d85eda21a22b6f1b09fca762159340f13cb"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-performance.yml",
+      "blob": "729d91eb5958507651f96e00fffff7cf49a59aed",
+      "bytes": 5269,
+      "sha256": "36de2c7511c20640324c00afb2f2cca98f809ceef451ba10ecf2d8e86532e792"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-recovery.yml",
+      "blob": "1a4a3ddf08470f08ab91847e3c8567078f51c47e",
+      "bytes": 4936,
+      "sha256": "a925ed94a40f96a9e4523a26237a48bd88695566ceab244725484f341f430bac"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-rule-contract.yml",
+      "blob": "ee895fb5fdce041f832e3abe07890aa333423229",
+      "bytes": 3263,
+      "sha256": "fac16d341628242d89a0b056ce2e342053d7f4d814f2433c942f51c3b07a0cbe"
+    },
+    {
+      "path": ".github/workflows/rust-runtime-windows-resident.yml",
+      "blob": "853f8cb1f0f37a8af1e9e38e27f148c5acda20be",
+      "bytes": 8724,
+      "sha256": "e4d979c66b413d95c9c56ff2101d6ce7e8ccbe2b85af8efa5f70f57e64699aaf"
+    },
+    {
+      "path": ".github/workflows/rust-runtime.yml",
+      "blob": "ba892459281d26c8b3bec79550403637d061058b",
+      "bytes": 8857,
+      "sha256": "1e1ea7df9c8f8167c9ae24161d16936ad6f49de9117365bcd07947be0e249d08"
+    },
+    {
+      "path": ".github/workflows/scorecard.yml",
+      "blob": "300a0fbbe00049244bd7221749027fbff9b7aea9",
+      "bytes": 1074,
+      "sha256": "0255c2a760ea638b812cb3de97933bf54486b3d2feaa27750031969d87536781"
+    },
+    {
+      "path": ".github/workflows/security-gates.yml",
+      "blob": "45588a52e44181fcd3792f3ccd617b8063607dc4",
+      "bytes": 6658,
+      "sha256": "a551e0207b7776aa75f28eb8fec4b1de4b70379bd4daa1bd5b61ac4e02450512"
+    },
+    {
+      "path": ".github/workflows/wake-desktop-core-alpha-feed.yml",
+      "blob": "04aa0774a3423d451493fd4dddf47d00ad25e2dd",
+      "bytes": 3175,
+      "sha256": "8fba30eda5d91145a7d405c46c54a8e73c202af53a58b2809319ed32c3eee41b"
+    },
+    {
+      "path": "pyproject.toml",
+      "blob": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+      "bytes": 8647,
+      "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+    },
+    {
+      "path": "scripts/ci/build_pytest_shard_plan.py",
+      "blob": "48f29df18238df89f814b585601aac5d377d13b2",
+      "bytes": 7828,
+      "sha256": "27d087f436ac6e19249db26d5daf6f89d9c3d1e40ee215fb142ef680d18f2c0c"
+    },
+    {
+      "path": "scripts/ci/pytest_shard.py",
+      "blob": "34ae7731e94194d8e35574f64e8f234a8e538af3",
+      "bytes": 5840,
+      "sha256": "c37874c0445a3ad03f7133137e2952fd57d494daa7a96a53a208a7ffc01c2a9f"
+    }
+  ],
+  "source_changes": [],
+  "tool_or_workload_execution": false,
+  "final_selected_source_frozen": false,
+  "original_task_promoted": false,
+  "final_head_acceptance_revalidated": false,
+  "limits": [
+    "This is a source-bound workflow dependency review, not a new executable selection parser or run result.",
+    "Final workflow deltas and selected candidate paths require their own independent review and actual execution.",
+    "Original RSP133 is not a global500-line production-file rule.",
+    "No workflow gates or expected results have been weakened."
+  ],
+  "prior_unpublished_wording_draft_tree": "8ece4f2ecce004cf534d8ba212aa65fca0f5e10c"
+}

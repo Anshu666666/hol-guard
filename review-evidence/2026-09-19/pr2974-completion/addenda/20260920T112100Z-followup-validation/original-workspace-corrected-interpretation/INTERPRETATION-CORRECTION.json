@@ -1,0 +1,53 @@
+{
+  "schema": "pr2974.workspace-observation-clock-correction.v2",
+  "prior_tree": "a326cada473fc8d2bf8ccf4e968cee0b0ccc214a",
+  "reviewer_finding": "partition_regression independently identified the timestamp scope; native_runtime_audit independently checked publisher-close ordering.",
+  "superseded_claims": [
+    {
+      "old": "real +419.290400 ms barrier miss / barrier opened at",
+      "correct": "first retained ready=true observation recorded at +419.290400 ms; exact internal commit instant unknown"
+    },
+    {
+      "old": "current authority withdrawal / retained rows identify withdrawal",
+      "correct": "the full authenticated/current readiness predicate failed; final ready=false may reflect cleanup close, so pre-deadline withdrawal and exact predicate are not established"
+    },
+    {
+      "old": "barrier stayed closed / opened at +386.753012 or +218.197637",
+      "correct": "discrete ready=false/true observations; no exact transition instant or continuous-state claim"
+    }
+  ],
+  "preserved_evidence": {
+    "original_readiness_deadline_ms": 400,
+    "first_admission_fault_constructor_return_lower_bound_ms": 428.411641,
+    "first_admission_fault_await_entry_lower_bound_ms": 441.258657,
+    "service_restart_constructor_return_lower_bound_ms": 461.916738,
+    "service_restart_await_entry_lower_bound_ms": 474.475488,
+    "original_cells": 15,
+    "passed": 12,
+    "failed": 3,
+    "original_raw_rows_times_hashes_results_unchanged": true
+  },
+  "source_explanation": [
+    {
+      "path": "scripts/native_slo_workspace_observer.py",
+      "git_blob": "ea382d142d37e9de784c590e5130b332f0133202",
+      "functions": [
+        "_publication",
+        "_record"
+      ],
+      "fact": "The state read under publisher._condition precedes the call to _record and its finished_ms sample."
+    },
+    {
+      "path": "scripts/native_slo_workspace_lifecycle.py",
+      "git_blob": "2228638126776fa992a482375f472acc9e9bc927",
+      "functions": [
+        "await_ack",
+        "run_lifecycle_cell"
+      ],
+      "fact": "The complete current/authenticated predicate and original deadline determine success; finally closes the publisher before restoring/freezing publication observations."
+    }
+  ],
+  "no_new_runtime_execution": true,
+  "no_production_change": true,
+  "no_deadline_change": true
+}

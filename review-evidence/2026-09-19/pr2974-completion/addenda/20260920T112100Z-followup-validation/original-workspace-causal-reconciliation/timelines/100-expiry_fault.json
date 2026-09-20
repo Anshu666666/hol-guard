@@ -1,0 +1,92 @@
+{
+  "count": 100,
+  "scenario": "expiry_fault",
+  "passed": true,
+  "original_result_sha256": "5d0f8deb02a80e7f7a98321ea22a5f89454e3b0f47951b81ce28e05465e14795",
+  "bytes": 14720,
+  "parts": 8,
+  "accepted_ms": 4.342671999893355,
+  "acceptance_boundary": "cold_provider_all_workspace_registrations_returned",
+  "readiness_deadline_ms": 400,
+  "reported_accept_to_ack_ms": 182.42416200007483,
+  "original_failure": null,
+  "original_publication_digest": "bfdb38b85d509f5500c94eff7da30f891dd9ce940d8934a8bd86f0149f27b379",
+  "publication_origin": "original_publication_observer_monotonic",
+  "timeline": [
+    {
+      "event_index": 0,
+      "kind": "compile",
+      "publication": 1,
+      "started_from_acceptance_ms": 13.666912000076081,
+      "finished_from_acceptance_ms": 100.21563800000877,
+      "duration_ms": 86.54872599993269,
+      "thread_cpu_ms": 85.650442,
+      "config_loads": 101,
+      "cache_entries": 101,
+      "config_load_wall_ms": 29.91840999948181,
+      "succeeded": true
+    },
+    {
+      "event_index": 1,
+      "kind": "push",
+      "publication": 1,
+      "started_from_acceptance_ms": 134.37250000004042,
+      "finished_from_acceptance_ms": 139.77742400004445,
+      "duration_ms": 5.40492400000403,
+      "thread_cpu_ms": 1.9226000000000243,
+      "binding": {
+        "generation": 4,
+        "policy_digest": "c114bf5123305e054139935bc3a3ba17a03d854116d5f40ffdee6a294284fdb6",
+        "runtime_identity": "2281f3e9ea651c86dd9a49a5a2f9327aee21ea0cdf91399c8e4c646a1c3c7ab4"
+      }
+    },
+    {
+      "event_index": 2,
+      "kind": "transport_ack",
+      "publication": 1,
+      "started_from_acceptance_ms": 127.44235600007414,
+      "finished_from_acceptance_ms": 139.83572300003289,
+      "duration_ms": 12.393366999958744,
+      "thread_cpu_ms": 7.147477999999999,
+      "validated": true,
+      "binding": {
+        "generation": 4,
+        "policy_digest": "c114bf5123305e054139935bc3a3ba17a03d854116d5f40ffdee6a294284fdb6",
+        "runtime_identity": "2281f3e9ea651c86dd9a49a5a2f9327aee21ea0cdf91399c8e4c646a1c3c7ab4"
+      }
+    },
+    {
+      "event_index": 3,
+      "kind": "barrier",
+      "publication": 1,
+      "started_from_acceptance_ms": 8.357247000049028,
+      "finished_from_acceptance_ms": 166.64559100001952,
+      "duration_ms": 158.2883439999705,
+      "thread_cpu_ms": 152.000858,
+      "ready": true,
+      "binding": {
+        "generation": 4,
+        "policy_digest": "c114bf5123305e054139935bc3a3ba17a03d854116d5f40ffdee6a294284fdb6",
+        "runtime_identity": "2281f3e9ea651c86dd9a49a5a2f9327aee21ea0cdf91399c8e4c646a1c3c7ab4"
+      }
+    }
+  ],
+  "lifecycle_clock_origin": "original_lifecycle_cell_entry_monotonic",
+  "lifecycle_boundaries_ms": {
+    "cold_registrations_return": 3581.0691310000493,
+    "expiry_enter": 353.8123910000195,
+    "expiry_return": 3541.7582850000144,
+    "publisher_start_enter": 3581.07076400006,
+    "publisher_start_return": 3583.661742000004,
+    "recovered_ack_enter": 3583.665709999991,
+    "recovered_ack_return": 3763.4904180000603,
+    "setup_ack_return": 353.8102359999584
+  },
+  "conservative_acceptance_to_boundary_lower_bounds_ms": {
+    "recovered_ack_enter": 2.596578999941812
+  },
+  "lower_bound_reason": "cold_registrations_return is marked after the unchanged actual acceptance; no cross-origin subtraction",
+  "recovered_request_evidence_present": true,
+  "secondary_workspace_probed": true,
+  "publisher_contained": true
+}

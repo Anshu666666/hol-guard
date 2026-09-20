@@ -1,0 +1,79 @@
+{
+  "schema": "pr2974.windows-wtext-typing-peer.v1",
+  "candidate_tree": "4e7da75bd507365d7f82a942c832b4dce0684ab7",
+  "reviewer": "partition_regression",
+  "scope": [
+    "src/codex_plugin_scanner/guard/windows_replaceable_file.py",
+    "tests/test_windows_replaceable_unicode_crt.py"
+  ],
+  "verdict": "The two reviewed afterimages contain only the four declared local type annotations; no runtime-expression, argument, cleanup, assertion or parametrization changes.",
+  "checks": [
+    {
+      "path": "src/codex_plugin_scanner/guard/windows_replaceable_file.py",
+      "delta": [
+        {
+          "kind": "+",
+          "line": 95,
+          "text": "    api: Any = ctypes.CDLL(name, use_errno=True)"
+        },
+        {
+          "kind": "-",
+          "line": 95,
+          "text": "    api = ctypes.CDLL(name, use_errno=True)"
+        }
+      ],
+      "before_blob": "7cfb9d6e91f0a920c7f04422cd8b3e00842fa78a",
+      "after_blob": "3055abe339a251a900924c1ebbc8de231ab052c5",
+      "after_sha256": "3e35c14d4b08379e74eb11378055fdde3a308659c0b896ee42f6a0cda535edfc"
+    },
+    {
+      "path": "tests/test_windows_replaceable_unicode_crt.py",
+      "delta": [
+        {
+          "kind": "+",
+          "line": 38,
+          "text": "        self.calls: list[tuple[Any, ...]] = []"
+        },
+        {
+          "kind": "-",
+          "line": 38,
+          "text": "        self.calls: list[tuple] = []"
+        },
+        {
+          "kind": "+",
+          "line": 76,
+          "text": "    events: list[tuple[Any, ...]] = []"
+        },
+        {
+          "kind": "-",
+          "line": 76,
+          "text": "    events: list[tuple] = []"
+        },
+        {
+          "kind": "+",
+          "line": 194,
+          "text": "    calls: list[tuple[Any, ...]] = []"
+        },
+        {
+          "kind": "-",
+          "line": 194,
+          "text": "    calls: list[tuple] = []"
+        }
+      ],
+      "before_blob": "9c9ab9f79adae13133f9d5438e59c937aa36dfc1",
+      "after_blob": "ab3d1bca6cb92489fd795043653062eb77487ebd",
+      "after_sha256": "f07e8cd8de3673d79de0d151c2a99f4a1647b34a8b0c72ccc0aa6735226bfb3a"
+    }
+  ],
+  "reasoning": [
+    "ctypes.CDLL(name, use_errno=True) is unchanged; annotating the local api variable as Any permits the existing dynamically retained callback attribute without suppressing an entire module or changing the call.",
+    "All three list element annotations now explicitly describe tuples of arbitrary finite length and values; the mutable list values, calls and fixture expectations are unchanged.",
+    "Both files already import Any. No new import-time expression or dependency was added."
+  ],
+  "limits": [
+    "No imports, formatting, type checking or Windows execution by this peer.",
+    "The original run35506268857/job106066499356 remains failed with eight type errors and zero downstream controls.",
+    "Child annotations and driver gates were separately reviewed by their owners and are outside this two-file delta peer.",
+    "This does not establish CRT equivalence, replacement success, platform containment, release qualification or a passing successor."
+  ]
+}

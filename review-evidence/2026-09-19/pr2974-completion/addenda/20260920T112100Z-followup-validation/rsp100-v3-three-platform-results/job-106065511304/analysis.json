@@ -1,0 +1,520 @@
+{
+  "job_id": 106065511304,
+  "platform_identity": {
+    "cell": "windows-x64",
+    "machine": "AMD64",
+    "system": "Windows"
+  },
+  "source_commit": "afd7717dc8916469880a69a6a250c97c3aa3fb7a",
+  "source_tree": "ea5849e45aeecc6e149bb8ef3886acdbde871bd9",
+  "driver_commit": "6c835281fa62ee26c07aef59616a2d16c7b4c9d6",
+  "driver_tree": "9294e08d3ec4b63132df94e6686c9a2ba2247a49",
+  "before_after_identical": true,
+  "result": {
+    "RSP100_complete": false,
+    "all_stages_succeeded": false,
+    "approval_summary_receipt_complete": false,
+    "classification": "bounded_RSP100_pair_and_approval_functional_validation",
+    "old_campaigns_executed": false,
+    "qualification_complete": false,
+    "source_verified_after": true,
+    "source_verified_before": true,
+    "stages": [
+      {
+        "actual_process_returncode": 0,
+        "command": [
+          "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+          "-c",
+          "\nimport hashlib, importlib, json, os, sys\nfrom pathlib import Path\nvenv = Path(\".venv\").absolute()\nexecutable = venv / (\"Scripts/python.exe\" if os.name == \"nt\" else \"bin/python\")\nconfig_path = venv / \"pyvenv.cfg\"\nconfig_bytes = config_path.read_bytes() if config_path.is_file() else None\nenvironment = {\n    \"classification\": \"child_virtualenv_identity_before_product_import\",\n    \"python\": sys.version,\n    \"executable\": str(Path(sys.executable).absolute()),\n    \"executable_resolved\": str(Path(sys.executable).resolve()),\n    \"prefix\": str(Path(sys.prefix).absolute()),\n    \"base_prefix\": str(Path(sys.base_prefix).absolute()),\n    \"expected_executable\": str(executable),\n    \"expected_prefix\": str(venv),\n    \"pyvenv_config_path\": str(config_path),\n    \"pyvenv_config_bytes\": len(config_bytes) if config_bytes is not None else None,\n    \"pyvenv_config_sha256\": hashlib.sha256(config_bytes).hexdigest() if config_bytes is not None else None,\n}\nenvironment[\"verified\"] = (\n    environment[\"executable\"] == str(executable)\n    and environment[\"prefix\"] == str(venv)\n    and environment[\"prefix\"] != environment[\"base_prefix\"]\n    and config_bytes is not None\n)\nprint(json.dumps(environment, sort_keys=True, allow_nan=False), flush=True)\nif not environment[\"verified\"]:\n    raise SystemExit(1)\nexpected = [\n    [\n        \"codex_plugin_scanner.guard.mcp_approval_risk\",\n        \"src/codex_plugin_scanner/guard/mcp_approval_risk.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_request_risk\",\n        \"src/codex_plugin_scanner/guard/mcp_request_risk.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_risk_dependencies\",\n        \"src/codex_plugin_scanner/guard/mcp_risk_dependencies.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_tool_calls\",\n        \"src/codex_plugin_scanner/guard/mcp_tool_calls.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.proxy.runtime_mcp\",\n        \"src/codex_plugin_scanner/guard/proxy/runtime_mcp.py\"\n    ]\n]\nloaded = []\nfor name, path in expected:\n    module = importlib.import_module(name)\n    actual = Path(module.__file__).resolve()\n    wanted = Path(path).resolve()\n    loaded.append({\"module\": name, \"actual\": str(actual), \"expected\": str(wanted), \"matches\": actual == wanted})\nfrom codex_plugin_scanner.guard import mcp_tool_calls as calls\nfrom codex_plugin_scanner.guard.proxy import runtime_mcp\nreport = {\n    \"python\": sys.version,\n    \"environment\": environment,\n    \"modules\": loaded,\n    \"all_import_paths_match\": all(item[\"matches\"] for item in loaded),\n    \"available\": calls._RISK_PAIR_HELPERS.available,\n    \"refusal_reason\": calls._RISK_PAIR_HELPERS.refusal_reason,\n    \"binding_count\": len(calls._RISK_PAIR_HELPERS._bindings),\n    \"approval_defaults_available\": runtime_mcp._APPROVAL_RISK_DEFAULTS.available,\n}\nprint(json.dumps(report, sort_keys=True, allow_nan=False))\nraise SystemExit(0 if report[\"available\"] and report[\"approval_defaults_available\"]\n                 and report[\"all_import_paths_match\"]\n                 and sys.version_info[:2] == (3, 12) else 1)\n"
+        ],
+        "configured_timeout_s": 180,
+        "containment_scope": "windows_direct_child_only",
+        "direct_process_retired": true,
+        "effective_timeout_s": 180,
+        "elapsed_s": 5.172,
+        "escaped_descendant_containment_proven": false,
+        "exit_code": 0,
+        "group_signal": null,
+        "name": "import-admission",
+        "process_group_retired": null,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 3203,
+        "stdout_sha256": "5de455a77f18429a34777832eb57e1db9306c4847ea35dd19b5f5060e457cace",
+        "timed_out": false,
+        "validation_budget_exhausted": false,
+        "windows_descendant_retirement_proven": false,
+        "windows_taskkill_attempt": null
+      },
+      {
+        "actual_process_returncode": 1,
+        "command": [
+          "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+          "-m",
+          "pytest",
+          "-q",
+          "--tb=short",
+          "--junitxml=rsp100-approval-evidence\\focused.xml",
+          "tests/test_mcp_risk_dependencies.py",
+          "tests/test_mcp_invocation_risk_pair.py",
+          "tests/test_mcp_request_risk_facts.py",
+          "tests/test_runtime_mcp_authority_callbacks.py",
+          "tests/test_runtime_mcp_tool_call_binding.py",
+          "tests/test_guard_browser_mcp_intent.py",
+          "tests/test_mcp_risk_prefilter.py",
+          "tests/test_mcp_package_drain_authority_review.py",
+          "tests/test_mcp_approval_risk_projection.py",
+          "tests/test_mcp_approval_risk_projection_guards.py"
+        ],
+        "configured_timeout_s": 900,
+        "containment_scope": "windows_direct_child_only",
+        "direct_process_retired": true,
+        "effective_timeout_s": 900,
+        "elapsed_s": 102.625,
+        "escaped_descendant_containment_proven": false,
+        "evidence_verified": false,
+        "exit_code": 1,
+        "group_signal": null,
+        "name": "focused-pytest",
+        "positive_control_evidence_missing": true,
+        "process_group_retired": null,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 590536,
+        "stdout_sha256": "73707dbc1a574783cde904911c3073b8c0baa6cf48c214f42694809d0b5250ca",
+        "timed_out": false,
+        "validation_budget_exhausted": false,
+        "windows_descendant_retirement_proven": false,
+        "windows_taskkill_attempt": null
+      },
+      {
+        "actual_process_returncode": 0,
+        "command": [
+          "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ruff",
+          "check",
+          "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "tests/test_mcp_approval_risk_projection.py",
+          "tests/test_mcp_approval_risk_projection_guards.py",
+          "tests/test_mcp_invocation_risk_pair.py",
+          "tests/test_mcp_risk_dependencies.py"
+        ],
+        "configured_timeout_s": 180,
+        "containment_scope": "windows_direct_child_only",
+        "direct_process_retired": true,
+        "effective_timeout_s": 180,
+        "elapsed_s": 0.125,
+        "escaped_descendant_containment_proven": false,
+        "exit_code": 0,
+        "group_signal": null,
+        "name": "ruff",
+        "process_group_retired": null,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 19,
+        "stdout_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "timed_out": false,
+        "validation_budget_exhausted": false,
+        "windows_descendant_retirement_proven": false,
+        "windows_taskkill_attempt": null
+      },
+      {
+        "actual_process_returncode": 0,
+        "command": [
+          "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py",
+          "tests/test_mcp_approval_risk_projection.py",
+          "tests/test_mcp_approval_risk_projection_guards.py",
+          "tests/test_mcp_invocation_risk_pair.py",
+          "tests/test_mcp_risk_dependencies.py"
+        ],
+        "configured_timeout_s": 180,
+        "containment_scope": "windows_direct_child_only",
+        "direct_process_retired": true,
+        "effective_timeout_s": 180,
+        "elapsed_s": 0.094,
+        "escaped_descendant_containment_proven": false,
+        "exit_code": 0,
+        "group_signal": null,
+        "name": "format",
+        "process_group_retired": null,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 26,
+        "stdout_sha256": "2ce9758b9f8abd876ec3e76c589e099e8b05377b1e7ea2331e81ee80f07bdff8",
+        "timed_out": false,
+        "validation_budget_exhausted": false,
+        "windows_descendant_retirement_proven": false,
+        "windows_taskkill_attempt": null
+      },
+      {
+        "actual_process_returncode": 0,
+        "command": [
+          "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+          "-m",
+          "basedpyright",
+          "--level",
+          "error",
+          "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_request_risk.py",
+          "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+          "src/codex_plugin_scanner/guard/mcp_tool_calls.py",
+          "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+        ],
+        "configured_timeout_s": 600,
+        "containment_scope": "windows_direct_child_only",
+        "direct_process_retired": true,
+        "effective_timeout_s": 600,
+        "elapsed_s": 3.593,
+        "escaped_descendant_containment_proven": false,
+        "exit_code": 0,
+        "group_signal": null,
+        "name": "typecheck",
+        "process_group_retired": null,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 32,
+        "stdout_sha256": "d6f435876f91ec6810850a9b1b579e2e7ce3b1f28aeaa9fecc6003b631d9a177",
+        "timed_out": false,
+        "validation_budget_exhausted": false,
+        "windows_descendant_retirement_proven": false,
+        "windows_taskkill_attempt": null
+      }
+    ]
+  },
+  "counts": {
+    "cohorts": {
+      "tests.test_guard_browser_mcp_intent.TestBrowserAutomationIntentV1": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 1
+      },
+      "tests.test_guard_browser_mcp_intent.TestBrowserIntentLiterals": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 1
+      },
+      "tests.test_guard_browser_mcp_intent.TestBrowserMcpCurrentBehavior": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 7
+      },
+      "tests.test_guard_browser_mcp_intent.TestBrowserRiskClassifierIntegration": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 17
+      },
+      "tests.test_guard_browser_mcp_intent.TestExtractMapping": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 5
+      },
+      "tests.test_guard_browser_mcp_intent.TestExtractToolOperation": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 2
+      },
+      "tests.test_guard_browser_mcp_intent.TestFullIntentNormalization": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 5
+      },
+      "tests.test_guard_browser_mcp_intent.TestIsBrowserMcpServer": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 4
+      },
+      "tests.test_guard_browser_mcp_intent.TestNormalizeBrowserMcpIntent": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 2
+      },
+      "tests.test_guard_browser_mcp_intent.TestOperationMaps": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 7
+      },
+      "tests.test_guard_browser_mcp_intent.TestPathPrefixNormalization": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 3
+      },
+      "tests.test_guard_browser_mcp_intent.TestProfileMode": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 4
+      },
+      "tests.test_guard_browser_mcp_intent.TestProxyBrowserIntentMetadata": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 3
+      },
+      "tests.test_guard_browser_mcp_intent.TestRedactedTargetUrl": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 3
+      },
+      "tests.test_guard_browser_mcp_intent.TestSensitiveSurfaces": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 8
+      },
+      "tests.test_guard_browser_mcp_intent.TestTargetDomainNormalization": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 5
+      },
+      "tests.test_guard_browser_mcp_intent.TestUrlExtraction": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 7
+      },
+      "tests.test_guard_browser_mcp_intent.TestUrlNormalization": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 3
+      },
+      "tests.test_guard_browser_mcp_intent.TestVolatileFields": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 2
+      },
+      "tests.test_mcp_approval_risk_projection": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 32
+      },
+      "tests.test_mcp_approval_risk_projection_guards": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 17
+      },
+      "tests.test_mcp_invocation_risk_pair": {
+        "failures": 7,
+        "skipped": 0,
+        "tests": 28
+      },
+      "tests.test_mcp_package_drain_authority_review": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 3
+      },
+      "tests.test_mcp_request_risk_facts": {
+        "failures": 1,
+        "skipped": 0,
+        "tests": 41
+      },
+      "tests.test_mcp_risk_dependencies": {
+        "failures": 0,
+        "skipped": 1,
+        "tests": 39
+      },
+      "tests.test_mcp_risk_prefilter": {
+        "failures": 1,
+        "skipped": 0,
+        "tests": 15
+      },
+      "tests.test_runtime_mcp_authority_callbacks": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 37
+      },
+      "tests.test_runtime_mcp_tool_call_binding": {
+        "failures": 0,
+        "skipped": 0,
+        "tests": 25
+      }
+    },
+    "errors": 2,
+    "failures": 8,
+    "positive_approval_controls": {
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[browser]": true,
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[multiple]": true,
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[single]": true,
+      "test_one_pure_analysis_supplies_decision_pending_summary_and_receipt[zero]": true,
+      "test_path_constructor_namespace_is_available_from_exact_class_dictionary": true,
+      "test_real_stdio_review_queues_and_records_without_forwarding_or_rederiving": true
+    },
+    "positive_approval_controls_passed": true,
+    "positive_shape_controls": {
+      "browser": false,
+      "description": false,
+      "plain": false,
+      "schema": false,
+      "secret": false
+    },
+    "positive_shape_controls_passed": false,
+    "skip_cases": [
+      {
+        "class": "tests.test_mcp_risk_dependencies",
+        "message": "__replace__ is introduced by Python 3.13",
+        "name": "test_generated_copy_or_serialization_hook_state_remains_bound[__replace__]"
+      }
+    ],
+    "skipped": 1,
+    "tests": 327,
+    "xml_exists": true,
+    "xml_sha256": "bfa716b826eb5e874623ea2cd9055916d6f50a1194898079269e96edf46b4224"
+  },
+  "admission": {
+    "all_import_paths_match": true,
+    "approval_defaults_available": true,
+    "available": true,
+    "binding_count": 174,
+    "environment": {
+      "base_prefix": "C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64",
+      "classification": "child_virtualenv_identity_before_product_import",
+      "executable": "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+      "executable_resolved": "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+      "expected_executable": "D:\\a\\hol-guard\\hol-guard\\.venv\\Scripts\\python.exe",
+      "expected_prefix": "D:\\a\\hol-guard\\hol-guard\\.venv",
+      "prefix": "D:\\a\\hol-guard\\hol-guard\\.venv",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "pyvenv_config_bytes": 170,
+      "pyvenv_config_path": "D:\\a\\hol-guard\\hol-guard\\.venv\\pyvenv.cfg",
+      "pyvenv_config_sha256": "b7f94cdd68229ec657be3e2325b127d390f175a4e9ace56c7303dc991f108eae",
+      "verified": true
+    },
+    "modules": [
+      {
+        "actual": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_approval_risk.py",
+        "expected": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_approval_risk.py",
+        "matches": true,
+        "module": "codex_plugin_scanner.guard.mcp_approval_risk"
+      },
+      {
+        "actual": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_request_risk.py",
+        "expected": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_request_risk.py",
+        "matches": true,
+        "module": "codex_plugin_scanner.guard.mcp_request_risk"
+      },
+      {
+        "actual": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_risk_dependencies.py",
+        "expected": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_risk_dependencies.py",
+        "matches": true,
+        "module": "codex_plugin_scanner.guard.mcp_risk_dependencies"
+      },
+      {
+        "actual": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_tool_calls.py",
+        "expected": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\mcp_tool_calls.py",
+        "matches": true,
+        "module": "codex_plugin_scanner.guard.mcp_tool_calls"
+      },
+      {
+        "actual": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\proxy\\runtime_mcp.py",
+        "expected": "D:\\a\\hol-guard\\hol-guard\\src\\codex_plugin_scanner\\guard\\proxy\\runtime_mcp.py",
+        "matches": true,
+        "module": "codex_plugin_scanner.guard.proxy.runtime_mcp"
+      }
+    ],
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "refusal_reason": null
+  },
+  "original_records": [
+    {
+      "name": "source-before.json",
+      "bytes": 10942,
+      "sha256": "effc82473e380f061f2fd78a8c2e23eebc227943cb89a81e4529f09370bf7ceb"
+    },
+    {
+      "name": "import-admission-result.json",
+      "bytes": 4039,
+      "sha256": "fd0461432eea8f0b7d057c1a26e714691fa290f5025de76e4cdd3391192e3367"
+    },
+    {
+      "name": "import-admission-stdout-original.json",
+      "bytes": 4410,
+      "sha256": "89f820b4c5223a88fe463bf1d04afd7fc5e98ce3879f35729038ccca887f03ba"
+    },
+    {
+      "name": "import-admission-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "focused-pytest-result.json",
+      "bytes": 1405,
+      "sha256": "f4276345a58fdf11be58cfd39ee4fa3eb9bda86bbd7d84167d6b5cc4e20e1d18"
+    },
+    {
+      "name": "focused-pytest-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "pytest-counts.json",
+      "bytes": 4824,
+      "sha256": "197cd978a4c29d6668293e402afdcda36e92d6cf93b4f3dc6aa0a9c10b51ad64"
+    },
+    {
+      "name": "ruff-result.json",
+      "bytes": 1321,
+      "sha256": "969b34dd40649c0448343d3e59c2869b9534dbbabb3461003a415f7e0c7e63bb"
+    },
+    {
+      "name": "ruff-stdout-original.json",
+      "bytes": 164,
+      "sha256": "fa818a155a4a3290641d057c99303442632fbf5b3eaf6e0f8dc83e9fa483ddcc"
+    },
+    {
+      "name": "ruff-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "format-result.json",
+      "bytes": 1339,
+      "sha256": "f092147d4aae2fc547fd65c16a57418a4229d2d7e6af513659f738ba84a2e7c2"
+    },
+    {
+      "name": "format-stdout-original.json",
+      "bytes": 172,
+      "sha256": "9852c192fb26fce5489afe651b94f0127317d0f25aed2480f98fce14d1115436"
+    },
+    {
+      "name": "format-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "typecheck-result.json",
+      "bytes": 1153,
+      "sha256": "025ebe0d53c38d077ff4151edae8db28638261f32ef512606f4c9584138d5b3e"
+    },
+    {
+      "name": "typecheck-stdout-original.json",
+      "bytes": 180,
+      "sha256": "c0703a07b8a34c3f63fd15bd8818e60a3c6f6682f4913ec0fce7e0b08f1da845"
+    },
+    {
+      "name": "typecheck-stderr-original.json",
+      "bytes": 135,
+      "sha256": "a2ba6b7466581ac906de835cb2a4a85bfb703be6c37a6610e968cf86bf8bb623"
+    },
+    {
+      "name": "source-after.json",
+      "bytes": 10942,
+      "sha256": "effc82473e380f061f2fd78a8c2e23eebc227943cb89a81e4529f09370bf7ceb"
+    },
+    {
+      "name": "result.json",
+      "bytes": 10372,
+      "sha256": "61bf5604141ec68567722d37bf94cb6b39c9868f1a8ca41db664368328671abf"
+    }
+  ],
+  "original_records_and_inner_streams_independently_verified": true,
+  "artifact_download_verified": false
+}

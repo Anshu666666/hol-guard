@@ -1,0 +1,75 @@
+name: Windows WTEXT reader acceptance
+on:
+  push:
+    branches: ["__DRIVER_BRANCH__"]
+    paths: [".github/workflows/windows-wtext-reader-acceptance.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: windows-wtext-reader-acceptance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source-wtext-acceptance:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      CANDIDATE_SOURCE: "__CANDIDATE_SHA__"
+      CANDIDATE_TREE: "__CANDIDATE_TREE__"
+    steps:
+      - name: Check out bound driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - name: Check out immutable candidate
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "__CANDIDATE_SHA__"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.8.15"
+      - name: Install unchanged frozen source dependencies
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = $null
+          $env:PYTHONHOME = $null
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Bind source, imports, dependencies and driver
+        id: binding
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/scripts/ci/validate_windows_wtext_reader_acceptance.py --source candidate --driver driver --output wtext-acceptance-evidence --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase before
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check source style and types without modifications
+        id: static
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/scripts/ci/validate_windows_wtext_reader_acceptance.py --source candidate --driver driver --output wtext-acceptance-evidence --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase static
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Execute declared source controls once
+        if: ${{ !cancelled() && steps.binding.outcome == 'success' && steps.static.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/scripts/ci/validate_windows_wtext_reader_acceptance.py --source candidate --driver driver --output wtext-acceptance-evidence --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase controls
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify source and driver after the one attempt
+        if: always()
+        shell: pwsh
+        run: |
+          & candidate/.venv/Scripts/python.exe driver/scripts/ci/validate_windows_wtext_reader_acceptance.py --source candidate --driver driver --output wtext-acceptance-evidence --source-sha $env:CANDIDATE_SOURCE --source-tree $env:CANDIDATE_TREE --phase after
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Retain original outcomes, diagnostics and cleanup
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-wtext-reader-acceptance-${{ github.run_attempt }}
+          path: wtext-acceptance-evidence/
+          if-no-files-found: error

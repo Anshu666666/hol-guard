@@ -1,0 +1,5 @@
+# Original 8f workspace lifecycle member recovery
+
+These are two unchanged members of artifact 10599581007 from run 35491537211 / job 106027206739, source 8f15b37b4a1bd054ef486148610e518b1be05cfc and driver 3ffa573bd4b91fc0d5c44511f19f2dfbd6cfcb22. The full 22,575,317-byte existing ZIP was rehashed to 693aab90fd15e90619994c54a50675b7c8ac2d5501b44d97f29bfadb92d4ce57. Only the 25,061-byte JSON and 255,626-byte JSONL were decompressed and transferred. All member bytes/SHA-256/Git blob IDs match the original retained descriptors.
+
+The bounded recovery used 128MiB address-space and 15 CPU-second limits, with 19,095,552-byte observed peak RSS. It ran no application import, native control, test or workload. All 20 transfer reads completed before the remote environment was released. No new network download occurred. This packet preserves original failed results and clock boundaries; detailed causal reconstruction is a separate follow-up. Binary/ZIP bodies are excluded, and no historical packet restoration is claimed.

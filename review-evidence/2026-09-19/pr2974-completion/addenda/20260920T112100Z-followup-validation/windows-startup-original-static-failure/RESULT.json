@@ -1,0 +1,111 @@
+{
+  "schema": "pr2974-windows-startup-attempt1-static-failure.v1",
+  "source": {
+    "sha": "dce62838d43a9947d2928f5caf595ab8feb40279",
+    "tree": "6215dcb493adb1533d317369231736f390236419",
+    "sole_parent": "4afa20cf014ccba918bf2fa61552dafe66767930"
+  },
+  "driver": {
+    "sha": "b4ab570e26b331f70be171bcb95ca87a35abb892",
+    "tree": "59c3d99e539822c8ede6f8e5099343c2c592d398"
+  },
+  "run": 35507796398,
+  "job": 106070430520,
+  "conclusion": "failure",
+  "started_at": "2026-09-20T11:25:33Z",
+  "completed_at": "2026-09-20T11:26:26Z",
+  "first_failure": "static Python basedpyright step",
+  "type_errors": [
+    "d:\\a\\hol-guard\\hol-guard\\driver\\startup-diagnostic\\observe_startup.py:420:13 - error: Argument of type \"str | None\" cannot be assigned to parameter \"args\" of type \"StrPath\" in function \"__new__\"",
+    "d:\\a\\hol-guard\\hol-guard\\driver\\startup-diagnostic\\observe_startup.py:420:13 - error: Argument of type \"str | None\" cannot be assigned to parameter \"args\" of type \"StrPath\" in function \"__init__\"",
+    "d:\\a\\hol-guard\\hol-guard\\driver\\startup-diagnostic\\retain_results.py:65:18 - error: Expected type arguments for generic class \"dict\" (reportMissingTypeArgument)\r",
+    "d:\\a\\hol-guard\\hol-guard\\driver\\startup-diagnostic\\retain_results.py:69:41 - error: Expected type arguments for generic class \"dict\" (reportMissingTypeArgument)\r",
+    "4 errors, 408 warnings, 0 notes"
+  ],
+  "format_passed": true,
+  "ruff_passed": true,
+  "bindings": {
+    "before_all_true": true,
+    "after_all_true": true,
+    "invariant_fields_identical": true,
+    "actual_python": "3.12.10",
+    "venv": "D:\\a\\hol-guard\\hol-guard\\candidate\\.venv"
+  },
+  "executed": {
+    "rust_compilation": false,
+    "default_rust_controls": 0,
+    "diagnostic_rust_controls": 0,
+    "python_controls": 0,
+    "original_selector_calls": 0
+  },
+  "planned_unchanged": {
+    "default_rust_controls": 3,
+    "diagnostic_rust_controls": 9,
+    "python_controls": 59,
+    "payload_bytes": 52,
+    "fallback_budget_ms": 750,
+    "outer_call_seconds": 3
+  },
+  "returned": {
+    "framed_files": 11,
+    "original_selected_files": 10,
+    "original_selected_bytes": 159080,
+    "frames_complete": true,
+    "each_size_sha256_gitblob_checked": true,
+    "index_join_checked": true,
+    "missing_allowlisted_files": [
+      "original-capture.json",
+      "original-selector-gate.json",
+      "original-selector.xml",
+      "original-selector.stdout",
+      "original-selector.stderr",
+      "original-selector.process.json",
+      "runtime-before.json",
+      "runtime-after.json",
+      "python-control-gate.json",
+      "rust-control-gate.json",
+      "python-controls.xml",
+      "python-controls.stdout",
+      "python-controls.stderr",
+      "rust-default-controls.stdout",
+      "rust-default-controls.stderr",
+      "rust-diagnostic-controls.stdout",
+      "rust-diagnostic-controls.stderr",
+      "python-collection.stdout",
+      "python-collection.stderr",
+      "rust-default-collection.stdout",
+      "rust-default-collection.stderr",
+      "rust-diagnostic-collection.stdout",
+      "rust-diagnostic-collection.stderr",
+      "rust-format.stdout",
+      "rust-format.stderr",
+      "rust-clippy-default.stdout",
+      "rust-clippy-default.stderr",
+      "rust-clippy-diagnostic.stdout",
+      "rust-clippy-diagnostic.stderr",
+      "diagnostic-build.stdout",
+      "diagnostic-build.stderr",
+      "driver-error-before.json",
+      "driver-error-python.json",
+      "driver-error-rust.json",
+      "driver-error-build.json",
+      "driver-error-workload.json",
+      "driver-error-after.json"
+    ],
+    "refused": [],
+    "complete_artifact": false
+  },
+  "artifact": {
+    "id": 10604567064,
+    "bytes": 16390,
+    "github_metadata_sha256": "be16ae669bd98a7b3ea92da5a1ef8e9ebc40aecd1da2f43877b5693c7567c933",
+    "archive_downloaded": false
+  },
+  "cause": {
+    "product_startup_cause_available": false,
+    "serving_child_cause_available": false,
+    "default_artifact_timing_claim": false
+  },
+  "qualification_complete": false,
+  "proposed_followup": "Only type annotations in the separate driver; final peer and normalization precede any fresh unique-branch attempt."
+}

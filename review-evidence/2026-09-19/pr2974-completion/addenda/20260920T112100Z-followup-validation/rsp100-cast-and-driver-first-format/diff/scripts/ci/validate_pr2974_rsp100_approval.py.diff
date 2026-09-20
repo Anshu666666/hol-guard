@@ -1,0 +1,13 @@
+--- before/scripts/ci/validate_pr2974_rsp100_approval.py
++++ after/scripts/ci/validate_pr2974_rsp100_approval.py
+@@ -407,7 +407,9 @@
+                     },
+                     "skip_cases": [
+                         {"class": case.get("classname"), "name": case.get("name"), "message": child.get("message")}
+-                        for case in root.iter("testcase") for child in case if child.tag == "skipped"
++                        for case in root.iter("testcase")
++                        for child in case
++                        if child.tag == "skipped"
+                     ],
+                 }
+             )

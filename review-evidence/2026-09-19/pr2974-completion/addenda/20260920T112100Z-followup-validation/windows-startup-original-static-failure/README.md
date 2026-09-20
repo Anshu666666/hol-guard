@@ -1,0 +1,5 @@
+# Original Windows startup diagnostic: first static failure
+
+Run 35507796398 / job 106070430520 failed at Python type checking after exact source/interpreter binding and successful Ruff/format. The four retained errors are confined to the separate driver: optional module.__file__ is passed to Path, and two dict annotations lack parameters. Rust compilation, the planned 3/9 Rust controls, 59 Python controls and original selector were all skipped. No startup result or cause was observed.
+
+All source, driver, dependency and interpreter invariant fields matched before and after. The original complete job log and ten original selected report bodies plus their projection index are preserved here. Every projected size, SHA-256, Git blob hash, chunk order and index reference was recomputed. The artifact's 16,390-byte size and digest are GitHub metadata only; its ZIP was not downloaded. Missing later-stage files stay explicit. The historical 4afa failure, original 750 ms fallback and 3-second call remain unchanged.

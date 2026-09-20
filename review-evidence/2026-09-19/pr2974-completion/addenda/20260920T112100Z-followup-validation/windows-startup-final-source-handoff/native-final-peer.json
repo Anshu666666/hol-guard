@@ -1,0 +1,217 @@
+{
+  "schema": "pr2974.windows-startup-normalized-source-and-driver-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "verdict": "clear_for_separately_bound_hosted_validation",
+  "base": {
+    "sha": "4afa20cf014ccba918bf2fa61552dafe66767930",
+    "tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513"
+  },
+  "source": {
+    "root": "6215dcb493adb1533d317369231736f390236419",
+    "nested_tree_hashes": 280,
+    "leaf_descriptors": 4759
+  },
+  "driver_template": {
+    "root": "6adac113f61577cce0037d677eb8dad4f7e7cc1e",
+    "nested_tree_hashes": 4,
+    "leaf_descriptors": 5
+  },
+  "manifest": {
+    "git_blob": "f95a9cfd99d4161609bd10241d882650416300f9",
+    "sha256": "4ca8827d6e2313d05b930d4f40a9beae67473d28056f86481471fb2826b50f9d"
+  },
+  "formatter_return": {
+    "tree": "481dc6a375353fbb243abe9902f2ac3ece8ef056",
+    "run": 35506749603,
+    "job": 106067745488,
+    "original_result_blob": "a4ffa30a3a9fc17b7baf911b85dfd298ac584cab",
+    "commands": 30,
+    "idempotent_pairs": 8,
+    "source_preserved": true
+  },
+  "rust_review": [
+    "Read every changed returned Rust hunk against the already reviewed corrected485/f0cd bodies.",
+    "All eight images match after whitespace and optional trailing-comma normalization; main.rs separately only moves the Windows observer module below the complete cfg-gated Linux sink declaration.",
+    "The cfg attribute remains attached to native_phase_sink. Original expression order, short-circuiting, borrowed original Result, macros' default erasure, fixed bounds, cleanup assertions, and identical expired Instant are preserved.",
+    "No global 500-line gate is imposed; the 522-line managed file is a bounded diagnostic delta whose expressions were reviewed."
+  ],
+  "python_driver_review": {
+    "before_driver_git_blob": "1c450961f051293e7ddf80d2e9bc44c9212ce8ed",
+    "after_driver_git_blob": "55e2fe4aca729acfe8973e916a9b9178bfccc247",
+    "before_projection_git_blob": "2c998bbc710f48280813a6d5947f82cbd6b4bdb1",
+    "after_projection_git_blob": "968ec7857817ff8c4d09d1ff99b6107e648c0a33",
+    "result_tree": "788f3eecc00eff8f8537c8f6b3d681981908c484",
+    "scope": "Read complete returned runner/projector and exact diffs. Changes are layout/grouping only; actual argument lists, order, deadlines, exact59 JUnit identity join, original selector, failure gates and log bounds remain.",
+    "ast_equal": "Owner's original Python3.13 AST normalization receipt is hash-bound for all five Python files. This reviewer did not re-execute AST parsing or lint.",
+    "original_workflow_blob": "eedc79d2e23a992780c309de0448667a8fabf971",
+    "expected_controls_blob": "4fa609a1761c6507430203ff39ea37007da762f3",
+    "workflow_and_expected_controls_unchanged": true
+  },
+  "source_proof": {
+    "source_delta": [
+      "ci/native_runtime/test_windows_startup_capture.py",
+      "ci/native_runtime/windows_startup_capture.py",
+      "ci/native_runtime/windows_startup_record.py",
+      "rust/crates/guard-runtime/src/main.rs",
+      "rust/crates/guard-runtime/src/managed_resident.rs",
+      "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+      "rust/crates/guard-runtime/src/native_windows_startup_observation.rs",
+      "rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs",
+      "rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs",
+      "rust/crates/guard-runtime/src/resident_state_discovery.rs"
+    ],
+    "base_blob_population": 4753,
+    "candidate_blob_population": 4759,
+    "no_removals": true,
+    "rust_images": [
+      {
+        "path": "rust/crates/guard-runtime/src/main.rs",
+        "bytes": 14777,
+        "sha256": "7854067d794c03483d426938205ef2961ea6bda8ced2deca42ea53c54b363d1e",
+        "git_blob": "4226c640e447cd5a6b8111e439e954422e0b03f2",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+        "bytes": 14494,
+        "sha256": "0677c55b3938a5617aaa6c27ae7b981119708146dbb736f76f4fcd6eabbe1996",
+        "git_blob": "aea07ad0d7cae8660346521adc04f8590bb9a0c1",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+        "bytes": 1583,
+        "sha256": "a3f91d8d11583e1f296a0fbd3a80652bf229eeec3dd1f4514f33438b8ac717c2",
+        "git_blob": "70f393c186b6933da330096c7525f56d85cbe066",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+        "bytes": 19109,
+        "sha256": "6331dd2a8679650389146124654c293f701c75f161be4da0d9a7ee35b74ff80e",
+        "git_blob": "fb61b5ac8ec9e3c2ad9c4ddf55baa1607a214ddc",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs",
+        "bytes": 9125,
+        "sha256": "e6e8a3d14f3eaee4e7605a50c89edc883f691219164361d34d005e9e3d15752e",
+        "git_blob": "404d32a5583289cf2d64c318287b5c0a4a6c4684",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs",
+        "bytes": 7960,
+        "sha256": "048998ed0944bd63a7cc15599b631b2b52b294cfc30d5a0b6c4e7938972121ee",
+        "git_blob": "154224c4a0e55f661194c9b60596f1f0be7d018e",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/native_windows_startup_observation.rs",
+        "bytes": 4673,
+        "sha256": "2e984a64b679eaa5bf02b3cc4eab24e048f4191f3b2c721aaacdda413f362cfe",
+        "git_blob": "cc1114b50383d2e326b40890e25ea3d2537ab117",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+        "bytes": 5506,
+        "sha256": "3ce1dd002c4c0bb6d9ad6bf0b474d0ab54d8f5488588ca41433cacb8ea85385a",
+        "git_blob": "2ec58d12307473e8ff1c658957252a85ce86aed2",
+        "comparison": "equal after whitespace/optional trailing-comma normalization; main module ordering checked separately"
+      }
+    ],
+    "all_rust_normalizations_match": true,
+    "formatter_commands": 30,
+    "formatter_pairs": 8,
+    "formatter_result_input_source": {
+      "head": "6a40f409e404f8d8a19da53a8fec29d0c1a74278",
+      "status": "",
+      "tree": "62db1be46e8ded842ad52613bc57af55ec4422df"
+    },
+    "formatter_result_input_driver": {
+      "head": "f45a0d4f42231590f97e6f01b41816c9ee012cfa",
+      "status": "",
+      "tree": "4418e33318de27dbd7926eca4877fc1d58264d23"
+    }
+  },
+  "source_files": [
+    {
+      "path": "ci/native_runtime/test_windows_startup_capture.py",
+      "bytes": 11921,
+      "sha256": "8b29e6ea01f9103d7879b184a4dcfca7c39641d7a073a7e6e27a497e3ff0ca73",
+      "git_blob": "7c9c2b5b862f217153702f6d4447f2b44f1867a8"
+    },
+    {
+      "path": "ci/native_runtime/windows_startup_capture.py",
+      "bytes": 9029,
+      "sha256": "8ccf94276151b5a317d5d1a69a40cc63a74312842da870db449e548e36b2c7b7",
+      "git_blob": "0310d4ed4a7d7f92e2de0e61df5bb0c1fb100301"
+    },
+    {
+      "path": "ci/native_runtime/windows_startup_record.py",
+      "bytes": 9067,
+      "sha256": "7103374d7e41a2ae144f8ec2377d0cdb241625fd458315d4c95005f4b3ced0bf",
+      "git_blob": "5b5ee572389d88b0f41d0506dcee13650b211ca9"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "bytes": 14777,
+      "sha256": "7854067d794c03483d426938205ef2961ea6bda8ced2deca42ea53c54b363d1e",
+      "git_blob": "4226c640e447cd5a6b8111e439e954422e0b03f2"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "bytes": 14494,
+      "sha256": "0677c55b3938a5617aaa6c27ae7b981119708146dbb736f76f4fcd6eabbe1996",
+      "git_blob": "aea07ad0d7cae8660346521adc04f8590bb9a0c1"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+      "bytes": 1583,
+      "sha256": "a3f91d8d11583e1f296a0fbd3a80652bf229eeec3dd1f4514f33438b8ac717c2",
+      "git_blob": "70f393c186b6933da330096c7525f56d85cbe066"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "bytes": 19109,
+      "sha256": "6331dd2a8679650389146124654c293f701c75f161be4da0d9a7ee35b74ff80e",
+      "git_blob": "fb61b5ac8ec9e3c2ad9c4ddf55baa1607a214ddc"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_enabled.rs",
+      "bytes": 9125,
+      "sha256": "e6e8a3d14f3eaee4e7605a50c89edc883f691219164361d34d005e9e3d15752e",
+      "git_blob": "404d32a5583289cf2d64c318287b5c0a4a6c4684"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_windows_startup_observation_tests.rs",
+      "bytes": 7960,
+      "sha256": "048998ed0944bd63a7cc15599b631b2b52b294cfc30d5a0b6c4e7938972121ee",
+      "git_blob": "154224c4a0e55f661194c9b60596f1f0be7d018e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_windows_startup_observation.rs",
+      "bytes": 4673,
+      "sha256": "2e984a64b679eaa5bf02b3cc4eab24e048f4191f3b2c721aaacdda413f362cfe",
+      "git_blob": "cc1114b50383d2e326b40890e25ea3d2537ab117"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_state_discovery.rs",
+      "bytes": 5506,
+      "sha256": "3ce1dd002c4c0bb6d9ad6bf0b474d0ab54d8f5488588ca41433cacb8ea85385a",
+      "git_blob": "2ec58d12307473e8ff1c658957252a85ce86aed2"
+    }
+  ],
+  "limits": [
+    "This peer independently rehashes source/manifest bodies and all nested tree descriptors, not every unchanged repository blob body.",
+    "The original formatter's result and returned images were read; no duplicate formatter, native build, controls or original selector ran in this peer.",
+    "The ZIP is metadata-only in the formatter-return packet; the owner's full framed-log decoder is not independently rerun here.",
+    "Source commit and workflow branch/SHA placeholders still require exact root binding. The immutable source must remain a sole child of the recorded4afa parent.",
+    "The future Windows diagnostic remains parent-only, with no child cause export or complete descendant-cleanup claim; original750ms/3s and failure status remain unchanged."
+  ],
+  "native_compilation_executed": false,
+  "native_controls_executed": false,
+  "original_selector_executed": false
+}

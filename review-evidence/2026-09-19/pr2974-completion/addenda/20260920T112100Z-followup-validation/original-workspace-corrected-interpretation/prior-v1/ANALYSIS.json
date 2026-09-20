@@ -1,0 +1,107 @@
+{
+  "schema": "pr2974.workspace-100-scope-causal-review.v1",
+  "source": {
+    "sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+    "tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf"
+  },
+  "original_run": 35491537211,
+  "original_job": 106027206739,
+  "raw_recovery_tree": "10a6e675544a0c2dc6d12a6303bde87f00c556e6",
+  "immutable_input": {
+    "artifact_id": 10599581007,
+    "zip_bytes": 22575317,
+    "zip_sha256": "693aab90fd15e90619994c54a50675b7c8ac2d5501b44d97f29bfadb92d4ce57"
+  },
+  "result": {
+    "original_cells": 15,
+    "passed": 12,
+    "failed": 3,
+    "original_readiness_deadline_ms": 400,
+    "original_verdicts_unchanged": true,
+    "original_failed_cases": [
+      "key_rotation",
+      "first_admission_fault",
+      "service_restart"
+    ],
+    "full_rsp_128_129_qualification": false,
+    "headline_timing_eligible": false
+  },
+  "findings": [
+    {
+      "case": "first_admission_fault",
+      "observed": "The actual first accepted native reply was discarded by the declared fault. The second reply validated at +359.622837 ms and its Python readiness barrier opened at +386.753012 ms. The real new service constructor returned at least 428.411641 ms after the unchanged registration acceptance; await_ack was entered at least 441.258657 ms after acceptance. No recovered hook was offered.",
+      "implication": "Timely transport and barrier observations do not satisfy complete caller readiness when construction returns beyond the original 400 ms deadline.",
+      "unproved": "The original records do not split constructor work after wait_until_ready from scheduling/observer cost, so they do not identify one removable constructor phase."
+    },
+    {
+      "case": "service_restart",
+      "observed": "The first reply validated at +269.234860 ms while its Python barrier stayed closed. The same policy binding was acknowledged again at +391.402746 ms; the second barrier opened at +419.290400 ms. Constructor return was at least +461.916738 ms and await_ack entry at least +474.475488 ms. No recovered hook was offered.",
+      "implication": "This cell has a real barrier miss before later constructor completion; the +419.290400 ms observation cannot be moved inside 400 ms.",
+      "unproved": "The source can reject a valid transport ACK because of a newer publication epoch, changed command authority, or resident identity/currentness. No exact rejecting predicate, epoch, or last-error transition was retained."
+    },
+    {
+      "case": "key_rotation",
+      "observed": "Supported generated command-control-key recovery returned at the original acceptance. A valid transport ACK appeared at +189.925645 ms and a ready barrier at +218.197637 ms. Two later configuration captures outside a publication had zero configuration loads, followed by a publication ending with a closed barrier at +476.483356 ms and no second push. The original authenticated/current readiness check failed, so no recovered hook was offered.",
+      "implication": "A previously ready barrier is insufficient evidence of current authority. Retained compilation and barrier rows identify withdrawal but not the exact invalidation reason.",
+      "unproved": "Do not infer a readback bug, expiry, runtime mismatch, or specific metadata path from these rows. The key is generated command-control authority, not interactive enrollment or a policy-integrity-key migration."
+    }
+  ],
+  "cross_cell_observations": [
+    "All three service-restart cells (1, 10 and 100 scopes) show a first valid transport ACK with a closed Python barrier, then a second valid ACK with the same binding and a ready barrier. Only the 100-scope cell exceeds 400 ms.",
+    "At 100 scopes, both cold replacement cells perform 101 actual configuration loads in the first compile, approximately 83 ms inclusive calling-thread wall/CPU. Their second compiles have zero new configuration loads but still take approximately 48–50 ms; zero loads is not zero configuration capture/merge cost.",
+    "The original publisher rechecks current authority and resident metadata after a transport ACK. No evidence supports removing those guards or replaying an ambiguous native request.",
+    "All 15 publisher observers froze with zero callbacks in flight and matching complete bounded event digests. This is complete retention of these publisher rows, not proof of unobserved phase coverage or complete platform qualification."
+  ],
+  "clock_rules": [
+    "Publication started/finished values are shifted only by the acceptance expressed in that same PublicationObserver origin.",
+    "LifecycleClocks uses a separate cell-entry origin. Its cold_registrations_return marker occurs after actual acceptance; subtracting it from later constructor/await boundaries yields conservative lower bounds, not an exact cross-origin timestamp.",
+    "Native evaluation, subprocess startup, interpreter imports and complete HTTP readiness are not equated to validated transport ACK.",
+    "Original failed reports contain installed_runtime_matches=false because there is no recovered receipt binding to compare. This is not evidence that a different runtime was loaded."
+  ],
+  "preserved_scope": [
+    "Same-process replacement means two actual Python service instances on the same owned home, after old publisher/resident/service containment; no Python process restart is claimed.",
+    "The 100-scope lost-metadata and expiry cells passed their implemented checks at 362.222529 ms and 182.424162 ms respectively.",
+    "All three failed cells retained the original authenticated-ack deadline failure digest, zero recovered receipts and unoffered secondary-workspace proof.",
+    "No original workload was rerun and no production repair, deadline, acceptance, authority or retry behavior was changed by this analysis."
+  ],
+  "next_action": {
+    "authorized_by_parent": true,
+    "stage": "prepare_for_independent_peer_before_one_bounded_diagnostic",
+    "source_reference": "exact original 8f source and installed default-runtime workload",
+    "selected_original_cells": {
+      "counts": [
+        100
+      ],
+      "scenarios": [
+        "key_rotation",
+        "first_admission_fault",
+        "service_restart"
+      ]
+    },
+    "scope": "Fixture-local bounded fixed-reason publisher/constructor observation; separate from the 88-call priority-launcher observer.",
+    "observe": [
+      "Original publication context/epoch and request_publish transitions, closed error categories and actual input-reconcile invalidations.",
+      "Existing resident-generation/metadata confirmation branch outcomes using returned values and original arguments; no additional filesystem reads.",
+      "Original wait_until_ready, HookWorker, request-services, HTTP bind/activate and outer service-constructor boundaries.",
+      "Original acceptance and 400 ms deadline unchanged, with current-authority and actual recovered-request outcomes retained."
+    ],
+    "prohibitions": [
+      "No additional native/HTTP probes",
+      "No retry or repeated cell",
+      "No stale ACK reuse",
+      "No deadline extension",
+      "No payload, key, path or process-identifier export",
+      "No product repair before observed cause evidence"
+    ],
+    "required_controls": [
+      "Identical forwarded arguments and result/exception identity",
+      "Exact-once original callback counts",
+      "Owned-instance filtering",
+      "Patch restoration on setup/body/cleanup failure",
+      "Finite record bounds and explicit observation loss",
+      "Real existing resident-currentness and epoch/invalidation outcomes",
+      "Caller/observer clock-origin separation"
+    ],
+    "interpretation": "The original run_lifecycle_sweep full-matrix success field remains false for this three-cell subset; a diagnostic collection-admission flag must be separate from original workload verdicts."
+  }
+}

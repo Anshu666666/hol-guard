@@ -1,0 +1,52 @@
+{
+  "schema": "hol-guard.pr2974.windows-wtext-final-source-peer.v1",
+  "review_date_utc": "2026-09-20",
+  "source_tree": "12e379f2f3a3bfaea4e4f0f052501405a3075214",
+  "reviewer": "qualification_audit",
+  "files": {
+    "helper": {
+      "bytes": 9094,
+      "sha256": "01dbfb47f77e9c2505f7fefaea50a51f01a73268cb2f9186b17fde6d494f2683",
+      "git_blob": "7cfb9d6e91f0a920c7f04422cd8b3e00842fa78a"
+    },
+    "focused": {
+      "bytes": 8175,
+      "sha256": "e968e201b807b1b52d67d90f3a819e2e9d0f2d58d1cb1242baa6f5dccd1e1633",
+      "git_blob": "9c9ab9f79adae13133f9d5438e59c937aa36dfc1"
+    },
+    "cohort": {
+      "bytes": 13363,
+      "sha256": "8f8470e25d0c4c5621cdab7bf6b9a6d5597b8dece91750dbaba2808e9c612335",
+      "git_blob": "4c032fac9b9af89fa38ce1845064e5ffdcff9f5e"
+    },
+    "old_api": {
+      "bytes": 16953,
+      "sha256": "b81c797152d307ba3c23d49de57ccb006cb749fd80f3615e70ceb115b8cf04d3",
+      "git_blob": "ca47ce667108b5069c35a7936cc623fdedb7f2c4"
+    },
+    "result": {
+      "bytes": 8546,
+      "sha256": "6f50ea7a9341f34d24b97d7af9972872a4732d9ce5322abb3d62e54f2567181d",
+      "git_blob": "8319e6bbe21d10ab2325bf64dc0efd1396319da5"
+    }
+  },
+  "outcome": "No additional concrete source blocker in the final narrow WTEXT tuple.",
+  "checks": [
+    "Final helper is equal to the previously reviewed ca61f3e image after removing blank-only lines; no code changed.",
+    "Focused test is exactly the prior 7f7cd86a image with its three local StopNative references renamed to StopNativeError.",
+    "Existing API test is exactly ab48d32e with only the mode0x10000/unicode_bom_unproved parameter removed; mode0 invalid rejection and every other assertion remain.",
+    "The final acceptance cohort retains the same five definitions and original18 actual Windows cells plus four synthetic controls. Its _safe predicate adds explicit parentheses around the existing len==64 and lowercase-hex conjunction; Python precedence and accepted values are unchanged.",
+    "The acceptance child remains exact ebe7088f137005949364206c6d00fe4e9654d6aa.",
+    "The retained formatter result binds all nine actual files, reports Ruff format/lint exit0 and AST equality, and explicitly reports no imports, types, tests or native build. This reviewer inspected that retained result and did not independently execute Ruff/AST."
+  ],
+  "scope": [
+    "Source-only follow-up to helper peer235d6e5d, focused peer62ba7316 and acceptance peeredae8891.",
+    "Actual18 original/candidate Windows parity/refusal cells and native focused/control execution remain mandatory and unexecuted in this peer.",
+    "WTEXT keeps original CRT sharing; this does not establish concurrent destination replacement or resolve historical WinError32.",
+    "The Ex API probe and its driver/workflow are outside this follow-up.",
+    "No product integration, timing launch, task promotion or qualification credit."
+  ],
+  "qualification_eligible": false,
+  "executed_controls": 0,
+  "task_promotions": []
+}

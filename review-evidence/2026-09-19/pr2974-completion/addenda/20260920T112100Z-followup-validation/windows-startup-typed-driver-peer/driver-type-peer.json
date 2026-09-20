@@ -1,0 +1,31 @@
+{
+  "schema": "pr2974.windows-startup-driver-type-correction-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "verdict": "clear_for_separate_normalization_and_validation",
+  "draft_tree": "d747ff43508c5076f0ee136f87cce1518d05a2db",
+  "files": [
+    {
+      "key": "driver",
+      "before": "55e2fe4aca729acfe8973e916a9b9178bfccc247",
+      "after": "ffa9d4431f3bb2040401b2637e71002c5593d493",
+      "bytes": 19671,
+      "sha256": "0e1d110a204df51e4f3dad214381841739180b76ecf708907bcecdd73d420e5c"
+    },
+    {
+      "key": "projector",
+      "before": "968ec7857817ff8c4d09d1ff99b6107e648c0a33",
+      "after": "18d9a1a3bdbb096d77a1914182f24a328b47c669",
+      "bytes": 4389,
+      "sha256": "9ccb96bc8e7119284c6556874e4240c8ae353f97051aef8cb9f5a46fee96e8d8"
+    }
+  ],
+  "findings": [
+    "The driver adds only typing.cast import and cast(str, parser.__file__) inside the existing Path constructor. typing.cast returns the same object, so original parser path validation and failures remain; no new coercion or fallback is introduced.",
+    "The projector changes only _line's parameter and _emit's return annotations from bare dict to dict[str, object]. Original serialization, bounds, stdout framing, hashes and error handling are unchanged.",
+    "The first hosted attempt's four driver type errors remain failed preparation evidence. No Rust controls, Python control cohort or original selector ran in that failed attempt; this peer grants none of that execution credit."
+  ],
+  "limits": [
+    "Source review only; normalization and typecheck of final returned bytes remain pending.",
+    "The exact source/control roster and original workload stay unchanged. Parent must bind a new immutable driver before any successor execution."
+  ]
+}

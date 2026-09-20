@@ -1,0 +1,15 @@
+This packet records an independent RSP-024 technical-contract review of source 124472b8949805e0dd36052df6894b335d8b519d (tree a0c139c4e02535545c5b0e602c240a38affde5fe). It is technical preparation, not a GitHub approval, CODEOWNER approval, activation or full qualification.
+
+The original requirement is to resolve questions on availability, authority transfer, distributions and rollback, without treating an old passing manifest as safety proof. The original PRD explicitly distinguishes native evaluated decision, posture transformation, availability result and delivered response, and requires preserving current behavior unless a separate change is accepted.
+
+Three findings remain material:
+
+- Current source and delivery tests continue ordinary unavailable PreTool requests with warn/allow, while preserving designated integrity denials and separate permission/lifecycle handling. Several older fail-safe declarations and the six-case parity metadata still describe incompatible fallback or blanket blocking. Reconcile their scope and point to current outcome vectors; do not change the runtime to make historical wording true.
+- Current Python approval coordination includes durable local queues and narrowly bound compatibility reuse. That route is distinct from external Rust enrollment/claim/consume. Existing broad prose saying Python never authorizes or persists approval state is not an accurate description of every current route. No reuse allowlist expansion or native consume qualification follows from this review.
+- Package-only auto selection and no production Python evaluator fallback make off mode, a universal wheel or a test oracle insufficient as an operational rollback. The original requirement is the prior tested native artifact/route with actual retirement, state and first-request evidence.
+
+The review also resolves source facts: ordinary raw-edge Watch posture comes from its ACKed snapshot; the original Rust receipt is recorded before delivery transformation; current source ownership analysis explicitly inventories synchronous posture/config readers; managed retries preserve fatal/committed-response errors; and the reviewed native, policy and MCP stdio paths have concrete distinct commit boundaries.
+
+The source includes version-bound wheel construction and post-signing/freeze manifest support. These functions do not prove final installed distribution or rollback. Performance distributions must retain the original KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER boundaries and original sampling requirements. Four-platform Rust validation on exact124472 is preserved separately and does not provide installed qualification.
+
+Read review.json for exact function anchors, dependency findings, resolved positions and remaining evidence questions. source-manifest.json binds the fetched source bodies retained here. The preserved original PRD/TODO/TAKEAWAY are not a recovered ChatGPT transcript. No source imports, tests, builds or workloads were executed by this review.

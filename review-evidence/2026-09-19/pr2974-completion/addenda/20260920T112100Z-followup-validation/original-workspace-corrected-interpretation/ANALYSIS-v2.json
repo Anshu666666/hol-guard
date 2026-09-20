@@ -1,0 +1,115 @@
+{
+  "schema": "pr2974.workspace-100-scope-causal-review.v2",
+  "source": {
+    "sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+    "tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf"
+  },
+  "original_run": 35491537211,
+  "original_job": 106027206739,
+  "raw_recovery_tree": "10a6e675544a0c2dc6d12a6303bde87f00c556e6",
+  "immutable_input": {
+    "artifact_id": 10599581007,
+    "zip_bytes": 22575317,
+    "zip_sha256": "693aab90fd15e90619994c54a50675b7c8ac2d5501b44d97f29bfadb92d4ce57"
+  },
+  "result": {
+    "original_cells": 15,
+    "passed": 12,
+    "failed": 3,
+    "original_readiness_deadline_ms": 400,
+    "original_verdicts_unchanged": true,
+    "original_failed_cases": [
+      "key_rotation",
+      "first_admission_fault",
+      "service_restart"
+    ],
+    "full_rsp_128_129_qualification": false,
+    "headline_timing_eligible": false
+  },
+  "findings": [
+    {
+      "case": "first_admission_fault",
+      "observed": "The actual first accepted native reply was discarded by the declared fault. The second reply's validated observation was retained at +359.622837 ms, and a subsequent record retained ready=true at +386.753012 ms. These are observer timestamps, not exact internal commit instants. The real new service constructor returned at least 428.411641 ms after the unchanged registration acceptance; await_ack was entered at least 441.258657 ms after acceptance. No recovered hook was offered.",
+      "implication": "A retained ready-state observation within 400 ms does not satisfy complete caller readiness when construction returns beyond the original 400 ms deadline.",
+      "unproved": "The original records do not split constructor work after wait_until_ready from scheduling/observer cost, identify one removable constructor phase, or establish continuous readiness after the retained ready state."
+    },
+    {
+      "case": "service_restart",
+      "observed": "The first reply's validated observation was retained at +269.234860 ms, followed by a ready=false state observation. The same policy binding had another validated ACK observation at +391.402746 ms and a ready=true observation recorded at +419.290400 ms. The observer reads state under the publisher lock and timestamps the row afterward, so the exact internal barrier commit time is unknown and may lie before or after 400 ms. Constructor return was at least +461.916738 ms and await_ack entry at least +474.475488 ms. No recovered hook was offered.",
+      "implication": "The constructor and await-entry lower bounds conclusively preserve the caller-readiness miss. The +419.290400 ms retained observation alone does not prove an internal barrier commit after 400 ms; no observation is moved or re-timed.",
+      "unproved": "The source can reject a valid transport ACK because of a newer publication epoch, changed command authority, or resident identity/currentness. No exact rejecting predicate, epoch, last-error transition, or barrier commit instant was retained. A ready=false observation does not establish continuous closure across the preceding interval."
+    },
+    {
+      "case": "key_rotation",
+      "observed": "Supported generated command-control-key recovery returned at the original acceptance. A validated transport ACK observation was retained at +189.925645 ms and a ready=true state observation at +218.197637 ms. Two later configuration captures outside a publication had zero configuration loads, followed by a publication whose ready=false observation was recorded at +476.483356 ms with no second push. The original authenticated/current readiness predicate failed, so no recovered hook was offered. The cell closes its publisher before freezing these rows; the final ready=false state may therefore reflect cleanup closure rather than a pre-deadline authority withdrawal.",
+      "implication": "A retained ready state does not prove that the complete authenticated/current readiness predicate subsequently succeeded. The failed await remains an original failure; the available rows cannot isolate the failing predicate or establish a pre-deadline withdrawal.",
+      "unproved": "Do not infer a readback bug, expiry, runtime mismatch, specific metadata path, exact barrier commit time, or specific authority-withdrawal time from these rows. The key is generated command-control authority, not interactive enrollment or a policy-integrity-key migration."
+    }
+  ],
+  "cross_cell_observations": [
+    "All three service-restart cells (1, 10 and 100 scopes) retain a first validated transport ACK observation followed by ready=false, then a second validated ACK observation with the same binding followed by ready=true. These are discrete sampled states, not proof of continuous closure or exact transition times. Only the 100-scope cell fails the implemented caller-readiness check.",
+    "At 100 scopes, both cold replacement cells perform 101 actual configuration loads in the first compile, approximately 83 ms inclusive calling-thread wall/CPU. Their second compiles have zero new configuration loads but still take approximately 48–50 ms; zero loads is not zero configuration capture/merge cost.",
+    "The original publisher rechecks current authority and resident metadata after a transport ACK. No evidence supports removing those guards or replaying an ambiguous native request.",
+    "All 15 publisher observers froze with zero callbacks in flight and matching complete bounded event digests. This is complete retention of these publisher rows, not proof of unobserved phase coverage or complete platform qualification."
+  ],
+  "clock_rules": [
+    "Publication started/finished values are shifted only by the acceptance expressed in that same PublicationObserver origin.",
+    "PublicationObserver._publication reads _acked/_closed and the binding under the existing publisher condition, releases that lock, then _record samples finished_ms. A barrier row therefore dates a retained observation after the state read, not the precise state transition. Unmeasured scheduling between these operations remains unassigned.",
+    "LifecycleClocks uses a separate cell-entry origin. Its cold_registrations_return marker occurs after actual acceptance; subtracting it from later constructor/await boundaries yields conservative lower bounds, not an exact cross-origin timestamp.",
+    "Native evaluation, subprocess startup, interpreter imports and complete HTTP readiness are not equated to validated transport ACK.",
+    "Original failed reports contain installed_runtime_matches=false because there is no recovered receipt binding to compare. This is not evidence that a different runtime was loaded.",
+    "run_lifecycle_cell closes the publisher before freezing its final publication rows. A late ready=false row cannot be attributed to a pre-deadline invalidation without a retained closed flag and ordering evidence."
+  ],
+  "preserved_scope": [
+    "Same-process replacement means two actual Python service instances on the same owned home, after old publisher/resident/service containment; no Python process restart is claimed.",
+    "The 100-scope lost-metadata and expiry cells passed their implemented checks at 362.222529 ms and 182.424162 ms respectively.",
+    "All three failed cells retained the original authenticated-ack deadline failure digest, zero recovered receipts and unoffered secondary-workspace proof.",
+    "No original workload was rerun and no production repair, deadline, acceptance, authority or retry behavior was changed by this analysis."
+  ],
+  "next_action": {
+    "authorized_by_parent": true,
+    "stage": "prepare_for_independent_peer_before_one_bounded_diagnostic",
+    "source_reference": "exact original 8f source and installed default-runtime workload",
+    "selected_original_cells": {
+      "counts": [
+        100
+      ],
+      "scenarios": [
+        "key_rotation",
+        "first_admission_fault",
+        "service_restart"
+      ]
+    },
+    "scope": "Fixture-local bounded fixed-reason publisher/constructor observation; separate from the 88-call priority-launcher observer.",
+    "observe": [
+      "Original publication context/epoch and request_publish transitions, closed state, closed error categories and actual input-reconcile outcomes, distinguishing cleanup close from earlier invalidation.",
+      "Existing resident-generation/metadata confirmation branch outcomes using returned values and original arguments; no additional filesystem reads.",
+      "Original wait_until_ready, HookWorker, request-services, HTTP bind/activate and outer service-constructor boundaries.",
+      "Original acceptance and 400 ms deadline unchanged, with current-authority and actual recovered-request outcomes retained.",
+      "Record state-sampling intervals as observations rather than exact commit times; retain closed state and explicit cleanup boundaries."
+    ],
+    "prohibitions": [
+      "No additional native/HTTP probes",
+      "No retry or repeated cell",
+      "No stale ACK reuse",
+      "No deadline extension",
+      "No payload, key, path or process-identifier export",
+      "No product repair before observed cause evidence"
+    ],
+    "required_controls": [
+      "Identical forwarded arguments and result/exception identity",
+      "Exact-once original callback counts",
+      "Owned-instance filtering",
+      "Patch restoration on setup/body/cleanup failure",
+      "Finite record bounds and explicit observation loss",
+      "Real existing resident-currentness and epoch/invalidation outcomes",
+      "Caller/observer clock-origin separation"
+    ],
+    "interpretation": "The original run_lifecycle_sweep full-matrix success field remains false for this three-cell subset; a diagnostic collection-admission flag must be separate from original workload verdicts."
+  },
+  "supersedes_interpretation_only": {
+    "prior_tree": "a326cada473fc8d2bf8ccf4e968cee0b0ccc214a",
+    "prior_analysis_blob": "f61e3f8aa18e8042ae0d1d299c1b0789886733b3",
+    "raw_numbers_source_and_verdicts_unchanged": true
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "classification": "bounded_source_cast_and_platform_driver_formatting",
+  "source_tree": "ea5849e45aeecc6e149bb8ef3886acdbde871bd9",
+  "initial_format": {
+    "bytes": 73709,
+    "sha256": "af2f14659bfd758c9bca2b9f7341296144b6aa1cbb93915f4350490f7c301efb",
+    "report": {
+      "scope": "two-image format/AST/read-only lint only; no source imports/tests/builds",
+      "rlimit_as": 134217728,
+      "ruff_sha256": "ae9e6252f6021b1303a08a29ffe4e6c627352b57e03137008b1efc4dca803d23",
+      "config_sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb",
+      "commands": [
+        {
+          "argv": [
+            "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+            "format",
+            "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+            "scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 0,
+          "stdout": "1 file reformatted, 1 file left unchanged\n",
+          "stderr": ""
+        },
+        {
+          "argv": [
+            "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+            "check",
+            "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+            "scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 1,
+          "stdout": "SIM112 Use capitalized environment variable `SYSTEMROOT` instead of `SystemRoot`\n   --> scripts/ci/validate_pr2974_rsp100_approval.py:137:44\n    |\n135 |             if windows:\n136 |                 # A bounded best-effort tree request is not proof of descendant retirement.\n137 |                 taskkill = Path(os.environ[\"SystemRoot\"]) / \"System32\" / \"taskkill.exe\"\n    |                                            ^^^^^^^^^^^^\n138 |                 try:\n139 |                     cleanup = subprocess.run(\n    |\nhelp: Replace `SystemRoot` with `SYSTEMROOT`\n\nFound 1 error.\nNo fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).\n",
+          "stderr": ""
+        },
+        {
+          "argv": [
+            "/home/user/pr2974-recovery/windows/reader-format-4d/ruff",
+            "format",
+            "--check",
+            "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+            "scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 0,
+          "stdout": "2 files already formatted\n",
+          "stderr": ""
+        }
+      ],
+      "files": [
+        {
+          "path": "src/codex_plugin_scanner/guard/mcp_approval_risk.py",
+          "ast_equal": true,
+          "bytes": 13278,
+          "sha256": "2e4069d3cf17dad484953b9c7f349f74f40dd60b897453dea1d0a81dbe9cc3c2",
+          "git_blob_sha": "ec4d6bd1fdcef5b7e44de98d4f26d770db47e101",
+          "physical_lines": 296
+        },
+        {
+          "path": "scripts/ci/validate_pr2974_rsp100_approval.py",
+          "ast_equal": true,
+          "bytes": 20273,
+          "sha256": "51f29e8ac496f5fa5cfbe2da0bd85c087df10637228a9d8720d5e49c0027b027",
+          "git_blob_sha": "529dac7ad830a19495f0ffce25e4ba59f0f97659",
+          "physical_lines": 476
+        }
+      ]
+    }
+  },
+  "final_driver_format": {
+    "bytes": 22480,
+    "sha256": "cc8eef6e52738a2654bd118fcb18d891c6c197a84dd477b4e759144a169c2f49",
+    "report": {
+      "change": "Windows os.environ is case-insensitive and stores keys uppercase; use canonical SYSTEMROOT",
+      "before_sha256": "51f29e8ac496f5fa5cfbe2da0bd85c087df10637228a9d8720d5e49c0027b027",
+      "sha256": "4d1b38152d75e50d4c171b6c9a4748e60dc769cfde55806b88f15732d7125fa1",
+      "bytes": 20273,
+      "git_blob_sha": "e3c99557268cae40ca539ca3e8889e2e3b434c9f",
+      "format_AST_equal": true,
+      "commands": [
+        {
+          "argv": [
+            "format",
+            "/home/user/pr2974-recovery/requirements/approval-matrix-format/after/scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 0,
+          "stdout": "1 file left unchanged\n",
+          "stderr": ""
+        },
+        {
+          "argv": [
+            "check",
+            "/home/user/pr2974-recovery/requirements/approval-matrix-format/after/scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 0,
+          "stdout": "All checks passed!\n",
+          "stderr": ""
+        },
+        {
+          "argv": [
+            "format",
+            "--check",
+            "/home/user/pr2974-recovery/requirements/approval-matrix-format/after/scripts/ci/validate_pr2974_rsp100_approval.py"
+          ],
+          "exit_code": 0,
+          "stdout": "1 file already formatted\n",
+          "stderr": ""
+        }
+      ]
+    }
+  },
+  "explicit_lint_correction": "os.environ[\"SystemRoot\"] -> os.environ[\"SYSTEMROOT\"]; Windows environment keys are case-insensitive/uppercased",
+  "product_imports_or_tests_executed": false
+}

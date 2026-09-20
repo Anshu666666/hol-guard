@@ -1,0 +1,119 @@
+--- before/startup-diagnostic/retain_results.py
++++ after/startup-diagnostic/retain_results.py
+@@ -12,23 +12,52 @@
+ MAX_TOTAL = 4194304
+ CHUNK = 3072
+ NAMES = (
+-    "original-capture.json", "original-selector-gate.json", "original-selector.xml",
+-    "original-selector.stdout", "original-selector.stderr", "original-selector.process.json",
+-    "runtime-before.json", "runtime-after.json", "source-before.json", "source-after.json",
+-    "binding-comparison.json", "python-control-gate.json", "rust-control-gate.json",
+-    "python-controls.xml", "python-controls.stdout", "python-controls.stderr",
+-    "rust-default-controls.stdout", "rust-default-controls.stderr",
+-    "rust-diagnostic-controls.stdout", "rust-diagnostic-controls.stderr",
+-    "python-collection.stdout", "python-collection.stderr",
+-    "rust-default-collection.stdout", "rust-default-collection.stderr",
+-    "rust-diagnostic-collection.stdout", "rust-diagnostic-collection.stderr",
+-    "python-types.stdout", "python-types.stderr", "python-format.stdout", "python-format.stderr",
+-    "python-lint.stdout", "python-lint.stderr", "rust-format.stdout", "rust-format.stderr",
+-    "rust-clippy-default.stdout", "rust-clippy-default.stderr",
+-    "rust-clippy-diagnostic.stdout", "rust-clippy-diagnostic.stderr",
+-    "diagnostic-build.stdout", "diagnostic-build.stderr",
+-    "driver-error-before.json", "driver-error-static.json", "driver-error-python.json",
+-    "driver-error-rust.json", "driver-error-build.json", "driver-error-workload.json",
++    "original-capture.json",
++    "original-selector-gate.json",
++    "original-selector.xml",
++    "original-selector.stdout",
++    "original-selector.stderr",
++    "original-selector.process.json",
++    "runtime-before.json",
++    "runtime-after.json",
++    "source-before.json",
++    "source-after.json",
++    "binding-comparison.json",
++    "python-control-gate.json",
++    "rust-control-gate.json",
++    "python-controls.xml",
++    "python-controls.stdout",
++    "python-controls.stderr",
++    "rust-default-controls.stdout",
++    "rust-default-controls.stderr",
++    "rust-diagnostic-controls.stdout",
++    "rust-diagnostic-controls.stderr",
++    "python-collection.stdout",
++    "python-collection.stderr",
++    "rust-default-collection.stdout",
++    "rust-default-collection.stderr",
++    "rust-diagnostic-collection.stdout",
++    "rust-diagnostic-collection.stderr",
++    "python-types.stdout",
++    "python-types.stderr",
++    "python-format.stdout",
++    "python-format.stderr",
++    "python-lint.stdout",
++    "python-lint.stderr",
++    "rust-format.stdout",
++    "rust-format.stderr",
++    "rust-clippy-default.stdout",
++    "rust-clippy-default.stderr",
++    "rust-clippy-diagnostic.stdout",
++    "rust-clippy-diagnostic.stderr",
++    "diagnostic-build.stdout",
++    "diagnostic-build.stderr",
++    "driver-error-before.json",
++    "driver-error-static.json",
++    "driver-error-python.json",
++    "driver-error-rust.json",
++    "driver-error-build.json",
++    "driver-error-workload.json",
+     "driver-error-after.json",
+ )
+ 
+@@ -44,9 +73,8 @@
+     info = {"name": name, "bytes": len(content), "sha256": sha, "git_blob": blob, "chunks": count}
+     _line({"kind": "begin", **info})
+     for index in range(count):
+-        part = content[index * CHUNK:(index + 1) * CHUNK]
+-        _line({"kind": "chunk", "name": name, "index": index,
+-               "base64": base64.b64encode(part).decode("ascii")})
++        part = content[index * CHUNK : (index + 1) * CHUNK]
++        _line({"kind": "chunk", "name": name, "index": index, "base64": base64.b64encode(part).decode("ascii")})
+     _line({"kind": "end", "name": name, "sha256": sha})
+     return info
+ 
+@@ -70,7 +98,13 @@
+             with path.open("rb") as handle:
+                 content = handle.read(MAX_FILE + 1)
+             after = path.stat()
+-            if len(content) > MAX_FILE or before.st_size != after.st_size or len(content) != after.st_size or before.st_mtime_ns != after.st_mtime_ns or total + len(content) > MAX_TOTAL:
++            if (
++                len(content) > MAX_FILE
++                or before.st_size != after.st_size
++                or len(content) != after.st_size
++                or before.st_mtime_ns != after.st_mtime_ns
++                or total + len(content) > MAX_TOTAL
++            ):
+                 refused.append(name)
+                 continue
+             total += len(content)
+@@ -78,10 +112,15 @@
+         except OSError:
+             refused.append(name)
+     index = {
+-        "schema": "pr2974-windows-startup-log-subset.v1", "files": records,
+-        "missing": missing, "refused": refused, "bytes": total,
+-        "subset_only": True, "complete_artifact": False,
+-        "original_result_unchanged": True, "qualification_complete": False,
++        "schema": "pr2974-windows-startup-log-subset.v1",
++        "files": records,
++        "missing": missing,
++        "refused": refused,
++        "bytes": total,
++        "subset_only": True,
++        "complete_artifact": False,
++        "original_result_unchanged": True,
++        "qualification_complete": False,
+     }
+     content = (json.dumps(index, indent=2, sort_keys=True) + "\n").encode()
+     with (output / "log-subset-index.json").open("xb") as handle:

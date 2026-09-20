@@ -1,0 +1,174 @@
+{
+  "date": "2026-09-20",
+  "driver": {
+    "commit": "deecf1fe5dd905210fba150d8721649f0dfa542b",
+    "full_blob_delta": [
+      {
+        "after": "9493aa175ee2d61643e71472edadd3d01b1fc2b5",
+        "before": null,
+        "bytes": 3683,
+        "path": ".github/workflows/windows-atomic-rename-probe.yml"
+      },
+      {
+        "after": "0b8a74b9d51b355478017a97e51a0d637070d9ee",
+        "before": null,
+        "bytes": 12797,
+        "path": "scripts/ci/validate_windows_atomic_rename_probe.py"
+      }
+    ],
+    "sole_parent": "4fe16ec68c1afab358e0923be916b4468302f409",
+    "tree": "b456e1517317873492cadf28b42fc36af4de1909"
+  },
+  "formatter": {
+    "report_blob": "8319e6bbe21d10ab2325bf64dc0efd1396319da5",
+    "reviewed_images": [
+      {
+        "after": {
+          "blob": "178943d8c192f7655633ddd267ec1d08abe0e82f",
+          "bytes": 6832,
+          "sha256": "499ed318ca2050654e257b4896ad1b5963b0ec48aebcad6c57990b4e1cd5f8f8"
+        },
+        "ast_equal": true,
+        "before": {
+          "blob": "178943d8c192f7655633ddd267ec1d08abe0e82f",
+          "bytes": 6832,
+          "sha256": "499ed318ca2050654e257b4896ad1b5963b0ec48aebcad6c57990b4e1cd5f8f8"
+        },
+        "path": "ci/native_runtime/windows_atomic_rename_probe.py",
+        "physical_lines": 186
+      },
+      {
+        "after": {
+          "blob": "ca5e0721007446c2670e6c7f11030227d50b4b00",
+          "bytes": 12793,
+          "sha256": "04b424166f6a5f41870457ba8390289bd3ef85d18933d2f6e9c0cabe503599ac"
+        },
+        "ast_equal": true,
+        "before": {
+          "blob": "ca5e0721007446c2670e6c7f11030227d50b4b00",
+          "bytes": 12793,
+          "sha256": "04b424166f6a5f41870457ba8390289bd3ef85d18933d2f6e9c0cabe503599ac"
+        },
+        "path": "tests/test_windows_atomic_rename_probe.py",
+        "physical_lines": 305
+      },
+      {
+        "after": {
+          "blob": "0b8a74b9d51b355478017a97e51a0d637070d9ee",
+          "bytes": 12797,
+          "sha256": "7c123aca151d28fc5f64daf9e758d4c652aeda841b272a8e9b0715fb035484c7"
+        },
+        "ast_equal": true,
+        "before": {
+          "blob": "0b8a74b9d51b355478017a97e51a0d637070d9ee",
+          "bytes": 12797,
+          "sha256": "7c123aca151d28fc5f64daf9e758d4c652aeda841b272a8e9b0715fb035484c7"
+        },
+        "path": "scripts/ci/validate_windows_atomic_rename_probe.py",
+        "physical_lines": 309
+      }
+    ],
+    "runs": [
+      {
+        "name": "format",
+        "return_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "lint",
+        "return_code": 0,
+        "timed_out": false
+      }
+    ],
+    "source_imported": false,
+    "tests_run": false,
+    "tree": "12e379f2f3a3bfaea4e4f0f052501405a3075214",
+    "types_run": false
+  },
+  "gate": {
+    "before_after_binding_required": true,
+    "exact_candidate_and_base_commit_tree_required": true,
+    "exact_python": "CPython 3.12.10 on Windows in candidate virtualenv",
+    "groups": {
+      "absolute_buffer": 1,
+      "commit_cleanup_report": 1,
+      "held_reader": 4,
+      "rename_audit": 2,
+      "snapshot_failure": 1,
+      "source_guards": 3,
+      "writer_admission": 5
+    },
+    "original_writer_calls_and_cleanup_receipts_required": true,
+    "pinned_source_imports_required": true,
+    "runner_blob": "0b8a74b9d51b355478017a97e51a0d637070d9ee",
+    "total_cases": 17,
+    "zero_failures_errors_skips_required": true
+  },
+  "limits": [
+    "No source, native, timing or Windows control execution by this peer.",
+    "Absolute destination plus NULL root remains an API-argument hypothesis, not an established cause or repair for earlier WinError87.",
+    "The 17 cases include one memory-layout/buffer control, not 17 successful rename operations.",
+    "No product promotion, historical-handle attribution, Unicode-mode acceptance or installed-artifact qualification."
+  ],
+  "reviewer": "partition_regression",
+  "schema": "pr2974_windows_ex_argument_binding_peer_v1",
+  "scope": "Final commit/tree, workflow-template, formatter and 17-case-gate binding only; semantics inherit source peer 5377e667e8e19aec3ba2234dc14e939affabd8ca.",
+  "source": {
+    "commit": "4fe16ec68c1afab358e0923be916b4468302f409",
+    "full_blob_delta": [
+      {
+        "after": "178943d8c192f7655633ddd267ec1d08abe0e82f",
+        "before": null,
+        "bytes": 6832,
+        "path": "ci/native_runtime/windows_atomic_rename_probe.py"
+      },
+      {
+        "after": "d7db236e8d3f98d6c3037798ccfc0605c5deec87",
+        "before": null,
+        "bytes": 7500,
+        "path": "ci/native_runtime/windows_atomic_rename_probe_child.py"
+      },
+      {
+        "after": "ca5e0721007446c2670e6c7f11030227d50b4b00",
+        "before": null,
+        "bytes": 12793,
+        "path": "tests/test_windows_atomic_rename_probe.py"
+      },
+      {
+        "after": "892db8974406e30ef818198afbb3fd2ac168d29a",
+        "before": "840e769097e22a5df76510e8f8c076b273543bdb",
+        "bytes": 15419,
+        "path": "tests/test_windows_replaceable_reader_process.py"
+      }
+    ],
+    "parent_tree": "375fe06dc5aa6be6191294db38ec4dfba58ec89d",
+    "sole_parent": "60619956b77c7770c0e53c474f948be095340ffb",
+    "tree": "c5e9167d6f1d2537cb9c0d0fc2dbb6a811c0075a"
+  },
+  "source_or_ref_mutation": false,
+  "verdict": "Final bindings match the reviewed argument-form probe; no binding blocker identified.",
+  "workflow": {
+    "bound_blob": "9493aa175ee2d61643e71472edadd3d01b1fc2b5",
+    "bytes": 3683,
+    "exact": true,
+    "sha256": "99f55b5368253f10530790567355b7380f9f5c3fb7f9db40633687718dfd4934",
+    "substitutions": [
+      [
+        "__DRIVER_BRANCH__",
+        "codex/pr2974-windows-atomic-rename-absolute-probe-20260920",
+        1
+      ],
+      [
+        "__CANDIDATE_SHA__",
+        "4fe16ec68c1afab358e0923be916b4468302f409",
+        2
+      ],
+      [
+        "__CANDIDATE_TREE__",
+        "c5e9167d6f1d2537cb9c0d0fc2dbb6a811c0075a",
+        1
+      ]
+    ],
+    "template_blob": "28df46908e103a6d850e21f7c8fcfc8234decbe2"
+  }
+}

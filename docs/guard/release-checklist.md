@@ -42,6 +42,16 @@ Guard uses two isolated release lines:
 - PyPI 3.x alpha versions use public PEP 440 versions such as `3.0.0a1`. Package installers ignore these prereleases unless users opt in with an exact version or an explicit prerelease flag.
 - `plugin-scanner` remains on its stable release line during Guard 3.x alpha publishing. The alpha workflow removes its distributions before upload.
 
+### Publish a stable 3.x release from main
+
+1. Land the intended changes on `main` with conventional commits (`feat` for minor, `fix` for patch, `feat!` or `BREAKING CHANGE` for major).
+2. The `Release Please` workflow opens or updates a `chore(release): <version>` pull request with changelog and version metadata.
+3. Merge that pull request when the batch is ready. Merging it tags the release commit and dispatches `Publish to PyPI` for `release_channel=stable` and `release_train=main`.
+4. Confirm the dispatched publish builds native wheels, uploads to PyPI, and creates the GitHub release assets.
+5. Maintainers can still dispatch `Publish to PyPI` from `main` as a break-glass path with the exact next version and `expected_sha` set to the `main` commit.
+
+Normal pushes to `main` still build and verify packages without publishing.
+
 ### Publish a 3.x alpha
 
 1. Merge the intended changes and the latest compatible `main` fixes into `release/3.0`.

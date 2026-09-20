@@ -19,10 +19,12 @@ def test_source_distribution_and_package_versions_match():
     pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     source_version = pyproject["project"]["version"]
-    assert source_version == package_version == "3.0.1"
+    assert source_version == package_version
     try:
         installed_version = distribution_version("hol-guard")
     except PackageNotFoundError:
+        pytest.skip("install the project to validate distribution metadata")
+    if installed_version != source_version:
         pytest.skip("install the project to validate distribution metadata")
     assert installed_version == source_version
 

@@ -579,7 +579,8 @@ def test_release_tags_are_bound_to_the_exact_published_source() -> None:
     assert 'git fetch --force --no-tags origin "+refs/tags/${tag}:refs/tags/${tag}"' in stable_run
     assert 'git rev-parse "${tag}^{commit}"' in stable_run
     assert 'remote_tag_sha" != "$SOURCE_SHA"' in stable_run
-    assert 'gh release view "$tag" --json isDraft,isPrerelease' in stable_run
+    assert 'gh release view "$tag" --json isDraft,isPrerelease,assets' in stable_run
+    assert 'gh release upload "$tag"' in stable_run
     assert "Existing stable release is a draft or prerelease" in stable_run
     assert "remote_guard_files=" in stable_run and "verify_release_asset_inventory.py" in stable_run
     assert '[[ "${#remote_guard_files[@]}" -gt 0 ]]' in stable_run

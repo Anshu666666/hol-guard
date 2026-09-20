@@ -63,13 +63,19 @@ jobs:
             echo "Release workflow reruns are denied; create a fresh authorized dispatch" >&2
             exit 1
           fi
-          if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" ]]; then
-            echo "Release dispatch actor is not an authorized maintainer" >&2
-            exit 1
-          fi
           case "${RELEASE_CHANNEL}:${RELEASE_TRAIN}:${GITHUB_REF}" in
-            alpha:3.0:refs/heads/release/3.0) ;;
-            stable:main:refs/heads/main) ;;
+            alpha:3.0:refs/heads/release/3.0)
+              if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" ]]; then
+                echo "Release dispatch actor is not an authorized maintainer" >&2
+                exit 1
+              fi
+              ;;
+            stable:main:refs/heads/main)
+              if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
+                echo "Release dispatch actor is not an authorized maintainer" >&2
+                exit 1
+              fi
+              ;;
             *)
               echo "Release channel, train, and source branch are not an authorized combination" >&2
               exit 1
@@ -154,13 +160,13 @@ jobs:
               echo "Release workflow reruns are denied; create a fresh authorized dispatch" >&2
               exit 1
             fi
-            if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" ]]; then
-              echo "Release dispatch actor is not an authorized maintainer" >&2
-              exit 1
-            fi
             CHANNEL="$RELEASE_CHANNEL"
             TRAIN="$RELEASE_TRAIN"
             if [[ "$CHANNEL" == "alpha" && "$TRAIN" == "3.0" ]]; then
+              if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" ]]; then
+                echo "Release dispatch actor is not an authorized maintainer" >&2
+                exit 1
+              fi
               TRAIN_REF="refs/heads/release/${TRAIN}"
               if [[ "$GITHUB_REF" != "$TRAIN_REF" ]]; then
                 echo "Alpha releases must run from ${TRAIN_REF}" >&2
@@ -189,6 +195,10 @@ jobs:
               done
               VERSION=$(uv run --no-sync python scripts/validate_alpha_release.py "${VALIDATOR_ARGS[@]}")
             elif [[ "$CHANNEL" == "stable" && "$TRAIN" == "main" ]]; then
+              if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
+                echo "Release dispatch actor is not an authorized maintainer" >&2
+                exit 1
+              fi
               if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
                 echo "Stable releases must run from refs/heads/main" >&2
                 exit 1
@@ -1474,15 +1484,18 @@ jobs:
             echo "Stable tag does not target the published source" >&2
             exit 1
           fi
-          if release_json=$(gh release view "$tag" --json isDraft,isPrerelease 2>/dev/null); then
+          mapfile -d '' local_files < <(find dist -maxdepth 1 -type f -print0 | sort -z)
+          [[ "${#local_files[@]}" -gt 0 ]]
+          if release_json=$(gh release view "$tag" --json isDraft,isPrerelease,assets 2>/dev/null); then
             if ! jq -e '.isDraft == false and .isPrerelease == false' <<< "$release_json" >/dev/null; then
               echo "Existing stable release is a draft or prerelease" >&2
               exit 1
             fi
             existing_dir=$(mktemp -d)
+            if [[ "$(jq -r '.assets | length' <<< "$release_json")" == "0" ]]; then
+              gh release upload "$tag" "${local_files[@]}"
+            fi
             gh release download "$tag" --dir "$existing_dir"
-            mapfile -d '' local_files < <(find dist -maxdepth 1 -type f -print0 | sort -z)
-            [[ "${#local_files[@]}" -gt 0 ]]
             for local_file in "${local_files[@]}"; do
               remote_file="$existing_dir/$(basename "$local_file")"
               [[ -f "$remote_file" ]]

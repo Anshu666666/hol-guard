@@ -1,0 +1,527 @@
+name: Inspect original native archive
+
+on:
+  push:
+    branches: [hgp/inspect-native-sampler-original-20260920]
+    paths: [.github/workflows/inspect-native-sampler-original.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: original-native-inspection-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/inspect-native-sampler-original-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Materialize fixed inspector part 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/original-native-inspector.py" <<'PYTHON'
+          """Verify one original native archive without executing or extracting its contents."""
+
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+
+          REPO = "hashgraph-online/hol-guard"
+          REPOSITORY_ID = 1194748811
+          API = "https://api.github.com/repos/" + REPO
+          ORIGINAL_HEAD = "6e76cd34597fb59efa8f27f37137aa7d910e50b0"
+          ORIGINAL_TREE = "62ef44342f6b70ccecb8897c1ccb754274ab5b2a"
+          SOURCE_HEAD = "8440f0fcab081188bb17651e7bbbe814afbeb7b0"
+          SOURCE_TREE = "ee78447e3422ee072f5b8f25eb9f7b54995d9fca"
+          ORIGINAL_WORKFLOW = "2d788b8fe33673b764781660bcb61ab8bce6c826"
+          ORIGINAL_RUN = 35528040186
+          ORIGINAL_JOB = 106123684535
+          ORIGINAL_WORKFLOW_ID = 362807895
+          JOB_START = "2026-09-20T18:08:33Z"
+          JOB_END = "2026-09-20T18:20:47Z"
+          ARTIFACT_ID = 10609973673
+          ARTIFACT_BYTES = 8470966
+          ARTIFACT_SHA = "1084219ed9ee5390bbd8410120a283670eec7c543fbe8dbfebd68384b835804c"
+          ARTIFACT_CREATED = "2026-09-20T18:20:38Z"
+          RUNTIME_SHA = "8742a7623eea8789238b86ad93a43020fdae74bed82ddc946ee7935d15fd4e8c"
+          INSPECTOR_BRANCH = "hgp/inspect-native-sampler-original-20260920"
+          INSPECTOR_PATH = ".github/workflows/inspect-native-sampler-original.yml"
+          MIB = 1024 * 1024
+          TOKEN = ""
+          DEADLINE = 0.0
+          SOURCES = (
+              ("ci/native_runtime/probe_native_default_auto.py", "6b3b683cad3f368599e04951a2ea272ffa18d3d1", 23355),
+              ("ci/native_runtime/probe_installed_pi_output.py", "8b2e0fffbfbd818b368c71a6e1f86c1196872b7d", 59973),
+              ("ci/native_runtime/probe_installed_native_extensions.py", "35f023db815142f83b5ab5506d45f5f5bd1eb52c", 22354),
+              ("ci/native_runtime/probe_installed_scoped_policy.py", "0a80d1dbf8004c8c15e75187f6d1932bea16b8be", 18723),
+              ("ci/native_runtime/profile_installed_readiness.py", "97f31f6d7441ade6f45e633f7edc2d6e4c269ff7", 25298),
+          )
+          MEMBERS = {
+              "native-dist/hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl": "native_wheel",
+              "native-default-auto.json": "default_auto",
+              "installed-pi-output.json": "pi_output",
+              "installed-native-extensions.json": "native_extensions",
+              "installed-scoped-policy.json": "scoped_policy",
+              "installed-readiness-profile.json": "readiness_profile",
+          }
+          REQUIRED = {"native_wheel", "default_auto", "pi_output", "native_extensions", "scoped_policy", "readiness_profile"}
+          PARSED = {"default_auto", "pi_output", "native_extensions", "scoped_policy", "readiness_profile"}
+
+
+          class Refusal(Exception):
+              """Only locally supplied fixed codes may be published."""
+
+
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+
+
+          def tick():
+              need(time.monotonic() < DEADLINE, "inspection_deadline")
+
+
+          def pairs(items):
+              result = {}
+              for key, value in items:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+
+
+          def invalid_number(_value):
+              raise Refusal("nonfinite_json")
+
+
+          def parse(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=invalid_number)
+
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+
+
+          def request_for(url, authenticated):
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-original-native-inspection"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              return urllib.request.Request(url, headers=headers, method="GET")
+
+
+          def open_url(url, authenticated):
+              tick()
+              try:
+                  return OPENER.open(request_for(url, authenticated), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+
+
+          def read_bounded(response, limit):
+              raw = bytearray()
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - len(raw)))
+                  if not chunk:
+                      return bytes(raw)
+                  raw.extend(chunk)
+                  need(len(raw) <= limit, "response_size_limit")
+
+
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse(read_bounded(response, 2 * MIB))
+
+
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None, "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+          def git_blob(raw):
+              return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+
+
+          TREE_CACHE = {}
+
+
+          def tree(sha):
+              if sha not in TREE_CACHE:
+                  value = api("/git/trees/" + sha)
+                  need(value.get("sha") == sha and value.get("truncated") is False, "source_tree")
+                  entries = value.get("tree")
+                  need(isinstance(entries, list) and len(entries) <= 20000, "source_tree_entries")
+                  mapped = {entry["path"]: (entry["mode"], entry["type"], entry["sha"]) for entry in entries}
+                  need(len(mapped) == len(entries), "source_tree_duplicates")
+                  TREE_CACHE[sha] = mapped
+              return TREE_CACHE[sha]
+
+
+          def source_entry(tree_sha, path):
+              parts = path.split("/")
+              for part in parts[:-1]:
+                  row = tree(tree_sha).get(part)
+                  need(row is not None and row[:2] == ("040000", "tree"), "source_directory")
+                  tree_sha = row[2]
+              return tree(tree_sha).get(parts[-1])
+
+
+          def verify_blob(tree_sha, path, sha, size):
+              need(source_entry(tree_sha, path) == ("100644", "blob", sha), "source_file_binding")
+              data = api("/git/blobs/" + sha)
+              need(data.get("sha") == sha and data.get("encoding") == "base64", "source_blob")
+              raw = base64.b64decode(data["content"], validate=False)
+              need(len(raw) == size and git_blob(raw) == sha, "source_blob_digest")
+
+
+          def validate_own_source():
+              need(os.environ.get("GITHUB_REPOSITORY") == REPO
+                   and os.environ.get("GITHUB_REF") == "refs/heads/" + INSPECTOR_BRANCH
+                   and os.environ.get("GITHUB_EVENT_NAME") == "push"
+                   and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "inspector_context")
+              sha = os.environ.get("GITHUB_SHA", "")
+              need(re.fullmatch("[0-9a-f]{40}", sha) is not None, "inspector_head")
+              commit = api("/git/commits/" + sha)
+              need(commit["sha"] == sha and [p["sha"] for p in commit["parents"]] == [ORIGINAL_HEAD],
+                   "inspector_parent")
+              left, right = ORIGINAL_TREE, commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  before, after = dict(tree(left)), dict(tree(right))
+                  old, new = before.pop(directory, None), after.pop(directory, None)
+                  need(before == after and old is not None and new is not None
+                       and old[:2] == new[:2] == ("040000", "tree"), "inspector_source_delta")
+                  left, right = old[2], new[2]
+              before, after = dict(tree(left)), dict(tree(right))
+              leaf = INSPECTOR_PATH.rsplit("/", 1)[1]
+              added = after.pop(leaf, None)
+              need(leaf not in before and before == after and added is not None
+                   and added[:2] == ("100644", "blob"), "inspector_single_leaf")
+
+
+          def validate_original():
+              run = api("/actions/runs/" + str(ORIGINAL_RUN))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["id"] == REPOSITORY_ID
+                   and run["repository"]["private"] is False, "original_public_repository")
+              need(run["id"] == ORIGINAL_RUN and run["run_attempt"] == 1
+                   and run["head_sha"] == ORIGINAL_HEAD and run["workflow_id"] == ORIGINAL_WORKFLOW_ID
+                   and run["path"] == ".github/workflows/native-sampler-window.yml"
+                   and run["head_branch"] == "hgp/native-sampler-window-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "failure", "original_failed_run")
+              commit = api("/git/commits/" + ORIGINAL_HEAD)
+              need(commit["sha"] == ORIGINAL_HEAD and commit["tree"]["sha"] == ORIGINAL_TREE
+                   and [p["sha"] for p in commit["parents"]] == [SOURCE_HEAD], "original_commit")
+              source = api("/git/commits/" + SOURCE_HEAD)
+              need(source["sha"] == SOURCE_HEAD and source["tree"]["sha"] == SOURCE_TREE, "executed_source")
+              verify_blob(ORIGINAL_TREE, ".github/workflows/native-sampler-window.yml", ORIGINAL_WORKFLOW, 103400)
+              for path, sha, size in SOURCES:
+                  verify_blob(SOURCE_TREE, path, sha, size)
+              job = api("/actions/jobs/" + str(ORIGINAL_JOB))
+              need(job["id"] == ORIGINAL_JOB and job["run_id"] == ORIGINAL_RUN and job["run_attempt"] == 1
+                   and job["head_sha"] == ORIGINAL_HEAD and job["status"] == "completed"
+                   and job["conclusion"] == "failure" and job["started_at"] == JOB_START
+                   and job["completed_at"] == JOB_END
+                   and job["name"] == "macos (macos-15-intel, macosx_13_0_x86_64, x86_64-apple-darwin, 13.0)",
+                   "original_job")
+              steps = {row["number"]: row for row in job["steps"]}
+              for number, name, conclusion in (
+                  (13, "Assemble and install native wheel", "failure"),
+                  (14, "Profile the original readiness failure", "success"),
+                  (15, "Measure installed adapter-to-decision SLOs", "skipped"),
+              ):
+                  need(steps.get(number, {}).get("name") == name
+                       and steps[number]["conclusion"] == conclusion, "original_step_disposition")
+              artifact = api("/actions/artifacts/" + str(ARTIFACT_ID))
+              binding = artifact["workflow_run"]
+              need(artifact["id"] == ARTIFACT_ID and artifact["expired"] is False
+                   and artifact["name"] == "hol-guard-native-wheel-x86_64-apple-darwin"
+                   and artifact["size_in_bytes"] == ARTIFACT_BYTES
+                   and artifact["digest"] == "sha256:" + ARTIFACT_SHA and artifact["created_at"] == ARTIFACT_CREATED
+                   and binding["id"] == ORIGINAL_RUN and binding["head_sha"] == ORIGINAL_HEAD
+                   and binding["repository_id"] == binding["head_repository_id"] == REPOSITORY_ID,
+                   "original_artifact")
+              need(timestamp(JOB_START) <= timestamp(artifact["created_at"]) <= timestamp(JOB_END),
+                   "artifact_job_time")
+
+
+          def download():
+              url = API + "/actions/artifacts/" + str(ARTIFACT_ID) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == ARTIFACT_BYTES), "archive_length")
+                      raw = read_bounded(response, ARTIFACT_BYTES)
+                      need(len(raw) == ARTIFACT_BYTES and hashlib.sha256(raw).hexdigest() == ARTIFACT_SHA,
+                           "archive_digest")
+                      return raw
+              raise Refusal("redirect_limit")
+
+
+          PYTHON
+      - name: Materialize fixed inspector part 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> "$RUNNER_TEMP/original-native-inspector.py" <<'PYTHON'
+          def inspect_zip(raw):
+              contents, records = {}, []
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  members = archive.infolist()
+                  need(len(members) == len(MEMBERS), "zip_member_count")
+                  seen, expanded = set(), 0
+                  for member in members:
+                      need(member.filename in MEMBERS and member.filename not in seen, "zip_member_name")
+                      seen.add(member.filename)
+                      label = MEMBERS[member.filename]
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode)
+                           and stat.S_IFMT(mode) in (0, stat.S_IFREG)
+                           and not (member.flag_bits & 1)
+                           and member.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED), "zip_member_type")
+                      limit = 32 * MIB if label == "native_wheel" else MIB
+                      need(0 < member.file_size <= limit, "zip_member_size")
+                      expanded += member.file_size
+                      need(expanded <= 64 * MIB, "zip_expansion_limit")
+                      digest, size, selected = hashlib.sha256(), 0, bytearray()
+                      with archive.open(member) as stream:
+                          while True:
+                              tick()
+                              chunk = stream.read(min(65536, member.file_size + 1 - size))
+                              if not chunk:
+                                  break
+                              size += len(chunk)
+                              need(size <= member.file_size, "zip_member_length")
+                              digest.update(chunk)
+                              if label in PARSED:
+                                  selected.extend(chunk)
+                      need(size == member.file_size, "zip_member_length")
+                      # Every outer member was consumed to EOF, including the wheel.
+                      records.append({"member": label, "bytes": size, "sha256": digest.hexdigest(), "crcVerified": True})
+                      if label in PARSED:
+                          contents[label] = bytes(selected)
+                  need(REQUIRED <= {MEMBERS[name] for name in seen}, "required_reports_missing")
+              return contents, sorted(records, key=lambda row: row["member"])
+
+
+          def integer(value, maximum=1000000):
+              need(type(value) is int and 0 <= value <= maximum, "report_integer")
+              return value
+
+
+          def boolean(value):
+              need(type(value) is bool, "report_boolean")
+              return value
+
+
+          def project_default(value):
+              need(isinstance(value, dict) and value.get("schema") == "hol-guard.native-default-installed-receipt.v1"
+                   and value.get("target") == "x86_64-macos" and value.get("default_mode") == "auto", "default_report")
+              metrics = value.get("receipt_metrics")
+              need(isinstance(metrics, dict), "receipt_metrics")
+              names = ("accepted", "deduped", "dropped", "durable_pending", "failures", "processed")
+              counts = {key: integer(value.get(key)) for key in (
+                  "corpus_decisions", "resident_decisions", "oneshot_decisions", "python_semantic_decisions", "fail_safe_decisions")}
+              counts["receipt_metrics"] = {key: integer(metrics.get(key)) for key in names}
+              return counts
+
+
+          def project_pi(value):
+              need(isinstance(value, dict) and value.get("schema") == "hol-guard.installed-pi-native-output.v1"
+                   and value.get("source_sha") == SOURCE_HEAD and value.get("source_checkout_import") is False,
+                   "pi_report")
+              runtime = value.get("runtime")
+              need(isinstance(runtime, dict) and runtime.get("build_sha") == SOURCE_HEAD
+                   and runtime.get("runtime_sha256") == RUNTIME_SHA and runtime.get("target") == "x86_64-macos"
+                   and runtime.get("mode") == "auto" and runtime.get("runtime_version") == "3.0.1", "pi_runtime")
+              extension = value.get("generated_extension")
+              need(isinstance(extension, dict) and extension.get("harness") == "omp", "pi_extension")
+              real, negative = extension.get("real_cases"), extension.get("malformed_result_cases")
+              real_names = ("empty", "large-nonsource", "multiblock-crlf-unicode", "small")
+              negative_names = ("negative-empty", "negative-malformed", "negative-mismatch-proof", "negative-missing-decision",
+                                "negative-missing-proof", "negative-nonzero-allow", "negative-observe")
+              need(isinstance(real, dict) and set(real) == set(real_names)
+                   and isinstance(negative, dict) and set(negative) == set(negative_names), "pi_case_set")
+              real_rows, negative_rows = [], []
+              for name in real_names:
+                  row = real[name]
+                  need(isinstance(row, dict), "pi_case")
+                  real_rows.append({"case": name, "preserved": boolean(row.get("preserved")),
+                                    "inputUnchanged": boolean(row.get("input_content_unchanged"))})
+              for name in negative_names:
+                  row = negative[name]
+                  need(isinstance(row, dict), "pi_case")
+                  negative_rows.append({"case": name, "cliInvocations": integer(row.get("cli_invocations")),
+                                        "isError": boolean(row.get("is_error")), "preserved": boolean(row.get("preserved"))})
+              routes = value.get("native_route_metrics")
+              need(isinstance(routes, dict), "pi_routes")
+              return {"sourceSha": SOURCE_HEAD, "runtimeSha256": RUNTIME_SHA,
+                      "realCases": real_rows, "negativeCases": negative_rows,
+                      "nativeResidentRoutes": integer(routes.get("native_resident"))}
+
+
+          def project_extensions(value):
+              need(isinstance(value, dict) and value.get("schema") == "guard.installed-native-extensions.v1"
+                   and value.get("source_sha") == SOURCE_HEAD, "extensions_report")
+              names = (
+                  "external-off", "external-enabled", "owned-help", "safe-does-not-weaken-floor",
+                  "permission-disabled", "external-disabled", "external-reenabled", "restart-retains-controls",
+                  "command.package.go", "command.package.jvm", "command.package.node", "command.package.php",
+                  "command.package.python", "command.package.ruby", "command.package.rust", "command.package.system",
+                  "mcp-write-blocked", "mcp-read-inherits", "mcp-instapods-delete-review",
+                  "mcp-instapods-alias-exec-review", "mcp-instapods-inherit", "mcp-off",
+              )
+              cases = value.get("cases")
+              need(isinstance(cases, list) and len(cases) == len(names)
+                   and all(isinstance(row, dict) for row in cases)
+                   and [row.get("case") for row in cases] == list(names), "extensions_case_set")
+              rows = []
+              for name, row in zip(names, cases):
+                  need(row.get("decision") in {"allow", "deny"}
+                       and row.get("minimum_action") in {"allow", "warn", "review", "require-reapproval", "block"},
+                       "extensions_case_action")
+                  rows.append({"case": name, "decision": row["decision"], "minimumAction": row["minimum_action"],
+                               "controlRevision": integer(row.get("control_revision")),
+                               "observations": integer(row.get("observations"))})
+              return {"sourceSha": SOURCE_HEAD, "caseCount": len(rows), "cases": rows,
+                      "persistedReceipts": integer(value.get("persisted_receipts")),
+                      "markerTamperRejected": boolean(value.get("marker_tamper_rejected")),
+                      "interactiveEnrollmentExercised": boolean(value.get("interactive_enrollment_exercised")),
+                      "targetCommandsExecuted": integer(value.get("target_commands_executed")),
+                      "scopedReadinessClaim": False}
+
+
+          def project_scoped(value):
+              need(isinstance(value, dict) and value.get("schema") == "guard.installed-scoped-policy.v1"
+                   and value.get("source_sha") == SOURCE_HEAD and value.get("runtime_sha256") == RUNTIME_SHA,
+                   "scoped_report")
+              need(value.get("passed") is False and value.get("failure") == "readiness_deadline",
+                   "scoped_original_failure_not_preserved")
+              return {"sourceSha": SOURCE_HEAD, "runtimeSha256": RUNTIME_SHA, "passed": False,
+                      "failure": "readiness_deadline", "readinessBudgetMs": 400}
+
+
+          def project_profile(value):
+              expected = {
+                  "acceptance_claim": False, "disposition": "diagnostic_only",
+                  "original_failure_preserved": True,
+                  "process_timeout_semantics": "trial_leader_terminated_descendants_unverified",
+                  "profile_timings_are_instrumented": True, "readiness_budget_ms": 400,
+                  "schema": "guard.installed-readiness-source-profile.v1", "source_sha": SOURCE_HEAD,
+                  "runtime_sha256": RUNTIME_SHA,
+                  "trial_order": ["control", "start", "publication"],
+                  "trial_stack_samples": [{"trial": "control", "available": True,
+                      "labels": ["socket_fqdn", "server_bind", "server_init", "fixture_init"],
+                      "observation": "one_trial_thread_stack_sample", "timing_claim": False}],
+                  "trials": [{"trial": "control", "outcome": "trial_unavailable", "unavailable_reason": "process_timeout",
+                      "last_entered_phase": "fixture_setup", "phase_semantics": "last_entered_boundary_without_duration",
+                      "cleanup": "unverified"}],
+                  "unverified_cleanup_stops_remaining_trials": True,
+              }
+              need(isinstance(value, dict) and all(key in value for key in expected), "profile_report")
+              # Canonical JSON also distinguishes booleans from numbers. No arbitrary labels or text escape.
+              need(json.dumps({key: value[key] for key in expected}, sort_keys=True, allow_nan=False)
+                   == json.dumps(expected, sort_keys=True), "profile_refusal_not_preserved")
+              return {"disposition": "diagnostic_only", "acceptanceClaim": False, "readinessBudgetMs": 400,
+                      "trialCount": 1, "stackSampleCount": 1, "usableStackSamples": 1,
+                      "sampledFixedLabels": ["socket_fqdn", "server_bind", "server_init", "fixture_init"],
+                      "sampleObservation": "one_trial_thread_stack_sample", "readinessCauseClaim": False,
+                      "controlOutcome": "trial_unavailable", "controlReason": "process_timeout",
+                      "lastEnteredPhase": "fixture_setup", "phaseDurationClaim": False,
+                      "cleanup": "unverified", "remainingTrialsStopped": True}
+
+
+          def project(contents):
+              return {"defaultAuto": project_default(parse(contents["default_auto"])),
+                      "piOutput": project_pi(parse(contents["pi_output"])),
+                      "nativeExtensions": project_extensions(parse(contents["native_extensions"])),
+                      "scopedPolicy": project_scoped(parse(contents["scoped_policy"])),
+                      "readinessProfile": project_profile(parse(contents["readiness_profile"]))}
+
+
+          def main():
+              global TOKEN, DEADLINE
+              TOKEN = os.environ.pop("GH_TOKEN", "")
+              DEADLINE = time.monotonic() + 180
+              result = {"schema": "original-native-archive-inspection.v1", "inspectionPassed": False,
+                        "originalRun": ORIGINAL_RUN, "originalAttempt": 1, "originalJob": ORIGINAL_JOB,
+                        "originalConclusion": "failure", "sourceSha": SOURCE_HEAD,
+                        "artifactId": ARTIFACT_ID, "artifactBytes": ARTIFACT_BYTES, "artifactSha256": ARTIFACT_SHA,
+                        "archiveBytesVerified": False, "allOuterCrcVerified": False,
+                        "nativeExecuted": False, "nativeAcceptanceClaim": False, "originalFailurePreserved": True}
+              try:
+                  need(bool(TOKEN), "token_missing")
+                  validate_own_source()
+                  validate_original()
+                  result["sourceBindingsVerified"] = True
+                  raw = download()
+                  result["archiveBytesVerified"] = True
+                  contents, records = inspect_zip(raw)
+                  result.update(allOuterCrcVerified=True, members=records, memberCount=len(records))
+                  result["reports"] = project(contents)
+                  present = {row["member"] for row in records}
+                  result["optionalReportPresence"] = {label: label in present for label in (
+                      "native_extensions", "scoped_policy", "managed_floors", "installed_slo", "artifact_evidence", "stop_diagnostic")}
+                  result["wheelBoundary"] = "outer_crc_and_hash_only_no_nested_inspection_or_execution"
+                  result["inspectionPassed"] = True
+              except Refusal as error:
+                  # Refusal arguments are fixed source literals, never input or exception prose.
+                  result["failure"] = error.args[0]
+              except Exception:
+                  result["failure"] = "inspection_unavailable"
+              finally:
+                  TOKEN = ""
+              print(json.dumps(result, sort_keys=True, allow_nan=False), flush=True)
+              return 0 if result["inspectionPassed"] else 1
+
+
+          if __name__ == "__main__":
+              raise SystemExit(main())
+          PYTHON
+      - name: Verify and project the original archive
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -I "$RUNNER_TEMP/original-native-inspector.py"

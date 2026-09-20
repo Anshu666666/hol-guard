@@ -14,9 +14,12 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from collections.abc import Mapping
 from contextlib import suppress
 from pathlib import Path
+from types import CodeType
 from typing import Any
 
 import codex_plugin_scanner
@@ -25,7 +28,7 @@ from codex_plugin_scanner.guard.native_runtime import native_mode, native_runtim
 
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(_ROOT))
-from ci.native_runtime.installed_readiness_profile import ReadinessProfile, publisher_targets  # noqa: E402
+from ci.native_runtime.installed_readiness_profile import ReadinessProfile, _code, publisher_targets  # noqa: E402
 from ci.native_runtime.installed_scoped_policy_fixture import SignedPolicyFixture  # noqa: E402
 from ci.native_runtime.probe_installed_scoped_policy import (  # noqa: E402
     ProbeError,
@@ -55,6 +58,213 @@ _PHASES = frozenset(
         "report_write",
     }
 )
+
+_STACK_SAMPLE_AFTER_SECONDS = 25.0
+_STACK_FRAME_LIMIT = 32
+_STACK_LABELS = frozenset(
+    {
+        "path_resolve",
+        "fixture_init",
+        "fixture_certificate",
+        "fixture_close",
+        "store_init",
+        "store_initialize",
+        "store_initialize_once",
+        "store_schema",
+        "store_connect",
+        "store_advisory_lock",
+        "credential_lock",
+        "credential_set",
+        "secret_fingerprint",
+        "secret_persist",
+        "secret_mirror",
+        "encrypted_secret_set",
+        "encrypted_secret_get",
+        "encrypted_secret_write",
+        "dpop_key",
+        "rsa_key",
+        "server_init",
+        "server_bind",
+        "socket_fqdn",
+        "tls_wrap",
+        "thread_start",
+        "readiness_call",
+        "resident_stop",
+    }
+)
+
+
+def _stack_targets() -> dict[str, object]:
+    """Resolve implementation identities only; never inspect authority values."""
+    import socket
+    import socketserver
+    import ssl
+    from http.server import HTTPServer
+
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    from codex_plugin_scanner.guard import store_base
+    from codex_plugin_scanner.guard.cli.oauth_client import generate_dpop_key_pair
+    from codex_plugin_scanner.guard.store_connection_schema import StoreConnectionSchemaMixin
+    from codex_plugin_scanner.guard.store_oauth import StoreOAuthConnectMixin
+    from codex_plugin_scanner.guard.store_secret_policy_integrity import StoreSecretPolicyIntegrityMixin
+
+    return {
+        "path_resolve": Path.resolve,
+        "fixture_init": SignedPolicyFixture.__init__,
+        "fixture_certificate": SignedPolicyFixture._certificate,
+        "fixture_close": SignedPolicyFixture.close,
+        "store_init": StoreSecretPolicyIntegrityMixin.__init__,
+        "store_initialize": StoreConnectionSchemaMixin._initialize_serialized,
+        "store_initialize_once": StoreConnectionSchemaMixin._initialize_serialized_once,
+        "store_schema": StoreConnectionSchemaMixin._initialize_schema,
+        "store_connect": StoreConnectionSchemaMixin._connect_once,
+        "store_advisory_lock": StoreConnectionSchemaMixin._hold_advisory_file_lock,
+        "credential_lock": StoreConnectionSchemaMixin.hold_oauth_credential_lock,
+        "credential_set": StoreOAuthConnectMixin._set_oauth_local_credentials_unlocked,
+        "secret_fingerprint": store_base._secret_fingerprint,
+        "secret_persist": StoreSecretPolicyIntegrityMixin._assert_oauth_secret_persisted,
+        "secret_mirror": StoreSecretPolicyIntegrityMixin._mirror_oauth_secret_to_fallback,
+        "encrypted_secret_set": store_base.EncryptedFileSecretStore.set_secret,
+        "encrypted_secret_get": store_base.EncryptedFileSecretStore.get_secret,
+        "encrypted_secret_write": store_base.EncryptedFileSecretStore._atomic_write_bytes,
+        "dpop_key": generate_dpop_key_pair,
+        "rsa_key": rsa.generate_private_key,
+        "server_init": socketserver.TCPServer.__init__,
+        "server_bind": HTTPServer.server_bind,
+        "socket_fqdn": socket.getfqdn,
+        "tls_wrap": ssl.SSLContext.wrap_socket,
+        "thread_start": threading.Thread.start,
+        "readiness_call": require_initial_readiness,
+        "resident_stop": stop_native_resident,
+    }
+
+
+class TrialStackSample:
+    """One sample of the creating thread; no profiler, locals, names or paths."""
+
+    def __init__(
+        self,
+        targets: Mapping[str, object],
+        checkpoint: Path,
+        mode: str,
+        source: str,
+        runtime: str,
+    ) -> None:
+        if (
+            mode not in _TRIALS
+            or re.fullmatch(r"[0-9a-f]{40}", source) is None
+            or re.fullmatch(r"[0-9a-f]{64}", runtime) is None
+        ):
+            raise ValueError("trial_stack_identity_invalid")
+        self._owner = threading.current_thread()
+        self._codes: dict[int, tuple[CodeType, str]] = {}
+        for label, function in targets.items():
+            if label not in _STACK_LABELS:
+                continue
+            code = _code(function)
+            if code is not None:
+                self._codes[id(code)] = (code, label)
+        self._path = checkpoint.with_suffix(".stack.json")
+        self._identity = {
+            "schema": "guard.installed-readiness-trial-stack.v1",
+            "trial": mode,
+            "source_sha": source,
+            "runtime_sha256": runtime,
+        }
+        self._cancel = threading.Event()
+        self._worker = threading.Thread(target=self._run, daemon=True)
+
+    def _wait_for_sample(self) -> bool:
+        return self._cancel.wait(_STACK_SAMPLE_AFTER_SECONDS)
+
+    def _snapshot(self) -> dict[str, object]:
+        unavailable: dict[str, object] = {"available": False, "labels": []}
+        frame = None
+        try:
+            identity = self._owner.ident
+            if identity is None or not self._owner.is_alive():
+                return unavailable
+            frame = sys._current_frames().get(identity)
+            labels: list[str] = []
+            for _ in range(_STACK_FRAME_LIMIT):
+                if frame is None:
+                    break
+                code = frame.f_code
+                admitted = self._codes.get(id(code))
+                if admitted is not None and code is admitted[0] and admitted[1] not in labels:
+                    labels.append(admitted[1])
+                frame = frame.f_back
+            if not self._owner.is_alive():
+                return unavailable
+            return {"available": bool(labels), "labels": labels}
+        except BaseException:
+            return unavailable
+        finally:
+            frame = None
+
+    def _run(self) -> None:
+        with suppress(BaseException):
+            if self._wait_for_sample():
+                return
+            value = {**self._identity, **self._snapshot()}
+            if not self._cancel.is_set():
+                payload = json.dumps(value, sort_keys=True) + "\n"
+                if len(payload.encode("utf-8")) <= _CHECKPOINT_LIMIT:
+                    self._path.write_text(payload, encoding="utf-8")
+
+    def start(self) -> None:
+        with suppress(BaseException):
+            self._worker.start()
+
+    def close(self) -> bool:
+        self._cancel.set()
+        with suppress(BaseException):
+            if self._worker.ident is not None:
+                self._worker.join(timeout=0.1)
+        return not self._worker.is_alive()
+
+
+def read_trial_stack(checkpoint: Path, mode: str, source: str, runtime: str) -> dict[str, object]:
+    """Project an exact bound sample; missing or unrecognized evidence stays unavailable."""
+    result: dict[str, object] = {
+        "trial": mode,
+        "available": False,
+        "labels": [],
+        "observation": "one_trial_thread_stack_sample",
+        "timing_claim": False,
+    }
+    with suppress(OSError, ValueError, UnicodeError):
+        with checkpoint.with_suffix(".stack.json").open("rb") as handle:
+            payload = handle.read(_CHECKPOINT_LIMIT + 1)
+        if len(payload) > _CHECKPOINT_LIMIT:
+            return result
+        value = json.loads(payload)
+        if not isinstance(value, dict) or set(value) != {
+            "schema",
+            "trial",
+            "source_sha",
+            "runtime_sha256",
+            "available",
+            "labels",
+        }:
+            return result
+        labels, available = value["labels"], value["available"]
+        if (
+            value["schema"] != "guard.installed-readiness-trial-stack.v1"
+            or value["trial"] != mode
+            or value["source_sha"] != source
+            or value["runtime_sha256"] != runtime
+            or type(available) is not bool
+            or not isinstance(labels, list)
+            or len(labels) > _STACK_FRAME_LIMIT
+            or any(not isinstance(label, str) or label not in _STACK_LABELS for label in labels)
+            or len(set(labels)) != len(labels)
+            or bool(labels) is not available
+        ):
+            return result
+        result.update(available=available, labels=labels)
+    return result
 
 
 def write_checkpoint(path: Path | None, mode: str, source: str, runtime: str, phase: str) -> None:
@@ -167,6 +377,7 @@ def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path |
         publisher = None
         observation = None
         runtime_cleanup_attempted = False
+        stack_sample: TrialStackSample | None = None
 
         def cleanup_runtime() -> None:
             nonlocal runtime_cleanup_attempted
@@ -190,6 +401,10 @@ def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path |
                 report["cleanup"] = "failed" if failed else "contained"
 
         try:
+            if checkpoint is not None:
+                with suppress(BaseException):
+                    stack_sample = TrialStackSample(_stack_targets(), checkpoint, mode, source_sha, runtime_sha256)
+                    stack_sample.start()
             write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "fixture_setup")
             fixture = SignedPolicyFixture(Path(temporary).resolve())
             os.environ["SSL_CERT_FILE"] = str(fixture.ca_file)
@@ -235,6 +450,10 @@ def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path |
                 os.environ["SSL_CERT_FILE"] = previous_ca
             if observation is not None:
                 report["profile"] = observation.snapshot()
+            if stack_sample is not None:
+                sample_contained = stack_sample.close()
+                if not sample_contained and report["cleanup"] == "contained":
+                    report["cleanup"] = "unverified"
             write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "temporary_cleanup")
     return report
 
@@ -252,12 +471,14 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
         "process_timeout_semantics": "trial_leader_terminated_descendants_unverified",
         "unverified_cleanup_stops_remaining_trials": True,
         "trials": [],
+        "trial_stack_samples": [],
     }
     if runtime is None:
         report["disposition"] = "original_readiness_failure_not_admitted"
         return report
     report["runtime_sha256"] = runtime
     results: list[dict[str, Any]] = []
+    stack_samples: list[dict[str, object]] = []
 
     def unavailable(mode: str, checkpoint: Path, reason: str) -> dict[str, object]:
         return {
@@ -320,7 +541,10 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
             except OSError:
                 results.append(unavailable(mode, checkpoint, "process_launch_failed"))
                 break
+            finally:
+                stack_samples.append(read_trial_stack(checkpoint, mode, expected_source, runtime))
     report["trials"] = results
+    report["trial_stack_samples"] = stack_samples
     report["disposition"] = "diagnostic_only"
     return report
 

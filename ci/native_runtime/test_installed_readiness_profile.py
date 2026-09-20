@@ -562,3 +562,280 @@ def test_child_launch_failure_stops_without_exposing_error(monkeypatch: pytest.M
     assert results[0]["last_entered_phase"] == "unavailable"
     assert results[0]["cleanup"] == "unverified"
     assert "synthetic-private" not in json.dumps(report)
+
+
+def test_trial_stack_sample_observes_actual_held_owner_not_other_thread(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    entered, release = threading.Event(), threading.Event()
+    foreign_entered, foreign_release = threading.Event(), threading.Event()
+    ready = threading.Event()
+    samplers: list[probe.TrialStackSample] = []
+    outcomes: list[object] = []
+    failures: list[BaseException] = []
+    checkpoint = tmp_path / "checkpoint.json"
+    canary = "synthetic-private-held-setup"
+
+    def held_setup(private: str) -> str:
+        entered.set()
+        if not release.wait(timeout=3):
+            raise TimeoutError("synthetic-private-release")
+        return private
+
+    def foreign_setup() -> None:
+        foreign_entered.set()
+        foreign_release.wait(timeout=3)
+
+    def owner() -> None:
+        try:
+            sampler = probe.TrialStackSample(
+                {"fixture_init": held_setup, "store_init": foreign_setup},
+                checkpoint,
+                "control",
+                _SOURCE,
+                _RUNTIME,
+            )
+            samplers.append(sampler)
+            monkeypatch.setattr(sampler, "_wait_for_sample", lambda: not entered.wait(timeout=3))
+            sampler.start()
+            ready.set()
+            try:
+                outcomes.append(held_setup(canary))
+            finally:
+                outcomes.append(sampler.close())
+        except BaseException as error:
+            failures.append(error)
+            ready.set()
+
+    foreign = threading.Thread(target=foreign_setup, daemon=True)
+    actual = threading.Thread(target=owner, daemon=True)
+    try:
+        foreign.start()
+        assert foreign_entered.wait(timeout=3)
+        actual.start()
+        assert ready.wait(timeout=3) and len(samplers) == 1
+        samplers[0]._worker.join(timeout=3)
+        assert not samplers[0]._worker.is_alive()
+        record = probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)
+        assert record["available"] is True and record["labels"] == ["fixture_init"]
+        assert record["observation"] == "one_trial_thread_stack_sample" and record["timing_claim"] is False
+        encoded = checkpoint.with_suffix(".stack.json").read_text(encoding="utf-8")
+        assert canary not in encoded and "foreign_setup" not in encoded and __file__ not in encoded
+        assert "ident" not in encoded and "pid" not in encoded
+    finally:
+        release.set()
+        foreign_release.set()
+        if actual.ident is not None:
+            actual.join(timeout=3)
+        if foreign.ident is not None:
+            foreign.join(timeout=3)
+    assert not actual.is_alive() and not foreign.is_alive()
+    assert failures == [] and outcomes == [canary, True]
+    assert capsys.readouterr() == ("", "")
+
+
+def test_trial_stack_sample_requires_exact_callable_code_identity(tmp_path: Path) -> None:
+    def trusted() -> dict[str, object]:
+        return sampler._snapshot()
+
+    class NonCallable:
+        __code__ = trusted.__code__
+
+    cloned_code = trusted.__code__.replace()
+    assert cloned_code == trusted.__code__ and cloned_code is not trusted.__code__
+    clone = FunctionType(cloned_code, globals(), "synthetic-private-clone", closure=trusted.__closure__)
+    sampler = probe.TrialStackSample(
+        {"fixture_init": trusted, "store_init": NonCallable(), "synthetic-private-label": trusted},
+        tmp_path / "checkpoint.json",
+        "control",
+        _SOURCE,
+        _RUNTIME,
+    )
+    try:
+        assert trusted() == {"available": True, "labels": ["fixture_init"]}
+        assert clone() == {"available": False, "labels": []}
+    finally:
+        assert sampler.close()
+
+
+def test_trial_stack_sample_bounds_frame_walk_and_omits_unknown_frames(tmp_path: Path) -> None:
+    def outer() -> dict[str, object]:
+        return recurse(probe._STACK_FRAME_LIMIT + 4)
+
+    def recurse(remaining: int) -> dict[str, object]:
+        if remaining:
+            return recurse(remaining - 1)
+        return sampler._snapshot()
+
+    sampler = probe.TrialStackSample(
+        {"fixture_init": outer, "store_schema": recurse},
+        tmp_path / "checkpoint.json",
+        "control",
+        _SOURCE,
+        _RUNTIME,
+    )
+    try:
+        assert outer() == {"available": True, "labels": ["store_schema"]}
+        assert sampler._snapshot() == {"available": False, "labels": []}
+    finally:
+        assert sampler.close()
+
+
+def test_trial_stack_unavailable_api_and_completed_owner_remain_explicit(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    samplers: list[probe.TrialStackSample] = []
+
+    def owner() -> None:
+        samplers.append(probe.TrialStackSample({"fixture_init": owner}, checkpoint, "control", _SOURCE, _RUNTIME))
+
+    actual = threading.Thread(target=owner, daemon=True)
+    actual.start()
+    actual.join(timeout=3)
+    assert not actual.is_alive() and len(samplers) == 1
+    assert samplers[0]._snapshot() == {"available": False, "labels": []}
+    assert samplers[0].close()
+    current = probe.TrialStackSample({}, checkpoint, "control", _SOURCE, _RUNTIME)
+
+    def refused() -> Any:
+        raise RuntimeError("synthetic-private-frame-error")
+
+    monkeypatch.setattr(sys, "_current_frames", refused)
+    try:
+        assert current._snapshot() == {"available": False, "labels": []}
+    finally:
+        assert current.close()
+    assert not checkpoint.with_suffix(".stack.json").exists()
+
+
+def test_trial_stack_cancel_joins_actual_sampler_and_preserves_original_exception(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    sampler = probe.TrialStackSample({}, checkpoint, "control", _SOURCE, _RUNTIME)
+    original = RuntimeError("synthetic-private-original")
+    with pytest.raises(RuntimeError) as raised:
+        try:
+            sampler.start()
+            assert sampler._worker.is_alive()
+            raise original
+        finally:
+            assert sampler.close()
+    assert raised.value is original and not sampler._worker.is_alive()
+    assert not checkpoint.with_suffix(".stack.json").exists()
+    assert probe._STACK_SAMPLE_AFTER_SECONDS < probe._PROCESS_LIMIT_SECONDS == 30
+
+
+def test_trial_stack_record_admission_refuses_foreign_unknown_and_oversize(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    path = checkpoint.with_suffix(".stack.json")
+    value: dict[str, object] = {
+        "schema": "guard.installed-readiness-trial-stack.v1",
+        "trial": "control",
+        "source_sha": _SOURCE,
+        "runtime_sha256": _RUNTIME,
+        "available": True,
+        "labels": ["fixture_init"],
+    }
+    path.write_text(json.dumps(value), encoding="utf-8")
+    assert probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)["available"] is True
+    for field, invalid in (
+        ("schema", "synthetic-private-schema"),
+        ("trial", "start"),
+        ("source_sha", "3" * 40),
+        ("runtime_sha256", "4" * 64),
+        ("available", 1),
+        ("available", False),
+        ("labels", ["synthetic-private-frame"]),
+        ("labels", ["fixture_init", "fixture_init"]),
+        ("labels", [[]]),
+        ("labels", []),
+        ("private", "synthetic-private-payload"),
+    ):
+        path.write_text(json.dumps({**value, field: invalid}), encoding="utf-8")
+        result = probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)
+        assert result["available"] is False and result["labels"] == []
+        assert "synthetic-private" not in json.dumps(result)
+    path.write_bytes(b" " * (probe._CHECKPOINT_LIMIT + 1))
+    assert probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)["available"] is False
+    for payload in ("[]", "{", "\\ud800"):
+        path.write_text(payload, encoding="utf-8")
+        assert probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)["available"] is False
+    path.unlink()
+    assert probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)["available"] is False
+    with pytest.raises(ValueError, match=r"^trial_stack_identity_invalid$"):
+        probe.TrialStackSample({}, checkpoint, "control", "synthetic-private-source", _RUNTIME)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("broken", ["start", "write"])
+def test_trial_stack_observer_failures_are_silent_and_do_not_escape(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    broken: str,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    sampler = probe.TrialStackSample({}, checkpoint, "control", _SOURCE, _RUNTIME)
+
+    def refused(*_args: Any, **_kwargs: Any) -> None:
+        raise OSError("synthetic-private-observer-error")
+
+    monkeypatch.setattr(sampler, "_wait_for_sample", lambda: False)
+    if broken == "start":
+        monkeypatch.setattr(sampler._worker, "start", refused)
+    else:
+        monkeypatch.setattr(Path, "write_text", refused)
+    sampler.start()
+    if sampler._worker.ident is not None:
+        sampler._worker.join(timeout=3)
+    assert sampler.close() and not sampler._worker.is_alive()
+    assert probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)["available"] is False
+    assert capsys.readouterr() == ("", "")
+
+
+def test_actual_child_stack_sample_survives_failure_without_retry_or_private_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_run = subprocess.run
+    calls = 0
+
+    def launch(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        nonlocal calls
+        calls += 1
+        assert kwargs["timeout"] == 30
+        checkpoint = command[command.index("--checkpoint") + 1]
+        child = (
+            "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); "
+            "from ci.native_runtime import profile_installed_readiness as p; "
+            "exec('def held():\\n s.start()\\n s._worker.join(timeout=3)\\n'); "
+            "s=p.TrialStackSample({'fixture_init':held},Path(sys.argv[2]),'control',sys.argv[3],sys.argv[4]); "
+            "vars(s)['_wait_for_sample']=lambda:False; held(); "
+            "assert s.close(); print('synthetic-private-child-output'); sys.exit(17)"
+        )
+        return real_run(
+            [
+                sys.executable,
+                "-I",
+                "-c",
+                child,
+                str(Path(__file__).resolve().parents[2]),
+                checkpoint,
+                _SOURCE,
+                _RUNTIME,
+            ],
+            **kwargs,
+        )
+
+    monkeypatch.setattr(probe.subprocess, "run", launch)
+    report = probe.run_trials(_original(), _SOURCE)
+    results = cast(list[dict[str, Any]], report["trials"])
+    samples = cast(list[dict[str, Any]], report["trial_stack_samples"])
+    assert calls == 1 and len(results) == len(samples) == 1
+    assert results[0]["outcome"] == "trial_unavailable" and results[0]["cleanup"] == "unverified"
+    assert results[0]["unavailable_reason"] == "process_exit_failed"
+    assert samples[0]["trial"] == "control" and samples[0]["available"] is True
+    assert samples[0]["labels"] == ["fixture_init"] and samples[0]["timing_claim"] is False
+    assert report["acceptance_claim"] is False and "synthetic-private" not in json.dumps(report)

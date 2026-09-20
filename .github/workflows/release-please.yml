@@ -3,7 +3,6 @@ name: Release Please
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions: {}
 
@@ -44,9 +43,7 @@ jobs:
 
   dispatch-stable-publish:
     name: Dispatch stable PyPI publish
-    if: >-
-      github.run_attempt == 1 &&
-      needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true'
     needs: release-please
     runs-on: ubuntu-latest
     permissions:

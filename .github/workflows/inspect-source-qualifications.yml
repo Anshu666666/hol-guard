@@ -1,0 +1,852 @@
+name: Inspect original source qualification archives
+on:
+  push:
+    branches: [hgp/inspect-source-qualifications-20260920]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: original-source-archive-inspection-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  native-source:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event_name == 'push' && github.ref == 'refs/heads/hgp/inspect-source-qualifications-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Materialize fixed reader part 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > native-source-inspector.py <<'FIXED_SOURCE_PART_0'
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+          
+          PINS = json.loads(r'''{"publicSource":"526cda062f02d021ad8e349cfa065e6eb65947fb","publicTree":"ef2da5ba035a941bd911de2aeab55391df8bb987","sourceParent":"5ec0df808bbe584a4caa106304057d55886e3c24","parentTree":"054bccd340260250d9945879944a1259a86713d9","validationHead":"6426271d83ba26ce41a8c8686d5c51390abed0f0","validationWorkflowBlob":"e693708d333c6be8bc2e206b8406e1fd37f74a1c","validationRun":35531974325,"validationWorkflowId":362841954,"receipts":[{"python":"3.10","jobId":106134074871,"artifactId":10611477297,"bytes":5116,"sha256":"5890589a0e87bcae302b5dfaef77692d0f9815643cf075ea989455b3abef00ca"},{"python":"3.12","jobId":106134074999,"artifactId":10611572887,"bytes":5116,"sha256":"2cb38c5b5c6bf901a1824a5f307eaf4b23b9fa6d0264c7d7b358dabdec353554"}],"groups":{"source-01":{"count":504,"nodeIdsSha256":"a3dbc2e7354e3ce01d65133a96fca5c91a706fed8a2d98a265a0c7e313a9a543","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_native_approval_v4_restoration.py":25}},"source-06":{"count":168,"nodeIdsSha256":"4ad5046fcae3a69384c95072fe4b875c935e530d062fadef8fa1c1e286a0bdcb","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","allowedSetupSkips":["tests/test_native_policy_snapshot_v3_publisher.py::test_windows_scope_aliases_share_one_digest_identity"],"requiredFiles":{"tests/test_headless_readiness_handoff.py":11}},"source-07":{"count":571,"nodeIdsSha256":"7b4a3bdc9641a62f603347ecac630b19619e326dd9bbd70f6cc5ec4369706a65","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_installed_live_continuation_probe.py":5,"tests/test_installed_live_continuation_receipt.py":18,"ci/native_runtime/test_installed_readiness_profile.py":47,"ci/native_runtime/test_installed_failure_diagnostics.py":22,"ci/native_runtime/test_installed_scoped_policy_fixture.py":33},"subtestCounts":{"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_absent_wrong_and_duplicate_case_identities_fail":7,"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_every_nonpass_marker_fails_including_suite_level_markers":12,"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_each_generic_sync_shape_must_complete_and_pass":12}},"source-09":{"count":934,"nodeIdsSha256":"e625d84e80985afe6ca3a015721be10d57af1777554e4df39d228cae254c3c55","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_native_live_approval_completion.py":30,"tests/test_native_live_action_boundary.py":2,"tests/test_native_review_challenge_projection.py":28,"tests/test_guard_live_hook_binding.py":15,"tests/test_guard_codex_live_action_boundary.py":6}},"focused-recovery":{"count":284,"nodeIdsSha256":"3ea63657355b8cd0abef9ad70161b80d8c4d8862e2a83501fcce76cb85fa355f","deselectedCount":1,"deselectedSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278"},"slow-vector-commitment":{"count":1,"nodeIdsSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}},"receiptFields":{"schema":"public-native-live-receipt.v1","typeRoots":402,"checkedTypeRoots":403,"additionalTypeRoots":["tests/test_guard_frozen_daemon_runtime.py"],"preservedSourceGroups":13,"executedSourceGroups":["source-01","source-06","source-07","source-09"],"focusedFiles":39,"sourcePins":185,"expectedSourceCases":{"source-01":504,"source-06":168,"source-07":571,"source-09":934},"originalPlatformSkips":1,"newReadinessCases":11,"priorContinuationCases":21,"newNativeLiveCases":108,"expectedSourceSubtests":31,"expectedFocusedCases":284,"existingSlowDeselected":1,"separateSlowCommitmentCases":1,"vectorCounts":{"ordinary":133,"mixed":188,"generic":260},"sourceUnchanged":true,"passed":true,"installedExecuted":false,"nativeApprovalAuthorityExecuted":false,"controlledResidentTestsAreInstalledEvidence":false,"compiledNativeCommitmentPassed":true},"changedFiles":[{"path":"ci/native_runtime/installed_scoped_policy_fixture.py","before":"d1cabcd5311bb3fb78a46589ed3042dd53cff5b6","after":"18c4f3e76a9dee60e07e4e4a07bba80d08278c8b","bytes":13026},{"path":"ci/native_runtime/probe_installed_live_continuation.py","before":null,"after":"493586cbaedac5edb7002c8c625df72542123b79","bytes":11368},{"path":"ci/native_runtime/test_installed_scoped_policy_fixture.py","before":"5875419a17e74fc7a33ed4b01a1ea8082ffb1427","after":"6a7af160bd64959dc92fb4e7755ec9a7b6843609","bytes":14811},{"path":"scripts/ci/policy_source_contract_roots.json","before":"9df790e0200d6adbb050acf0da8b2aa8d22b10f5","after":"afd60ff6882090ee5ccb128a6b9873c5437c6c27","bytes":43998},{"path":"src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_resume.py","before":"03c4c22c3b95294fa7ee13ced41460c4f1265118","after":"5b73cbc08e233f6fa48455c51f86a5486cf39e10","bytes":7702},{"path":"src/codex_plugin_scanner/guard/continuation_runtime.py","before":"02882455bbd71eaac57731b52729b47c1a555bb5","after":"8bbddeefba43372414e0b32503b137975ace8c3e","bytes":15887},{"path":"src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py","before":"962a6f0b991eaf5717b84fd49386eecf9d3a5304","after":"de129fc20dc24c886ec96b63cf3eb65b3e76942b","bytes":19407},{"path":"src/codex_plugin_scanner/guard/daemon/hook_worker_native.py","before":"017a45053640fa0b9c91466823f218a98b3611c2","after":"ab60fde233f882063a128129f123dd38530cb866","bytes":22698},{"path":"src/codex_plugin_scanner/guard/daemon/server.py","before":"b33035e955ff687ce62c6c570e496c2ea5df76ee","after":"7df6fc6bbc700a2e0bb934fbb7d5dd8d07adfd20","bytes":392339},{"path":"src/codex_plugin_scanner/guard/native_approval_bridge.py","before":"f59544632931250b80212e190813c16c93fb3c8d","after":"991a34b3b4d0930987078804780f5bd4dc5ab4cf","bytes":9111},{"path":"src/codex_plugin_scanner/guard/native_approval_v4_bridge.py","before":"750eee52e191b037cf2c581ca1678a56628617fe","after":"2cbb72fce0529c45c2e15f8bceffd783b4436a6d","bytes":9295},{"path":"src/codex_plugin_scanner/guard/native_live_approval_completion.py","before":null,"after":"f69922e2f05fc021929b08d0baf6169e034b9a7e","bytes":10726},{"path":"src/codex_plugin_scanner/guard/native_live_approval_state.py","before":null,"after":"daafc14080f7d97cbc863dd853757fee230de181","bytes":12224},{"path":"src/codex_plugin_scanner/guard/native_review_challenge_projection.py","before":null,"after":"97123c84d639b3a723d1c03c562dfd262aea2170","bytes":3761},{"path":"src/codex_plugin_scanner/guard/review_contracts.py","before":"c3c0b2e7e39f165c4fedd6bdff03a4ad9392d565","after":"b680b4b30fd5da61b60251aabff087b3d8359a85","bytes":27219},{"path":"src/codex_plugin_scanner/guard/review_exact_capability_advertisement.py","before":"ec70775e733a49c03b906b64cb5ef6401db2a4e2","after":"46a091a14c1fe67b8b229282cc51c1ac69f05a6f","bytes":3243},{"path":"src/codex_plugin_scanner/guard/runtime/command_executors.py","before":"526a2f5819d1b2fcf49c39dc435d00f14a5a38f3","after":"633ec44828b44f73b3c2c3d91c5e970ddf28ef1d","bytes":17054},{"path":"src/codex_plugin_scanner/guard/runtime/exact_cloud_review.py","before":"f92b1a25ec2030d3b6b626e6e223291cc94a9044","after":"a5864007ec76bd5a46b9ae63028f5d547a5c18c7","bytes":19310},{"path":"src/codex_plugin_scanner/guard/runtime/exact_cloud_review_executor.py","before":"758fd9a987b15cf8fb5a4ec21a9aad7369fe1861","after":"bfe0267a6911f91b857a4e2a59f93514e827e724","bytes":3572},{"path":"src/codex_plugin_scanner/guard/runtime/exact_cloud_review_transport.py","before":"9de8c4dafc8fe5544f7f24d3599dea274aba5351","after":"3de57716bc869e995a50133671a01dc2b97fe558","bytes":8950},{"path":"src/codex_plugin_scanner/guard/runtime/local_request_snapshots.py","before":"1523986f2658c1e53fb60eaf1d89b1f44f492a4a","after":"5a6a2709378b59be9d167cedba4b6b332cb5bfdd","bytes":56508},{"path":"src/codex_plugin_scanner/guard/runtime/native_cloud_review_executor.py","before":null,"after":"4b7164c2833147404630e64cda864959c8ed2130","bytes":2066},{"path":"src/codex_plugin_scanner/guard/store_approval_facade.py","before":"96f4e16af58fb85bad97beb3d684d78000d98993","after":"17f38b43097588135cb26645619308cef615df86","bytes":18403},{"path":"src/codex_plugin_scanner/guard/store_approval_writes.py","before":"6ab82882c41e21ad7e000151cfd7030456398779","after":"6ff357ec56440b38f67428eed2d76c08802a3564","bytes":13789},{"path":"src/codex_plugin_scanner/guard/store_continuation.py","before":"492c74722cba339d52fe5062aef7ca365dedb482","after":"5e56fa59a7cd761f5c8d3738c57a8c270418dffd","bytes":16127},{"path":"src/codex_plugin_scanner/guard/store_live_hook_binding.py","before":"5e8b0da3f3755088d904817a1ae5a02602677ccc","after":"630d67f51ecaf8a4982257cd8797135a11791fe5","bytes":7968},{"path":"tests/test_guard_frozen_daemon_runtime.py","before":"0cfe297dabfdb7e6b9763cb8a0688c79a202c515","after":"8297544a883cc82db7fc9cf4828d1b0a98d3f812","bytes":19215},{"path":"tests/test_guard_live_hook_binding.py","before":"3f8dfc71e8edfdaf762423d971ca2a1495d6b33a","after":"5005b59394c953eca122659f18713a303f09e5b1","bytes":13378},{"path":"tests/test_installed_live_continuation_probe.py","before":null,"after":"bd4c477b9f58a69309175d63bb9d0d8cde931f37","bytes":5614},{"path":"tests/test_installed_live_continuation_receipt.py","before":null,"after":"ad815c51414d43eac81d733944631b8c1ad3ce4a","bytes":6998},{"path":"tests/test_native_approval_v4_restoration.py","before":null,"after":"5460af67bb49893241beb23212f46409dda4f12a","bytes":14097},{"path":"tests/test_native_live_action_boundary.py","before":null,"after":"8d0ad5a37d084c3e195ec417153249b932f77f1f","bytes":8304},{"path":"tests/test_native_live_approval_completion.py","before":null,"after":"406a01b860be93c8f011a6e9a6b4e2878e2958fb","bytes":24479},{"path":"tests/test_native_review_challenge_projection.py","before":null,"after":"3a1a8bb38c4aef8425af01e881129d9c6b188452","bytes":10463}]}''')
+          REPO = "hashgraph-online/hol-guard"
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 180
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+          
+          
+          class Refusal(Exception):
+              pass
+          
+          
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+          
+          
+          def tick():
+              need(time.monotonic() < DEADLINE, "admission_deadline")
+          
+          
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+          
+          
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+          
+          
+          def fail_json():
+              raise Refusal("nonfinite_json")
+          
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          
+          
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+          
+          
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-native-source-admission"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+          
+          
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+          
+          
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+          
+          
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 2 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+          
+          
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None,
+                  "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+          
+          
+          def validate_run():
+              run = api("/actions/runs/" + str(PINS["validationRun"]))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["private"] is False,
+                   "public_validation_repository_required")
+              need(run["id"] == PINS["validationRun"] and run["run_attempt"] == 1,
+                   "original_run_required")
+          FIXED_SOURCE_PART_0
+      - name: Materialize fixed reader part 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> native-source-inspector.py <<'FIXED_SOURCE_PART_1'
+              need(run["head_sha"] == PINS["validationHead"]
+                   and run["workflow_id"] == PINS["validationWorkflowId"]
+                   and run["path"] == ".github/workflows/native-live-source-validation.yml"
+                   and run["head_branch"] == "hgp/native-live-source-validation-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "success", "validation_run_not_admitted")
+              commit = api("/git/commits/" + PINS["validationHead"])
+              need(commit["sha"] == PINS["validationHead"]
+                   and [parent["sha"] for parent in commit["parents"]] == [PINS["publicSource"]],
+                   "validation_commit")
+              tree_sha = commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  tree = api("/git/trees/" + tree_sha)
+                  need(tree.get("truncated") is False, "validation_tree_truncated")
+                  entries = [entry for entry in tree["tree"]
+                             if entry["path"] == directory and entry["type"] == "tree"]
+                  need(len(entries) == 1, "validation_workflow_directory")
+                  tree_sha = entries[0]["sha"]
+              tree = api("/git/trees/" + tree_sha)
+              need(tree.get("truncated") is False, "validation_tree_truncated")
+              entries = [entry for entry in tree["tree"]
+                         if entry["path"] == "native-live-source-validation.yml" and entry["type"] == "blob"]
+              need(len(entries) == 1 and entries[0]["sha"] == PINS["validationWorkflowBlob"],
+                   "validation_workflow_source")
+              workflow = api("/git/blobs/" + PINS["validationWorkflowBlob"])
+              need(workflow["sha"] == PINS["validationWorkflowBlob"] and workflow["encoding"] == "base64",
+                   "validation_workflow_blob")
+              data = base64.b64decode(workflow["content"])
+              need(len(data) <= 98304 and hashlib.sha1(
+                  b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+              ).hexdigest() == PINS["validationWorkflowBlob"], "validation_workflow_digest")
+              return run
+          
+          
+          RESULTS = ("changed-ruff-check", "changed-ruff-format", "registered-types", "source-01",
+                     "source-06", "source-07", "source-09", "focused-recovery", "slow-vector-commitment")
+          MEMBERS = frozenset({"receipt.json", "source-01.json", "source-06.json", "source-07.json",
+                               "source-09.json", "focused-recovery.json", "slow-vector-commitment.json"})
+          
+          
+          def canonical(value):
+              return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          
+          
+          def require_exact(value, expected, code):
+              need(canonical(value) == canonical(expected), code)
+          
+          
+          def inspect_contents(contents, python):
+              need(set(contents) == MEMBERS, "native_source_members")
+              expected_receipt = dict(PINS["receiptFields"])
+              expected_receipt.update(
+                  sourceHead=PINS["publicSource"], sourceTree=PINS["publicTree"],
+                  validationHead=PINS["validationHead"], runId=str(PINS["validationRun"]),
+                  runAttempt=1, python=python, outcomes=[{"name": name, "exit": 0} for name in RESULTS],
+              )
+              require_exact(contents["receipt.json"], expected_receipt, "native_source_receipt_not_admitted")
+              groups = []
+              for name, expected in PINS["groups"].items():
+                  skips = expected.get("allowedSetupSkips", [])
+                  subtests = expected.get("subtestCounts", {})
+                  expected_group = {
+                      "schema": "public-native-live-source-group.v1", "group": name,
+                      "sourceHead": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+                      "python": python, "pytestExit": 0,
+                      "expectedCount": expected["count"], "collectedCount": expected["count"],
+                      "nodeIdsSha256": expected["nodeIdsSha256"], "collectionVerified": True,
+                      "deselectedCount": expected["deselectedCount"], "deselectedSha256": expected["deselectedSha256"],
+                      "passedCalls": expected["count"] - len(skips), "skippedPhases": len(skips),
+                      "failedPhases": 0, "xfailPhases": 0, "allowedSetupSkips": skips,
+                      "expectedSubtests": sum(subtests.values()), "observedSubtests": sum(subtests.values()),
+                      "subtestParents": [{"nodeId": node, "expected": count, "observed": count, "passed": count}
+                                         for node, count in sorted(subtests.items())],
+                      "subtestCountsVerified": True, "allSubtestsPassed": True,
+                      "failedSubtests": 0, "skippedSubtests": 0, "xfailSubtests": 0,
+                      "unknownReports": 0, "requiredFilePasses": expected.get("requiredFiles", {}),
+                      "failedKnownNodeIds": [], "allExpectedPhasesPassed": True, "passed": True,
+                      "installedExecuted": False, "compiledNativeCommitmentExecuted": name == "slow-vector-commitment",
+                  }
+                  require_exact(contents[name + ".json"], expected_group, "native_source_group_not_admitted")
+                  groups.append({"group": name, "passedCalls": expected_group["passedCalls"],
+                                 "originalSetupSkips": len(skips), "subtests": sum(subtests.values()),
+                                 "nodeIdsSha256": expected["nodeIdsSha256"]})
+              return {"python": python, "qualifiedSource": PINS["publicSource"],
+                      "checkedTypeRoots": expected_receipt["checkedTypeRoots"], "outcomes": len(RESULTS),
+                      "groups": groups, "sourceUnchanged": True, "installedAcceptanceClaim": False}
+          
+          
+          def read_archive(archive):
+              contents = {}
+              with zipfile.ZipFile(archive) as zipped:
+                  members = zipped.infolist()
+                  need(len(members) == len(MEMBERS) and {member.filename for member in members} == MEMBERS,
+                       "native_source_members")
+                  total = 0
+                  for member in members:
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode)
+                           and stat.S_IFMT(mode) in (0, stat.S_IFREG) and not (member.flag_bits & 1)
+                           and member.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED},
+                           "native_source_member_type")
+                      need(0 < member.file_size <= MIB, "native_source_member_size")
+                      total += member.file_size
+                      need(total <= 7 * MIB, "native_source_total_size")
+                      data = zipped.read(member)
+                      need(len(data) == member.file_size, "native_source_member_length")
+                      contents[member.filename] = parse_json(data)
+              return contents
+          
+          
+          def inspect_receipt(row):
+              need(type(row["jobId"]) is int and row["jobId"] > 0
+                   and type(row["artifactId"]) is int and row["artifactId"] > 0
+                   and type(row["bytes"]) is int and 0 < row["bytes"] <= 2 * MIB
+                   and isinstance(row["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]),
+                   "native_source_receipt_pins")
+              job = api("/actions/jobs/" + str(row["jobId"]))
+              need(job["id"] == row["jobId"] and job["run_id"] == PINS["validationRun"]
+                   and job["run_attempt"] == 1 and job["head_sha"] == PINS["validationHead"]
+                   and job["name"] == "verify (" + row["python"] + ")"
+                   and job["status"] == "completed" and job["conclusion"] == "success",
+                   "native_source_job_not_admitted")
+              artifact = api("/actions/artifacts/" + str(row["artifactId"]))
+              need(artifact["id"] == row["artifactId"] and artifact["expired"] is False
+                   and artifact["name"] == "public-native-live-" + row["python"]
+                   and artifact["size_in_bytes"] == row["bytes"] and artifact["digest"] == "sha256:" + row["sha256"]
+                   and artifact["workflow_run"]["id"] == PINS["validationRun"]
+                   and artifact["workflow_run"]["head_sha"] == PINS["validationHead"],
+                   "native_source_artifact_not_admitted")
+              need(timestamp(job["started_at"]) <= timestamp(artifact["created_at"])
+                   <= timestamp(job["completed_at"]), "native_source_artifact_time")
+              archive = io.BytesIO()
+              download(row["artifactId"], row["bytes"], row["sha256"], archive)
+              record = inspect_contents(read_archive(archive), row["python"])
+              record.update(jobId=row["jobId"], artifactId=row["artifactId"], archiveBytes=row["bytes"],
+                            sha256=row["sha256"], allSevenMemberCrcVerified=True)
+              return record
+          
+          
+          TREE_CACHE = {}
+          
+          def tree_entries(sha):
+              if sha in TREE_CACHE:
+                  return TREE_CACHE[sha]
+              need(len(TREE_CACHE) < 96, "lineage_tree_limit")
+              tree = api("/git/trees/" + sha)
+              need(tree.get("sha") == sha and tree.get("truncated") is False, "lineage_tree_identity")
+              rows = tree.get("tree")
+              need(isinstance(rows, list) and len(rows) <= 4096, "lineage_tree_size")
+              result = {}
+              for row in rows:
+                  need(isinstance(row, dict) and isinstance(row.get("path"), str)
+                       and row["path"] not in result and "/" not in row["path"], "lineage_tree_entry")
+                  result[row["path"]] = (row["mode"], row["type"], row["sha"])
+              TREE_CACHE[sha] = result
+              return result
+          
+          def exact_tree_delta(old_tree, new_tree, expected_rows):
+              expected = {row["path"]: row for row in expected_rows}
+              need(len(expected) == len(expected_rows), "lineage_expected_duplicate")
+              observed = set()
+          
+              def walk(old_sha, new_sha, prefix, depth):
+                  need(depth <= 8, "lineage_depth")
+                  old, new = tree_entries(old_sha), tree_entries(new_sha)
+                  for name in sorted(set(old) | set(new)):
+                      before, after = old.get(name), new.get(name)
+                      if before == after:
+                          continue
+                      path = prefix + name
+                      if before is not None and after is not None and before[:2] == after[:2] == ("040000", "tree"):
+                          need(any(item.startswith(path + "/") for item in expected), "lineage_unrelated_directory")
+                          walk(before[2], after[2], path + "/", depth + 1)
+                      else:
+                          need(path in expected, "lineage_unrelated_file")
+                          row = expected[path]
+                          want_before = None if row["before"] is None else ("100644", "blob", row["before"])
+                          need(before == want_before and after == ("100644", "blob", row["after"]),
+                               "lineage_candidate_file")
+                          observed.add(path)
+          
+              walk(old_tree, new_tree, "", 0)
+              need(observed == set(expected), "lineage_missing_change")
+              return len(observed)
+          
+          
+          def verify_lineage():
+              current = api("/git/commits/" + PINS["publicSource"])
+              parent = api("/git/commits/" + PINS["sourceParent"])
+              need(current["sha"] == PINS["publicSource"] and current["tree"]["sha"] == PINS["publicTree"]
+                   and [row["sha"] for row in current["parents"]] == [PINS["sourceParent"]]
+                   and parent["sha"] == PINS["sourceParent"] and parent["tree"]["sha"] == PINS["parentTree"],
+                   "native_source_lineage_commit")
+              count = exact_tree_delta(PINS["parentTree"], PINS["publicTree"], PINS["changedFiles"])
+              need(count == 34, "native_source_change_count")
+              return {"parentSource": PINS["sourceParent"], "qualifiedSource": PINS["publicSource"],
+                      "qualifiedTree": PINS["publicTree"], "changedFiles": count,
+                      "nativeExecutionSourceEqualsQualifiedSource": False,
+                      "specifiedNativeExecutionSource": "f90c8727e7c66d5d0ce96552719b36f22c585ec7",
+                      "laterSourceQualificationRequiredSeparately": True,
+                      "historicalSourceFamiliesReexecutedOnCurrentSource": False}
+          
+          
+          def verify_inspector_source():
+              need(os.environ.get("GITHUB_REPOSITORY") == REPO
+                   and os.environ.get("GITHUB_EVENT_NAME") == "push"
+                   and os.environ.get("GITHUB_REF") == "refs/heads/hgp/inspect-source-qualifications-20260920",
+                   "inspector_context")
+              sha = os.environ.get("GITHUB_SHA", "")
+              need(re.fullmatch(r"[0-9a-f]{40}", sha) is not None, "inspector_head")
+              current = api("/git/commits/" + sha)
+              need(current["sha"] == sha and [row["sha"] for row in current["parents"]]
+                   == ["f90c8727e7c66d5d0ce96552719b36f22c585ec7"], "inspector_parent")
+              source = api("/git/commits/f90c8727e7c66d5d0ce96552719b36f22c585ec7")
+              need(source["sha"] == "f90c8727e7c66d5d0ce96552719b36f22c585ec7"
+                   and source["tree"]["sha"] == "c5fc4d76eb219253672d79be7f43fd20c9a36d2b", "inspector_parent_tree")
+              delta = api("/compare/f90c8727e7c66d5d0ce96552719b36f22c585ec7..." + sha)
+              need(delta["status"] == "ahead" and delta["ahead_by"] == 1 and delta["behind_by"] == 0
+                   and delta["total_commits"] == 1 and len(delta["files"]) == 1
+                   and delta["files"][0]["filename"] == ".github/workflows/inspect-source-qualifications.yml"
+                   and delta["files"][0]["status"] == "added", "inspector_only_path")
+          
+          
+          report = {
+              "purpose": "original_source_archives_only", "sourceTestsExecuted": False,
+              "schema": "guard.native-live-source-admission.v1", "passed": False,
+              "qualifiedSource": PINS["publicSource"], "validationRun": PINS["validationRun"],
+              "validationAttempt": 1, "nativeAcceptanceClaim": False, "interpreters": [], "lineage": None,
+          }
+          try:
+              need(TOKEN and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "admission_context")
+              need([row["python"] for row in PINS["receipts"]] == ["3.10", "3.12"], "required_interpreters")
+              need(type(PINS["validationRun"]) is int and PINS["validationRun"] > 0
+                   and type(PINS["validationWorkflowId"]) is int and PINS["validationWorkflowId"] > 0
+                   and isinstance(PINS["validationHead"], str)
+                   and re.fullmatch(r"[0-9a-f]{40}", PINS["validationHead"]) is not None,
+                   "native_source_validation_pins")
+              verify_inspector_source()
+              validate_run()
+              report["lineage"] = verify_lineage()
+              report["interpreters"] = [inspect_receipt(row) for row in PINS["receipts"]]
+              validate_run()
+              report["passed"] = True
+          except Refusal as error:
+              report["failure"] = str(error)
+          except BaseException:
+              report["failure"] = "admission_unavailable"
+          Path("native-live-source-admission.json").write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report["passed"] else 1)
+          FIXED_SOURCE_PART_1
+      - name: Verify original source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python native-source-inspector.py
+  report-source:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event_name == 'push' && github.ref == 'refs/heads/hgp/inspect-source-qualifications-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Materialize fixed reader part 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > report-source-inspector.py <<'FIXED_SOURCE_PART_0'
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+          
+          PINS = json.loads(r'''{"publicSource":"f90c8727e7c66d5d0ce96552719b36f22c585ec7","publicTree":"c5fc4d76eb219253672d79be7f43fd20c9a36d2b","sourceParent":"526cda062f02d021ad8e349cfa065e6eb65947fb","parentTree":"ef2da5ba035a941bd911de2aeab55391df8bb987","validationHead":"29cc96ea4494abc1201264528f3ca377e0b89822","validationWorkflowBlob":"03f7f8e135d06e7f26261ecfc87ab0c628e20657","validationWorkflowBytes":388751,"validationRun":35534652688,"validationWorkflowId":362864570,"receipts":[{"python":"3.10","jobId":106141389666,"artifactId":10612795379,"bytes":3015,"sha256":"02bfcd03254535d7c666157f360f066d4273d4de6532ac35b762a98340bbec84"},{"python":"3.12","jobId":106141389567,"artifactId":10612595904,"bytes":3015,"sha256":"01721d226edb3d0c3c8884ac1ef0448954bf7f5e130e2ab94e79bcabbfed7d26"}],"groups":{"source-06":{"count":196,"nodeIdsSha256":"6686d6538deef6b31913bff5532f571a88594b36cc2059244111b76a7aa96417","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_headless_readiness_handoff.py":11,"tests/test_native_policy_runtime_reports.py":28},"allowedSetupSkips":["tests/test_native_policy_snapshot_v3_publisher.py::test_windows_scope_aliases_share_one_digest_identity"]},"source-09":{"count":993,"nodeIdsSha256":"d858802c6677b07f0c59cd99a5dae208e8b4acc82851624d600230cae7e0323f","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_native_live_approval_completion.py":30,"tests/test_native_live_action_boundary.py":2,"tests/test_native_review_challenge_projection.py":28,"tests/test_guard_live_hook_binding.py":15,"tests/test_guard_codex_live_action_boundary.py":6,"tests/test_runtime_policy_report_revisions.py":57,"tests/test_runtime_policy_reports_sync.py":2}},"compiler-controls":{"count":8,"nodeIdsSha256":"46404d54c70b1240b8a26f59d3a2eb93762ed4a9f0e48bf03e8c537abf535951","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_native_command_program.py":8}}},"receiptFields":{"schema":"public-runtime-report-receipt.v1","typeRoots":407,"checkedTypeRoots":408,"additionalTypeRoots":["tests/test_guard_frozen_daemon_runtime.py"],"preservedSourceGroups":13,"executedSourceGroups":["source-06","source-09"],"sourcePins":1709,"expectedSourceCases":{"source-06":196,"source-09":993},"originalPlatformSkips":1,"requiredNewCases":{"nativeCapture":28,"revisionState":57,"runtimeSync":2},"expectedSourceSubtests":0,"compilerControls":8,"generatedArtifact":{"path":"contracts/extensions/native-command-program.v1.json","gitBlob":"ff718c97c4f6469e88f7a13d8d932d55dbe8ae90","bytes":1451029,"semanticSourcePins":93},"priorExecutionCreditTransferred":false,"sourceUnchanged":true,"passed":true,"installedExecuted":false,"nativeApprovalAuthorityExecuted":false,"controlledResidentTestsAreInstalledEvidence":false,"compiledNativeCommitmentExecuted":false},"changedFiles":[{"path":"contracts/extensions/native-command-program.v1.json","before":"5da9ae714b75fb72aae6bf09b67826743d6cf74d","after":"ff718c97c4f6469e88f7a13d8d932d55dbe8ae90","bytes":1451029},{"path":"scripts/ci/policy_source_contract_roots.json","before":"afd60ff6882090ee5ccb128a6b9873c5437c6c27","after":"8da58797997cbc58b99370abe49c181d0b804177","bytes":44730},{"path":"src/codex_plugin_scanner/guard/native_policy_runtime_reports.py","before":null,"after":"c17abf689da6865c9baf076c6378de783ee3f03a","bytes":9944},{"path":"src/codex_plugin_scanner/guard/runtime/policy_report_revisions.py","before":null,"after":"68d0c020fd390cabce81a0b72c8cbb3363f4a435","bytes":9442},{"path":"src/codex_plugin_scanner/guard/runtime/runner.py","before":"2443fd5a2199b23892d0dbb4399804e42b39e264","after":"fd754752ac5e997fdc8c51df948f0669b31651e2","bytes":284692},{"path":"tests/test_native_policy_runtime_reports.py","before":null,"after":"3b1b8bf888bfff4c67888ff47b392dc13e0d16ac","bytes":15567},{"path":"tests/test_runtime_policy_report_revisions.py","before":null,"after":"662f3df26855bed74c04b2347961727add9d3ce4","bytes":20430},{"path":"tests/test_runtime_policy_reports_sync.py","before":null,"after":"a92b819b11daee629eabc7723b2eec4378f77e25","bytes":6315}]}''')
+          REPO = "hashgraph-online/hol-guard"
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 180
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+          
+          
+          class Refusal(Exception):
+              pass
+          
+          
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+          
+          
+          def tick():
+              need(time.monotonic() < DEADLINE, "admission_deadline")
+          
+          
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+          
+          
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+          
+          
+          def fail_json():
+              raise Refusal("nonfinite_json")
+          
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          
+          
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+          
+          
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-native-source-admission"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+          
+          
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+          
+          
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+          
+          
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 2 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+          
+          
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None,
+                  "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+          
+          
+          def validate_run():
+              run = api("/actions/runs/" + str(PINS["validationRun"]))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["private"] is False,
+                   "public_validation_repository_required")
+              need(run["id"] == PINS["validationRun"] and run["run_attempt"] == 1,
+                   "original_run_required")
+              need(run["head_sha"] == PINS["validationHead"]
+                   and run["workflow_id"] == PINS["validationWorkflowId"]
+                   and run["path"] == ".github/workflows/current-policy-report-source-validation.yml"
+                   and run["head_branch"] == "hgp/current-policy-report-source-validation-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "success", "validation_run_not_admitted")
+              commit = api("/git/commits/" + PINS["validationHead"])
+              need(commit["sha"] == PINS["validationHead"]
+                   and [parent["sha"] for parent in commit["parents"]] == [PINS["publicSource"]],
+                   "validation_commit")
+              tree_sha = commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  tree = api("/git/trees/" + tree_sha)
+                  need(tree.get("truncated") is False, "validation_tree_truncated")
+                  entries = [entry for entry in tree["tree"]
+                             if entry["path"] == directory and entry["type"] == "tree"]
+                  need(len(entries) == 1, "validation_workflow_directory")
+                  tree_sha = entries[0]["sha"]
+              tree = api("/git/trees/" + tree_sha)
+              need(tree.get("truncated") is False, "validation_tree_truncated")
+              entries = [entry for entry in tree["tree"]
+                         if entry["path"] == "current-policy-report-source-validation.yml" and entry["type"] == "blob"]
+              need(len(entries) == 1 and entries[0]["sha"] == PINS["validationWorkflowBlob"],
+                   "validation_workflow_source")
+              workflow = api("/git/blobs/" + PINS["validationWorkflowBlob"])
+              need(workflow["sha"] == PINS["validationWorkflowBlob"] and workflow["encoding"] == "base64",
+                   "validation_workflow_blob")
+              data = base64.b64decode(workflow["content"])
+              need(len(data) == PINS["validationWorkflowBytes"] and len(data) <= 524288 and hashlib.sha1(
+                  b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+              ).hexdigest() == PINS["validationWorkflowBlob"], "validation_workflow_digest")
+              return run
+          
+          
+          RESULTS = ("changed-ruff-check", "changed-ruff-format", "registered-types", "source-06",
+                     "source-09", "compiler-controls", "generated-program-current")
+          MEMBERS = frozenset({"receipt.json", "source-06.json", "source-09.json", "compiler-controls.json"})
+          
+          
+          def canonical(value):
+              return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          
+          
+          def require_exact(value, expected, code):
+              need(canonical(value) == canonical(expected), code)
+          
+          
+          def inspect_contents(contents, python):
+              need(set(contents) == MEMBERS, "native_source_members")
+              expected_receipt = dict(PINS["receiptFields"])
+              expected_receipt.update(
+                  sourceHead=PINS["publicSource"], sourceTree=PINS["publicTree"],
+                  validationHead=PINS["validationHead"], runId=str(PINS["validationRun"]),
+                  runAttempt=1, python=python, outcomes=[{"name": name, "exit": 0} for name in RESULTS],
+              )
+              require_exact(contents["receipt.json"], expected_receipt, "native_source_receipt_not_admitted")
+              groups = []
+              for name, expected in PINS["groups"].items():
+                  skips = expected.get("allowedSetupSkips", [])
+                  subtests = expected.get("subtestCounts", {})
+                  expected_group = {
+                      "schema": "public-native-live-source-group.v1", "group": name,
+                      "sourceHead": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+                      "python": python, "pytestExit": 0,
+                      "expectedCount": expected["count"], "collectedCount": expected["count"],
+                      "nodeIdsSha256": expected["nodeIdsSha256"], "collectionVerified": True,
+                      "deselectedCount": expected["deselectedCount"], "deselectedSha256": expected["deselectedSha256"],
+                      "passedCalls": expected["count"] - len(skips), "skippedPhases": len(skips),
+                      "failedPhases": 0, "xfailPhases": 0, "allowedSetupSkips": skips,
+                      "expectedSubtests": sum(subtests.values()), "observedSubtests": sum(subtests.values()),
+                      "subtestParents": [{"nodeId": node, "expected": count, "observed": count, "passed": count}
+                                         for node, count in sorted(subtests.items())],
+                      "subtestCountsVerified": True, "allSubtestsPassed": True,
+                      "failedSubtests": 0, "skippedSubtests": 0, "xfailSubtests": 0,
+                      "unknownReports": 0, "requiredFilePasses": expected.get("requiredFiles", {}),
+                      "failedKnownNodeIds": [], "allExpectedPhasesPassed": True, "passed": True,
+                      "installedExecuted": False, "compiledNativeCommitmentExecuted": False,
+                  }
+                  require_exact(contents[name + ".json"], expected_group, "native_source_group_not_admitted")
+                  groups.append({"group": name, "passedCalls": expected_group["passedCalls"],
+                                 "originalSetupSkips": len(skips), "subtests": sum(subtests.values()),
+                                 "nodeIdsSha256": expected["nodeIdsSha256"]})
+              return {"python": python, "qualifiedSource": PINS["publicSource"],
+                      "checkedTypeRoots": expected_receipt["checkedTypeRoots"], "outcomes": len(RESULTS),
+                      "groups": groups, "sourceUnchanged": True, "installedAcceptanceClaim": False}
+          
+          
+          def read_archive(archive):
+              contents = {}
+              with zipfile.ZipFile(archive) as zipped:
+                  members = zipped.infolist()
+                  need(len(members) == len(MEMBERS) and {member.filename for member in members} == MEMBERS,
+                       "native_source_members")
+                  total = 0
+                  for member in members:
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode)
+                           and stat.S_IFMT(mode) in (0, stat.S_IFREG) and not (member.flag_bits & 1)
+                           and member.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED},
+                           "native_source_member_type")
+          FIXED_SOURCE_PART_0
+      - name: Materialize fixed reader part 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> report-source-inspector.py <<'FIXED_SOURCE_PART_1'
+                      need(0 < member.file_size <= MIB, "native_source_member_size")
+                      total += member.file_size
+                      need(total <= 4 * MIB, "native_source_total_size")
+                      data = zipped.read(member)
+                      need(len(data) == member.file_size, "native_source_member_length")
+                      contents[member.filename] = parse_json(data)
+              return contents
+          
+          
+          def inspect_receipt(row):
+              need(type(row["jobId"]) is int and row["jobId"] > 0
+                   and type(row["artifactId"]) is int and row["artifactId"] > 0
+                   and type(row["bytes"]) is int and 0 < row["bytes"] <= 2 * MIB
+                   and isinstance(row["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]),
+                   "native_source_receipt_pins")
+              job = api("/actions/jobs/" + str(row["jobId"]))
+              need(job["id"] == row["jobId"] and job["run_id"] == PINS["validationRun"]
+                   and job["run_attempt"] == 1 and job["head_sha"] == PINS["validationHead"]
+                   and job["name"] == "verify (" + row["python"] + ")"
+                   and job["status"] == "completed" and job["conclusion"] == "success",
+                   "native_source_job_not_admitted")
+              artifact = api("/actions/artifacts/" + str(row["artifactId"]))
+              need(artifact["id"] == row["artifactId"] and artifact["expired"] is False
+                   and artifact["name"] == "public-runtime-report-" + row["python"]
+                   and artifact["size_in_bytes"] == row["bytes"] and artifact["digest"] == "sha256:" + row["sha256"]
+                   and artifact["workflow_run"]["id"] == PINS["validationRun"]
+                   and artifact["workflow_run"]["head_sha"] == PINS["validationHead"],
+                   "native_source_artifact_not_admitted")
+              need(timestamp(job["started_at"]) <= timestamp(artifact["created_at"])
+                   <= timestamp(job["completed_at"]), "native_source_artifact_time")
+              archive = io.BytesIO()
+              download(row["artifactId"], row["bytes"], row["sha256"], archive)
+              record = inspect_contents(read_archive(archive), row["python"])
+              record.update(jobId=row["jobId"], artifactId=row["artifactId"], archiveBytes=row["bytes"],
+                            sha256=row["sha256"], allFourMemberCrcVerified=True)
+              return record
+          
+          
+          TREE_CACHE = {}
+          
+          def tree_entries(sha):
+              if sha in TREE_CACHE:
+                  return TREE_CACHE[sha]
+              need(len(TREE_CACHE) < 96, "lineage_tree_limit")
+              tree = api("/git/trees/" + sha)
+              need(tree.get("sha") == sha and tree.get("truncated") is False, "lineage_tree_identity")
+              rows = tree.get("tree")
+              need(isinstance(rows, list) and len(rows) <= 4096, "lineage_tree_size")
+              result = {}
+              for row in rows:
+                  need(isinstance(row, dict) and isinstance(row.get("path"), str)
+                       and row["path"] not in result and "/" not in row["path"], "lineage_tree_entry")
+                  result[row["path"]] = (row["mode"], row["type"], row["sha"])
+              TREE_CACHE[sha] = result
+              return result
+          
+          def exact_tree_delta(old_tree, new_tree, expected_rows):
+              expected = {row["path"]: row for row in expected_rows}
+              need(len(expected) == len(expected_rows), "lineage_expected_duplicate")
+              observed = set()
+          
+              def walk(old_sha, new_sha, prefix, depth):
+                  need(depth <= 8, "lineage_depth")
+                  old, new = tree_entries(old_sha), tree_entries(new_sha)
+                  for name in sorted(set(old) | set(new)):
+                      before, after = old.get(name), new.get(name)
+                      if before == after:
+                          continue
+                      path = prefix + name
+                      if before is not None and after is not None and before[:2] == after[:2] == ("040000", "tree"):
+                          need(any(item.startswith(path + "/") for item in expected), "lineage_unrelated_directory")
+                          walk(before[2], after[2], path + "/", depth + 1)
+                      else:
+                          need(path in expected, "lineage_unrelated_file")
+                          row = expected[path]
+                          want_before = None if row["before"] is None else ("100644", "blob", row["before"])
+                          need(before == want_before and after == ("100644", "blob", row["after"]),
+                               "lineage_candidate_file")
+                          observed.add(path)
+          
+              walk(old_tree, new_tree, "", 0)
+              need(observed == set(expected), "lineage_missing_change")
+              return len(observed)
+          
+          
+          def verify_lineage():
+              current = api("/git/commits/" + PINS["publicSource"])
+              parent = api("/git/commits/" + PINS["sourceParent"])
+              need(current["sha"] == PINS["publicSource"] and current["tree"]["sha"] == PINS["publicTree"]
+                   and [row["sha"] for row in current["parents"]] == [PINS["sourceParent"]]
+                   and parent["sha"] == PINS["sourceParent"] and parent["tree"]["sha"] == PINS["parentTree"],
+                   "native_source_lineage_commit")
+              count = exact_tree_delta(PINS["parentTree"], PINS["publicTree"], PINS["changedFiles"])
+              need(count == 8, "native_source_change_count")
+              return {"parentSource": PINS["sourceParent"], "qualifiedSource": PINS["publicSource"],
+                      "qualifiedTree": PINS["publicTree"], "changedFiles": count,
+                      "nativeExecutionSourceEqualsQualifiedSource": True,
+                      "historicalSourceFamiliesReexecutedOnCurrentSource": False}
+          
+          
+          def verify_inspector_source():
+              need(os.environ.get("GITHUB_REPOSITORY") == REPO
+                   and os.environ.get("GITHUB_EVENT_NAME") == "push"
+                   and os.environ.get("GITHUB_REF") == "refs/heads/hgp/inspect-source-qualifications-20260920",
+                   "inspector_context")
+              sha = os.environ.get("GITHUB_SHA", "")
+              need(re.fullmatch(r"[0-9a-f]{40}", sha) is not None, "inspector_head")
+              current = api("/git/commits/" + sha)
+              need(current["sha"] == sha and [row["sha"] for row in current["parents"]]
+                   == ["f90c8727e7c66d5d0ce96552719b36f22c585ec7"], "inspector_parent")
+              source = api("/git/commits/f90c8727e7c66d5d0ce96552719b36f22c585ec7")
+              need(source["sha"] == "f90c8727e7c66d5d0ce96552719b36f22c585ec7"
+                   and source["tree"]["sha"] == "c5fc4d76eb219253672d79be7f43fd20c9a36d2b", "inspector_parent_tree")
+              delta = api("/compare/f90c8727e7c66d5d0ce96552719b36f22c585ec7..." + sha)
+              need(delta["status"] == "ahead" and delta["ahead_by"] == 1 and delta["behind_by"] == 0
+                   and delta["total_commits"] == 1 and len(delta["files"]) == 1
+                   and delta["files"][0]["filename"] == ".github/workflows/inspect-source-qualifications.yml"
+                   and delta["files"][0]["status"] == "added", "inspector_only_path")
+          
+          
+          report = {
+              "purpose": "original_source_archives_only", "sourceTestsExecuted": False,
+              "schema": "guard.runtime-report-source-admission.v1", "passed": False,
+              "qualifiedSource": PINS["publicSource"], "validationRun": PINS["validationRun"],
+              "validationAttempt": 1, "nativeAcceptanceClaim": False, "interpreters": [], "lineage": None,
+          }
+          try:
+              need(TOKEN and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "admission_context")
+              need([row["python"] for row in PINS["receipts"]] == ["3.10", "3.12"], "required_interpreters")
+              need(type(PINS["validationRun"]) is int and PINS["validationRun"] > 0
+                   and type(PINS["validationWorkflowId"]) is int and PINS["validationWorkflowId"] > 0
+                   and isinstance(PINS["validationHead"], str)
+                   and re.fullmatch(r"[0-9a-f]{40}", PINS["validationHead"]) is not None,
+                   "native_source_validation_pins")
+              verify_inspector_source()
+              validate_run()
+              report["lineage"] = verify_lineage()
+              report["interpreters"] = [inspect_receipt(row) for row in PINS["receipts"]]
+              validate_run()
+              report["passed"] = True
+          except Refusal as error:
+              report["failure"] = str(error)
+          except BaseException:
+              report["failure"] = "admission_unavailable"
+          Path("runtime-report-source-admission.json").write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report["passed"] else 1)
+          FIXED_SOURCE_PART_1
+      - name: Verify original source archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python report-source-inspector.py

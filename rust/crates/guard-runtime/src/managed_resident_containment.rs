@@ -383,14 +383,20 @@ pub(super) fn abort_spawned_managed(
         start_marker: process_start_marker(process_id).ok(),
         runtime_digest: runtime_digest().ok(),
     }];
-    let termination = terminate_spawned_managed(child, Duration::from_millis(100));
-    let retirement = wait_for_generation_containment(
-        scope,
-        digest,
-        generation,
-        token,
-        &known_processes,
-        Instant::now() + Duration::from_millis(50),
+    let termination = crate::windows_startup_call!(
+        AbortTerminate,
+        terminate_spawned_managed(child, Duration::from_millis(100))
+    );
+    let retirement = crate::windows_startup_call!(
+        AbortRetire,
+        wait_for_generation_containment(
+            scope,
+            digest,
+            generation,
+            token,
+            &known_processes,
+            Instant::now() + Duration::from_millis(50),
+        )
     );
     #[cfg(windows)]
     if termination.is_err() || retirement.is_err() {

@@ -9,6 +9,7 @@ mod native_hook_receipt;
 mod native_phase_observation;
 #[cfg(all(feature = "diagnostic-phases", target_os = "linux"))]
 mod native_phase_sink;
+mod native_windows_startup_observation;
 mod oneshot;
 mod policy_enforcement;
 mod policy_store;
@@ -182,6 +183,7 @@ fn run() -> Result<(), String> {
             let bytes = read_stdin_bounded()?;
             let started_at = std::time::Instant::now();
             let timeout = managed_resident::client_timeout(&bytes);
+            crate::windows_startup_begin!(started_at, started_at + timeout);
             let response = managed_resident::client_request_at_deadline(
                 std::path::Path::new(state_dir),
                 &bytes,
@@ -282,8 +284,10 @@ fn main() {
     std::panic::set_hook(Box::new(|_| eprintln!("native_runtime_panicked")));
     if let Err(code) = crate::with_native_phase_export!(run()) {
         eprintln!("{code}");
+        crate::windows_startup_emit!(Some(code.as_str()));
         std::process::exit(2);
     }
+    crate::windows_startup_emit!(None);
 }
 
 #[cfg(test)]

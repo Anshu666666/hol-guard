@@ -74,21 +74,30 @@ pub(crate) fn discover_home_states_prefer(
             ))
         })
         .collect::<Result<Vec<_>, String>>()?;
+    crate::windows_startup_event!(Scopes, scopes.len());
     let preferred_digest = preferred_digest
         .filter(|digest| digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit()));
     let mut states = Vec::new();
     for (scope, digest_prefix) in scopes {
         let paths = state_paths(&scope)?;
+        crate::windows_startup_event!(Paths, paths.len());
         for path in paths {
-            let Ok(state) = read_state_file_raw(&path, &private_root) else {
+            let Ok(state) =
+                crate::windows_startup_call!(ReadState, read_state_file_raw(&path, &private_root))
+            else {
                 continue;
             };
             let digest = state.runtime_sha256.clone();
             if digest.len() != 64
                 || !digest.bytes().all(|byte| byte.is_ascii_hexdigit())
                 || !digest[..16].eq_ignore_ascii_case(&digest_prefix)
-                || validate_state(&scope, &state, &digest).is_err()
+                || crate::windows_startup_call!(
+                    ValidateState,
+                    validate_state(&scope, &state, &digest)
+                )
+                .is_err()
             {
+                crate::windows_startup_event!(RejectedState, 1);
                 continue;
             }
             states.push((scope.clone(), digest, state));
@@ -101,6 +110,7 @@ pub(crate) fn discover_home_states_prefer(
             .cmp(&left_preferred)
             .then_with(|| right.2.generation.cmp(&left.2.generation))
     });
+    crate::windows_startup_event!(States, states.len());
     Ok(states)
 }
 

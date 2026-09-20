@@ -127,27 +127,36 @@ fn try_home_states(
     deadline: Instant,
     preferred_digest: &str,
 ) -> Result<Option<Vec<u8>>, String> {
-    let runtime_digest = runtime_digest()?;
-    for (_scope, _digest, state) in discover_home_states_prefer(state_base, Some(preferred_digest))?
-    {
+    let runtime_digest = crate::windows_startup_call!(RuntimeDigest, runtime_digest())?;
+    let states = crate::windows_startup_call!(
+        Discovery,
+        discover_home_states_prefer(state_base, Some(preferred_digest))
+    )?;
+    for (_scope, _digest, state) in states {
         if Instant::now() >= deadline {
             return Ok(None);
         }
         let same_runtime = runtime_digest == state.runtime_sha256;
         if (same_runtime
-            && validate_package_process_identity(state.process_id, &state.process_start_marker)
-                .is_err())
+            && crate::windows_startup_call!(
+                ProcessIdentity,
+                validate_package_process_identity(state.process_id, &state.process_start_marker)
+            )
+            .is_err())
             || (!same_runtime
-                && validate_runtime_process_identity(
-                    state.process_id,
-                    &state.process_start_marker,
-                    &state.runtime_sha256,
+                && crate::windows_startup_call!(
+                    ProcessIdentity,
+                    validate_runtime_process_identity(
+                        state.process_id,
+                        &state.process_start_marker,
+                        &state.runtime_sha256,
+                    )
                 )
                 .is_err())
         {
             continue;
         }
-        let token = token_from_state(&state)?;
+        let token = crate::windows_startup_call!(Token, token_from_state(&state))?;
         let identity = crate::resident_client::ExpectedProcessIdentity {
             process_id: state.process_id,
             start_marker: &state.process_start_marker,
@@ -155,22 +164,27 @@ fn try_home_states(
         };
         #[cfg(test)]
         deadline_tests::checkpoint(deadline_tests::Stage::Validated);
-        match crate::resident_client::send_request_for_digest_at_deadline_detailed(
-            &state.transport,
-            &state.endpoint,
-            &token,
-            payload,
-            deadline,
-            &identity,
+        match crate::windows_startup_exchange!(
+            crate::resident_client::send_request_for_digest_at_deadline_detailed(
+                &state.transport,
+                &state.endpoint,
+                &token,
+                payload,
+                deadline,
+                &identity,
+            )
         ) {
             Ok(response) => return Ok(Some(response)),
             // The exchange phase determines replay safety. A later owner or
             // serving-process exit cannot make authentication or response
             // failures safe to send to another resident.
-            Err(error) if containment::is_retryable_live_request_error(&error) => {}
+            Err(error) if containment::is_retryable_live_request_error(&error) => {
+                crate::windows_startup_retry!(error);
+            }
             Err(_) => return Err("native_resident_live_request_failed".to_owned()),
         }
     }
+    crate::windows_startup_event!(NoResponse, 1);
     Ok(None)
 }
 
@@ -186,8 +200,8 @@ fn client_request_with_lease_inner(
     // Keep the caller's budget intact. Windows spawn already has
     // CLIENT_START_TIMEOUT; shrinking every live request by 300ms makes the
     // 250ms command-model SLO miss the ready serve entirely.
-    let digest = runtime_digest()?;
-    let scope = state_scope(state_base, &digest)?;
+    let digest = crate::windows_startup_call!(RuntimeDigest, runtime_digest())?;
+    let scope = crate::windows_startup_call!(PrivateScope, state_scope(state_base, &digest))?;
     if let Some(response) = try_home_states(state_base, payload, overall_deadline, &digest)? {
         return Ok(response);
     }
@@ -197,10 +211,12 @@ fn client_request_with_lease_inner(
     // Older per-digest launchers left their startup marker in the runtime
     // scope.  Retire only an authenticated stale marker before taking the
     // home-wide lock; a live marker remains an active startup signal.
-    let _ = clear_stale_startup_lock(&scope, &digest)?;
-    let mut lock = acquire_startup_lock(state_base)?;
-    if lock.is_none() && clear_stale_startup_lock(state_base, &digest)? {
-        lock = acquire_startup_lock(state_base)?;
+    let _ = crate::windows_startup_call!(StaleLock, clear_stale_startup_lock(&scope, &digest))?;
+    let mut lock = crate::windows_startup_call!(StartupLock, acquire_startup_lock(state_base))?;
+    if lock.is_none()
+        && crate::windows_startup_call!(StaleLock, clear_stale_startup_lock(state_base, &digest))?
+    {
+        lock = crate::windows_startup_call!(StartupLock, acquire_startup_lock(state_base))?;
     }
     if lock.is_none() {
         let deadline = overall_deadline.min(Instant::now() + CLIENT_START_TIMEOUT);
@@ -212,8 +228,8 @@ fn client_request_with_lease_inner(
             }
             thread::sleep(CLIENT_RETRY_DELAY);
         }
-        if clear_stale_startup_lock(state_base, &digest)? {
-            lock = acquire_startup_lock(state_base)?;
+        if crate::windows_startup_call!(StaleLock, clear_stale_startup_lock(state_base, &digest))? {
+            lock = crate::windows_startup_call!(StartupLock, acquire_startup_lock(state_base))?;
         }
     }
     let _startup_lock = lock.ok_or_else(|| "native_resident_start_in_progress".to_owned())?;
@@ -223,25 +239,32 @@ fn client_request_with_lease_inner(
     if let Some(response) = try_live_or_restart(state_base, payload, overall_deadline, &digest)? {
         return Ok(response);
     }
-    restart_budget::consume(&scope)?;
-    let generation = next_generation(&scope, &digest)?;
+    crate::windows_startup_call!(RestartBudget, restart_budget::consume(&scope))?;
+    let generation = crate::windows_startup_call!(Generation, next_generation(&scope, &digest))?;
     let mut token = [0u8; crate::AUTH_TOKEN_BYTES];
     getrandom::fill(&mut token).map_err(|_| "native_client_random_failed".to_owned())?;
-    let mut spawned = containment::spawn_managed_for_owner(
-        state_base,
-        generation,
-        &digest,
-        &token,
-        std::process::id(),
+    let mut spawned = crate::windows_startup_call!(
+        Spawn,
+        containment::spawn_managed_for_owner(
+            state_base,
+            generation,
+            &digest,
+            &token,
+            std::process::id(),
+        )
     )?;
     let deadline = overall_deadline.min(Instant::now() + CLIENT_START_TIMEOUT);
+    crate::windows_startup_event!(PollEntered, 1);
     let request_result = loop {
         if Instant::now() >= deadline {
+            crate::windows_startup_event!(PollExpired, 1);
             break Ok(None);
         }
         match try_live_or_restart(state_base, payload, overall_deadline, &digest) {
             Ok(Some(response)) => break Ok(Some(response)),
-            Ok(None) => {}
+            Ok(None) => {
+                crate::windows_startup_event!(PollNoResponse, 1);
+            }
             Err(error) => break Err(error),
         }
         thread::sleep(CLIENT_RETRY_DELAY);

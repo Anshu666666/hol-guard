@@ -24,9 +24,10 @@ pub(crate) fn client_request_at_deadline(
     payload: &[u8],
     deadline: Instant,
 ) -> Result<Vec<u8>, String> {
-    let client_lease = lease::acquire(state_base)?;
+    let client_lease = crate::windows_startup_call!(Lease, lease::acquire(state_base))?;
     let result = client_request_with_lease(state_base, payload, deadline, &client_lease);
     drop(client_lease);
+    crate::windows_startup_event!(LeaseDropped, 1);
     #[cfg(test)]
     super::deadline_tests::checkpoint(super::deadline_tests::Stage::LeaseCleanup);
     finish_before_deadline(result, deadline)

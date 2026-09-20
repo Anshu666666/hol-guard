@@ -839,3 +839,96 @@ def test_actual_child_stack_sample_survives_failure_without_retry_or_private_out
     assert samples[0]["trial"] == "control" and samples[0]["available"] is True
     assert samples[0]["labels"] == ["fixture_init"] and samples[0]["timing_claim"] is False
     assert report["acceptance_claim"] is False and "synthetic-private" not in json.dumps(report)
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), float("-inf"), True])
+def test_trial_stack_parent_window_refuses_nonfinite_or_boolean_clock(tmp_path: Path, invalid: float) -> None:
+    with pytest.raises(ValueError, match=r"^trial_stack_clock_invalid$"):
+        probe.TrialStackSample(
+            {}, tmp_path / "checkpoint.json", "control", _SOURCE, _RUNTIME, sample_at_monotonic=invalid
+        )
+
+
+def test_trial_stack_late_parent_window_samples_actual_creating_thread_immediately(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+
+    def held_setup() -> None:
+        sampler.start()
+        sampler._worker.join(timeout=3)
+
+    sampler = probe.TrialStackSample(
+        {"fixture_init": held_setup},
+        checkpoint,
+        "control",
+        _SOURCE,
+        _RUNTIME,
+        sample_at_monotonic=probe.time.monotonic() - 1,
+    )
+    try:
+        held_setup()
+        result = probe.read_trial_stack(checkpoint, "control", _SOURCE, _RUNTIME)
+        assert result["available"] is True and result["labels"] == ["fixture_init"]
+    finally:
+        assert sampler.close() and not sampler._worker.is_alive()
+
+
+def test_trial_stack_parent_window_cancellation_prevents_late_write(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint.json"
+    sampler = probe.TrialStackSample(
+        {}, checkpoint, "control", _SOURCE, _RUNTIME, sample_at_monotonic=probe.time.monotonic() + 25
+    )
+    sampler.start()
+    assert sampler.close() and not sampler._worker.is_alive()
+    assert not checkpoint.with_suffix(".stack.json").exists()
+
+
+def test_trial_launch_carries_original_parent_sample_target_without_extending_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    targets: list[float] = []
+
+    def launch(command: list[str], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        targets.append(float(command[command.index("--sample-at-monotonic") + 1]))
+        assert kwargs["timeout"] == 30
+        return subprocess.CompletedProcess(command, 17)
+
+    monkeypatch.setattr(probe.subprocess, "run", launch)
+    before = probe.time.monotonic()
+    report = probe.run_trials(_original(), _SOURCE)
+    after = probe.time.monotonic()
+    assert len(targets) == 1 and before + 25 <= targets[0] <= after + 25
+    assert len(cast(list[object], report["trials"])) == 1
+    assert report["acceptance_claim"] is False and report["readiness_budget_ms"] == 400
+
+
+def test_trial_cli_forwards_parent_sample_clock_to_actual_trial_boundary(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    observed: list[float] = []
+
+    def observe_trial(_mode: str, _source: str, _runtime: str, **kwargs: Any) -> dict[str, object]:
+        observed.append(kwargs["sample_at_monotonic"])
+        return {"acceptance_claim": False}
+
+    destination = tmp_path / "report.json"
+    monkeypatch.setattr(probe, "trial", observe_trial)
+    monkeypatch.setattr(
+        probe.sys,
+        "argv",
+        [
+            "profile",
+            "--trial",
+            "control",
+            "--expected-source-sha",
+            _SOURCE,
+            "--expected-runtime-sha256",
+            _RUNTIME,
+            "--sample-at-monotonic",
+            "1234.5",
+            "--json",
+            str(destination),
+        ],
+    )
+    assert probe.main() == 0
+    assert observed == [1234.5]
+    assert json.loads(destination.read_text()) == {"acceptance_claim": False}

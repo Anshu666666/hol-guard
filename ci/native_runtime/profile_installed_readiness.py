@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -150,6 +151,8 @@ class TrialStackSample:
         mode: str,
         source: str,
         runtime: str,
+        *,
+        sample_at_monotonic: float | None = None,
     ) -> None:
         if (
             mode not in _TRIALS
@@ -158,6 +161,11 @@ class TrialStackSample:
         ):
             raise ValueError("trial_stack_identity_invalid")
         self._owner = threading.current_thread()
+        if sample_at_monotonic is None:
+            sample_at_monotonic = time.monotonic() + _STACK_SAMPLE_AFTER_SECONDS
+        if type(sample_at_monotonic) not in (int, float) or not math.isfinite(sample_at_monotonic):
+            raise ValueError("trial_stack_clock_invalid")
+        self._sample_at_monotonic = sample_at_monotonic
         self._codes: dict[int, tuple[CodeType, str]] = {}
         for label, function in targets.items():
             if label not in _STACK_LABELS:
@@ -176,7 +184,8 @@ class TrialStackSample:
         self._worker = threading.Thread(target=self._run, daemon=True)
 
     def _wait_for_sample(self) -> bool:
-        return self._cancel.wait(_STACK_SAMPLE_AFTER_SECONDS)
+        remaining = self._sample_at_monotonic - time.monotonic()
+        return self._cancel.wait(max(0.0, min(_STACK_SAMPLE_AFTER_SECONDS, remaining)))
 
     def _snapshot(self) -> dict[str, object]:
         unavailable: dict[str, object] = {"available": False, "labels": []}
@@ -343,7 +352,14 @@ def original_failure(report: object, expected_source: str) -> str | None:
     return runtime
 
 
-def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path | None = None) -> dict[str, object]:
+def trial(
+    mode: str,
+    source_sha: str,
+    runtime_sha256: str,
+    *,
+    checkpoint: Path | None = None,
+    sample_at_monotonic: float | None = None,
+) -> dict[str, object]:
     report: dict[str, object] = {
         "schema": "guard.installed-readiness-profile-trial.v1",
         "trial": mode,
@@ -403,7 +419,14 @@ def trial(mode: str, source_sha: str, runtime_sha256: str, *, checkpoint: Path |
         try:
             if checkpoint is not None:
                 with suppress(BaseException):
-                    stack_sample = TrialStackSample(_stack_targets(), checkpoint, mode, source_sha, runtime_sha256)
+                    stack_sample = TrialStackSample(
+                        _stack_targets(),
+                        checkpoint,
+                        mode,
+                        source_sha,
+                        runtime_sha256,
+                        sample_at_monotonic=sample_at_monotonic,
+                    )
                     stack_sample.start()
             write_checkpoint(checkpoint, mode, source_sha, runtime_sha256, "fixture_setup")
             fixture = SignedPolicyFixture(Path(temporary).resolve())
@@ -495,6 +518,9 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
             output = Path(temporary) / (mode + ".json")
             checkpoint = Path(temporary) / (mode + ".checkpoint.json")
             try:
+                # Include child imports and identity setup in the original parent window.
+                # CPython monotonic time is shared across processes on all supported platforms.
+                sample_at_monotonic = time.monotonic() + _STACK_SAMPLE_AFTER_SECONDS
                 completed = subprocess.run(
                     [
                         sys.executable,
@@ -510,6 +536,8 @@ def run_trials(original: dict[str, Any] | None, expected_source: str) -> dict[st
                         str(output),
                         "--checkpoint",
                         str(checkpoint),
+                        "--sample-at-monotonic",
+                        str(sample_at_monotonic),
                     ],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -557,6 +585,7 @@ def main() -> int:
     parser.add_argument("--trial", choices=_TRIALS)
     parser.add_argument("--expected-runtime-sha256")
     parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--sample-at-monotonic", type=float)
     args = parser.parse_args()
     result: dict[str, object]
     try:
@@ -568,7 +597,11 @@ def main() -> int:
                 "trial_identity_invalid",
             )
             result = trial(
-                args.trial, args.expected_source_sha, args.expected_runtime_sha256, checkpoint=args.checkpoint
+                args.trial,
+                args.expected_source_sha,
+                args.expected_runtime_sha256,
+                checkpoint=args.checkpoint,
+                sample_at_monotonic=args.sample_at_monotonic,
             )
         else:
             result = run_trials(

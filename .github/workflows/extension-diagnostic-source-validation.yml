@@ -1,0 +1,396 @@
+name: Public extension diagnostic source validation
+
+on:
+  push:
+    branches: [hgp/extension-diagnostic-subtest-validation-20260920]
+    paths: [.github/workflows/extension-diagnostic-source-validation.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-extension-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/extension-diagnostic-subtest-validation-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      PUBLIC_SOURCE_SHA: de346908fd397e051acdebd812ef47c4fd05e755
+      PUBLIC_SOURCE_TREE: e618214bdaae9d7993d1b5f12c2f6fc9ead3dd0d
+      PUBLIC_PARENT_SHA: 39d3251194ee3fb2c4439f7c9544e60e0a913583
+      PYTHON_VERSION: ${{ matrix.python }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: public-source
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: public-source
+          persist-credentials: false
+          fetch-depth: 3
+      - name: Bind exact public source and single workflow child
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-list --parents -n 1 HEAD)" = "$GITHUB_SHA $PUBLIC_SOURCE_SHA"
+          test "$(git diff --name-only "$PUBLIC_SOURCE_SHA" HEAD)" = ".github/workflows/extension-diagnostic-source-validation.yml"
+          git checkout --detach "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^')" = "$PUBLIC_PARENT_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare pinned dependencies and owned interpreter
+        run: |
+          set -euo pipefail
+          python -I scripts/ci/policy_contract_interpreter.py prepare
+          uv sync --frozen --extra dev --python "$PYTHON_VERSION"
+          python -I scripts/ci/policy_contract_interpreter.py verify
+      - name: Install the exact reviewed formatter
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'ruff==0.15.17 --hash=sha256:ecfc3c7878fff94633ab0348524e093f9ce3243080416dd7d14f8ba400174719' > "$RUNNER_TEMP/policy-formatter-requirements.txt"
+          python -m pip install --disable-pip-version-check --no-deps --require-hashes --only-binary=:all: --target "$RUNNER_TEMP/policy-formatter" -r "$RUNNER_TEMP/policy-formatter-requirements.txt"
+          "$RUNNER_TEMP/policy-formatter/bin/ruff" --version
+      - name: Materialize exact source and case admission
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/public-extension-source-$PYTHON_VERSION"
+          mkdir -p "$target"
+          cat > "$target/source-manifest.json" <<'JSON'
+          {"schema":"public-extension-diagnostic-source-manifest.v1","sourceHead":"de346908fd397e051acdebd812ef47c4fd05e755","sourceTree":"e618214bdaae9d7993d1b5f12c2f6fc9ead3dd0d","sourceParent":"39d3251194ee3fb2c4439f7c9544e60e0a913583","changedPaths":["ci/native_runtime/probe_installed_native_extensions.py","ci/native_runtime/test_installed_failure_diagnostics.py"],"files":[{"path":"ci/native_runtime/probe_installed_native_extensions.py","gitBlob":"35f023db815142f83b5ab5506d45f5f5bd1eb52c","bytes":22354},{"path":"ci/native_runtime/test_installed_failure_diagnostics.py","gitBlob":"3d4f9cd55c02740ce93d30c4d9de1a59834cadbb","bytes":16282},{"path":"pyproject.toml","gitBlob":"876066431cbe958a77a85edddff95a829394cfbc","bytes":8862},{"path":"uv.lock","gitBlob":"45bf8a2dcf7b1f70c4387508a94348ba54f20022","bytes":956861},{"path":"scripts/ci/policy_contract_interpreter.py","gitBlob":"26f714af2a0d07a109f83e3d59dbfe8c11089107","bytes":2010},{"path":"scripts/ci/policy_source_contract.py","gitBlob":"552725f880af9aaa2b6d5958c2c74662a97baffe","bytes":7114},{"path":"scripts/ci/policy_source_contract_roots.json","gitBlob":"97af93640fc0195a05f07e00a68e38dffc859ade","bytes":38514},{"path":"tests/conftest.py","gitBlob":"61e6d98609309fac99c9baae50fab5f47229fcde","bytes":14199},{"path":"tests/guard_test_invariants.py","gitBlob":"2aa54c626525881c7b1ecdab1077e029560f1f0d","bytes":9498},{"path":"tests/bundle_first_cloud.py","gitBlob":"6fb49e098b3c6973cf5017e8688fc9e61113ec50","bytes":815},{"path":"scripts/native_publication_diagnostic.py","gitBlob":"6ee0dc07be55784359a8925ccfb61d4bb67c10ef","bytes":15146},{"path":"scripts/native_publication_capture_diagnostic.py","gitBlob":"40ef284507b6e6f1018fbac8d2673872d20ea2eb","bytes":5353},{"path":"scripts/native_publication_worker_diagnostic.py","gitBlob":"18b30500f95ff4d1994aca6853c97cf0fcf4a267","bytes":7343},{"path":"src/codex_plugin_scanner/guard/daemon/hook_worker.py","gitBlob":"ed969bba5cacff2bb80491a871bf82d645e4c042","bytes":19342},{"path":"src/codex_plugin_scanner/guard/native_policy_snapshot_constants.py","gitBlob":"afb888ee46939730c04380142ea550c4b11fa74a","bytes":8112},{"path":"src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py","gitBlob":"0a0bda9a67347c585482d0f24923aef716e4ff46","bytes":23112},{"path":"src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_attempt.py","gitBlob":"9b5b470f013ac9724dbe6b7958ffc494010a15a8","bytes":10855},{"path":"tests/test_native_command_program_metadata_limits.py","gitBlob":"c321f94f2411a0aec0c03df93019e59c4de6904a","bytes":4916},{"path":"tests/test_native_policy_test_support.py","gitBlob":"389125b1c5946b45df8adbf545995839a1241ec6","bytes":14182},{"path":"tests/test_installed_pi_output_probe.py","gitBlob":"067ddbe3d7c4f7b9b751ef89d09cf14fd8ab28f1","bytes":37232},{"path":"tests/test_native_default_auto_probe.py","gitBlob":"f850150b59f56b826b22259280dabbfa1c0d375b","bytes":18239},{"path":"tests/test_native_publication_diagnostic.py","gitBlob":"00ecb6d42155a98d3178372623f978ebd14b8af1","bytes":32492},{"path":"tests/test_native_warm_phase_diagnostic.py","gitBlob":"d7547f0ce57f899026ba7373b8ab4ce27b0abc46","bytes":8942},{"path":"tests/test_guard_native_release_gate_benchmark.py","gitBlob":"21d60154723805eda21889839276c41af25d7970","bytes":4459},{"path":"tests/test_guard_command_corpus.py","gitBlob":"21e8fec14255c5c367887b9e55d09570f452162e","bytes":20534},{"path":"tests/test_guard_command_corpus_diagnostics.py","gitBlob":"f1c685469600950e6cd002b99feb26f2e687307a","bytes":11396},{"path":"tests/test_native_sensitive_resident_evidence.py","gitBlob":"34e5b1111b5a27e16702007f17607e5f6fc628c7","bytes":9168},{"path":"tests/test_native_publication_preparation_diagnostic.py","gitBlob":"9c40339ac7cd4f772fa092ea75ead299392b4482","bytes":6888},{"path":"tests/test_native_publication_worker_diagnostic.py","gitBlob":"0c76b8288011685526f006d350ca442523cde1cf","bytes":9683},{"path":"tests/test_native_publication_capture_diagnostic.py","gitBlob":"29bf83f5f8ee6e0d4ceb862c1d1f9f33932bf04f","bytes":5226},{"path":"tests/test_native_publication_worker_phase_detail.py","gitBlob":"44a8497ee10a115adbb9c5825bd22d0faf8b7e60","bytes":8103},{"path":"tests/test_candidate_workflow_sources.py","gitBlob":"be7f2bfb3449c5480e5f074229283d277763b627","bytes":4792},{"path":"tests/test_native_publication_runtime_diagnostic.py","gitBlob":"3b7c114aab98a1d39b6ae7dcfaf58cdf52b7cc50","bytes":2346},{"path":"tests/test_native_recovery_diagnostic.py","gitBlob":"fbcfc4163d2123e65e7d3e0d9e798493f4dac17d","bytes":9834},{"path":"ci/native_runtime/test_installed_scoped_policy_fixture.py","gitBlob":"5875419a17e74fc7a33ed4b01a1ea8082ffb1427","bytes":12833},{"path":"ci/native_runtime/test_installed_managed_policy_fixture.py","gitBlob":"303e977a80d3860bf592d977643a95dd01eac4b1","bytes":16578},{"path":"ci/native_runtime/test_installed_managed_floors.py","gitBlob":"c90589205cea58fa331c1794532f21ca4c3cd80f","bytes":17317},{"path":"tests/test_command_contract_sort_keys.py","gitBlob":"41525dfddcf8bd1889737d90df6ec48ea386b26d","bytes":2551},{"path":"ci/native_runtime/test_installed_managed_recovery.py","gitBlob":"f79d2143e2dc75b49e9d1f7897addef7fbf8243f","bytes":2857},{"path":"tests/test_native_command_unenrolled_manifest.py","gitBlob":"5168fd5bea3af22691022fffcd694b8e36ac4bd5","bytes":7350},{"path":"tests/test_guard_policy_support_export.py","gitBlob":"34c90c9d1e99d9cafd2be9a4245d7940e4eb147c","bytes":12248},{"path":"tests/test_ci_pytest_shard.py","gitBlob":"6da7f198d92dbc7104769c7354fb38c4defd6d9b","bytes":7557},{"path":"tests/test_policy_cli_error_guidance.py","gitBlob":"324ac2e902f18f5c7bef43d17caca5890f698a27","bytes":10325},{"path":"ci/native_runtime/test_native_client_stage_diagnostic.py","gitBlob":"9ad09b546e54ed6ae616cc414a319eedc2d424eb","bytes":8163},{"path":"ci/native_runtime/test_installed_readiness_profile.py","gitBlob":"d21ba20e3986d62ddf2ccc08b03353e705812962","bytes":34475}],"selectors":{"source-07":["tests/test_native_command_program_metadata_limits.py","tests/test_native_policy_test_support.py","tests/test_installed_pi_output_probe.py","tests/test_native_default_auto_probe.py","tests/test_native_publication_diagnostic.py","tests/test_native_warm_phase_diagnostic.py","tests/test_guard_native_release_gate_benchmark.py","tests/test_guard_command_corpus.py","tests/test_guard_command_corpus_diagnostics.py","tests/test_native_sensitive_resident_evidence.py","tests/test_native_publication_preparation_diagnostic.py","tests/test_native_publication_worker_diagnostic.py","tests/test_native_publication_capture_diagnostic.py","tests/test_native_publication_worker_phase_detail.py","tests/test_candidate_workflow_sources.py","tests/test_native_publication_runtime_diagnostic.py","tests/test_native_recovery_diagnostic.py","ci/native_runtime/test_installed_scoped_policy_fixture.py","ci/native_runtime/test_installed_managed_policy_fixture.py","ci/native_runtime/test_installed_managed_floors.py","ci/native_runtime/test_installed_failure_diagnostics.py","tests/test_command_contract_sort_keys.py","ci/native_runtime/test_installed_managed_recovery.py","tests/test_native_command_unenrolled_manifest.py","tests/test_guard_policy_support_export.py","tests/test_ci_pytest_shard.py","tests/test_policy_cli_error_guidance.py","ci/native_runtime/test_native_client_stage_diagnostic.py","ci/native_runtime/test_installed_readiness_profile.py"]},"extraArgs":{},"expected":{"source-07":{"count":539,"nodeIdsSha256":"a007ff940e34341ad56e6b67fcaca5878852795990ceef1dfe3fe0b7ca30a203","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","subtestCounts":{"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_absent_wrong_and_duplicate_case_identities_fail":7,"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_every_nonpass_marker_fails_including_suite_level_markers":12,"tests/test_native_sensitive_resident_evidence.py::SensitiveResidentEvidenceTests::test_each_generic_sync_shape_must_complete_and_pass":12}}},"diagnosticModule":"ci/native_runtime/test_installed_failure_diagnostics.py","diagnosticNodeIds":["ci/native_runtime/test_installed_failure_diagnostics.py::test_timeout_keeps_original_exception_and_call_count_without_private_output","ci/native_runtime/test_installed_failure_diagnostics.py::test_success_or_other_exception_never_samples_threads[False]","ci/native_runtime/test_installed_failure_diagnostics.py::test_success_or_other_exception_never_samples_threads[True]","ci/native_runtime/test_installed_failure_diagnostics.py::test_observation_failure_cannot_replace_timeout[observe]","ci/native_runtime/test_installed_failure_diagnostics.py::test_observation_failure_cannot_replace_timeout[serialize]","ci/native_runtime/test_installed_failure_diagnostics.py::test_observation_failure_cannot_replace_timeout[print]","ci/native_runtime/test_installed_failure_diagnostics.py::test_case_and_counts_reject_unknown_private_values","ci/native_runtime/test_installed_failure_diagnostics.py::test_actual_blocked_thread_is_observed_without_reading_frame_material","ci/native_runtime/test_installed_failure_diagnostics.py::test_thread_count_frame_depth_and_unavailable_observation_are_bounded","ci/native_runtime/test_installed_failure_diagnostics.py::test_spoofed_function_name_and_filename_do_not_match_trusted_code","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_keeps_registration_inside_original_deadline_and_restores_observer[False]","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_keeps_registration_inside_original_deadline_and_restores_observer[True]","ci/native_runtime/test_installed_failure_diagnostics.py::test_publication_window_remains_finite_for_unknown_values","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_timings_remain_finite[1.0-0.0-None]","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_timings_remain_finite[0.0-nan-None]","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_timings_remain_finite[0.0-inf-None]","ci/native_runtime/test_installed_failure_diagnostics.py::test_initial_readiness_timings_remain_finite[0.0-1000000.0-999999.0]","ci/native_runtime/test_installed_failure_diagnostics.py::test_late_ack_cannot_satisfy_the_original_initial_readiness_budget","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_refusal_observes_the_actual_preexisting_publisher","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_success_or_exception_preserves_call_and_methods[False]","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_success_or_exception_preserves_call_and_methods[True]","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_publication_diagnostic_output_failure_preserves_original_refusal"],"requiredNodeIds":["ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_refusal_observes_the_actual_preexisting_publisher","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_success_or_exception_preserves_call_and_methods[False]","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_readiness_success_or_exception_preserves_call_and_methods[True]","ci/native_runtime/test_installed_failure_diagnostics.py::test_extension_publication_diagnostic_output_failure_preserves_original_refusal"]}
+          JSON
+          cat > "$target/group.py" <<'PY'
+          if __name__ == "__main__":
+              import hashlib
+              import json
+              import os
+              from pathlib import Path
+              import sys
+
+              root = Path.cwd().resolve()
+              sys.path.insert(0, str(root))
+              import pytest
+              from _pytest.reports import TestReport
+              from _pytest.subtests import SubtestReport
+
+              name, manifest_path, report_path = sys.argv[1:]
+              manifest = json.loads(Path(manifest_path).read_text())
+              expected = manifest["expected"][name]
+
+              def digest(ids):
+                  return hashlib.sha256(json.dumps(sorted(ids), separators=(",", ":")).encode()).hexdigest()
+
+              class Evidence:
+                  def __init__(self):
+                      self.items = []
+                      self.deselected = []
+                      self.collection_verified = False
+                      self.reports = []
+                      self.subreports = []
+                      self.unknown_reports = 0
+                      self.collect_errors = 0
+
+                  def pytest_deselected(self, items):
+                      self.deselected.extend(item.nodeid for item in items)
+
+                  def pytest_collectreport(self, report):
+                      if report.failed:
+                          self.collect_errors += 1
+
+                  def pytest_collection_finish(self, session):
+                      self.items = [item.nodeid for item in session.items]
+                      self.collection_verified = (
+                          len(self.items) == expected["count"]
+                          and len(set(self.items)) == len(self.items)
+                          and digest(self.items) == expected["nodeIdsSha256"]
+                          and len(self.deselected) == expected["deselectedCount"]
+                          and digest(self.deselected) == expected["deselectedSha256"]
+                          and self.collect_errors == 0
+                      )
+                      if not self.collection_verified:
+                          raise pytest.UsageError("source_recovery_collection_mismatch")
+
+                  def pytest_runtest_logreport(self, report):
+                      if type(report) is TestReport:
+                          self.reports.append((report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")))
+                      elif type(report) is SubtestReport:
+                          self.subreports.append((report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")))
+                      else:
+                          self.unknown_reports += 1
+
+              probe = Evidence()
+              code = int(pytest.main(["-q", *manifest["selectors"][name], *manifest["extraArgs"].get(name, []), "--tb=short"], plugins=[probe]))
+              allowed = set(probe.items)
+              failures = sorted({node for node, phase, outcome, xfail in probe.reports + probe.subreports if outcome != "passed" or xfail})
+              expected_subtests = expected.get("subtestCounts", {})
+              subtest_parents = [
+                  {"nodeId": node, "expected": count,
+                   "observed": sum(item == node for item, _, _, _ in probe.subreports),
+                   "passed": sum(item == node and phase == "call" and outcome == "passed" and not xfail
+                                 for item, phase, outcome, xfail in probe.subreports)}
+                  for node, count in sorted(expected_subtests.items())
+              ]
+              subtest_counts_ok = (
+                  all(node in allowed and type(count) is int and count > 0 for node, count in expected_subtests.items())
+                  and {node for node, _, _, _ in probe.subreports} == set(expected_subtests)
+                  and all(row["observed"] == row["expected"] for row in subtest_parents)
+              )
+              subtest_ok = subtest_counts_ok and all(
+                  node in allowed and phase == "call" and outcome == "passed" and not xfail
+                  for node, phase, outcome, xfail in probe.subreports
+              )
+              phase_ok = all(
+                  [(phase, outcome, xfail) for node, phase, outcome, xfail in probe.reports if node == item]
+                  == [("setup", "passed", False), ("call", "passed", False), ("teardown", "passed", False)]
+                  for item in probe.items
+              )
+              diagnostic_ids = [item for item in probe.items if item.startswith(manifest["diagnosticModule"] + "::")]
+              diagnostic_ok = sorted(diagnostic_ids) == sorted(manifest["diagnosticNodeIds"])
+              required_rows = [
+                  {"nodeId": item, "phases": [
+                      {"when": phase, "outcome": outcome, "xfail": xfail}
+                      for node, phase, outcome, xfail in probe.reports if node == item
+                  ]}
+                  for item in manifest["requiredNodeIds"]
+              ]
+              required_ok = all(
+                  row["phases"] == [
+                      {"when": phase, "outcome": "passed", "xfail": False}
+                      for phase in ("setup", "call", "teardown")
+                  ] for row in required_rows
+              )
+              passed = (
+                  code == 0 and probe.collection_verified and phase_ok
+                  and len(probe.reports) == 3 * expected["count"]
+                  and diagnostic_ok and required_ok and subtest_ok and probe.unknown_reports == 0
+              )
+              record = {
+                  "schema": "public-extension-diagnostic-source-group.v1", "group": name,
+                  "sourceHead": os.environ["PUBLIC_SOURCE_SHA"], "sourceTree": os.environ["PUBLIC_SOURCE_TREE"],
+                  "python": os.environ["PYTHON_VERSION"], "pytestExit": code,
+                  "expectedCount": expected["count"], "collectedCount": len(probe.items),
+                  "nodeIdsSha256": digest(probe.items), "collectionVerified": probe.collection_verified,
+                  "deselectedCount": len(probe.deselected), "deselectedSha256": digest(probe.deselected),
+                  "passedCalls": sum(phase == "call" and outcome == "passed" and not xfail for _, phase, outcome, xfail in probe.reports),
+                  "skippedPhases": sum(outcome == "skipped" for _, _, outcome, _ in probe.reports),
+                  "failedPhases": sum(outcome == "failed" for _, _, outcome, _ in probe.reports),
+                  "xfailPhases": sum(xfail for _, _, _, xfail in probe.reports),
+                  "failedKnownNodeIds": [node for node in failures if node in allowed][:expected["count"]],
+                  "allThreePhasesPassed": phase_ok, "passed": passed,
+                  "subtestCount": len(probe.subreports),
+                  "passedSubtests": sum(phase == "call" and outcome == "passed" and not xfail for _, phase, outcome, xfail in probe.subreports),
+                  "failedSubtests": sum(outcome == "failed" for _, _, outcome, _ in probe.subreports),
+                  "skippedSubtests": sum(outcome == "skipped" for _, _, outcome, _ in probe.subreports),
+                  "xfailSubtests": sum(xfail for _, _, _, xfail in probe.subreports),
+                  "subtestParents": subtest_parents, "subtestCountsVerified": subtest_counts_ok,
+                  "allSubtestsPassed": subtest_ok, "unknownReportTypes": probe.unknown_reports,
+                  "diagnosticCasesVerified": diagnostic_ok, "diagnosticCases": len(diagnostic_ids),
+                  "existingDiagnosticCases": len(diagnostic_ids) - len(required_rows),
+                  "requiredCases": required_rows, "requiredCasesPassed": required_ok,
+                  "installedExecuted": False, "nativeExecuted": False,
+              }
+              Path(report_path).write_text(json.dumps(record, sort_keys=True) + "\n")
+              print(json.dumps(record, sort_keys=True), flush=True)
+              raise SystemExit(0 if passed else (code or 1))
+          PY
+      - name: Execute diagnostic style, configured types and source contracts
+        run: |
+          set -euo pipefail
+          .venv/bin/python - <<'PY'
+          import ast
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          from pathlib import Path
+          import signal
+          import subprocess
+          import sys
+          import time
+
+          root = Path.cwd().resolve()
+          source = os.environ["PUBLIC_SOURCE_SHA"]
+          output = Path(os.environ["RUNNER_TEMP"]) / ("public-extension-source-" + os.environ["PYTHON_VERSION"])
+          manifest = json.loads((output / "source-manifest.json").read_text())
+          results = []
+          assert sys.version_info[:2] == tuple(map(int, os.environ["PYTHON_VERSION"].split(".")))
+          assert Path(sys.prefix).resolve() == root / ".venv"
+          assert "PYTHONPATH" not in os.environ and "PYTHONDONTWRITEBYTECODE" not in os.environ
+          assert sys.dont_write_bytecode is False
+
+          def source_unchanged():
+              return (
+                  subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == source
+                  and subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip() == os.environ["PUBLIC_SOURCE_TREE"]
+                  and not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True)
+              )
+
+          assert source_unchanged()
+          assert manifest["sourceHead"] == source and manifest["sourceTree"] == os.environ["PUBLIC_SOURCE_TREE"]
+          assert manifest["sourceParent"] == os.environ["PUBLIC_PARENT_SHA"]
+          assert subprocess.check_output(["git", "rev-list", "--parents", "-n", "1", source], text=True).strip() == source + " " + manifest["sourceParent"]
+          changed = subprocess.check_output(["git", "diff", "--name-only", manifest["sourceParent"], source], text=True).splitlines()
+          assert changed == manifest["changedPaths"]
+          for item in manifest["files"]:
+              path = root / item["path"]
+              assert path.is_file() and not path.is_symlink()
+              data = path.read_bytes()
+              assert len(data) == item["bytes"]
+              assert hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() == item["gitBlob"]
+          test_path = manifest["diagnosticModule"]
+          before = ast.parse(subprocess.check_output(["git", "show", manifest["sourceParent"] + ":" + test_path]))
+          after = ast.parse((root / test_path).read_text())
+          after_functions = {node.name: node for node in after.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+          for node in before.body:
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                  assert node.name in after_functions
+                  assert ast.dump(node, include_attributes=False) == ast.dump(after_functions[node.name], include_attributes=False)
+          spec = importlib.util.spec_from_file_location("source_contract", root / "scripts/ci/policy_source_contract.py")
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          configuration = module._configuration()
+          roots = list(dict.fromkeys(configuration.original_roots + configuration.additional_roots))
+          assert len(roots) == 366 and len(configuration.groups) == 13
+          assert next(g for g in configuration.groups if g.name == "source-07").selectors == manifest["selectors"]["source-07"]
+          additional_candidate_roots = [path for path in manifest["changedPaths"] if path not in roots]
+          assert additional_candidate_roots == ["ci/native_runtime/probe_installed_native_extensions.py"]
+          checked_roots = [*roots, *additional_candidate_roots]
+          assert len(checked_roots) == 367 and all(path in checked_roots for path in manifest["changedPaths"])
+          assert len(manifest["requiredNodeIds"]) == 4 and len(set(manifest["requiredNodeIds"])) == 4
+          assert len(manifest["diagnosticNodeIds"]) == 22 and len(set(manifest["diagnosticNodeIds"])) == 22
+          assert set(manifest["requiredNodeIds"]) < set(manifest["diagnosticNodeIds"])
+          ruff = str(Path(os.environ["RUNNER_TEMP"]) / "policy-formatter/bin/ruff")
+
+          def wait_owned_leader(process, timeout):
+              deadline = time.monotonic() + timeout
+              while True:
+                  event = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                  if event is not None:
+                      return event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      raise subprocess.TimeoutExpired(process.args, timeout)
+                  time.sleep(min(0.05, remaining))
+
+          def close_owned_group(process):
+              deadline = time.monotonic() + 5.0
+              # Verify it remains our waitable child before signaling its owned group.
+              try:
+                  os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+              except OSError:
+                  return False
+              # The leader is still live or unreaped, so its PID cannot be reused here.
+              try:
+                  os.killpg(process.pid, signal.SIGKILL)
+              except ProcessLookupError:
+                  pass
+              except OSError:
+                  return False
+              while True:
+                  process.poll()
+                  try:
+                      os.killpg(process.pid, 0)
+                  except ProcessLookupError:
+                      return process.returncode is not None
+                  except OSError:
+                      return False
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      return False
+                  time.sleep(min(0.05, remaining))
+
+          def run(name, argv, timeout=600, record=True):
+              print(json.dumps({"publicValidation": name, "started": True, "sourceHead": source}), flush=True)
+              process = None
+              contained = True
+              try:
+                  process = subprocess.Popen(argv, cwd=root, start_new_session=True)
+                  try:
+                      code = wait_owned_leader(process, timeout)
+                  except subprocess.TimeoutExpired:
+                      code = 124
+              except OSError:
+                  code = 126
+              finally:
+                  if process is not None:
+                      contained = close_owned_group(process)
+              command_code = code
+              if not contained:
+                  code = 125
+              if record:
+                  results.append({"name": name, "exit": code})
+              print(json.dumps({"publicValidation": name, "exit": code, "commandExit": command_code, "sourceHead": source, "ownedProcessGroupAbsent": contained}), flush=True)
+              (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+              if not contained:
+                  raise SystemExit(125)
+              return code
+
+          passed = False
+          try:
+              run("candidate-lint", [ruff, "check", *manifest["changedPaths"]])
+              run("candidate-format", [ruff, "format", "--check", *manifest["changedPaths"]])
+              run("registered-types", ["uv", "run", "--no-sync", "basedpyright", "--level", "error", "--pythonpath", str(root / ".venv/bin/python"), "--pythonversion", os.environ["PYTHON_VERSION"], *checked_roots], timeout=900)
+              run("source-07", ["uv", "run", "--no-sync", "python", str(output / "group.py"), "source-07", str(output / "source-manifest.json"), str(output / "source-07.json")], timeout=900)
+              passed = len(results) == 4 and all(row["exit"] == 0 for row in results)
+          finally:
+              unchanged = source_unchanged()
+              record = {
+                  "schema": "public-extension-diagnostic-source-receipt.v1",
+                  "sourceHead": source, "sourceTree": os.environ["PUBLIC_SOURCE_TREE"],
+                  "sourceParent": manifest["sourceParent"], "validationHead": os.environ["GITHUB_SHA"],
+                  "runId": os.environ["GITHUB_RUN_ID"], "runAttempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                  "python": os.environ["PYTHON_VERSION"], "formatter": "ruff 0.15.17",
+                  "typeRoots": len(roots), "checkedTypeRoots": len(checked_roots),
+                  "additionalCandidateTypeRoots": additional_candidate_roots,
+                  "preservedSourceGroups": len(configuration.groups),
+                  "executedSourceGroups": ["source-07"], "sourcePins": len(manifest["files"]),
+                  "expectedSourceCases": 539, "explicitExtensionCases": 4,
+                  "expectedDiagnosticCases": 22, "existingDiagnosticCases": 18,
+                  "expectedSubtests": 31, "expectedSubtestParents": 3,
+                  "sourceContractEnvironment": {"launcher": "uv run --no-sync", "bytecodeOverridePresent": "PYTHONDONTWRITEBYTECODE" in os.environ, "pythonPathOverridePresent": "PYTHONPATH" in os.environ, "dontWriteBytecode": sys.dont_write_bytecode},
+                  "exactChangedPaths": changed, "productionSourceUnchangedFromParent": True,
+                  "originalDiagnosticFunctionsUnchanged": True,
+                  "priorFullSourcePairReexecutedOnThisHead": False,
+                  "outcomes": results, "sourceUnchanged": unchanged, "passed": passed and unchanged,
+                  "installedExecuted": False, "nativeExecuted": False,
+              }
+              (output / "receipt.json").write_text(json.dumps(record, sort_keys=True) + "\n")
+              print(json.dumps(record, sort_keys=True), flush=True)
+          raise SystemExit(0 if passed and unchanged else 1)
+          PY
+      - name: Preserve tracked source fence
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-extension-source-${{ matrix.python }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/public-extension-source-${{ matrix.python }}/receipt.json
+            ${{ runner.temp }}/public-extension-source-${{ matrix.python }}/source-07.json
+            ${{ runner.temp }}/public-extension-source-${{ matrix.python }}/source-manifest.json
+            ${{ runner.temp }}/public-extension-source-${{ matrix.python }}/results.json
+          if-no-files-found: error
+          retention-days: 14

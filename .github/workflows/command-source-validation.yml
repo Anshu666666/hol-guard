@@ -1,0 +1,404 @@
+name: Public consumer source validation
+
+on:
+  push:
+    branches: [hgp/command-source-validation-20260920]
+    paths: [.github/workflows/command-source-validation.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-consumer-source-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/command-source-validation-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      PUBLIC_SOURCE_SHA: 6b69ea0e4bdb12baf7e2fc321121235a0fe16eeb
+      PUBLIC_SOURCE_TREE: 583036088ce954aa65ec320c326248c4e7c5c922
+      PUBLIC_MERGE_SHA: 4e852e40765875470bb71a45c331efbbb8e3c124
+      PUBLIC_PARENT_SHA: 1c746110920e528f70e5993714ac05451ee88aa0
+      PUBLIC_MAIN_SHA: acdc8ecf848a6699db08e33a9e646477e8b2ce60
+      PUBLIC_BASE_SHA: bfe9d3e1f1cdf8a29373484ca9d99a11ce2800e1
+      PYTHON_VERSION: ${{ matrix.python }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: public-source
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          repository: hashgraph-online/hol-guard
+          ref: ${{ github.sha }}
+          path: public-source
+          persist-credentials: false
+          fetch-depth: 10
+      - name: Bind the workflow and exact source
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$PUBLIC_SOURCE_SHA"
+          test "$(git diff --name-only "$PUBLIC_SOURCE_SHA" HEAD)" = ".github/workflows/command-source-validation.yml"
+          git checkout --detach "$PUBLIC_SOURCE_SHA"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare the original owned contract interpreter
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          python -I scripts/ci/policy_contract_interpreter.py prepare
+          uv sync --frozen --extra dev --python "$PYTHON_VERSION"
+          python -I scripts/ci/policy_contract_interpreter.py verify
+      - name: Observe runner resources
+        id: resources
+        run: |
+          set -euo pipefail
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def bounded_text(path):
+              try:
+                  with Path(path).open(encoding="ascii") as handle:
+                      value = handle.read(65).strip()
+              except (OSError, UnicodeError):
+                  return None
+              return value if len(value) <= 64 else None
+
+          quota = bounded_text("/sys/fs/cgroup/cpu.max")
+          quota_us = period_us = None
+          if quota is not None:
+              parts = quota.split()
+              if len(parts) == 2 and parts[1].isdigit() and int(parts[1]) > 0:
+                  period_us = int(parts[1])
+                  if parts[0].isdigit() and int(parts[0]) > 0:
+                      quota_us = int(parts[0])
+          memory = bounded_text("/sys/fs/cgroup/memory.max")
+          memory_limit = int(memory) if memory is not None and memory.isdigit() and int(memory) > 0 else None
+          observation = {
+              "schema": "source-validation-runner-resources.v1",
+              "cpuCount": os.cpu_count(),
+              "affinityCount": len(os.sched_getaffinity(0)),
+              "physicalMemoryBytes": os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES"),
+              "cgroupCpuQuotaUs": quota_us,
+              "cgroupCpuPeriodUs": period_us,
+              "cgroupMemoryLimitBytes": memory_limit,
+          }
+          encoded = json.dumps(observation, sort_keys=True, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + encoded + "\n")
+          print(encoded, flush=True)
+          PY
+      - name: Install the exact reviewed formatter
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'ruff==0.15.17 --hash=sha256:ecfc3c7878fff94633ab0348524e093f9ce3243080416dd7d14f8ba400174719' > "$RUNNER_TEMP/policy-formatter-requirements.txt"
+          python -m pip install --disable-pip-version-check --no-deps --require-hashes --only-binary=:all: --target "$RUNNER_TEMP/policy-formatter" -r "$RUNNER_TEMP/policy-formatter-requirements.txt"
+          "$RUNNER_TEMP/policy-formatter/bin/ruff" --version
+      - name: Format public candidate and execute its configured source checks
+        run: |
+          set -euo pipefail
+          .venv/bin/python - <<'PY'
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          import signal
+          import time
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import subprocess
+          import sys
+          
+          root = Path.cwd().resolve()
+          output = Path(os.environ["RUNNER_TEMP"]) / ("public-consumer-validation-" + os.environ["PYTHON_VERSION"])
+          output.mkdir()
+          source = os.environ["PUBLIC_SOURCE_SHA"]
+          assert "PYTHONDONTWRITEBYTECODE" not in os.environ
+          assert "PYTHONPATH" not in os.environ
+          assert sys.dont_write_bytecode is False
+          expected_files = [{"path":".github/workflows/native-wheel-ci.yml","sha":"a369152987d65a336cfdd1e18812d84d5d8a0862","bytes":27958},{"path":"ci/native_runtime/installed_consumer_readiness_fixture.py","sha":"eb711e4f7514a6598510c1f074529853961c3599","bytes":7104},{"path":"ci/native_runtime/installed_readiness_profile.py","sha":"7871c061fa36a62873618c18abfcecd2c4b802dc","bytes":8527},{"path":"ci/native_runtime/probe_installed_consumer_readiness.py","sha":"42519a0948adcdbab1e3fb8b1bdc092b086b9f57","bytes":15792},{"path":"ci/native_runtime/profile_installed_readiness.py","sha":"08e889a99ce16d9b3b3c92f56dc8ad06230142d8","bytes":23980},{"path":"ci/native_runtime/test_installed_readiness_profile.py","sha":"d21ba20e3986d62ddf2ccc08b03353e705812962","bytes":34475},{"path":"docs/guard/contracts/hook-data-plane-ownership.v2.json","sha":"185d72a73e07237ebff8673dd3f6f19699aa0891","bytes":30362},{"path":"scripts/ci/policy_source_contract_roots.json","sha":"f31491c9145cece15675af1687a03df5d3b85c85","bytes":37953},{"path":"src/codex_plugin_scanner/guard/adapters/cursor_hook_config.py","sha":"b2bf15d431dd2664c0a1c63277637871bbb8bc6f","bytes":15836},{"path":"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_head.py","sha":"15545aee0c9297ded4be1fff395a5f045c7a1e81","bytes":19949},{"path":"src/codex_plugin_scanner/guard/adapters/cursor_hook_script_template_tail.py","sha":"77e4f669edfe7bdd242a3b9346954f40a5caf436","bytes":17937},{"path":"src/codex_plugin_scanner/guard/cursor_hook_rebind.py","sha":"95d349b90fc45b5fe4c62d5c0d891bbd15355644","bytes":5760},{"path":"src/codex_plugin_scanner/guard/native_policy_consumer_capture.py","sha":"0ce5575f6abb94c1206161512c81d7524e8564ad","bytes":13248},{"path":"src/codex_plugin_scanner/guard/native_policy_snapshot_control.py","sha":"119404fad2b9d26914a9070b8896a3db9933391b","bytes":12151},{"path":"src/codex_plugin_scanner/guard/native_policy_snapshot.py","sha":"809d544aebe5eac15eb01f28170d52bf2a350053","bytes":18687},{"path":"src/codex_plugin_scanner/guard/policy_consumer_readiness_contract.py","sha":"0c7ff887ab7525c9d78eed6f9b2d84060c780ac0","bytes":6799},{"path":"src/codex_plugin_scanner/guard/policy_consumer_readiness_observation.py","sha":"165ba76f7da408cf9f28218aa7c358026ff8d334","bytes":10555},{"path":"src/codex_plugin_scanner/guard/policy_consumer_readiness_sync.py","sha":"978d8e0a9413b9e66109d2ea92e089cefd9997dc","bytes":6104},{"path":"src/codex_plugin_scanner/guard/runtime/runner.py","sha":"2443fd5a2199b23892d0dbb4399804e42b39e264","bytes":283980},{"path":"src/codex_plugin_scanner/guard/schemas/policy-consumer-readiness-v2.json","sha":"b2cfebee2ea633311facd62c073c885cfc2b32af","bytes":10838},{"path":"tests/fixtures/guard-command-corpus/decision-diff-report.json","sha":"69c8caba8f35f18f9743336f2fa6a52fcca0df1c","bytes":52816},{"path":"tests/fixtures/policy-consumer-readiness-v2/profile.json","sha":"4fdbeabc99cd1d915a98ee9e3e75c90a830638ab","bytes":1404},{"path":"tests/fixtures/policy-consumer-readiness-v2/README.md","sha":"eb74415e66bee467171fb0a489b1799338d5d2ef","bytes":4511},{"path":"tests/fixtures/policy-consumer-readiness-v2/schema.json","sha":"b2cfebee2ea633311facd62c073c885cfc2b32af","bytes":10838},{"path":"tests/fixtures/policy-consumer-readiness-v2/vectors.json","sha":"f15c92ff231738e4891f28c319ec74eddb7fd4ea","bytes":69420},{"path":"tests/test_cursor_frozen_hook_command.py","sha":"a4f30a50e88f43a69f3a0efb48fcdb1fb4bfe01d","bytes":12295},{"path":"tests/test_cursor_hook_rebind.py","sha":"d24b9be37aaca3f314692bbc3ee4c8c19c056286","bytes":17254},{"path":"tests/test_cursor_hooks.py","sha":"5b50f97a799b6640f8251784d0fdfe8788d5eb67","bytes":100912},{"path":"tests/test_cursor_watch_hook_script.py","sha":"7187b85380908bd47eaf6642959243674119f103","bytes":9457},{"path":"tests/test_guard_command_decision_diff.py","sha":"52579049eda71280364c7a14885cf2da85f4006b","bytes":10251},{"path":"tests/test_guard_daemon_storage_liveness.py","sha":"1f0e5404a13047b7f8cbdba8e2f01024219a3922","bytes":14810},{"path":"tests/test_native_policy_consumer_capture.py","sha":"a68e738dbf3fb4a8f3d0abf37f34a303b041f58a","bytes":9677},{"path":"tests/test_native_policy_installation_retirement.py","sha":"9050ead461068ab77411665afb55b9a9a8d727d3","bytes":16255},{"path":"tests/test_native_policy_publication_maintenance.py","sha":"38f588141bde86be7fd2b62db0ea38a291c84d83","bytes":6797},{"path":"tests/test_native_policy_snapshot_control.py","sha":"eee7f20113921c7a4bf20c93ee0d69ad29811339","bytes":14478},{"path":"tests/test_policy_consumer_readiness_contract.py","sha":"46f0270a9bc679b828dc880917ae46de95fe9791","bytes":6705},{"path":"tests/test_policy_consumer_readiness_observation.py","sha":"be6cfa38e60891604b3dc9fa9c1e2d79b9bb8fcb","bytes":8317},{"path":"tests/test_policy_consumer_readiness_sync.py","sha":"2f266e5043da56e3eef8714102fdf74783f617d9","bytes":6229},{"path":"tests/test_policy_delivery_outcome.py","sha":"7d4c39a9d00d447b87499f4207c02aa9184bf616","bytes":9545}]
+          assert subprocess.check_output(["git", "rev-list", "--parents", "-n", "1", "HEAD"], text=True).strip().split() == [source, os.environ["PUBLIC_MERGE_SHA"]]
+          assert subprocess.check_output(["git", "rev-list", "--parents", "-n", "1", os.environ["PUBLIC_MERGE_SHA"]], text=True).strip().split() == [os.environ["PUBLIC_MERGE_SHA"], os.environ["PUBLIC_PARENT_SHA"], os.environ["PUBLIC_MAIN_SHA"]]
+          assert subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == source
+          assert subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip() == os.environ["PUBLIC_SOURCE_TREE"]
+          assert subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True) == ""
+          assert set(subprocess.check_output(["git", "diff", "--name-only", os.environ["PUBLIC_BASE_SHA"], "HEAD"], text=True).splitlines()) == {item["path"] for item in expected_files}
+          for item in expected_files:
+              data = (root / item["path"]).read_bytes()
+              assert len(data) == item["bytes"]
+              assert hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == item["sha"]
+          report_path = root / "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+          original_report = json.loads(report_path.read_text(encoding="utf-8"))
+          spec = importlib.util.spec_from_file_location("source_contract", root / "scripts/ci/policy_source_contract.py")
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          configuration = module._configuration()
+          roots = list(dict.fromkeys(configuration.original_roots + configuration.additional_roots))
+          assert len(roots) == 362 and len(configuration.groups) == 13
+          assert [group.name for group in configuration.groups] == [f"source-{number:02d}" for number in range(1, 14)]
+          selected = [group for group in configuration.groups if group.name in {"source-06", "source-08"}]
+          assert len(selected) == 2
+          python_paths = ["src/codex_plugin_scanner/guard/policy_consumer_readiness_contract.py","src/codex_plugin_scanner/guard/native_policy_consumer_capture.py","src/codex_plugin_scanner/guard/policy_consumer_readiness_observation.py","src/codex_plugin_scanner/guard/policy_consumer_readiness_sync.py","tests/test_policy_consumer_readiness_contract.py","tests/test_native_policy_consumer_capture.py","tests/test_policy_consumer_readiness_observation.py","tests/test_policy_consumer_readiness_sync.py","ci/native_runtime/installed_consumer_readiness_fixture.py","ci/native_runtime/probe_installed_consumer_readiness.py","src/codex_plugin_scanner/guard/native_policy_snapshot.py","src/codex_plugin_scanner/guard/native_policy_snapshot_control.py","src/codex_plugin_scanner/guard/runtime/runner.py","tests/test_native_policy_snapshot_control.py","ci/native_runtime/installed_readiness_profile.py","ci/native_runtime/profile_installed_readiness.py","ci/native_runtime/test_installed_readiness_profile.py"]
+          assert all(path in roots or path.startswith("src/") for path in python_paths)
+          ruff = str(Path(os.environ["RUNNER_TEMP"]) / "policy-formatter/bin/ruff")
+          results = []
+          def wait_owned_leader(process, timeout):
+              deadline = time.monotonic() + timeout
+              while True:
+                  event = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                  if event is not None:
+                      return event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      raise subprocess.TimeoutExpired(process.args, timeout)
+                  time.sleep(min(0.05, remaining))
+
+          def close_owned_group(process):
+              deadline = time.monotonic() + 5.0
+              # Verify it remains our waitable child before signaling its owned group.
+              try:
+                  os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+              except OSError:
+                  return False
+              # The leader is still live or unreaped, so its PID cannot be reused here.
+              try:
+                  os.killpg(process.pid, signal.SIGKILL)
+              except ProcessLookupError:
+                  pass
+              except OSError:
+                  return False
+              while True:
+                  process.poll()
+                  try:
+                      os.killpg(process.pid, 0)
+                  except ProcessLookupError:
+                      return process.returncode is not None
+                  except OSError:
+                      return False
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      return False
+                  time.sleep(min(0.05, remaining))
+
+          def run(name, argv, timeout=600, record=True):
+              print(json.dumps({"publicValidation": name, "started": True, "sourceHead": source}), flush=True)
+              process = None
+              contained = True
+              try:
+                  process = subprocess.Popen(argv, cwd=root, start_new_session=True)
+                  try:
+                      code = wait_owned_leader(process, timeout)
+                  except subprocess.TimeoutExpired:
+                      code = 124
+              except OSError:
+                  code = 126
+              finally:
+                  if process is not None:
+                      contained = close_owned_group(process)
+              command_code = code
+              if not contained:
+                  code = 125
+              if record:
+                  results.append({"name": name, "exit": code})
+              print(json.dumps({"publicValidation": name, "exit": code, "commandExit": command_code, "sourceHead": source, "ownedProcessGroupAbsent": contained}), flush=True)
+              (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+              if not contained:
+                  raise SystemExit(125)
+              return code
+
+          before_code = 0
+          before_path = output / "profiler-before.json"
+          if os.environ["PYTHON_VERSION"] == "3.12":
+              before_driver = output / "profiler-before.py"
+              before_driver.write_text("import ast\nimport hashlib\nimport json\nimport os\nimport subprocess\nfrom pathlib import Path\nimport sys\nimport types\n\nroot = Path.cwd().resolve()\nsys.path.insert(0, str(root))\ntarget = root / \"ci/native_runtime/test_installed_readiness_profile.py\"\nselector = \"test_default_publication_profile_is_available_while_real_start_is_still_running\"\nhelper_raw = subprocess.check_output([\n    \"git\", \"show\",\n    \"e06f586fd95f28a44a58f4f784a376fe85b57060:ci/native_runtime/installed_readiness_profile.py\",\n])\nassert len(helper_raw) == 7821\nhelper_source = helper_raw.decode(\"utf-8\")\nassert hashlib.sha1(b\"blob \" + str(len(helper_raw)).encode() + b\"\\0\" + helper_raw).hexdigest() == \"bdfc2f1047c69cb3bdbe753ef9f137d94bce8a96\"\ntarget_raw = target.read_bytes()\nassert hashlib.sha1(b\"blob \" + str(len(target_raw)).encode() + b\"\\0\" + target_raw).hexdigest() == \"d21ba20e3986d62ddf2ccc08b03353e705812962\"\nassert sys.version_info[:2] == (3, 12)\nassert \"PYTHONDONTWRITEBYTECODE\" not in os.environ and \"PYTHONPATH\" not in os.environ\nassert sys.dont_write_bytecode is False\nfunction = next(node for node in ast.parse(target_raw).body if isinstance(node, ast.FunctionDef) and node.name == selector)\nexpected = ast.dump(ast.parse('publication[\"completed\"] is True and publication[\"available\"] is True', mode=\"eval\").body)\nassertions = [node for node in ast.walk(function) if isinstance(node, ast.Assert) and ast.dump(node.test) == expected]\nassert len(assertions) == 1\nassertion_line = assertions[0].lineno\n\nimport ci.native_runtime\nimport pytest\n\nname = \"ci.native_runtime.installed_readiness_profile\"\nbaseline = types.ModuleType(name)\nbaseline.__file__ = \"<fixed-original-readiness-profiler>\"\nsys.modules[name] = baseline\nsetattr(ci.native_runtime, \"installed_readiness_profile\", baseline)\nexec(compile(helper_source, baseline.__file__, \"exec\"), baseline.__dict__)\n\nclass Evidence:\n    def __init__(self):\n        self.phases = []\n        self.assertion_matches = False\n        self.calls = 0\n\n    def pytest_runtest_makereport(self, item, call):\n        if call.when != \"call\":\n            return\n        self.calls += 1\n        if item.name != selector or call.excinfo is None:\n            return\n        error = call.excinfo.value\n        last = error.__traceback__\n        while last is not None and last.tb_next is not None:\n            last = last.tb_next\n        self.assertion_matches = (\n            isinstance(error, AssertionError)\n            and last is not None\n            and last.tb_lineno == assertion_line\n            and Path(last.tb_frame.f_code.co_filename).resolve() == target\n        )\n\n    def pytest_runtest_logreport(self, report):\n        if report.when in {\"setup\", \"call\", \"teardown\"} and report.outcome in {\"passed\", \"failed\", \"skipped\"}:\n            self.phases.append({\"when\": report.when, \"outcome\": report.outcome})\n\nevidence = Evidence()\ncode = int(pytest.main([\"-q\", str(target) + \"::\" + selector, \"--tb=no\", \"-p\", \"no:cacheprovider\"], plugins=[evidence]))\nexpected_phases = [\n    {\"when\": \"setup\", \"outcome\": \"passed\"},\n    {\"when\": \"call\", \"outcome\": \"failed\"},\n    {\"when\": \"teardown\", \"outcome\": \"passed\"},\n]\nconfirmed = code == 1 and evidence.calls == 1 and evidence.assertion_matches and evidence.phases == expected_phases\nrecord = {\n    \"schema\": \"readiness-profiler-before.v1\", \"required\": True,\n    \"python\": \"3.12\", \"sourceHead\": os.environ[\"PUBLIC_SOURCE_SHA\"],\n    \"helperBlob\": \"bdfc2f1047c69cb3bdbe753ef9f137d94bce8a96\",\n    \"testBlob\": \"d21ba20e3986d62ddf2ccc08b03353e705812962\",\n    \"selector\": selector, \"pytestExit\": code,\n    \"callCount\": evidence.calls, \"phases\": evidence.phases,\n    \"failureAtOriginalAvailabilityAssertion\": evidence.assertion_matches,\n    \"expectedFailureConfirmed\": confirmed, \"nativeExecuted\": False,\n}\nPath(sys.argv[1]).write_text(json.dumps(record, sort_keys=True) + \"\\n\", encoding=\"utf-8\")\nprint(json.dumps({\"profilerBefore\": record}, sort_keys=True), flush=True)\nraise SystemExit(0 if confirmed else 1)\n", encoding="utf-8")
+              before_code = run("profiler-before-original-helper", ["uv", "run", "--no-sync", "python", str(before_driver), str(before_path)], timeout=90, record=False)
+              if not before_path.exists():
+                  before_path.write_text(json.dumps({"schema": "readiness-profiler-before.v1", "required": True, "python": "3.12", "sourceHead": source, "expectedFailureConfirmed": False, "disposition": "before_result_unavailable", "processExit": before_code, "nativeExecuted": False}, sort_keys=True) + "\n", encoding="utf-8")
+          else:
+              before_path.write_text(json.dumps({"schema": "readiness-profiler-before.v1", "required": False, "python": "3.10", "sourceHead": source, "disposition": "comparison_requires_python_3_12", "nativeExecuted": False}, sort_keys=True) + "\n", encoding="utf-8")
+          
+          run("ruff-format-initial", [ruff, "format", *python_paths])
+          run("ruff-safe-fixes", [ruff, "check", "--fix", *python_paths])
+          run("ruff-format", [ruff, "format", *python_paths])
+          style = list(dict.fromkeys(["src", *[path for path in configuration.original_roots if not path.startswith("src/")], *configuration.additional_roots, *configuration.style_roots]))
+          run("registered-lint", [ruff, "check", *style])
+          run("registered-format", [ruff, "format", "--check", *style])
+          run("registered-types", ["uv", "run", "--no-sync", "basedpyright", "--level", "error", "--pythonpath", str(root / ".venv/bin/python"), "--pythonversion", os.environ["PYTHON_VERSION"], *roots], timeout=900)
+          imports = "from codex_plugin_scanner.guard import " + ", ".join(name.rsplit(".", 1)[-1] for name in configuration.imports)
+          run("registered-imports", ["uv", "run", "--no-sync", "python", "-c", imports])
+          for group in selected:
+              run(group.name, ["uv", "run", "--no-sync", "pytest", "-q", *group.selectors, "--tb=short", "--junitxml=" + str(output / (group.name + ".xml"))], timeout=900)
+          required_modules = {
+              "test_policy_consumer_readiness_contract": 32,
+              "test_native_policy_consumer_capture": 11,
+              "test_policy_consumer_readiness_observation": 12,
+              "test_policy_consumer_readiness_sync": 13,
+          }
+          case_counts = {}
+          nonce_count = 0
+          try:
+              cases = list(ET.parse(output / "source-06.xml").getroot().iter("testcase"))
+              for name in sorted(required_modules):
+                  matches = [case for case in cases if case.attrib.get("classname", "").split(".")[-1] == name]
+                  case_counts[name] = len(matches)
+                  assert len(matches) == required_modules[name] and all(not any(child.tag in {"failure", "error", "skipped"} for child in case) for case in matches)
+              nonce_cases = [
+                  case for case in ET.parse(output / "source-08.xml").getroot().iter("testcase")
+                  if case.attrib.get("classname", "").split(".")[-1] == "test_native_policy_snapshot_control"
+                  and (case.attrib.get("name") == "test_external_challenge_nonce_is_authenticated_without_changing_deadline"
+                       or case.attrib.get("name", "").startswith("test_external_invalid_challenge_nonce_refuses_before_transport["))
+              ]
+              nonce_count = len(nonce_cases)
+              assert nonce_count == 7 and all(not any(child.tag in {"failure", "error", "skipped"} for child in case) for case in nonce_cases)
+              required_code = 0
+          except (OSError, ET.ParseError, AssertionError):
+              required_code = 1
+          results.append({"name": "required-new-source-cases", "exit": required_code})
+          print(json.dumps({"publicValidation": "required-new-source-cases", "exit": required_code, "caseCounts": case_counts, "nonceControls": nonce_count}), flush=True)
+          (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+          run("readiness-profile-source", ["uv", "run", "--no-sync", "pytest", "-q",
+              "ci/native_runtime/test_installed_readiness_profile.py", "--tb=short",
+              "--junitxml=" + str(output / "readiness-profile.xml")], timeout=180)
+          profile_count = 0
+          try:
+              profile_cases = list(ET.parse(output / "readiness-profile.xml").getroot().iter("testcase"))
+              profile_count = len(profile_cases)
+              assert profile_count == 39
+              assert all(case.attrib.get("classname", "").split(".")[-1] == "test_installed_readiness_profile"
+                         and not any(child.tag in {"failure", "error", "skipped"} for child in case)
+                         for case in profile_cases)
+              profile_code = 0
+          except (OSError, ET.ParseError, AssertionError):
+              profile_code = 1
+          results.append({"name": "required-profile-source-cases", "exit": profile_code})
+          print(json.dumps({"publicValidation": "required-profile-source-cases", "exit": profile_code,
+                            "caseCount": profile_count}), flush=True)
+          (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+          gates = [
+              ("authority-ownership", ["scripts/ci/rust_authority_ownership_gate.py", "--root", ".", "--base-ref", os.environ["PUBLIC_BASE_SHA"], "--json", str(output / "authority-ownership.json")]),
+              ("io-ownership", ["scripts/ci/rust_io_ownership_gate.py", "--root", ".", "--json", str(output / "io-ownership.json")]),
+              ("io-privacy", ["scripts/ci/rust_io_privacy_gate.py", "--root", ".", "--json", str(output / "io-privacy.json")]),
+              ("native-approval", ["scripts/ci/native_approval_contract_gate.py", "--root", "."]),
+              ("semantic-callgraph", ["scripts/ci/python_hook_semantic_callgraph_gate.py", "--root", "."]),
+              ("native-receipt", ["scripts/ci/native_receipt_persistence_gate.py", "--root", ".", "--json", str(output / "native-receipt.json")]),
+              ("capability-cleanup", ["scripts/ci/python_capability_cleanup_gate.py", "--root", ".", "--json", str(output / "capability-cleanup.json")]),
+          ]
+          for name, arguments in gates:
+              run(name, [sys.executable, *arguments], timeout=180)
+          run("decision-report-write", [sys.executable, "tests/guard_command_decision_diff.py", "--write"], timeout=300)
+          run("decision-report-check", [sys.executable, "tests/guard_command_decision_diff.py", "--check"], timeout=300)
+          try:
+              regenerated_report = json.loads(report_path.read_text(encoding="utf-8"))
+              original_report["bindings"].pop("sources_sha256")
+              regenerated_report["bindings"].pop("sources_sha256")
+              semantic_code = 0 if regenerated_report == original_report else 1
+          except (KeyError, TypeError, ValueError):
+              semantic_code = 1
+          results.append({"name": "decision-report-semantic-preservation", "exit": semantic_code})
+          print(json.dumps({"publicValidation": "decision-report-semantic-preservation", "exit": semantic_code, "sourceHead": source}), flush=True)
+          (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+          main_tests = ["tests/test_cursor_frozen_hook_command.py","tests/test_cursor_hook_rebind.py","tests/test_cursor_hooks.py","tests/test_cursor_watch_hook_script.py","tests/test_guard_command_decision_diff.py","tests/test_guard_daemon_storage_liveness.py"]
+          main_modules = {Path(path).stem for path in main_tests}
+          assert len(main_tests) == 6 and len(main_modules) == 6
+          assert all(path not in roots for path in main_tests)
+          assert all(selector.split("::")[0] not in main_tests for group in configuration.groups for selector in group.selectors)
+          main_exit = run("changed-main-tests", ["uv", "run", "--no-sync", "pytest", "-q", *main_tests, "--tb=short", "--junitxml=" + str(output / "changed-main-tests.xml")], timeout=900, record=False)
+          main_counts = {}
+          try:
+              main_cases = list(ET.parse(output / "changed-main-tests.xml").getroot().iter("testcase"))
+              for case in main_cases:
+                  names = set(case.attrib.get("classname", "").split(".")) & main_modules
+                  assert len(names) == 1
+                  name = names.pop()
+                  main_counts[name] = main_counts.get(name, 0) + 1
+              assert set(main_counts) == main_modules and all(value > 0 for value in main_counts.values())
+              assert all(not any(child.tag in {"failure", "error", "skipped"} for child in case) for case in main_cases)
+          except (OSError, ET.ParseError, AssertionError):
+              main_exit = 1
+          results.append({"name": "changed-main-tests", "exit": main_exit})
+          print(json.dumps({"publicValidation": "changed-main-tests", "exit": main_exit, "sourceHead": source, "caseCounts": main_counts, "explicitFiles": 6, "registeredTypeRootsAdded": 0}), flush=True)
+          (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+          assert subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == source
+          raise SystemExit(1 if before_code or any(result["exit"] for result in results) else 0)
+          PY
+      - name: Preserve exact generated public bytes and finite check outcomes
+        if: always()
+        env:
+          RESOURCE_OBSERVATION: ${{ steps.resources.outputs.observation }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          
+          root = Path.cwd().resolve()
+          source = os.environ["PUBLIC_SOURCE_SHA"]
+          assert subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == source
+          assert subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip() == os.environ["PUBLIC_SOURCE_TREE"]
+          allowed = set(["src/codex_plugin_scanner/guard/policy_consumer_readiness_contract.py","src/codex_plugin_scanner/guard/native_policy_consumer_capture.py","src/codex_plugin_scanner/guard/policy_consumer_readiness_observation.py","src/codex_plugin_scanner/guard/policy_consumer_readiness_sync.py","tests/test_policy_consumer_readiness_contract.py","tests/test_native_policy_consumer_capture.py","tests/test_policy_consumer_readiness_observation.py","tests/test_policy_consumer_readiness_sync.py","ci/native_runtime/installed_consumer_readiness_fixture.py","ci/native_runtime/probe_installed_consumer_readiness.py","src/codex_plugin_scanner/guard/native_policy_snapshot.py","src/codex_plugin_scanner/guard/native_policy_snapshot_control.py","src/codex_plugin_scanner/guard/runtime/runner.py","tests/test_native_policy_snapshot_control.py","ci/native_runtime/installed_readiness_profile.py","ci/native_runtime/profile_installed_readiness.py","ci/native_runtime/test_installed_readiness_profile.py"])
+          report_path = "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+          allowed.add(report_path)
+          changed = subprocess.check_output(["git", "diff", "--name-only", "-z", "HEAD"]).decode("utf-8").split("\0")
+          changed = [path for path in changed if path]
+          assert set(changed).issubset(allowed), "Unexpected tracked mutation"
+          output = Path(os.environ["RUNNER_TEMP"]) / ("public-consumer-validation-" + os.environ["PYTHON_VERSION"])
+          output.mkdir(exist_ok=True)
+          records = []
+          for relative in sorted(set(changed) | {report_path}):
+              path = root / relative
+              assert path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(root)
+              data = path.read_bytes()
+              text = data.decode("utf-8", errors="strict")
+              assert len(data) <= 1048576
+              original = subprocess.check_output(["git", "rev-parse", "HEAD:" + relative], text=True).strip()
+              blob = hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+              digest = hashlib.sha256(data).hexdigest()
+              encoded = base64.b64encode(data).decode("ascii")
+              pieces = [encoded[index:index + 6000] for index in range(0, len(encoded), 6000)] or [""]
+              metadata = {"path": relative, "originalBlob": original, "gitBlob": blob, "bytes": len(data), "sha256": digest, "parts": len(pieces)}
+              records.append(metadata)
+              for index, piece in enumerate(pieces):
+                  print(json.dumps({"kind": "public-source-chunk-v1", "sourceHead": source, "python": os.environ["PYTHON_VERSION"], **metadata, "index": index, "base64": piece}, separators=(",", ":")), flush=True)
+          results_path = output / "results.json"
+          results = json.loads(results_path.read_text()) if results_path.is_file() else []
+          before = json.loads((output / "profiler-before.json").read_text(encoding="utf-8"))
+          assert before["sourceHead"] == source and before["python"] == os.environ["PYTHON_VERSION"]
+          before_ok = before.get("expectedFailureConfirmed") is True if os.environ["PYTHON_VERSION"] == "3.12" else before.get("required") is False
+          resources = json.loads(os.environ["RESOURCE_OBSERVATION"])
+          assert resources["schema"] == "source-validation-runner-resources.v1"
+          receipt = {"kind": "public-consumer-validation-v1", "runnerResources": resources, "sourceHead": source, "sourceTree": os.environ["PUBLIC_SOURCE_TREE"], "python": os.environ["PYTHON_VERSION"], "formatter": "ruff 0.15.17", "sourceContractEnvironment": {"launcher": "uv run --no-sync", "bytecodeOverridePresent": "PYTHONDONTWRITEBYTECODE" in os.environ, "pythonPathOverridePresent": "PYTHONPATH" in os.environ, "dontWriteBytecode": sys.dont_write_bytecode}, "expectedRegisteredRoots": 362, "expectedPreservedGroups": 13, "executedGroups": ["source-06", "source-08"], "explicitProfileSourceCases": 39, "explicitChangedMainTestFiles": ["tests/test_cursor_frozen_hook_command.py","tests/test_cursor_hook_rebind.py","tests/test_cursor_hooks.py","tests/test_cursor_watch_hook_script.py","tests/test_guard_command_decision_diff.py","tests/test_guard_daemon_storage_liveness.py"], "changedMainTestsInRegisteredTypeRoots": False, "profilerBefore": before, "results": results, "publicFiles": records, "nativeExecuted": False, "passed": before_ok and len(results) == 23 and all(result["exit"] == 0 for result in results)}
+          (output / "receipt.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(receipt, separators=(",", ":")), flush=True)
+          PY
+      - name: Preserve finite validation records
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-consumer-source-${{ matrix.python }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-consumer-validation-${{ matrix.python }}/*.json
+          if-no-files-found: error
+          retention-days: 7

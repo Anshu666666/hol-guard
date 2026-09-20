@@ -1,0 +1,60 @@
+name: RSP091 real Unix peer identity controls
+on:
+  push:
+    branches: ["codex/pr2974-rsp091-real-unix-peers-20260920-v3"]
+permissions:
+  contents: read
+jobs:
+  unix-peer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: linux-x64
+            runner: ubuntu-24.04
+          - lane: macos-x64
+            runner: macos-15-intel
+          - lane: macos-arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "641bcd6fb8e7d6149832b6ce07b421655f3351e5"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - name: Install exact build and formatter toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+      - name: Verify diagnostic admission controls
+        run: python -m unittest discover -v -s driver/rsp091-validation -p test_driver.py > "$RUNNER_TEMP/rsp091-driver-controls.log" 2>&1
+      - name: Build one original-feature test binary and run four exact parent controls
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/rsp091-target
+          SOURCE_SHA: "641bcd6fb8e7d6149832b6ce07b421655f3351e5"
+          SOURCE_TREE: "6a317d6a591f3505cec4431754761b60259c9b67"
+          LANE: ${{ matrix.lane }}
+        run: python driver/rsp091-validation/run.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: rsp091-unix-peer-${{ matrix.lane }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/rsp091-validation/
+            ${{ runner.temp }}/rsp091-driver-controls.log

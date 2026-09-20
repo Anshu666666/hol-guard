@@ -1,0 +1,128 @@
+name: PR2974 original Windows checkpoint version-bound cause diagnostic
+
+on:
+  push:
+    branches:
+      - codex/pr2974-windows-checkpoint-version-4d10758
+    paths:
+      - .github/workflows/pr2974-windows-checkpoint-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  original-installed-probe:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+    steps:
+      - name: Preserve committed line endings
+        run: git config --global core.autocrlf false
+      - name: Check out exact diagnostic
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-src
+          persist-credentials: false
+      - name: Check out untouched original source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 4d10758e2cb44e5afa72a08aa631a02541dad534
+          path: source-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Create frozen dependency environment
+        timeout-minutes: 3
+        working-directory: source-src
+        run: uv sync --frozen --extra dev --no-install-project --python 3.12
+      - name: Retrieve only the pinned original Windows artifact
+        timeout-minutes: 2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path checkpoint-evidence -ErrorAction Stop | Out-Null
+          python -I diagnostic-src/ci/native_runtime/windows_checkpoint_artifact.py `
+            --output "$env:GITHUB_WORKSPACE/checkpoint-evidence/original"
+      - name: Install exact original wheel with mandatory hash checking
+        timeout-minutes: 4
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          $uv = (Get-Command uv -ErrorAction Stop).Source
+          & "$env:GITHUB_WORKSPACE/source-src/.venv/Scripts/python.exe" -I `
+            diagnostic-src/ci/native_runtime/windows_checkpoint_diagnostic.py --install --uv "$uv" `
+            --source-root "$env:GITHUB_WORKSPACE/source-src" `
+            --harness-root "$env:GITHUB_WORKSPACE/diagnostic-src" `
+            --harness-sha "$env:DIAGNOSTIC_SHA" `
+            --original-artifacts "$env:GITHUB_WORKSPACE/checkpoint-evidence/original" `
+            --output "$env:GITHUB_WORKSPACE/checkpoint-evidence/run"
+          exit $LASTEXITCODE
+      - name: Run all independent readonly source checks
+        timeout-minutes: 2
+        working-directory: diagnostic-src
+        run: |
+          $python = "$env:GITHUB_WORKSPACE/source-src/.venv/Scripts/python.exe"
+          $files = @(
+            "ci/native_runtime/windows_checkpoint_observation.py",
+            "ci/native_runtime/test_windows_checkpoint_observation.py",
+            "ci/native_runtime/windows_checkpoint_artifact.py",
+            "ci/native_runtime/test_windows_checkpoint_artifact.py",
+            "ci/native_runtime/windows_checkpoint_identity.py",
+            "ci/native_runtime/windows_checkpoint_diagnostic.py"
+          )
+          $failed = $false
+          & $python -m ruff check @files
+          $lintStatus = $LASTEXITCODE
+          if ($lintStatus -ne 0) { $failed = $true }
+          & $python -m ruff format --check --diff @files
+          $formatStatus = $LASTEXITCODE
+          if ($formatStatus -ne 0) { $failed = $true }
+          Write-Output "checkpoint_static_status lint=$lintStatus format=$formatStatus"
+          if ($failed) { exit 1 }
+      - name: Run finite observer and artifact controls
+        timeout-minutes: 2
+        working-directory: diagnostic-src
+        run: |
+          & "$env:GITHUB_WORKSPACE/source-src/.venv/Scripts/python.exe" -m pytest `
+            -q -o addopts= -o junit_family=xunit1 --noconftest -p no:cacheprovider `
+            --rootdir=ci/native_runtime `
+            --basetemp="$env:GITHUB_WORKSPACE/checkpoint-evidence/controls-temp" `
+            --junitxml="$env:GITHUB_WORKSPACE/checkpoint-evidence/controls.xml" `
+            ci/native_runtime/test_windows_checkpoint_observation.py `
+            ci/native_runtime/test_windows_checkpoint_artifact.py
+          exit $LASTEXITCODE
+      - name: Run one unchanged original 21-route probe under the 60-second owner
+        timeout-minutes: 4
+        env:
+          DIAGNOSTIC_SHA: ${{ github.sha }}
+        run: |
+          & "$env:GITHUB_WORKSPACE/source-src/.venv/Scripts/python.exe" -I `
+            diagnostic-src/ci/native_runtime/windows_checkpoint_diagnostic.py `
+            --source-root "$env:GITHUB_WORKSPACE/source-src" `
+            --harness-root "$env:GITHUB_WORKSPACE/diagnostic-src" `
+            --harness-sha "$env:DIAGNOSTIC_SHA" `
+            --original-artifacts "$env:GITHUB_WORKSPACE/checkpoint-evidence/original" `
+            --output "$env:GITHUB_WORKSPACE/checkpoint-evidence/run"
+          exit $LASTEXITCODE
+      - name: Preserve every actual outcome and original artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-windows-checkpoint-version-cause-4d10758
+          path: checkpoint-evidence/
+          if-no-files-found: error
+          retention-days: 14

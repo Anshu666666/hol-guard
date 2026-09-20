@@ -54,15 +54,18 @@ jobs:
           if [[ -z "$VERSION" ]]; then
             VERSION="${TAG_NAME#v}"
           fi
-          if [[ -z "$VERSION" || -z "$SHA" ]]; then
-            echo "Release Please did not report a version and SHA" >&2
+          if [[ -z "$TAG_NAME" ]]; then
+            TAG_NAME="v${VERSION}"
+          fi
+          if [[ -z "$VERSION" || -z "$SHA" || -z "$TAG_NAME" ]]; then
+            echo "Release Please did not report a version, tag, and SHA" >&2
             exit 1
           fi
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release version is not a canonical stable X.Y.Z" >&2
             exit 1
           fi
-          gh workflow run "Publish to PyPI" --repo "$GITHUB_REPOSITORY" --ref main \
+          gh workflow run "Publish to PyPI" --repo "$GITHUB_REPOSITORY" --ref "$TAG_NAME" \
             -f release_channel=stable \
             -f release_train=main \
             -f release_version="$VERSION" \

@@ -57,6 +57,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           RELEASE_CHANNEL: ${{ github.event.inputs.release_channel }}
           RELEASE_TRAIN: ${{ github.event.inputs.release_train }}
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
           EXPECTED_SHA: ${{ github.event.inputs.expected_sha }}
         run: |
           if [[ "$GITHUB_RUN_ATTEMPT" != "1" ]]; then
@@ -73,6 +74,12 @@ jobs:
             stable:main:refs/heads/main)
               if [[ "$GITHUB_ACTOR_ID" != "6068672" && "$GITHUB_ACTOR_ID" != "301892678" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
                 echo "Release dispatch actor is not an authorized maintainer" >&2
+                exit 1
+              fi
+              ;;
+            "stable:main:refs/tags/v${RELEASE_VERSION}")
+              if [[ "$GITHUB_ACTOR_ID" != "41898282" ]]; then
+                echo "Tagged stable dispatches are limited to the Actions bot" >&2
                 exit 1
               fi
               ;;
@@ -199,8 +206,12 @@ jobs:
                 echo "Release dispatch actor is not an authorized maintainer" >&2
                 exit 1
               fi
-              if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              if [[ "$GITHUB_REF" != "refs/heads/main" && "$GITHUB_REF" != "refs/tags/v${RELEASE_VERSION}" ]]; then
                 echo "Stable releases must run from refs/heads/main" >&2
+                exit 1
+              fi
+              if [[ "$GITHUB_REF" == "refs/tags/v${RELEASE_VERSION}" && "$GITHUB_ACTOR_ID" != "41898282" ]]; then
+                echo "Tagged stable dispatches are limited to the Actions bot" >&2
                 exit 1
               fi
               PYPI_VERSIONS=$(uv run --no-sync python scripts/verify_release_registry.py \
@@ -213,12 +224,20 @@ jobs:
                 --argjson pypi "$PYPI_VERSIONS" \
                 --argjson testpypi "$TESTPYPI_VERSIONS" \
                 --argjson tags "$TAG_VERSIONS" \
-                '$pypi + $testpypi + $tags | unique')
+                --arg candidate "$RELEASE_VERSION" \
+                '$pypi + $testpypi + ($tags | map(select(. != $candidate))) | unique')
               EXPECTED_VERSION=$(uv run --no-sync python scripts/compute_main_release_version.py \
                 --base-version "$BASE_VERSION" <<< "$VERSIONS")
               if [[ "$RELEASE_VERSION" != "$EXPECTED_VERSION" ]]; then
                 echo "Stable release version must match the next registry-derived version: ${EXPECTED_VERSION}" >&2
                 exit 1
+              fi
+              if git rev-parse -q --verify "v${RELEASE_VERSION}^{commit}" >/dev/null; then
+                tag_sha=$(git rev-parse "v${RELEASE_VERSION}^{commit}")
+                if [[ "$tag_sha" != "$SOURCE_SHA" ]]; then
+                  echo "Stable tag does not target the dispatch source" >&2
+                  exit 1
+                fi
               fi
               VERSION="$RELEASE_VERSION"
             else
@@ -433,7 +452,7 @@ jobs:
           needs.build.outputs.channel == 'stable' &&
           github.event_name == 'workflow_dispatch' &&
           github.run_attempt == 1 &&
-          github.ref == 'refs/heads/main' &&
+          (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
           github.event.inputs.release_channel == 'stable' &&
           github.event.inputs.release_train == 'main'
         )
@@ -1109,7 +1128,7 @@ jobs:
       vars.MAIN_TESTPYPI_ENABLED == 'true' &&
       github.event_name == 'workflow_dispatch' &&
       github.run_attempt == 1 &&
-      github.ref == 'refs/heads/main' &&
+      (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
       github.event.inputs.release_channel == 'stable' &&
       github.event.inputs.release_train == 'main' &&
       needs.build.result == 'success' &&
@@ -1205,7 +1224,7 @@ jobs:
       vars.RELEASE_PUBLISHING_ENABLED == 'true' &&
       github.event_name == 'workflow_dispatch' &&
       github.run_attempt == 1 &&
-      github.ref == 'refs/heads/main' &&
+      (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
       github.event.inputs.release_channel == 'stable' &&
       github.event.inputs.release_train == 'main' &&
       needs.build.result == 'success' &&
@@ -1254,7 +1273,7 @@ jobs:
       vars.RELEASE_PUBLISHING_ENABLED == 'true' &&
       github.event_name == 'workflow_dispatch' &&
       github.run_attempt == 1 &&
-      github.ref == 'refs/heads/main' &&
+      (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
       github.event.inputs.release_channel == 'stable' &&
       github.event.inputs.release_train == 'main' &&
       needs.build.result == 'success' &&
@@ -1420,7 +1439,7 @@ jobs:
       vars.RELEASE_PUBLISHING_ENABLED == 'true' &&
       github.event_name == 'workflow_dispatch' &&
       github.run_attempt == 1 &&
-      github.ref == 'refs/heads/main' &&
+      (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
       github.event.inputs.release_channel == 'stable' &&
       github.event.inputs.release_train == 'main' &&
       needs.build.result == 'success' &&
@@ -1492,10 +1511,18 @@ jobs:
               exit 1
             fi
             existing_dir=$(mktemp -d)
-            if [[ "$(jq -r '.assets | length' <<< "$release_json")" == "0" ]]; then
-              gh release upload "$tag" "${local_files[@]}"
+            gh release download "$tag" --dir "$existing_dir" || true
+            missing_files=()
+            for local_file in "${local_files[@]}"; do
+              remote_file="$existing_dir/$(basename "$local_file")"
+              if [[ ! -f "$remote_file" ]]; then
+                missing_files+=("$local_file")
+              fi
+            done
+            if [[ "${#missing_files[@]}" -gt 0 ]]; then
+              gh release upload "$tag" "${missing_files[@]}"
+              gh release download "$tag" --dir "$existing_dir"
             fi
-            gh release download "$tag" --dir "$existing_dir"
             for local_file in "${local_files[@]}"; do
               remote_file="$existing_dir/$(basename "$local_file")"
               [[ -f "$remote_file" ]]
@@ -1650,7 +1677,7 @@ jobs:
         (
           github.event_name == 'workflow_dispatch' &&
           github.run_attempt == 1 &&
-          github.ref == 'refs/heads/main' &&
+          (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)) &&
           github.event.inputs.release_channel == 'stable' &&
           github.event.inputs.release_train == 'main' &&
           needs.build.outputs.channel == 'stable' &&

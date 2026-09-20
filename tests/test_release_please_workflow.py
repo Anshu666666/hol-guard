@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import yaml
+from tests.release_workflow_helpers import load_workflow
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_PLEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release-please.yml"
@@ -15,14 +15,8 @@ RELEASE_PLEASE_MANIFEST = ROOT / ".release-please-manifest.json"
 PINNED_RELEASE_PLEASE_ACTION = "googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071"
 
 
-def _workflow(path: Path) -> dict[object, object]:
-    workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
-    assert isinstance(workflow, dict)
-    return workflow
-
-
 def test_release_please_runs_on_main_pushes_only() -> None:
-    workflow = _workflow(RELEASE_PLEASE_WORKFLOW)
+    workflow = load_workflow(RELEASE_PLEASE_WORKFLOW)
 
     assert workflow["name"] == "Release Please"
     assert workflow["permissions"] == {}
@@ -34,7 +28,7 @@ def test_release_please_runs_on_main_pushes_only() -> None:
 
 
 def test_release_please_job_is_pinned_and_least_privilege() -> None:
-    jobs = _workflow(RELEASE_PLEASE_WORKFLOW)["jobs"]
+    jobs = load_workflow(RELEASE_PLEASE_WORKFLOW)["jobs"]
     release = jobs["release-please"]
     dispatch = jobs["dispatch-stable-publish"]
 
@@ -58,7 +52,8 @@ def test_release_please_job_is_pinned_and_least_privilege() -> None:
     assert "github.run_attempt == 1" in dispatch["if"]
     run = dispatch["steps"][0]["run"]
     assert 'gh workflow run "Publish to PyPI"' in run
-    assert "--ref main" in run
+    assert '--ref "$TAG_NAME"' in run
+    assert "--ref main" not in run
     assert "-f release_channel=stable" in run
     assert "-f release_train=main" in run
     assert '-f release_version="$VERSION"' in run
@@ -70,6 +65,8 @@ def test_release_please_config_versions_python_and_synced_metadata() -> None:
     config = json.loads(RELEASE_PLEASE_CONFIG.read_text(encoding="utf-8"))
     manifest = json.loads(RELEASE_PLEASE_MANIFEST.read_text(encoding="utf-8"))
     package = config["packages"]["."]
+    lockfile = (ROOT / "uv.lock").read_text(encoding="utf-8")
+    version_module = (ROOT / "src/codex_plugin_scanner/version.py").read_text(encoding="utf-8")
 
     assert config["include-v-in-tag"] is True
     assert config["include-component-in-tag"] is False
@@ -82,10 +79,12 @@ def test_release_please_config_versions_python_and_synced_metadata() -> None:
         "uv.lock",
     ]
     assert manifest == {".": "3.0.193"}
+    assert 'version = "3.0.193"  # x-release-please-version' in lockfile
+    assert '__version__ = "3.0.193"  # x-release-please-version' in version_module
 
 
 def test_stable_dispatch_allows_actions_bot_while_alpha_stays_maintainer_only() -> None:
-    publish = _workflow(PUBLISH_WORKFLOW)
+    publish = load_workflow(PUBLISH_WORKFLOW)
     authorize = publish["jobs"]["authorize-release"]["steps"][0]["run"]
     compute = next(
         step["run"] for step in publish["jobs"]["build"]["steps"] if step.get("name") == "Compute publish version"
@@ -100,18 +99,40 @@ def test_stable_dispatch_allows_actions_bot_while_alpha_stays_maintainer_only() 
     assert "41898282" not in alpha_gate
     assert '"$GITHUB_ACTOR_ID" != "41898282"' in stable_gate
     assert '"$GITHUB_ACTOR_ID" != "41898282"' in compute
+    assert "refs/tags/v${RELEASE_VERSION}" in authorize
+    assert "Tagged stable dispatches are limited to the Actions bot" in authorize
     assert compute.index('"$CHANNEL" == "stable" && "$TRAIN" == "main"') < compute.index("41898282")
     assert compute.index("VALIDATOR_ARGS=(") < compute.index("41898282")
+    assert '--arg candidate "$RELEASE_VERSION"' in compute
+    assert "$tags | map(select(. != $candidate))" in compute
+    assert "Stable tag does not target the dispatch source" in compute
 
 
 def test_existing_notes_only_github_release_receives_stable_assets() -> None:
     stable_run = next(
         step["run"]
-        for step in _workflow(PUBLISH_WORKFLOW)["jobs"]["release-main"]["steps"]
+        for step in load_workflow(PUBLISH_WORKFLOW)["jobs"]["release-main"]["steps"]
         if step.get("name") == "Create discoverable main release"
     )
 
     assert 'gh release view "$tag" --json isDraft,isPrerelease,assets' in stable_run
-    assert 'gh release upload "$tag"' in stable_run
-    assert ".assets | length" in stable_run
+    assert 'gh release upload "$tag" "${missing_files[@]}"' in stable_run
+    assert 'missing_files+=("$local_file")' in stable_run
     assert 'gh release create "$tag"' in stable_run
+
+
+def test_stable_jobs_accept_the_release_please_tag_ref() -> None:
+    jobs = load_workflow(PUBLISH_WORKFLOW)["jobs"]
+    tag_ref = "github.ref == format('refs/tags/v{0}', github.event.inputs.release_version)"
+    for job_name in (
+        "build-native-guard-wheels",
+        "publish-main-testpypi",
+        "reserve-main-tag",
+        "publish-main-pypi",
+        "release-main",
+        "publish-container",
+    ):
+        condition = jobs[job_name]["if"]
+        assert "github.ref == 'refs/heads/main'" in condition
+        assert tag_ref in condition
+        assert f"(github.ref == 'refs/heads/main' || {tag_ref})" in condition

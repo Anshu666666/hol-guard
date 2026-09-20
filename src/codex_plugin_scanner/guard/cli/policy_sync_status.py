@@ -4,6 +4,26 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from ..policy_bundle_parser import policy_bundle_rejection_message
+
+
+def policy_rejection_diagnostic(reason: object) -> dict[str, object] | None:
+    """Explain only recognized bundle codes, never persisted message content."""
+    if not isinstance(reason, str) or len(reason) > 96:
+        return None
+    remediation = policy_bundle_rejection_message(reason)
+    if remediation is None:
+        return None
+    return {
+        "code": reason,
+        # A rejected signature authenticates no individual rule identifier.
+        "rule_id": None,
+        "field_path": "$.verifier"
+        if reason in {"bundle_signature_invalid", "invalid_signature_encoding", "invalid_verifier"}
+        else "$",
+        "remediation": remediation,
+    }
+
 
 def _optional_string(value: object) -> str | None:
     return value if isinstance(value, str) and value else None
@@ -15,12 +35,13 @@ def cloud_policy_sync_fields(
     sync_summary: Mapping[str, object],
     cached_policy_bundle_error: str | None,
 ) -> dict[str, object]:
+    reason = cached_policy_bundle_error or _optional_string(policy_bundle_last_error.get("reason"))
     return {
         "cloud_policy_bundle_hash": _optional_string(policy_bundle.get("bundleHash")),
         "cloud_policy_bundle_version": _optional_string(policy_bundle.get("bundleVersion")),
         "cloud_policy_rollout_state": _optional_string(policy_bundle.get("rolloutState")),
-        "cloud_policy_sync_error": cached_policy_bundle_error
-        or _optional_string(policy_bundle_last_error.get("reason")),
+        "cloud_policy_sync_error": reason,
+        "policy_rejection_diagnostic": policy_rejection_diagnostic(reason),
         "receipt_upload_status": _optional_string(sync_summary.get("receipt_upload_status")),
         "policy_validation_status": _optional_string(sync_summary.get("policy_validation_status")),
         "policy_application_status": _optional_string(sync_summary.get("policy_application_status")),
@@ -52,4 +73,7 @@ def sync_output_rows(payload: Mapping[str, object]) -> list[tuple[str, str]]:
         rows.append(("Policy application", str(payload.get("policy_application_status"))))
     if payload.get("policy_rejection_reason"):
         rows.append(("Policy rejection", str(payload.get("policy_rejection_reason"))))
+    diagnostic = policy_rejection_diagnostic(payload.get("policy_rejection_reason"))
+    if diagnostic is not None:
+        rows.append(("Next step", str(diagnostic["remediation"])))
     return rows

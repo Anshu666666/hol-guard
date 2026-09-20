@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import cast
 from urllib.error import HTTPError
 
+from .policy_sync_status import policy_rejection_diagnostic
+
 
 def sync_failure_payload(error: BaseException, *, message: str | None = None) -> dict[str, object]:
     """Inspect explicit causes only; never consume response bodies or headers."""
@@ -36,4 +38,9 @@ def sync_success_payload(payload: dict[str, object]) -> dict[str, object]:
             "policy_rejection_reason",
         ):
             _ = payload.setdefault(key, summary.get(key))
+    diagnostic = policy_rejection_diagnostic(payload.get("policy_rejection_reason"))
+    if diagnostic is not None:
+        payload["policy_rejection_diagnostic"] = diagnostic
+    else:
+        payload.pop("policy_rejection_diagnostic", None)
     return payload

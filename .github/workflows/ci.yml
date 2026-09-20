@@ -416,8 +416,13 @@ jobs:
           tests/test_guard_runtime_hook_scheduler.py
           tests/test_guard_hook_process_runner.py::test_scheduler_and_runner_complete_48_routine_reviews_without_capacity_denial
           tests/test_guard_daemon_storage_liveness.py::test_locked_storage_hook_burst_fails_safe_without_stranding_daemon
-          tests/test_native_policy_snapshot_default_capture_worker.py::test_default_worker_admits_workspace_after_startup_status_writes
           tests/test_guard_continuation_contract.py
+          --no-cov --tb=short
+      - name: Run required authority timing cases untraced
+        # Keep the bounded admission report independent of unrelated large parameter IDs.
+        run: >-
+          uv run --no-sync pytest
+          tests/test_native_policy_snapshot_default_capture_worker.py::test_default_worker_admits_workspace_after_startup_status_writes
           --no-cov --junitxml=pytest-scheduling-sensitive.xml --tb=short
       - name: Verify required authority timing cases executed
         run: uv run --no-sync python scripts/ci/verify_scheduling_sensitive_outcomes.py --junit pytest-scheduling-sensitive.xml

@@ -75,7 +75,13 @@ def test_ci_workflow_cancels_stale_runs_and_uses_precomputed_affinity_shards() -
     assert SCHEDULING_SENSITIVE_NODE in scheduling_job
     assert f"--deselect {AUTHORITY_TIMING_NODE}" in tests_job
     assert AUTHORITY_TIMING_NODE in scheduling_job
-    assert "--no-cov --junitxml=pytest-scheduling-sensitive.xml" in scheduling_job
+    general_step, authority_step = scheduling_job.split("      - name: Run required authority timing cases untraced\n")
+    authority_step = authority_step.split("      - name: Verify required authority timing cases executed\n")[0]
+    assert AUTHORITY_TIMING_NODE not in general_step
+    assert "--no-cov --tb=short" in general_step
+    assert "--junitxml=" not in general_step
+    assert AUTHORITY_TIMING_NODE in authority_step and authority_step.count("tests/") == 1
+    assert "--no-cov --junitxml=pytest-scheduling-sensitive.xml" in authority_step
     assert "--cov " not in scheduling_job and "GUARD_PYTEST_UNDER_COVERAGE" not in scheduling_job
     assert "verify_scheduling_sensitive_outcomes.py --junit pytest-scheduling-sensitive.xml" in scheduling_job
 

@@ -36,6 +36,7 @@ from codex_plugin_scanner.guard.runtime.policy_runtime_posture import local_poli
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(_ROOT))
 from ci.native_runtime.installed_scoped_policy_fixture import COMMANDS, SignedPolicyFixture  # noqa: E402
+from ci.native_runtime.native_client_stage_diagnostic import observe_client_stages  # noqa: E402
 from scripts.native_publication_diagnostic import (  # noqa: E402
     cleanup_preserving_failure,
     observe_publication,
@@ -83,7 +84,7 @@ def _initial_readiness_elapsed(before: float, after: float) -> float | None:
 
 def require_initial_readiness(publisher: NativePolicySnapshotPublisher, workspace: Path) -> None:
     """Observe the original first publication; never retry or prewarm it."""
-    with observe_publication(publisher) as observation:
+    with observe_publication(publisher) as observation, observe_client_stages() as client_stages:
         started = time.monotonic()
         deadline = started + MAX_READINESS_P95_MS / 1000
         publisher.register_workspace(workspace)
@@ -109,6 +110,8 @@ def require_initial_readiness(publisher: NativePolicySnapshotPublisher, workspac
                     file=sys.stderr,
                 )
             report_publication_failure(observation, publisher, window="before_publisher_start")
+            with suppress(BaseException):
+                client_stages.report_failure()
         require(ready, "readiness_deadline")
 
 

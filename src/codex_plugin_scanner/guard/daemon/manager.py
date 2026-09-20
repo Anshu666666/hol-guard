@@ -502,6 +502,7 @@ def ensure_guard_daemon(
                     timeout=remaining_start_time,
                     process=process,
                     executable=executable,
+                    **({"expected_creation_time": pending_creation_time} if pending_creation_time is not None else {}),
                 )
                 if url is not None:
                     if not _clear_spawned_guard_daemon_pending_launch(
@@ -1019,11 +1020,13 @@ def _live_guard_daemon_url(
     *,
     require_current_runtime: bool = True,
     expected_pid: int | None = None,
+    expected_creation_time: int | None = None,
 ) -> str | None:
     identity = _live_guard_daemon_identity(
         guard_home,
         require_current_runtime=require_current_runtime,
         expected_pid=expected_pid,
+        **({"expected_creation_time": expected_creation_time} if expected_creation_time is not None else {}),
     )
     return identity[0] if identity is not None else None
 
@@ -1033,6 +1036,7 @@ def _live_guard_daemon_identity(
     *,
     require_current_runtime: bool = True,
     expected_pid: int | None = None,
+    expected_creation_time: int | None = None,
     health_timeout: float = 1.0,
 ) -> tuple[str, str] | None:
     identity = _load_authenticated_daemon_identity(guard_home)
@@ -1050,7 +1054,11 @@ def _live_guard_daemon_identity(
     pid = payload.get("pid")
     if not isinstance(pid, int) or pid <= 0 or not _guard_daemon_pid_is_running(pid):
         return None
-    if expected_pid is not None and not _guard_daemon_pid_is_spawned_launch(pid, expected_pid):
+    if expected_pid is not None and not _guard_daemon_pid_is_spawned_launch(
+        pid,
+        expected_pid,
+        **({"expected_creation_time": expected_creation_time} if expected_creation_time is not None else {}),
+    ):
         return None
     url = f"http://127.0.0.1:{port}"
     try:
@@ -2810,13 +2818,22 @@ def _guard_daemon_pid_is_running(pid: int) -> bool:
     return True
 
 
-def _guard_daemon_parent_pid(pid: int) -> int | None:
+def _guard_daemon_parent_pid(
+    pid: int,
+    *,
+    expected_parent_pid: int | None = None,
+    expected_parent_creation_time: int | None = None,
+) -> int | None:
     """Return the parent PID for a live process, or ``None`` when it cannot be proven."""
 
     if pid <= 0:
         return None
     if os.name == "nt":
-        return None
+        return windows_processes.windows_process_parent_pid(
+            pid,
+            expected_parent_pid=expected_parent_pid,
+            expected_parent_creation_time=expected_parent_creation_time,
+        )
     ps_path = _trusted_posix_ps_path()
     if ps_path is None:
         return None
@@ -2830,13 +2847,27 @@ def _guard_daemon_parent_pid(pid: int) -> int | None:
     return parent_pid if parent_pid > 0 else None
 
 
-def _guard_daemon_pid_is_spawned_launch(pid: int, expected_pid: int) -> bool:
+def _guard_daemon_pid_is_spawned_launch(
+    pid: int,
+    expected_pid: int,
+    *,
+    expected_creation_time: int | None = None,
+) -> bool:
     """Match the launched handle, including a PyInstaller one-file child."""
 
     if expected_pid <= 0:
         return False
     if pid == expected_pid:
         return True
+    if os.name == "nt":
+        return (
+            _guard_daemon_parent_pid(
+                pid,
+                expected_parent_pid=expected_pid,
+                expected_parent_creation_time=expected_creation_time,
+            )
+            == expected_pid
+        )
     return _guard_daemon_parent_pid(pid) == expected_pid and _guard_daemon_pid_is_running(expected_pid)
 
 
@@ -3001,6 +3032,7 @@ def _wait_for_started_guard_daemon_url(
     timeout: float,
     process: subprocess.Popen[bytes],
     executable: Path | None,
+    expected_creation_time: int | None = None,
 ) -> str | None:
     if executable is None:
         return _wait_for_guard_daemon_url(
@@ -3014,6 +3046,7 @@ def _wait_for_started_guard_daemon_url(
         process=process,
         require_current_runtime=False,
         expected_pid=process.pid,
+        **({"expected_creation_time": expected_creation_time} if expected_creation_time is not None else {}),
     )
 
 
@@ -3024,6 +3057,7 @@ def _wait_for_guard_daemon_url(
     process: subprocess.Popen[bytes] | None = None,
     require_current_runtime: bool = True,
     expected_pid: int | None = None,
+    expected_creation_time: int | None = None,
 ) -> str | None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -3034,6 +3068,7 @@ def _wait_for_guard_daemon_url(
                 guard_home,
                 require_current_runtime=False,
                 expected_pid=expected_pid,
+                **({"expected_creation_time": expected_creation_time} if expected_creation_time is not None else {}),
             )
         )
         if url is not None:

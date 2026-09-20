@@ -9,7 +9,7 @@ import runpy
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -390,6 +390,7 @@ def test_non_frozen_runtime_does_not_patch_daemon_inventory(monkeypatch: pytest.
 def test_spawned_launch_accepts_the_pyinstaller_onefile_child(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(manager, "os", SimpleNamespace(name="posix"))
     monkeypatch.setattr(manager, "_guard_daemon_parent_pid", lambda pid: 4242 if pid == 4243 else None)
     monkeypatch.setattr(manager, "_guard_daemon_pid_is_running", lambda pid: pid in {4242, 4243})
 
@@ -426,6 +427,7 @@ def test_live_identity_accepts_expected_pid_as_the_frozen_bootloader_parent(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(manager, "os", SimpleNamespace(name="posix"))
     monkeypatch.setattr(
         manager,
         "_load_authenticated_daemon_identity",

@@ -27,6 +27,149 @@ class _WindowsUnicodeString(ctypes.Structure):
     ]
 
 
+class _WindowsProcessBasicInformation(ctypes.Structure):
+    _fields_ = [
+        ("exit_status", ctypes.c_int32),
+        ("peb_base_address", ctypes.c_void_p),
+        ("affinity_mask", ctypes.c_size_t),
+        ("base_priority", ctypes.c_int32),
+        ("unique_process_id", ctypes.c_size_t),
+        ("inherited_from_unique_process_id", ctypes.c_size_t),
+    ]
+
+
+class _WindowsProcessFileTime(ctypes.Structure):
+    _fields_ = [("low", ctypes.c_uint32), ("high", ctypes.c_uint32)]
+
+
+def _load_parent_process_apis() -> tuple[Any, Any, Any, Any, Any] | None:
+    if os.name != "nt":
+        return None
+    win_dll = getattr(ctypes, "WinDLL", None)
+    if win_dll is None:
+        return None
+    try:
+        kernel32 = win_dll("kernel32", use_last_error=True)
+        open_process = kernel32.OpenProcess
+        open_process.argtypes = [ctypes.c_uint32, ctypes.c_int32, ctypes.c_uint32]
+        open_process.restype = ctypes.c_void_p
+        query_information = win_dll("ntdll", use_last_error=True).NtQueryInformationProcess
+        query_information.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.POINTER(ctypes.c_uint32),
+        ]
+        query_information.restype = ctypes.c_int32
+        get_times = kernel32.GetProcessTimes
+        get_times.argtypes = [ctypes.c_void_p, *([ctypes.POINTER(_WindowsProcessFileTime)] * 4)]
+        get_times.restype = ctypes.c_int32
+        wait = kernel32.WaitForSingleObject
+        wait.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        wait.restype = ctypes.c_uint32
+        close = kernel32.CloseHandle
+        close.argtypes = [ctypes.c_void_p]
+        close.restype = ctypes.c_int32
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+    return open_process, query_information, get_times, wait, close
+
+
+def _parent_information(handle: object, query: Any, pid: int) -> int | None:
+    information = _WindowsProcessBasicInformation()
+    returned = ctypes.c_uint32()
+    if int(query(handle, 0, ctypes.byref(information), ctypes.sizeof(information), ctypes.byref(returned))) != 0:
+        return None
+    parent_pid = int(information.inherited_from_unique_process_id)
+    if returned.value != ctypes.sizeof(information) or int(information.unique_process_id) != pid:
+        return None
+    return parent_pid if 0 < parent_pid <= 0xFFFFFFFF and parent_pid != pid else None
+
+
+def _creation_time_from_handle(handle: object, get_times: Any) -> int | None:
+    creation, exited, kernel, user = (_WindowsProcessFileTime() for _ in range(4))
+    if not get_times(handle, ctypes.byref(creation), ctypes.byref(exited), ctypes.byref(kernel), ctypes.byref(user)):
+        return None
+    value = (int(creation.high) << 32) | int(creation.low)
+    return value if value > 0 else None
+
+
+def windows_process_parent_pid(
+    pid: int,
+    *,
+    expected_parent_pid: int | None,
+    expected_parent_creation_time: int | None,
+) -> int | None:
+    """Prove one live child belongs to the exact already-recorded launcher.
+
+    Native parent IDs alone can outlive a parent and be reused. Retain both
+    handles, bind the parent's creation time, and refuse unknown liveness.
+    """
+    if (
+        type(pid) is not int
+        or not 0 < pid <= 0xFFFFFFFF
+        or type(expected_parent_pid) is not int
+        or not 0 < expected_parent_pid <= 0xFFFFFFFF
+        or pid == expected_parent_pid
+        or type(expected_parent_creation_time) is not int
+        or not 0 < expected_parent_creation_time < 2**64
+    ):
+        return None
+    apis = _load_parent_process_apis()
+    if apis is None:
+        return None
+    open_process, query, get_times, wait, close = apis
+    handles: list[object] = []
+    result = None
+    closed = True
+    try:
+        child = open_process(_WINDOWS_PROCESS_QUERY_LIMITED_INFORMATION | 0x00100000, False, pid)
+        if not child:
+            return None
+        handles.append(child)
+        if int(wait(child, 0)) != 0x00000102:
+            return None
+        parent_pid = _parent_information(child, query, pid)
+        if parent_pid != expected_parent_pid:
+            return None
+        child_creation = _creation_time_from_handle(child, get_times)
+        if child_creation is None:
+            return None
+        parent = open_process(_WINDOWS_PROCESS_QUERY_LIMITED_INFORMATION | 0x00100000, False, parent_pid)
+        if not parent:
+            return None
+        handles.append(parent)
+        if int(wait(parent, 0)) != 0x00000102:
+            return None
+        parent_creation = _creation_time_from_handle(parent, get_times)
+        if (
+            parent_creation is None
+            or parent_creation != expected_parent_creation_time
+            or parent_creation > child_creation
+        ):
+            return None
+        if (
+            _parent_information(child, query, pid) != expected_parent_pid
+            or _creation_time_from_handle(child, get_times) != child_creation
+            or _creation_time_from_handle(parent, get_times) != expected_parent_creation_time
+            or int(wait(child, 0)) != 0x00000102
+            or int(wait(parent, 0)) != 0x00000102
+        ):
+            return None
+        result = parent_pid
+    except (OSError, OverflowError, TypeError, ValueError):
+        return None
+    finally:
+        for handle in reversed(handles):
+            try:
+                if not close(handle):
+                    closed = False
+            except (OSError, TypeError, ValueError):
+                closed = False
+    return result if closed else None
+
+
 def native_windows_process_inventory_available() -> bool:
     """Return whether the native process APIs can be loaded on this host."""
 
@@ -291,4 +434,5 @@ __all__ = [
     "native_windows_process_inventory_available",
     "windows_process_command_line",
     "windows_process_command_line_inventory",
+    "windows_process_parent_pid",
 ]

@@ -1,6 +1,6 @@
 """Separate source-level diagnostics after an original installed readiness failure.
 
-Two predeclared fresh-process trials retain the original readiness function and
+Three predeclared fresh-process trials retain the original readiness function and
 400 ms deadline. Profiler timings include overhead and may finish after that
 deadline. These diagnostic trials never establish platform or SLO acceptance.
 """
@@ -35,7 +35,7 @@ from ci.native_runtime.probe_installed_scoped_policy import (  # noqa: E402
 from scripts.native_slo_session import stop_native_resident  # noqa: E402
 
 _REPORT_LIMIT = 32_768
-_TRIALS = ("control", "profiled")
+_TRIALS = ("control", "start", "publication")
 _PROCESS_LIMIT_SECONDS = 30
 
 
@@ -124,7 +124,11 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
             fixture = SignedPolicyFixture(Path(temporary).resolve())
             os.environ["SSL_CERT_FILE"] = str(fixture.ca_file)
             publisher = get_native_policy_snapshot_publisher(fixture.store)
-            observation = ReadinessProfile(publisher_targets(publisher), enabled=mode == "profiled")
+            observation = ReadinessProfile(
+                publisher_targets(publisher),
+                enabled=mode != "control",
+                window="start" if mode == "start" else "publication",
+            )
             with observation.attach(publisher):
                 try:
                     started = time.monotonic()
@@ -132,7 +136,9 @@ def trial(mode: str, source_sha: str, runtime_sha256: str) -> dict[str, object]:
                         require_initial_readiness(publisher, fixture.workspace)
                         report["outcome"] = "ready_observed"
                     except ProbeError as error:
-                        report["outcome"] = "readiness_deadline" if str(error) == "readiness_deadline" else "probe_refused"
+                        report["outcome"] = (
+                            "readiness_deadline" if str(error) == "readiness_deadline" else "probe_refused"
+                        )
                     finally:
                         report["caller_wall_ms_including_observer_setup"] = round(
                             min(999_999, max(0, (time.monotonic() - started) * 1000)), 3
@@ -242,7 +248,9 @@ def main() -> int:
             )
             result = trial(args.trial, args.expected_source_sha, args.expected_runtime_sha256)
         else:
-            result = run_trials(read_report(args.original_report) if args.original_report else None, args.expected_source_sha)
+            result = run_trials(
+                read_report(args.original_report) if args.original_report else None, args.expected_source_sha
+            )
         payload = json.dumps(result, sort_keys=True, allow_nan=False) + "\n"
         if len(payload.encode("utf-8")) > _REPORT_LIMIT:
             raise ValueError("profile_report_limit")

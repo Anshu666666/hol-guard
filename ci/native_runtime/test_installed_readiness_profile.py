@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import cProfile
 import json
 import subprocess
 import sys
@@ -76,34 +77,64 @@ def test_disabled_scope_preserves_actual_methods_and_remains_silent(capsys: pyte
     assert capsys.readouterr() == ("", "")
 
 
-def test_actual_thread_profile_admits_exact_code_identity_not_equal_clone() -> None:
+@pytest.mark.parametrize("window", ["start", "publication"])
+def test_actual_thread_profile_admits_exact_code_identity_not_equal_clone(window: str) -> None:
+    class NonCallable:
+        __code__ = _trusted.__code__
+
     cloned_code = _trusted.__code__.replace()
     assert cloned_code == _trusted.__code__ and cloned_code is not _trusted.__code__
     clone = FunctionType(cloned_code, globals(), "synthetic-private-function-name")
 
-    def action() -> int:
+    action_done = threading.Event()
+
+    def invoke_targets() -> None:
         for _ in range(2):
             _trusted()
         for _ in range(5):
             clone()
+
+    class OverlappingPublisher(_Publisher):
+        def start(self) -> None:
+            if window == "start":
+                invoke_targets()
+            super().start()
+            assert action_done.wait(timeout=3)
+
+    def action() -> int:
+        if window == "publication":
+            invoke_targets()
+        action_done.set()
         return 19
 
-    publisher = _Publisher(action)
+    publisher = OverlappingPublisher(action)
     observer = profiling.ReadinessProfile(
-        {"publisher_start": publisher.start, "publication": publisher._publish_once, "command_preparation": _trusted},
+        {
+            "publisher_start": publisher.start,
+            "publication": publisher._publish_once,
+            "command_preparation": _trusted,
+            "configuration": NonCallable(),
+        },
         enabled=True,
+        window=window,
     )
     with observer.attach(publisher):
         publisher.start()
         publisher.join()
     assert publisher.value == 19 and publisher.error is None
-    assert _window(observer, "start")["completed"] is True
-    publication = _window(observer, "publication")
-    assert publication["completed"] is True and publication["available"] is True
-    rows = publication["rows"]
+    selected = _window(observer, window)
+    assert selected["completed"] is True and selected["available"] is True
+    other = "publication" if window == "start" else "start"
+    assert _window(observer, other) == {"window": other, "completed": False, "available": False, "rows": []}
+    rows = selected["rows"]
     matched = [row for row in rows if row["label"] == "command_preparation"]
     assert len(matched) == 1 and matched[0]["calls"] == 2
-    assert {row["label"] for row in rows} <= {"publication", "command_preparation"}
+    if window == "publication":
+        assert {row["label"] for row in rows} <= {"publication", "command_preparation"}
+    else:
+        matched = [row for row in rows if row["label"] == "publisher_start"]
+        assert len(matched) == 1 and matched[0]["calls"] == 1
+        assert {row["label"] for row in rows} <= {"publisher_start", "publication", "command_preparation"}
     for row in rows:
         assert set(row) == {"label", "calls", "recursive_calls", "inclusive_ms", "self_ms", "values_capped_at"}
         assert all(0 <= row[key] <= 999_999 for key in ("calls", "recursive_calls", "inclusive_ms", "self_ms"))
@@ -111,6 +142,36 @@ def test_actual_thread_profile_admits_exact_code_identity_not_equal_clone() -> N
     assert "synthetic-private-function-name" not in encoded
     assert __file__ not in encoded
     assert observer.snapshot()["acceptance_claim"] is False
+    assert observer.snapshot()["selected_window"] == window
+    assert observer.snapshot()["event_scope"] == (
+        "interpreter_wide_events_during_selected_window"
+        if sys.version_info >= (3, 12)
+        else "selected_thread_events_during_selected_window"
+    )
+
+
+def test_default_publication_profile_is_available_while_real_start_is_still_running() -> None:
+    action_done = threading.Event()
+
+    class HeldStartPublisher(_Publisher):
+        def start(self) -> None:
+            super().start()
+            assert action_done.wait(timeout=3)
+
+    def action() -> int:
+        value = _trusted()
+        action_done.set()
+        return value
+
+    publisher = HeldStartPublisher(action)
+    observer = profiling.ReadinessProfile({"command_preparation": _trusted}, enabled=True)
+    with observer.attach(publisher):
+        publisher.start()
+        publisher.join()
+    publication = _window(observer, "publication")
+    assert publication["completed"] is True and publication["available"] is True
+    assert publisher.value == 7 and publisher.error is None
+    assert len(publication["rows"]) == 1 and publication["rows"][0]["calls"] == 1
 
 
 def test_inflight_worker_is_unavailable_until_actual_completion() -> None:
@@ -207,6 +268,29 @@ def test_preexisting_profiler_is_not_replaced_or_disabled() -> None:
     assert _window(observer, "publication")["available"] is False
 
 
+def test_unknown_window_is_refused_before_any_profile() -> None:
+    with pytest.raises(ValueError, match="^unknown_profile_window$"):
+        profiling.ReadinessProfile({}, enabled=True, window="synthetic-private-window")
+
+
+def test_preexisting_cprofile_remains_active_after_selected_window() -> None:
+    publisher = _Publisher(_trusted)
+    observer = profiling.ReadinessProfile({"command_preparation": _trusted}, enabled=True)
+    prior = cProfile.Profile()
+    prior.enable()
+    try:
+        with observer.attach(publisher):
+            publisher._publish_once()
+        _trusted()
+    finally:
+        prior.disable()
+    entries = [entry for entry in prior.getstats() if entry.code is _trusted.__code__]
+    assert len(entries) == 1 and entries[0].callcount == 2
+    assert publisher.value == 7 and publisher.error is None
+    assert _window(observer, "publication")["available"] is False
+    assert _window(observer, "publication")["rows"] == []
+
+
 def test_later_real_publications_execute_without_reprofiling_first() -> None:
     calls = 0
 
@@ -272,7 +356,8 @@ def test_rejected_original_never_launches_diagnostic_process(monkeypatch: pytest
 
 @pytest.mark.parametrize("cleanup", ["contained", "unverified"])
 def test_predeclared_trials_preserve_identity_and_discard_child_output(
-    monkeypatch: pytest.MonkeyPatch, cleanup: str,
+    monkeypatch: pytest.MonkeyPatch,
+    cleanup: str,
 ) -> None:
     modes: list[str] = []
 
@@ -303,7 +388,7 @@ def test_predeclared_trials_preserve_identity_and_discard_child_output(
 
     monkeypatch.setattr(probe.subprocess, "run", launch)
     report = probe.run_trials(_original(), _SOURCE)
-    assert modes == (["control", "profiled"] if cleanup == "contained" else ["control"])
+    assert modes == (["control", "start", "publication"] if cleanup == "contained" else ["control"])
     assert report["acceptance_claim"] is False and report["original_failure_preserved"] is True
     assert report["readiness_budget_ms"] == 400
     assert report["unverified_cleanup_stops_remaining_trials"] is True
@@ -332,7 +417,9 @@ def test_failure_only_workflow_keeps_original_platform_gates() -> None:
     assert "profile_installed_readiness.py" not in linux
     assert macos.count("profile_installed_readiness.py") == windows.count("profile_installed_readiness.py") == 1
     assert macos.count("id: installed_contracts") == windows.count("id: installed_contracts") == 1
-    assert "failure() && steps.installed_contracts.outcome == 'failure' && matrix.target == 'x86_64-apple-darwin'" in macos
+    assert (
+        "failure() && steps.installed_contracts.outcome == 'failure' && matrix.target == 'x86_64-apple-darwin'" in macos
+    )
     assert "failure() && steps.installed_contracts.outcome == 'failure'" in windows
     assert "continue-on-error" not in workflow
     assert "timeout-minutes: 45" in macos and "timeout-minutes: 20" in windows

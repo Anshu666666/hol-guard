@@ -16,15 +16,32 @@ _LIMIT = 999_999
 _WINDOWS = ("start", "publication")
 _LABELS = frozenset(
     {
-        "publisher_start", "publication", "publication_context", "command_preparation", "configuration",
-        "metadata_load", "metadata_validate", "control_projection", "control_authority_key", "source_capture",
-        "store_connect", "store_permissions", "integrity_secret", "runtime_status", "runtime_binary_validation",
-        "runtime_capabilities", "resident_transport", "stream_start", "stream_request",
+        "publisher_start",
+        "publication",
+        "publication_context",
+        "command_preparation",
+        "configuration",
+        "metadata_load",
+        "metadata_validate",
+        "control_projection",
+        "control_authority_key",
+        "source_capture",
+        "store_connect",
+        "store_permissions",
+        "integrity_secret",
+        "runtime_status",
+        "runtime_binary_validation",
+        "runtime_capabilities",
+        "resident_transport",
+        "stream_start",
+        "stream_request",
     }
 )
 
 
 def _code(function: object) -> CodeType | None:
+    if not callable(function):
+        return None
     with suppress(BaseException):
         candidate = getattr(inspect.unwrap(function), "__code__", None)
         if isinstance(candidate, CodeType):
@@ -43,8 +60,17 @@ def _number(value: object) -> int | float | None:
 class ReadinessProfile:
     """Never replace an authority result or serialize profiler names, paths or arguments."""
 
-    def __init__(self, targets: Mapping[str, object], *, enabled: bool) -> None:
+    def __init__(
+        self,
+        targets: Mapping[str, object],
+        *,
+        enabled: bool,
+        window: str = "publication",
+    ) -> None:
+        if window not in _WINDOWS:
+            raise ValueError("unknown_profile_window")
         self.enabled = enabled
+        self.window = window
         self._codes: dict[int, tuple[CodeType, str]] = {}
         for label, function in targets.items():
             if label not in _LABELS:
@@ -119,6 +145,8 @@ class ReadinessProfile:
         installed: list[tuple[str, object, Callable[..., Any]]] = []
         try:
             for name, window in (("start", "start"), ("_publish_once", "publication")):
+                if window != self.window:
+                    continue
                 original = getattr(publisher, name)
                 wrapped = self._wrap(window, original)
                 previous = namespace.get(name, missing)
@@ -144,6 +172,12 @@ class ReadinessProfile:
             ]
         return {
             "enabled": self.enabled,
+            "selected_window": self.window,
+            "event_scope": (
+                "interpreter_wide_events_during_selected_window"
+                if sys.version_info >= (3, 12)
+                else "selected_thread_events_during_selected_window"
+            ),
             "window_semantics": "whole_first_call_may_complete_after_readiness_deadline",
             "count_semantics": "profiler_calls_include_generator_resumptions",
             "timing_semantics": "instrumented_inclusive_and_self_wall_time_not_additive_across_windows",

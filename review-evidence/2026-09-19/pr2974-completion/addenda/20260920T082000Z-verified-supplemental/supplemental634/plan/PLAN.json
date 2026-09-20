@@ -1,0 +1,162 @@
+{
+  "schema": "hol-guard.pr2974.corrective634-bounded-original-readback-plan.v1",
+  "state": "prepared_not_executed",
+  "source_sha": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+  "driver_sha": "b05127dd2cec4f02eb97d715138179c741e52ec0",
+  "driver_tree": "d910c223f4628cef73694ca9a2d4dd70c6dc63b1",
+  "run_id": 35494533524,
+  "job_id": 106035074778,
+  "run_attempt": 1,
+  "input": {
+    "published_commit": "f1b033246d3d5fe623573e5bb3bafe588260fafd",
+    "path": "review-evidence/2026-09-19/pr2974-completion/addenda/20260920T072135Z-terminal-supplemental/supplemental/original-terminal.log",
+    "log_bytes": 11373473,
+    "log_sha256": "498649c47878f3a4b76d69363264f92ed88f2ec181daf0bffad62c931fc7b822",
+    "gzip_bytes": 8084748,
+    "gzip_sha256": "2f62975dd776557915baf3cf3180f484f20d0f8685c6898fe67f79dc200ffa43",
+    "base64_chars": 10779664,
+    "frame_parts": 1797,
+    "raw_bytes": 80685332,
+    "raw_sha256": "1efcb42481c407a7048963e368f5a5e7e3e851c9d84669d45412c0928bca83e3",
+    "original_names": 216
+  },
+  "bounds": {
+    "sandbox": "asnf",
+    "boot_id": "c6aba711-75f6-4cbb-90b1-d991ba91b54e",
+    "exclusive_remote_handoff_required": true,
+    "one_python_process_at_a_time": true,
+    "address_space_bytes": 99614720,
+    "io_chunk_bytes": 65536,
+    "maximum_materialized_json_value_bytes": 8388608,
+    "individual_streamed_original_member_bytes": 33554432,
+    "raw_stream_bytes_exact": 80685332,
+    "maximum_original_names": 256,
+    "cpu_seconds_per_stage": 90,
+    "wall_alarm_seconds_per_stage": 120,
+    "no_zip_archive_open": true,
+    "no_native_build_or_execution": true,
+    "no_test_or_workload_run": true,
+    "stop_on_changed_boot_limit_failure_or_identity_mismatch": true
+  },
+  "format": {
+    "packet_schema": "pr2974-current-integration-validation-content-addressed-reports.v1",
+    "producer": "ci/pr2974_supplemental_review_validation/report_projection.py",
+    "producer_blob": "fd30f2fc6502794df9cfc5d548d69e86f8ea8442",
+    "unique_contents_then_named_file_references": true,
+    "quoted_json_string_decoding": "stream ASCII runs and validated JSON escapes, including complete surrogate pairs, into a temporary byte file; never materialize the whole content string",
+    "content_encoding": "validate utf-8 round-trip or bounded base64 decoding according to the exact record; verify original length/hash and content key",
+    "names": "require safe relative unique names and exact content hash/length/encoding joins; retain duplicate-name-to-content mappings explicitly",
+    "difference_from_native_readback": "native111/114 extraction remains frozen. This plan adds bounded streaming of a content string while retaining the same8MiB maximum in-memory semantic value; byte extraction alone grants no semantic credit."
+  },
+  "stages": [
+    "Verify exact boot and hard resource limits before reading published log; download and hash in64KiB chunks with exact total length.",
+    "Require exactly one matched BEGIN/END frame, optional BOM only before GitHub timestamp, all1797 ordered parts and exact base64 character/gzip identity. Stream gzip with exact raw bound and hash.",
+    "Read top-level metadata and the content-addressed schema incrementally; stream and hash unique original bytes. Validate all216 safe name references. Retain complete admission index and every unsupported/missing item.",
+    "Reconstruct each selected capture by verifying the original snapshot, immutable contract and phase JSONL references. Apply8MiB materialized semantic-value bound; if a contract exceeds it, scan its individual fields/collection items under the same bound or explicitly withhold that cohort's complete admission.",
+    "Independently verify ordered collect/run contracts, selector coverage/count/order, unique identities, setup/call/teardown triples, outcome/xfail/failure fields, JUnit count/order/error/skip and ordered duplicate user properties. Recount all10 physical cohorts and8 logical groups, preserve593 and added41 scopes, and reject cross-cohort duplicate identities.",
+    "Verify inline definition/provider byte identities and compare retained source bindings to exact4d metadata; clearly separate source-reported identity from independently reconstructed byte bindings.",
+    "Retain original command/group/failure records and selected raw snapshots/phases/JUnit plus explicit derived row projections. Create and read back a standalone Git tree; no branch/ref/PR action. Preserve all earlier failed runs independently."
+  ],
+  "expected_schedule": [
+    {
+      "cohort": "oauth_fingerprint_original",
+      "declared_cases": 13,
+      "declared_setup_call_teardown_phases": 39,
+      "collection_limit_seconds": 600,
+      "body_limit_seconds": 600,
+      "selector_entries": 6
+    },
+    {
+      "cohort": "secret_promotion",
+      "declared_cases": 13,
+      "declared_setup_call_teardown_phases": 39,
+      "collection_limit_seconds": 60,
+      "body_limit_seconds": 60,
+      "selector_entries": 3
+    },
+    {
+      "cohort": "incoming_python_additions",
+      "declared_cases": 112,
+      "declared_setup_call_teardown_phases": 336,
+      "collection_limit_seconds": 600,
+      "body_limit_seconds": 600,
+      "selector_entries": 69
+    },
+    {
+      "cohort": "workspace-pure",
+      "declared_cases": 62,
+      "declared_setup_call_teardown_phases": 186,
+      "collection_limit_seconds": 300,
+      "body_limit_seconds": 300,
+      "selector_entries": 18
+    },
+    {
+      "cohort": "workspace-forward",
+      "declared_cases": 16,
+      "declared_setup_call_teardown_phases": 48,
+      "collection_limit_seconds": 300,
+      "body_limit_seconds": 300,
+      "selector_entries": 10
+    },
+    {
+      "cohort": "workspace-lifecycle",
+      "declared_cases": 10,
+      "declared_setup_call_teardown_phases": 30,
+      "collection_limit_seconds": 300,
+      "body_limit_seconds": 300,
+      "selector_entries": 10
+    },
+    {
+      "cohort": "incoming_ed731_python",
+      "declared_cases": 253,
+      "declared_setup_call_teardown_phases": 759,
+      "collection_limit_seconds": 600,
+      "body_limit_seconds": 600,
+      "selector_entries": 102
+    },
+    {
+      "cohort": "incoming_2433_python",
+      "declared_cases": 94,
+      "declared_setup_call_teardown_phases": 282,
+      "collection_limit_seconds": 600,
+      "body_limit_seconds": 600,
+      "selector_entries": 48
+    },
+    {
+      "cohort": "incoming_017_python",
+      "declared_cases": 20,
+      "declared_setup_call_teardown_phases": 60,
+      "collection_limit_seconds": 60,
+      "body_limit_seconds": 60,
+      "selector_entries": 10
+    },
+    {
+      "cohort": "incoming_8f15_python",
+      "declared_cases": 41,
+      "declared_setup_call_teardown_phases": 123,
+      "collection_limit_seconds": 60,
+      "body_limit_seconds": 60,
+      "selector_entries": 22
+    }
+  ],
+  "expected_total_cases": 634,
+  "expected_total_phases": 1902,
+  "expected_selector_entries": 298,
+  "no_promotion": {
+    "terminal_success_already_reported": true,
+    "independent_row_count_pending": true,
+    "installed_native_phase_measurement_executed": false,
+    "headline_timing_eligible": false,
+    "qualification_complete": false,
+    "complete_descendant_cleanup_certificate": false,
+    "requirement_status_changes": false
+  },
+  "source_review_files": [
+    "report_projection.py",
+    "finite_controls.py",
+    "supplemental_groups.py",
+    "control_capture_evidence.py"
+  ],
+  "interpretation": "If bounds or missing members prevent complete original-row admission, report the exact admitted subset and leave634 independent verification incomplete. Do not rerun controls, relax counts/deadlines, infer installed performance, or combine historical populations."
+}

@@ -1,0 +1,30 @@
+...
+         });
+         observed.recv_timeout(CONTROL_WAIT).unwrap();
++        assert!(
++            Instant::now() < deadline,
++            "fixture missed socket setup boundary"
++        );
+-        assert!(Instant::now() < deadline, "fixture missed socket setup boundary");
+         if expire {
+             thread::sleep(
+...
+ fn unix_socket_setup_cannot_admit_after_original_deadline() {
+     let (result, connected) = controlled_connect(true);
++    assert!(
++        !connected,
++        "expired socket setup admitted a real Unix connection"
++    );
+-    assert!(!connected, "expired socket setup admitted a real Unix connection");
+     assert_eq!(result, Err("native_client_deadline_exceeded".to_owned()));
+ }
+...
+     let (result, connected) = controlled_connect(false);
+     assert_eq!(result, Ok(()));
++    assert!(
++        connected,
++        "in-budget request did not reach the owned Unix listener"
++    );
+-    assert!(connected, "in-budget request did not reach the owned Unix listener");
+ }
+ 

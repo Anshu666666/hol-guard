@@ -1,0 +1,269 @@
+{
+  "schema": "pr2974.current-2ac-readonly-census.v1",
+  "checks_observed_at_utc": "2026-09-20T08:14:20.610Z",
+  "pr_readback_at_utc": "2026-09-20T08:17:03.016Z",
+  "source": {
+    "sha": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+    "tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+    "parent": "4d10758e2cb44e5afa72a08aa631a02541dad534"
+  },
+  "base": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+  "merge_build": {
+    "sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+    "tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+    "tree_equal_to_product": true,
+    "source_and_merge_sha_distinct": true
+  },
+  "checks": {
+    "total": 187,
+    "success": 166,
+    "skipped": 19,
+    "failure": 1,
+    "in_progress": 1,
+    "active": [
+      {
+        "id": 106044717892,
+        "name": "linux-x64",
+        "run": 35498078469,
+        "stage": "Enforce installed native soak"
+      }
+    ],
+    "failed": [
+      {
+        "id": 106044719158,
+        "name": "Kilo Code Review",
+        "reason": "Review failed: Assistant request was rate limited",
+        "source_finding": false
+      }
+    ]
+  },
+  "reviews": {
+    "inline_threads": 59,
+    "resolved": 59,
+    "unresolved": 0,
+    "formal_reviews": 51,
+    "commented": 51,
+    "approved": 0,
+    "requested_reviewer": "deep-purple-boots",
+    "mergeable": true,
+    "mergeable_state": "blocked",
+    "fresh_current_source_greptile_approval": false
+  },
+  "security": {
+    "gitleaks": {
+      "job": 106044717563,
+      "range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "commits": 1348,
+      "reported_approximate_bytes": 69167045,
+      "leaks": 0,
+      "conclusion": "success"
+    },
+    "sonar": {
+      "job": 106045887166,
+      "check": 106046427548,
+      "scm_revision": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "ce_task": "AaC92vp6wLlCYChRzerZ",
+      "gate": "passed",
+      "new_issues": 0,
+      "accepted_issues": 0,
+      "new_security_hotspots": 0,
+      "new_coverage_percent": 83.4,
+      "new_duplication_percent": 0,
+      "analysis_id": null,
+      "analysis_id_independently_retrieved": false
+    },
+    "codeql": {
+      "conclusion": "success",
+      "check": 106044797394,
+      "title": "No new alerts in code changed by this pull request",
+      "alert386_individual_state_verified": false
+    }
+  },
+  "normal_platforms": [
+    {
+      "lane": "mac_arm",
+      "source": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "build_sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+      "build_tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+      "job": 106044717703,
+      "conclusion": "success",
+      "python_controls": 9,
+      "rust_resident_client_controls": 22,
+      "installed_identity_entries": 17,
+      "default_auto": {
+        "delivered": 21,
+        "native_resident": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "runtime_reported": {
+        "sha256": "5ce1933b9a4a56031920379275252a96fea0e9df1433f7182e345928d2f4a302",
+        "bytes": 10784688
+      },
+      "runtime_binary_rehashed_by_this_peer": false,
+      "slo": {
+        "passed": true,
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": true,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": true,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "concurrency16_p99_ms": 501.14,
+        "concurrency16_routes": {
+          "native_resident": 16
+        },
+        "concurrency16_errors": 0,
+        "recovery_p95_ms": 243.595,
+        "readiness_p95_ms": 0.064,
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "qualification_complete": false
+      },
+      "projection_scope": "Decoded JSON stdout records recovered from original GitHub log by removing timestamp prefixes, not artifact member bytes."
+    },
+    {
+      "lane": "mac_intel",
+      "source": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "build_sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+      "build_tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+      "job": 106044717897,
+      "conclusion": "success",
+      "python_controls": 9,
+      "rust_resident_client_controls": 22,
+      "installed_identity_entries": 17,
+      "default_auto": {
+        "delivered": 21,
+        "native_resident": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "runtime_reported": {
+        "sha256": "2e66691bdda350b5f6606ab624d8f2f4372f44e0a73ffca7eda62e9cf84e02db",
+        "bytes": 11293988
+      },
+      "runtime_binary_rehashed_by_this_peer": false,
+      "slo": {
+        "passed": true,
+        "gates": {
+          "1m_latency": true,
+          "250k_latency": true,
+          "5m_latency": true,
+          "cold_latency": true,
+          "concurrency": true,
+          "concurrency_64_bounded": true,
+          "installed_corpus": true,
+          "python_fallback": true,
+          "readiness": true,
+          "recovery_latency": true,
+          "resident_share": true,
+          "rss": true,
+          "safe_corpus": true,
+          "warm_latency": true
+        },
+        "concurrency16_p99_ms": 846.008,
+        "concurrency16_routes": {
+          "native_resident": 16
+        },
+        "concurrency16_errors": 0,
+        "recovery_p95_ms": 872.142,
+        "readiness_p95_ms": 0.073,
+        "thresholds": {
+          "direct_cold_p95_ms": 150,
+          "installed_adapter_concurrent_p99_ms": 1000,
+          "installed_adapter_p95_ms": 1000,
+          "readiness_p95_ms": 400
+        },
+        "qualification_complete": false
+      },
+      "projection_scope": "Decoded JSON stdout records recovered from original GitHub log by removing timestamp prefixes, not artifact member bytes."
+    },
+    {
+      "lane": "windows",
+      "source": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+      "build_sha": "a570e051dd4796bc8fe3f9950d97c2296602f35e",
+      "build_tree": "89c4343c8a528e2abdc0b755b3242f9ae52e6323",
+      "job": 106044717868,
+      "conclusion": "success",
+      "python_controls": 13,
+      "rust_resident_client_controls": null,
+      "installed_identity_entries": 17,
+      "default_auto": {
+        "delivered": 21,
+        "native_resident": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "runtime_reported": {
+        "sha256": "8e95550f5cd63cd584759a55188bf854c7c42bedddb17eb5fe01000587fae775",
+        "bytes": 11349504
+      },
+      "runtime_binary_rehashed_by_this_peer": false,
+      "slo": null,
+      "projection_scope": "Decoded JSON stdout records recovered from original GitHub log by removing timestamp prefixes, not artifact member bytes."
+    }
+  ],
+  "ubuntu_edge": {
+    "run": 35498078547,
+    "job": 106044718935,
+    "conclusion": "success",
+    "original_native_cohort": {
+      "passed": 15,
+      "seconds": 18.19
+    },
+    "earlier_4d_initial_push_failure_cause_resolved": false
+  },
+  "limits": [
+    "Snapshot is not a terminal all-checks census: original Linux soak remains running and Kilo review failed externally.",
+    "Skipped checks are not passes; formal last-push/CODEOWNER approval is still absent.",
+    "Three normal native artifact IDs/digests/sizes are GitHub metadata and matching upload-log declarations only. ZIPs, wheels and runtime bytes were not downloaded or independently rehashed in this packet.",
+    "JSON projections preserve printed values and exact derived text after timestamp removal. They are not claimed to be exact artifact-member bytes.",
+    "The old Windows journal_checkpoint/os_permission event remains in its prior 4d evidence; it did not recur in this fresh 2ac default-auto report.",
+    "Normal Mac smoke uses its original 1,000 ms concurrent/recovery and 400 ms readiness gates; no original PRD performance/full qualification credit follows.",
+    "No job was canceled, rerun or dispatched; no product/evidence branch was moved by this agent."
+  ]
+}

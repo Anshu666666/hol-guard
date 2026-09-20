@@ -1,0 +1,49 @@
+{
+  "schema": "pr2974.corrective634-parser-static-peer.v1",
+  "observed_at_utc": "2026-09-20T08:07:11.912Z",
+  "reviewed_tree": "a6af203efae28d286bfe6719ea1be373161fd592",
+  "plan_tree": "1078c492bf50c1a28063a6cdeb5913898ffe14cb",
+  "prior_plan_peer_tree": "82212aa271daa45088a9cbb4cd29baf55bc28e35",
+  "files": [
+    {
+      "path": "decode_log_stream.py",
+      "bytes": 7845,
+      "sha256": "353c124db7b75ffb171b272ad609acd5930f1f7dcc648515e3c5c68aa9c76a8d",
+      "git_blob": "6560afdae60d13b5cacfc962ed59e80ffbaf3280"
+    },
+    {
+      "path": "extract_content_addressed_members.py",
+      "bytes": 9116,
+      "sha256": "fc3d9a4d4e9c14d06bc8d2e3d822c1a5bc4d41b2f3275be6f6039f8ddcf6a502",
+      "git_blob": "ff0b606c411002577106eda72b7b27d74971f8d7"
+    },
+    {
+      "path": "parser_controls.py",
+      "bytes": 7075,
+      "sha256": "1bb2a0abb2a5120a1fd066077e3eaf5fbd5eeef68a02ee27431ff68a8ac3d58b",
+      "git_blob": "04d97af9f096514827ab06e0d4084ed81255c9d4"
+    },
+    {
+      "path": "decode_log_stream-pre-preservation-fix.py",
+      "bytes": 7759,
+      "sha256": "05f771d03398211ec3bb5aeb6a998b6d5a2c0c21cf5ba93e3663a79aa7e9e50f",
+      "git_blob": "8c55afa87c3b1449520551f5b55dd99c49b6c1a5"
+    }
+  ],
+  "verdict": "Clear static review for the already authorized bounded synthetic parser controls and data-only extraction, subject to the exclusive sandbox handoff and unchanged bounds. No execution or complete semantic-count result is claimed.",
+  "checks": [
+    "Stage 1 keeps created_root admission and exclusive receipt creation, so an existing evidence root is not overwritten on failed admission. Stage 2 also uses a new output directory and exclusive receipt.",
+    "Stage 1 binds the original complete log hash, exact ordered frame count/source/driver metadata and compressed byte hash before streamed decompression; original raw bytes have their independent fixed size/hash admission.",
+    "Stage 2 incrementally validates exact content-addressed record shape, duplicate keys/names, JSON escapes and paired Unicode surrogates, strict base64 encoding, original member size/SHA, safe relative names and every content-reference/encoding/length join. It verifies full raw stream hash/size/EOF and metadata before creating named member links.",
+    "Maximum materialized JSON semantic value stays 8 MiB, streaming chunk 64 KiB, original member 32 MiB, process address space 95 MiB. Oversized or invalid content remains incomplete; these bounds do not license whole-contract loading.",
+    "The final stage 2 delta is extraction of the existing base64 copy loop into copy_base64 so synthetic controls exercise the same implementation.",
+    "Synthetic controls compile selected AST function/class definitions only. Inputs use BytesIO and fake existing-root objects; no top-level source download/decompression/member linking or original native/workload test runs.",
+    "Controls exercise chunk-split escapes/surrogates, malformed escapes, duplicate semantic/structural keys, nonfinite JSON, unsafe names, base64 alphabet/padding/trailing data and size bounds, exact stream size/hash, fixed log frame grammar and the old receipt overwrite versus new preservation."
+  ],
+  "limits": [
+    "The reviewed final parser controls have not been executed by this peer; pass/fail and memory observations must come from their actual bounded run.",
+    "Byte extraction is separate from semantic admission. All 634 original rows, 1,902 phases, 298 selectors, source/provider identities, case counts and JUnit ordered-property joins remain pending independent raw-report assessment.",
+    "Aggregate gate success and collected-content counts cannot stand in for those semantic joins.",
+    "No full qualification, complete descendant-cleanup certificate, native-phase coverage or task promotion follows from parser/byte-extraction success."
+  ]
+}

@@ -1,0 +1,57 @@
+...
+     assert_eq!(&header[..4], crate::REQUEST_MAGIC);
+     let digest_start = 4 + crate::FRAME_REQUEST_ID_BYTES;
++    let length = u32::from_be_bytes(header[crate::FRAME_HEADER_BYTES - 4..].try_into().unwrap());
+-    let length = u32::from_be_bytes(
+-        header[crate::FRAME_HEADER_BYTES - 4..]
+-            .try_into()
+-            .unwrap(),
+-    );
+     assert_eq!(length as usize, REQUEST.len());
+     let mut body = vec![0; REQUEST.len()];
+...
+     };
+     observed.recv_timeout(CONTROL_WAIT).unwrap();
++    assert!(
++        Instant::now() < deadline,
++        "fixture missed its selected boundary"
++    );
+-    assert!(Instant::now() < deadline, "fixture missed its selected boundary");
+     if expire {
+         thread::sleep(
+...
+         "expired validation admitted a real connection or request"
+     );
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
+-    assert_eq!(result, Err("native_resident_live_request_failed".to_owned()));
+ }
+ 
+...
+     );
+     assert_eq!(counts, (1, 0), "an authentication rejection was replayed");
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
+-    assert_eq!(result, Err("native_resident_live_request_failed".to_owned()));
+ }
+ 
+...
+         Reply::CommittedEof,
+     );
++    assert_eq!(
++        counts,
++        (1, 1),
++        "an ambiguous committed request was replayed"
++    );
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
+-    assert_eq!(counts, (1, 1), "an ambiguous committed request was replayed");
+-    assert_eq!(result, Err("native_resident_live_request_failed".to_owned()));
+ }
+ 

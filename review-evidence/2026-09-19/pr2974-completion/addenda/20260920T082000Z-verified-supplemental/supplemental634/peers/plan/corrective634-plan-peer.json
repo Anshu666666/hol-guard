@@ -1,0 +1,100 @@
+{
+  "schema": "pr2974.corrective634-bounded-readback-plan-peer.v1",
+  "observed_at": "2026-09-20T07:37:36Z",
+  "reviewer": "ci_review_audit",
+  "plan_tree": "1078c492bf50c1a28063a6cdeb5913898ffe14cb",
+  "plan": {
+    "blob": "a49d6e02fa064322c6f6541988e1ca478901112a",
+    "bytes": 7765,
+    "sha256": "5bc1899a1a22192ccf9e2a52691a936cd7e301480e4b855212665b4a21e5672a"
+  },
+  "status": "plan_scope_clear_implementation_and_execution_pending",
+  "blocking_plan_findings": [],
+  "exact_source": {
+    "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+    "driver": "b05127dd2cec4f02eb97d715138179c741e52ec0",
+    "driver_tree": "d910c223f4628cef73694ca9a2d4dd70c6dc63b1",
+    "run_id": 35494533524,
+    "job_id": 106035074778,
+    "run_attempt": 1
+  },
+  "input_review": {
+    "published_log_commit": "f1b033246d3d5fe623573e5bb3bafe588260fafd",
+    "published_log_path": "review-evidence/2026-09-19/pr2974-completion/addenda/20260920T072135Z-terminal-supplemental/supplemental/original-terminal.log",
+    "log_bytes": 11373473,
+    "log_sha256": "498649c47878f3a4b76d69363264f92ed88f2ec181daf0bffad62c931fc7b822",
+    "independently_verified_in_terminal_audit": {
+      "ordered_frame_parts": 1797,
+      "base64_chars": 10779664,
+      "compressed_bytes": 8084748,
+      "compressed_sha256": "2f62975dd776557915baf3cf3180f484f20d0f8685c6898fe67f79dc200ffa43"
+    },
+    "still_expected_until_this_plan_executes": {
+      "decompressed_bytes": 80685332,
+      "decompressed_sha256": "1efcb42481c407a7048963e368f5a5e7e3e851c9d84669d45412c0928bca83e3",
+      "original_names": 216,
+      "independent_case_count": 634,
+      "independent_phase_count": 1902
+    }
+  },
+  "source_readback": [
+    {
+      "path": "report_projection.py",
+      "matching_exact_driver": true,
+      "sha256": "cefc729d17baf054779dd671c5bab81be30b13b3b4a2c5ce44ce5e1f276f48de",
+      "status": false
+    },
+    {
+      "path": "finite_controls.py",
+      "matching_exact_driver": true,
+      "sha256": "1de055b6246fd1adc0df4441e6b0202a092f207b2f4e7b49d5c764eaba93bc00",
+      "status": false
+    },
+    {
+      "path": "supplemental_groups.py",
+      "matching_exact_driver": true,
+      "sha256": "618dc0db0c93e293d1c70d5d5ecf35f41b0bcf72d214a1036142f66c75848d09",
+      "status": false
+    },
+    {
+      "path": "control_capture_evidence.py",
+      "matching_exact_driver": true,
+      "sha256": "e7c1edc92a7eb340d39b39ba99b1fbe9536856d8f08043d639b9df85bbae290b",
+      "status": false
+    }
+  ],
+  "findings": [
+    "The plan operates on the exact already-published original log and immutable driver/source identities. It neither reruns the original controls nor alters their recorded outcome.",
+    "All seven plan-tree blobs were fetched and checked against their Git blob IDs and lengths. Each of the four included producer/capture/gate sources also matches a fresh direct read at the exact b05127dd driver path.",
+    "Fixed source-log, compressed-stream and raw-stream limits constrain the input. The plan requires the original source/driver/frame metadata, ordered unique frames, safe unique relative member names and exact content-address/length/encoding joins.",
+    "The producer's sorted JSON stores unique content records before named references; the proposed two-stage streaming extraction can preserve named duplicates while deduplicating content. Byte extraction grants no case or source-validation credit.",
+    "The 95 MiB hard address-space bound, 64 KiB I/O chunks, 8 MiB maximum materialized semantic value, 32 MiB streamed member bound, CPU/wall limits and exclusive sandbox handoff keep this readback separate from the prior OOM-prone whole-packet materialization.",
+    "Large contracts may be admitted only through bounded field/item scanning that preserves complete schema and joins. Otherwise the affected cohort, and therefore complete 634 verification, remains explicitly incomplete.",
+    "Independent finite credit requires ordered collect/run contracts, exact declared selector coverage, unique node identities, all setup/call/teardown records, outcomes and xfail/failure fields, JUnit counts/order/identity and ordered duplicate user properties. The aggregate passed flags or successful job alone cannot supply these observations.",
+    "The ten physical cohorts and eight logical groups correctly preserve 593 original cases plus the separately declared 41, 1,902 phases and 298 selector entries. Cross-cohort duplicate identities must be rejected before complete population credit.",
+    "Inline definition/provider hashes must join the relevant exact Git source bindings. Source-reported identity and independently reconstructed byte identity remain distinct; unresolved provenance cannot silently receive source-validation credit.",
+    "Original owned process-group retirement remains distinct from a complete descendant cleanup certificate. Installed native phases, benchmark eligibility, full qualification and task-status promotions remain false."
+  ],
+  "implementation_review_conditions": [
+    "Validate the parser as a separate bounded implementation before reading the large body. Reject duplicate or ambiguous structural metadata keys, invalid JSON escapes/surrogate sequences, unsupported encoding, unsafe names and count/hash/identity mismatch.",
+    "Retain ordered duplicate JUnit user properties exactly; do not collapse them into a mapping or infer missing phase/JUnit rows from summaries.",
+    "Treat the included producer and gate modules as read-only source references. Do not invoke finite_controls.run, test launchers, report regeneration or native code as part of readback.",
+    "Enforce resource limits before input processing, stop on changed sandbox boot or resource-bound failure, and record any partial admission without lifting limits or replacing the original reports.",
+    "Keep exact extracted bytes and derived projections separately identified. Persist the resulting bounded records through verified standalone Git objects before relying on transient files."
+  ],
+  "not_executed": {
+    "decompression": true,
+    "raw_semantic_readback": true,
+    "tests": true,
+    "workloads": true,
+    "native_code": true,
+    "remote_process": true
+  },
+  "mutations": {
+    "commit": false,
+    "ref": false,
+    "workflow": false,
+    "standalone_peer_evidence_tree_only": true
+  }
+}

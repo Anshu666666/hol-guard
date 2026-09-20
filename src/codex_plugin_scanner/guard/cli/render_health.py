@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ..policy_delivery_outcome import policy_delivery_summary_fields
 from .policy_sync_status import policy_rejection_diagnostic
 
 if TYPE_CHECKING:
@@ -291,6 +292,10 @@ def _build_cloud_summary_panel(view: RenderContext, payload: dict[str, object]) 
     diagnostic = policy_rejection_diagnostic(payload.get("cloud_policy_sync_error"))
     if diagnostic is not None:
         body.add_row("Next step", str(diagnostic["remediation"]))
+    delivery = policy_delivery_summary_fields(payload)
+    if delivery:
+        body.add_row("Policy delivery", str(delivery["policy_delivery_status"]))
+        body.add_row("Delivery next step", str(delivery["policy_delivery_remediation"]))
     body.add_row("Cached advisories", str(payload.get("advisory_count") or 0))
     if payload.get("advisory_headline"):
         body.add_row("Latest advisory", str(payload.get("advisory_headline")))

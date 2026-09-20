@@ -46,6 +46,8 @@ pub(super) fn run(state_base: &Path) -> Result<(), String> {
     let client_lease = super::lease::acquire(state_base);
     if client_lease.is_ok() {
         super::diagnostic::record(super::diagnostic::Stage::LeaseAcquired);
+    } else {
+        super::diagnostic::record(super::diagnostic::Stage::LeaseRefused);
     }
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();

@@ -312,3 +312,120 @@ def test_floor_failure_observation_preserves_only_finite_decision_values() -> No
         "decision": "deny",
         "minimum_action": "review",
     }
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        None,
+        "policy_generation",
+        "policy_digest",
+        "runtime_identity",
+        "command_extensions",
+        "reason_code",
+        "policy_action",
+    ],
+)
+def test_request_mismatch_preserves_failure_and_distinguishes_captured_binding_comparisons(
+    changed: str | None,
+) -> None:
+    """Real probe predicate; the supplied receipts are synthetic comparison inputs."""
+    binding: dict[str, object] = {"generation": 3, "policy_digest": "a" * 64, "runtime_identity": "b" * 64}
+    receipt: dict[str, object] = {
+        "decision_id": "current-decision",
+        "request_id": "current-request",
+        "request_digest": "f" * 64,
+        "reason_code": "native_command_permission_disabled",
+        "policy_action": "block",
+        "authority": "rust",
+        "decision": "deny",
+        "policy_generation": 3,
+        "policy_digest": binding["policy_digest"],
+        "runtime_identity": binding["runtime_identity"],
+        "command_extensions": {"revision": 7},
+    }
+    if changed is not None:
+        receipt[changed] = "synthetic-private-changed-value"
+    with pytest.raises(probe.ReceiptRequestMismatchError) as caught:
+        probe.verify_delivery(
+            {"hookSpecificOutput": {"permissionDecision": "deny"}, "policy_action": "block"},
+            binding=binding,
+            receipt=receipt,
+            command_binding={"revision": 7},
+            previous_receipt=None,
+            expected_reason="native_command_permission_disabled",
+            expected_request_digest="e" * 64,
+            label="managed-permission-observe",
+            completed_cases=2,
+        )
+    assert str(caught.value) == "receipt_request_mismatch"
+    assert caught.value.observation == {
+        "case": "managed-permission-observe",
+        "completed_cases": 2,
+        "matches_expected": {
+            field: field != changed
+            for field in (
+                "policy_generation",
+                "policy_digest",
+                "runtime_identity",
+                "command_extensions",
+                "reason_code",
+                "policy_action",
+            )
+        },
+    }
+    assert "synthetic-private" not in json.dumps(caught.value.observation)
+
+
+@pytest.mark.parametrize("completed,expected", [(None, None), (True, None), (-1, 0), (2, 2), (10_000, 20)])
+def test_request_mismatch_report_keeps_only_finite_fields_and_the_original_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    completed: int | None,
+    expected: int | None,
+) -> None:
+    """Exercise report serialization only; stop before any native prerequisites."""
+    private = "synthetic-private-report-canary"
+    error = probe.ReceiptRequestMismatchError(
+        label=private,
+        completed_cases=completed,
+        receipt={"policy_digest": private, "command_extensions": {"path": private}},
+        binding={"generation": 1, "policy_digest": "a" * 64, "runtime_identity": "b" * 64},
+        command_binding={"revision": 1},
+        expected_reason=private,
+        expected_action=private,
+    )
+
+    def stop_before_native_prerequisites(_environment: object) -> bool:
+        raise error
+
+    target = tmp_path / "report.json"
+    monkeypatch.setattr(probe.codex_plugin_scanner, "__file__", str(tmp_path / "site-packages" / "package.py"))
+    monkeypatch.setattr(probe, "environment_is_clean", stop_before_native_prerequisites)
+    monkeypatch.setattr(probe.sys, "argv", ["probe", "--json", str(target), "--expected-source-sha", "a" * 40])
+    assert probe.main() == 1
+    output = capsys.readouterr().out
+    report = json.loads(target.read_text())
+    assert report == json.loads(output)
+    assert report == {
+        "schema": "guard.installed-managed-floors.v1",
+        "passed": False,
+        "failure": "receipt_request_mismatch",
+        "failure_observation": {
+            "case": "other",
+            "completed_cases": expected,
+            "matches_expected": dict.fromkeys(
+                (
+                    "policy_generation",
+                    "policy_digest",
+                    "runtime_identity",
+                    "command_extensions",
+                    "reason_code",
+                    "policy_action",
+                ),
+                False,
+            ),
+        },
+    }
+    assert private not in output and private not in target.read_text()

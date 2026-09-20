@@ -17,12 +17,17 @@ from codex_plugin_scanner.guard import native_resident_stream
 
 def test_bounded_parser_drops_unknown_oversized_unterminated_and_duplicate_lines() -> None:
     stages = diagnostic._Stages()
+    lines = tuple(diagnostic._PREFIX + stage.encode() + b"\n" for stage in diagnostic._STAGES)
+    assert len(lines) == len(set(lines)) == 20
+    assert sum(len(line) for line in lines) == 892
+    assert diagnostic._MAX_LINE_BYTES == 64
+    assert max(len(line) - 1 for line in lines) <= diagnostic._MAX_LINE_BYTES
+    assert diagnostic._MAX_STREAMS == 4
     for _ in range(4096):
         stages.feed(b"synthetic-private-canary" * 10)
         assert len(stages.partial) <= diagnostic._MAX_LINE_BYTES
     stages.feed(b"\n" + diagnostic._PREFIX + b"unknown-private-canary\n")
-    for stage in diagnostic._STAGES:
-        line = diagnostic._PREFIX + stage.encode() + b"\n"
+    for line in lines:
         for byte in line:
             stages.feed(bytes([byte]))
         stages.feed(line)

@@ -21,6 +21,14 @@ pub(crate) enum Stage {
     RequestWritten,
     ResponseReceived,
     FrameWritten,
+    LeaseDirectoryReady,
+    LeaseProcessIdentified,
+    LeaseRuntimeHashed,
+    LeaseNonceReady,
+    LeaseDirectoryLockAcquired,
+    LeaseFileReady,
+    LeaseDurable,
+    LeaseRefused,
 }
 
 impl Stage {
@@ -38,6 +46,18 @@ impl Stage {
             Self::RequestWritten => b"guard_native_client_stage_v1=request_written\n",
             Self::ResponseReceived => b"guard_native_client_stage_v1=response_received\n",
             Self::FrameWritten => b"guard_native_client_stage_v1=frame_written\n",
+            Self::LeaseDirectoryReady => b"guard_native_client_stage_v1=lease_directory_ready\n",
+            Self::LeaseProcessIdentified => {
+                b"guard_native_client_stage_v1=lease_process_identified\n"
+            }
+            Self::LeaseRuntimeHashed => b"guard_native_client_stage_v1=lease_runtime_hashed\n",
+            Self::LeaseNonceReady => b"guard_native_client_stage_v1=lease_nonce_ready\n",
+            Self::LeaseDirectoryLockAcquired => {
+                b"guard_native_client_stage_v1=lease_directory_lock_acquired\n"
+            }
+            Self::LeaseFileReady => b"guard_native_client_stage_v1=lease_file_ready\n",
+            Self::LeaseDurable => b"guard_native_client_stage_v1=lease_durable\n",
+            Self::LeaseRefused => b"guard_native_client_stage_v1=lease_refused\n",
         }
     }
 }
@@ -45,7 +65,7 @@ impl Stage {
 #[derive(Clone, Copy, Default)]
 struct Observation {
     enabled: bool,
-    seen: u16,
+    seen: u32,
 }
 
 impl Observation {
@@ -89,7 +109,7 @@ pub(crate) fn record(stage: Stage) {
         line
     });
     if let Some(line) = line {
-        // At most 12 fixed lines (< 1 KiB) over this stream's entire lifetime.
+        // At most 20 fixed lines (< 1 KiB) over this stream's entire lifetime.
         // A diagnostic sink failure never changes the actual request outcome.
         let _ = std::io::stderr().write_all(line);
     }
@@ -99,7 +119,7 @@ pub(crate) fn record(stage: Stage) {
 mod tests {
     use super::*;
 
-    const STAGES: [Stage; 12] = [
+    const STAGES: [Stage; 20] = [
         Stage::StreamEntry,
         Stage::LeaseAcquired,
         Stage::FrameRead,
@@ -112,6 +132,14 @@ mod tests {
         Stage::RequestWritten,
         Stage::ResponseReceived,
         Stage::FrameWritten,
+        Stage::LeaseDirectoryReady,
+        Stage::LeaseProcessIdentified,
+        Stage::LeaseRuntimeHashed,
+        Stage::LeaseNonceReady,
+        Stage::LeaseDirectoryLockAcquired,
+        Stage::LeaseFileReady,
+        Stage::LeaseDurable,
+        Stage::LeaseRefused,
     ];
 
     #[test]
@@ -131,7 +159,8 @@ mod tests {
             }
         }
         assert!(output.len() < 1024);
-        assert_eq!(output.iter().filter(|byte| **byte == b'\n').count(), 12);
+        assert_eq!(output.len(), 892);
+        assert_eq!(output.iter().filter(|byte| **byte == b'\n').count(), 20);
         assert!(output
             .iter()
             .all(|byte| byte.is_ascii_lowercase() || b"_=1\n".contains(byte)));

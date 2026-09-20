@@ -95,6 +95,7 @@ from ..policy_canonical_rollout import (
 from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
+from ..policy_delivery_outcome import policy_delivery_outcome_fields
 from ..policy_document_io import PolicyCompilationError
 from ..policy_lane_capabilities import source_runtime_lane_observation
 from ..policy_memory_source import attach_disclosed_policy_source
@@ -3304,6 +3305,7 @@ def sync_receipts(
     summary: dict[str, object] = {
         "synced_at": payload.get("syncedAt"),
         "receipts_stored": receipts_stored_total,
+        **policy_delivery_outcome_fields(payload.get("policyDeliveryOutcome")),
         **policy_sync_outcomes(
             candidate=validated_policy_bundle,
             resident=validated_synced_policy_bundle(store),

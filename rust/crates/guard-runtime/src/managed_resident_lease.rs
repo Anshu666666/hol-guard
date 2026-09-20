@@ -143,16 +143,21 @@ fn acquire_directory_lock_with_retry(
 pub(super) fn acquire(state_base: &Path) -> Result<ClientLease, String> {
     let private_root = private_root_for_state_base(state_base)?;
     let directory = lease_directory(state_base)?;
+    super::diagnostic::record(super::diagnostic::Stage::LeaseDirectoryReady);
     let process_id = std::process::id();
     let start_marker = process_start_marker(process_id)?;
+    super::diagnostic::record(super::diagnostic::Stage::LeaseProcessIdentified);
     let digest = crate::resident_state::runtime_digest()?;
+    super::diagnostic::record(super::diagnostic::Stage::LeaseRuntimeHashed);
     let mut nonce = [0u8; 16];
     getrandom::fill(&mut nonce).map_err(|_| "native_client_random_failed".to_owned())?;
     let nonce = crate::resident_state_encoding::hex_bytes(&nonce);
     let path = directory.join(format!("{LEASE_PREFIX}{process_id}-{nonce}{LEASE_SUFFIX}"));
     let contents = format!("{process_id}\n{start_marker}\n{digest}\n");
+    super::diagnostic::record(super::diagnostic::Stage::LeaseNonceReady);
     let directory_lock =
         acquire_directory_lock_with_retry(&directory, &private_root, LEASE_ACQUIRE_RETRY_BUDGET)?;
+    super::diagnostic::record(super::diagnostic::Stage::LeaseDirectoryLockAcquired);
     let mut file = crate::resident_state::private_file(&path, true, &private_root)?;
     let identity = match LeaseIdentity::from_file(&file) {
         Ok(identity) => identity,
@@ -166,6 +171,7 @@ pub(super) fn acquire(state_base: &Path) -> Result<ClientLease, String> {
     // are not serialized behind filesystem latency. Recent partial
     // records remain fail-closed as live until the write completes.
     drop(directory_lock);
+    super::diagnostic::record(super::diagnostic::Stage::LeaseFileReady);
     if file
         .write_all(contents.as_bytes())
         .and_then(|()| file.sync_all())
@@ -174,6 +180,7 @@ pub(super) fn acquire(state_base: &Path) -> Result<ClientLease, String> {
         let _ = identity.remove_if_same(&path);
         return Err("native_resident_lease_write_failed".to_owned());
     }
+    super::diagnostic::record(super::diagnostic::Stage::LeaseDurable);
     let stopped = Arc::new(AtomicBool::new(false));
     let heartbeat_stopped = Arc::clone(&stopped);
     let heartbeat_directory = directory.clone();

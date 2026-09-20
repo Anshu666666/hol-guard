@@ -15,8 +15,10 @@ import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -53,18 +55,23 @@ def _local_peer() -> Iterator[tuple[str, _Peer]]:
 
         def do_POST(self) -> None:
             try:
-                assert self.headers.get("Authorization", "").startswith("Bearer ")
-                assert self.headers.get("DPoP")
+                if not self.headers.get("Authorization", "").startswith("Bearer "):
+                    raise ValueError("authorization_required")
+                if not self.headers.get("DPoP"):
+                    raise ValueError("dpop_required")
                 length = int(self.headers.get("Content-Length", "0"))
-                assert 0 < length <= 1_000_000
+                if not 0 < length <= 1_000_000:
+                    raise ValueError("body_length_invalid")
                 payload = json.loads(self.rfile.read(length))
-                assert payload["protocolVersion"] == 2
+                if payload["protocolVersion"] != 2:
+                    raise ValueError("protocol_version_invalid")
                 if self.path == "/api/guard/review/v2/commands/lease":
                     result: dict[str, object] = {"protocolVersion": 2, "item": None}
                     completed = peer.polled
                 elif self.path == "/api/guard/review/v2/events:batch":
                     batch = payload["events"]
-                    assert isinstance(batch, list) and batch
+                    if not isinstance(batch, list) or not batch:
+                        raise ValueError("events_invalid")
                     result = {
                         "protocolVersion": 2,
                         "acknowledgedThrough": payload["lastSequence"],
@@ -74,7 +81,7 @@ def _local_peer() -> Iterator[tuple[str, _Peer]]:
                     }
                     completed = peer.acknowledged
                 else:
-                    raise AssertionError("Unexpected local protocol path")
+                    raise ValueError("protocol_path_invalid")
                 body = json.dumps(result).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -97,6 +104,56 @@ def _local_peer() -> Iterator[tuple[str, _Peer]]:
         server.server_close()
         thread.join(timeout=3)
         assert not thread.is_alive()
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "authorization",
+        "dpop",
+        "empty-body",
+        "oversized-body",
+        "version",
+        "events-type",
+        "events-empty",
+        "path",
+    ],
+)
+def test_local_peer_refuses_invalid_protocol_without_exposing_request(invalid: str) -> None:
+    canary = "synthetic-private-protocol-canary"
+    headers = {"Authorization": f"Bearer {canary}", "DPoP": canary}
+    payload: dict[str, object] = {"protocolVersion": 2, "private": canary}
+    path = "/api/guard/review/v2/commands/lease"
+    if invalid == "authorization":
+        headers["Authorization"] = canary
+    elif invalid == "dpop":
+        del headers["DPoP"]
+    elif invalid == "version":
+        payload["protocolVersion"] = 1
+    elif invalid in {"events-type", "events-empty"}:
+        path = "/api/guard/review/v2/events:batch"
+        payload["events"] = canary if invalid == "events-type" else []
+    elif invalid == "path":
+        path = f"/invalid/{canary}"
+    body = b"" if invalid == "empty-body" else json.dumps(payload).encode()
+    headers["Content-Length"] = str(1_000_001 if invalid == "oversized-body" else len(body))
+
+    with _local_peer() as (issuer, peer):
+        target = urlsplit(issuer)
+        assert target.hostname is not None
+        connection = HTTPConnection(target.hostname, target.port, timeout=3)
+        try:
+            connection.request("POST", path, body=body, headers=headers)
+            response = connection.getresponse()
+            response_body = response.read().decode()
+            assert response.status == 500
+            assert response.reason == "Local protocol fixture failed"
+            assert canary not in response_body
+            assert peer.errors == ["ValueError"]
+            assert not peer.polled.is_set()
+            assert not peer.acknowledged.is_set()
+        finally:
+            connection.close()
 
 
 def _connected_store(tmp_path: Path, issuer: str) -> GuardStore:

@@ -94,6 +94,39 @@ class NativeFloorMismatchError(ProbeError):
         }
 
 
+class ReceiptRequestMismatchError(ProbeError):
+    """Keep finite comparisons when two independently reviewed requests differ.
+
+    These comparisons describe the captured receipts. They do not identify
+    which input changed or prove that a policy transition caused the failure.
+    """
+
+    def __init__(
+        self,
+        *,
+        label: str,
+        completed_cases: int | None,
+        receipt: dict[str, Any],
+        binding: dict[str, object],
+        command_binding: object,
+        expected_reason: str,
+        expected_action: str,
+    ) -> None:
+        super().__init__("receipt_request_mismatch")
+        self.observation = {
+            "case": label if type(label) is str and label in _CASES else "other",
+            "completed_cases": min(len(_CASES), max(0, completed_cases)) if type(completed_cases) is int else None,
+            "matches_expected": {
+                "policy_generation": receipt.get("policy_generation") == binding.get("generation"),
+                "policy_digest": receipt.get("policy_digest") == binding.get("policy_digest"),
+                "runtime_identity": receipt.get("runtime_identity") == binding.get("runtime_identity"),
+                "command_extensions": receipt.get("command_extensions") == command_binding,
+                "reason_code": receipt.get("reason_code") == expected_reason,
+                "policy_action": receipt.get("policy_action") == expected_action,
+            },
+        }
+
+
 def verify_native_floor(result: dict[str, Any], *, label: str, immutable_review: bool = False) -> None:
     expected = "review" if immutable_review else "block"
     if result.get("decision") != "deny" or result.get("minimum_action") != expected:
@@ -125,6 +158,8 @@ def verify_delivery(
     expected_reason: str,
     expected_request_digest: str,
     immutable_review: bool = False,
+    label: str = "other",
+    completed_cases: int | None = None,
 ) -> None:
     """A raw floor and receipt cannot substitute for its exact HTTP disposition."""
     output = mapping(response.get("hookSpecificOutput"), "http_output_missing")
@@ -149,7 +184,16 @@ def verify_delivery(
         require(isinstance(value, str) and bool(value), "receipt_identity_missing")
         if field != "request_digest" and isinstance(previous_receipt, dict):
             require(value != previous_receipt.get(field), "receipt_not_fresh")
-    require(accepted.get("request_digest") == expected_request_digest, "receipt_request_mismatch")
+    if accepted.get("request_digest") != expected_request_digest:
+        raise ReceiptRequestMismatchError(
+            label=label,
+            completed_cases=completed_cases,
+            receipt=accepted,
+            binding=binding,
+            command_binding=command_binding,
+            expected_reason=expected_reason,
+            expected_action=expected,
+        )
     require(
         accepted.get("reason_code") == expected_reason and accepted.get("policy_action") == expected,
         "receipt_result_mismatch",
@@ -308,6 +352,8 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             expected_reason=result["reason_code"],
             expected_request_digest=mapping(edge.get("receipt"), "raw_receipt_missing")["request_digest"],
             immutable_review=immutable_review,
+            label=label,
+            completed_cases=len(rows),
         )
         if immutable_review:
             request_id = response.get("approval_request_id")
@@ -518,7 +564,7 @@ def main() -> int:
         report["passed"] = True
     except ProbeError as error:
         report["failure"] = str(error)
-        if isinstance(error, NativeFloorMismatchError):
+        if isinstance(error, (NativeFloorMismatchError, ReceiptRequestMismatchError)):
             report["failure_observation"] = error.observation
     except Exception:
         report["failure"] = "probe_execution_failed"

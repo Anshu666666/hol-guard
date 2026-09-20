@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import cast
 from urllib.error import HTTPError
 
+from ..policy_delivery_outcome import sanitize_policy_delivery_summary
 from .policy_sync_status import policy_rejection_diagnostic
 
 
@@ -30,7 +31,10 @@ def sync_success_payload(payload: dict[str, object]) -> dict[str, object]:
 
     receipts = payload.get("receipts")
     if isinstance(receipts, dict):
-        summary = cast(dict[str, object], receipts)
+        summary = dict(cast(dict[str, object], receipts))
+        sanitize_policy_delivery_summary(summary, summary)
+        payload["receipts"] = summary
+        receipts = summary
         for key in (
             "receipt_upload_status",
             "policy_validation_status",
@@ -38,6 +42,12 @@ def sync_success_payload(payload: dict[str, object]) -> dict[str, object]:
             "policy_rejection_reason",
         ):
             _ = payload.setdefault(key, summary.get(key))
+    source = (
+        payload
+        if "policy_delivery_status" in payload or not isinstance(receipts, dict)
+        else cast(dict[str, object], receipts)
+    )
+    sanitize_policy_delivery_summary(payload, source)
     diagnostic = policy_rejection_diagnostic(payload.get("policy_rejection_reason"))
     if diagnostic is not None:
         payload["policy_rejection_diagnostic"] = diagnostic

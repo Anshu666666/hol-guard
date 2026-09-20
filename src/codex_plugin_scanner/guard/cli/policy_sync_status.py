@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from ..policy_bundle_parser import policy_bundle_rejection_message
+from ..policy_delivery_outcome import policy_delivery_summary_fields
 
 
 def policy_rejection_diagnostic(reason: object) -> dict[str, object] | None:
@@ -46,6 +47,7 @@ def cloud_policy_sync_fields(
         "policy_validation_status": _optional_string(sync_summary.get("policy_validation_status")),
         "policy_application_status": _optional_string(sync_summary.get("policy_application_status")),
         "policy_rejection_reason": _optional_string(sync_summary.get("policy_rejection_reason")),
+        **policy_delivery_summary_fields(sync_summary),
     }
 
 
@@ -76,4 +78,8 @@ def sync_output_rows(payload: Mapping[str, object]) -> list[tuple[str, str]]:
     diagnostic = policy_rejection_diagnostic(payload.get("policy_rejection_reason"))
     if diagnostic is not None:
         rows.append(("Next step", str(diagnostic["remediation"])))
+    delivery = policy_delivery_summary_fields(payload)
+    if delivery:
+        rows.append(("Policy delivery", str(delivery["policy_delivery_status"])))
+        rows.append(("Delivery next step", str(delivery["policy_delivery_remediation"])))
     return rows

@@ -33,6 +33,14 @@ _STAGES = (
     "request_written",
     "response_received",
     "frame_written",
+    "lease_directory_ready",
+    "lease_process_identified",
+    "lease_runtime_hashed",
+    "lease_nonce_ready",
+    "lease_directory_lock_acquired",
+    "lease_file_ready",
+    "lease_durable",
+    "lease_refused",
 )
 _LINES = {_PREFIX + stage.encode("ascii"): stage for stage in _STAGES}
 _MAX_STREAMS = 4

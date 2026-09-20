@@ -1,0 +1,49 @@
+...
+ MAX_READ_BYTES = 64 * 1024 * 1024
+ ROOT = Path(__file__).resolve().parent
++BASE_COMMIT = "4afa20cf014ccba918bf2fa61552dafe66767930"
+-BASE_COMMIT = "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd"
+ 
+ 
+...
+     def focused(self, role: str, root: Path, binary: Path, env: dict[str, str]) -> list[dict[str, object]]:
+         groups = ("managed",) if os.name == "nt" else ("managed", "unix")
++        require(role == "candidate", "candidate_only_role")
++        phase = "after"
+-        phase = "before" if role == "before" else "after"
+         results = []
+         expected_digest = next(digest for path, digest in self.focused_binaries if path == binary)
+...
+ def main() -> int:
+     parser = argparse.ArgumentParser(description=__doc__)
++    for field in ("candidate-root", "driver-root", "candidate-sha",
+-    for field in ("before-root", "candidate-root", "driver-root", "before-sha", "candidate-sha",
+                   "driver-sha", "expected-host", "output", "target-root"):
+         parser.add_argument("--" + field, required=True)
+     args = parser.parse_args()
++    candidate, driver = (Path(value).resolve(strict=True) for value in (
++        args.candidate_root, args.driver_root,
+-    before, candidate, driver = (Path(value).resolve(strict=True) for value in (
+-        args.before_root, args.candidate_root, args.driver_root,
+     ))
+     output, target_root = Path(args.output).resolve(), Path(args.target_root).resolve()
+     require(all(not output.is_relative_to(root) and not target_root.is_relative_to(root)
++                for root in (candidate, driver)), "output_inside_source")
+-                for root in (before, candidate, driver)), "output_inside_source")
+     output.mkdir(mode=0o700, parents=False, exist_ok=False)
+     target_root.mkdir(mode=0o700, parents=False, exist_ok=False)
+...
+         starting["driver"] = validation.snapshot(driver, "driver-before", base_env)
+         require(starting["driver"]["head"] == args.driver_sha and starting["driver"]["status"] == "", "driver_binding")
++        roots = (("candidate", candidate, args.candidate_sha, manifest["candidate_tree"]),)
+-        roots = (("before", before, args.before_sha, manifest["before_tree"]),
+-                 ("candidate", candidate, args.candidate_sha, manifest["candidate_tree"]))
+         for role, root, commit, tree in roots:
+             snap = validation.snapshot(root, role + "-before", base_env)
+...
+     finally:
+         final = {}
++        for label, root in (("candidate", candidate), ("driver", driver)):
+-        for label, root in (("before", before), ("candidate", candidate), ("driver", driver)):
+             try:
+                 final[label] = validation.snapshot(root, label + "-after", base_env)

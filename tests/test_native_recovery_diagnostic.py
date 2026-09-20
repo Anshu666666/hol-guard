@@ -159,7 +159,8 @@ def test_slow_success_keeps_its_latency_and_emits_bounded_evidence(
                 )
             return _response()
 
-        def stop_resident(self) -> bool:
+        def stop_resident(self, *, preserve_clients: bool = False) -> bool:
+            assert preserve_clients
             self.stopped = True
             return True
 

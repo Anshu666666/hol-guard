@@ -644,3 +644,67 @@ def test_http_observer_restores_existing_override_and_forwards_original_exceptio
         worker._review_raw_hook_native(payload=payload)
     assert caught.value is error and seen[0] is payload
     assert worker._review_raw_hook_native is original and calls == []
+
+
+@pytest.mark.parametrize("stage", ["initial-policy", "case-policy", "approval-policy"])
+def test_readiness_stage_preserves_exact_failure_and_bounded_context(
+    stage: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    failure = RuntimeError("private request/path canary")
+    with (
+        pytest.raises(RuntimeError) as caught,
+        probe.report_managed_readiness_stage(stage=stage, mode="observe", control_revision=7, completed_cases=3),
+    ):
+        raise failure
+    assert caught.value is failure
+    record = json.loads(capsys.readouterr().out)
+    assert record == {
+        "schema": "guard.installed-managed-readiness-stage.v1",
+        "stage": stage,
+        "mode": "observe",
+        "control_revision": 7,
+        "completed_cases": 3,
+        "readiness_call_failed": True,
+    }
+    assert "canary" not in json.dumps(record)
+
+
+def test_readiness_stage_success_is_silent(capsys: pytest.CaptureFixture[str]) -> None:
+    completed = []
+    with probe.report_managed_readiness_stage(
+        stage="initial-policy", mode="enforce", control_revision=1, completed_cases=0
+    ):
+        completed.append(True)
+    assert completed == [True]
+    assert capsys.readouterr().out == ""
+
+
+def test_readiness_stage_unknown_inputs_cannot_leak(capsys: pytest.CaptureFixture[str]) -> None:
+    with (
+        pytest.raises(ValueError),
+        probe.report_managed_readiness_stage(
+            stage="private-canary", mode="private-canary", control_revision=True, completed_cases=999
+        ),
+    ):
+        raise ValueError("private-canary")
+    record = json.loads(capsys.readouterr().out)
+    assert record["stage"] == record["mode"] == "other"
+    assert record["control_revision"] is None and record["completed_cases"] is None
+    assert "private" not in json.dumps(record)
+
+
+def test_readiness_stage_output_failure_cannot_replace_original(monkeypatch: pytest.MonkeyPatch) -> None:
+    failure = RuntimeError("original")
+
+    def unavailable(*_args: object, **_kwargs: object) -> None:
+        raise OSError("output unavailable")
+
+    monkeypatch.setattr("builtins.print", unavailable)
+    with (
+        pytest.raises(RuntimeError) as caught,
+        probe.report_managed_readiness_stage(
+            stage="case-policy", mode="enforce", control_revision=1, completed_cases=2
+        ),
+    ):
+        raise failure
+    assert caught.value is failure

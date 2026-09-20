@@ -18,9 +18,9 @@ Current Guard support in this repo:
   - wrapper prompt screening now suppresses copied debug and incident context while still escalating risky prompt intent
   - uses same-chat MCP elicitation for live managed MCP tool approvals in the interactive CLI and Codex App
   - falls back to the local approval center only for nonresponsive or headless Codex sessions such as `codex exec`
-  - when a browser approval request has a live Codex thread binding, approving or blocking in the browser resumes that same Codex thread with HOL Guard continuation copy and the exact blocked command context
-  - headless Codex sessions resume through `codex exec resume` with Guard-managed hooks still enabled, so saved approvals can replay the blocked command instead of forcing a manual retry
-  - when no Codex thread binding is available, returns an explicit manual fallback instead of a false resume success
+  - an approved request can notify its bound Codex thread through the trusted app-server channel; a sent notification does not prove that the original tool action resumed or finished
+  - does not start `codex exec resume` when that channel is unavailable; a blocked request does not resume the thread, and missing bindings or transport failures retain their explicit recovery result
+  - an original live hook can continue only within its existing wait deadline after the exact request and current execution authority are confirmed; inspect that completion result separately from the saved decision
 - `claude-code`
   - detects global and project settings, hooks, `.mcp.json`, and workspace agents
   - supports local hook install and uninstall in `.claude/settings.local.json`
@@ -171,6 +171,16 @@ Explicit non-support:
 ## Protection Contract Summary
 
 Generated from `src/codex_plugin_scanner/guard/adapters/contracts.py`.
+
+The flags below describe declared adapter paths. They do not certify a particular
+installed version, an active session, successful action completion, or a native
+approval credential. Check the per-request continuation result and the installed
+artifact's supported path. Codex source controls cover
+[blocked and missing-channel refusals](../../tests/test_guard_codex_resume_endpoints.py),
+[live hook completion](../../tests/test_guard_codex_live_action_boundary.py), and
+[native one-shot completion](../../tests/test_native_live_approval_completion.py).
+The native V4 path additionally requires the external root-signed authority and
+matching browser credential described in [native approval enrollment](native-approval-enrollment.md).
 
 | Harness | Install Aliases | Native Approval | Browser Fallback | Resume | Event Surfaces |
 |---------|-----------------|-----------------|------------------|--------|----------------|

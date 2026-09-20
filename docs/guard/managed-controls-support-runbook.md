@@ -2,6 +2,10 @@
 
 Use this runbook for Local Extension settings and for staged Guard Cloud Managed Controls authoring, compatibility, delivery, acknowledgement, drift, and rollback reports.
 
+For connection, validation, publication and continuation failures, start with
+the passive export and stage-specific actions in
+[Policy delivery diagnosis and recovery](policy-delivery-support.md).
+
 ## Preserve the boundary
 
 Local Guard enforces on the device. Cloud outage, sign-out, plan state, or sync failure does not mean local protection expired. Use the [glossary](managed-controls-glossary.md), [ADR 0011](adr/0011-extension-first-managed-controls.md), and the [Cloud availability boundary](managed-controls-cloud-operator-guide.md).

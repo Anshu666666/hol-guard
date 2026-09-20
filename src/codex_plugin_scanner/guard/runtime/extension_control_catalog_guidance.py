@@ -11,16 +11,21 @@ def catalog_upgrade_status(
     *,
     registry: CommandSafetyExtensionRegistry,
     runtime_version: str,
+    observed_catalog_digest: str | None = None,
     missing_permission_ids: tuple[str, ...] = (),
     missing_extension_ids: tuple[str, ...] = (),
 ) -> dict[str, object]:
     """Explain why a policy cannot claim applied against another catalog."""
 
     codes = tuple(failure.code.value for failure in resolution.failures)
+    if observed_catalog_digest is not None and observed_catalog_digest != registry.catalog_digest:
+        mismatch = ResolverFailureCode.CATALOG_DIGEST_MISMATCH.value
+        if mismatch not in codes:
+            codes = (*codes, mismatch)
     digest_mismatch = ResolverFailureCode.CATALOG_DIGEST_MISMATCH.value in codes
     unknown_permission = ResolverFailureCode.UNKNOWN_PERMISSION_TARGET.value in codes
     unknown_extension = ResolverFailureCode.UNKNOWN_EXTENSION_TARGET.value in codes
-    applied = not resolution.failures
+    catalog_compatible = not codes
     if digest_mismatch:
         next_action = (
             "Update this device to a runtime that supports the policy's catalog, "
@@ -32,10 +37,14 @@ def catalog_upgrade_status(
     elif unknown_extension:
         listed = ", ".join(missing_extension_ids) or "the named extension"
         next_action = f"Restore {listed} on this device, or remove it from the Cloud policy."
+    elif codes:
+        next_action = "Restore valid local extension-control authority before checking catalog compatibility."
     else:
         next_action = "No catalog upgrade is required."
     return {
-        "applied": applied,
+        # Catalog resolution is an explanation, not evidence of native delivery.
+        "applied": False,
+        "catalog_compatible": catalog_compatible,
         "runtime_version": runtime_version,
         "catalog_digest": registry.catalog_digest,
         "failure_codes": codes,

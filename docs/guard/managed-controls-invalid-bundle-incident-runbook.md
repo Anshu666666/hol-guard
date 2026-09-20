@@ -16,7 +16,8 @@ See [Policy Extension fields v1](policy-extension-fields-v1.md), [Local Policy +
 ```bash
 set -o pipefail
 hol-guard command controls status | jq -e '{revision, catalog_digest, health}'
-hol-guard policy explain --json | jq -e '{digest, rules, compiled_rows, actions, scopes}'
+hol-guard policy explain --json | jq -e \
+  '{digest, rules, compiled_rows, actions, scope_rule_counts: ([.scopes | to_entries[] | .value])}'
 ```
 
 Record the visible bounded rejection reason separately. Apply every redaction step in the [support runbook](managed-controls-support-runbook.md); do not attach broad status, connect, or doctor output.

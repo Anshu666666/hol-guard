@@ -47,6 +47,11 @@ from .command_queue_protocol import lease_id as _lease_id
 from .command_queue_protocol import pending_result_is_stale as _pending_result_is_stale
 from .command_queue_protocol import result_payload as _result_payload
 from .command_queue_protocol import retry_wait_seconds as _retry_wait_seconds  # noqa: F401
+from .command_queue_result_retry import (
+    exact_result_delivery_binding,
+    exact_result_subject_is_current,
+    rebind_exact_result,
+)
 from .command_queue_state import (
     COMMAND_QUEUE_ENABLED_ENV,
     COMMAND_QUEUE_LEASE_WAIT_MS_ENV,  # noqa: F401 - public compatibility export
@@ -262,7 +267,27 @@ def _retry_pending_result(
         state.pop("active_job", None)
         _save_state(store, state)
         return False
-    if _pending_result_is_stale(job):
+    exact = uses_exact_transport(job)
+    if exact and "delivery_binding" in pending and not exact_result_subject_is_current(store, pending):
+        state.update(state="result_pending", last_error="The pending Review result requires its original connection.")
+        _save_state(store, state)
+        return True
+    if _pending_result_is_stale(job) and exact:
+        state["state"] = "result_pending"
+        _save_state(store, state)
+        leased = _lease_job_with_401_retry(store, state, auth_context)
+        rebound = rebind_exact_result(store, pending, leased) if leased is not None else None
+        if rebound is None or leased is None:
+            state.update(
+                state="result_pending", last_error="The pending Review result is waiting for its matching lease."
+            )
+            _save_state(store, state)
+            return True
+        job, payload = leased, rebound
+        pending = {**pending, "job": job, "payload": payload}
+        state["pending_result"] = pending
+        _save_state(store, state)
+    elif _pending_result_is_stale(job):
         _LOGGER.warning("Guard command dropped stale pending result.")
         state.pop("pending_result", None)
         state.pop("active_job", None)
@@ -271,13 +296,26 @@ def _retry_pending_result(
         _save_state(store, state)
         return False
     try:
-        _post_result(auth_context, job, payload)
-    except urllib.error.HTTPError as error:
-        if error.code != 401:
-            raise
-        _LOGGER.warning("Pending Guard result 401, attempting OAuth refresh retry.")
-        refreshed_auth_context = _resolve_command_queue_auth_context(store, force_refresh=True)
-        _post_result(refreshed_auth_context, job, payload)
+        try:
+            _post_result(auth_context, job, payload)
+        except urllib.error.HTTPError as error:
+            if error.code != 401:
+                raise
+            _LOGGER.warning("Pending Guard result 401, attempting OAuth refresh retry.")
+            refreshed_auth_context = _resolve_command_queue_auth_context(store, force_refresh=True)
+            if exact and "delivery_binding" in pending and not exact_result_subject_is_current(store, pending):
+                state.update(
+                    state="result_pending", last_error="The pending Review result requires its original connection."
+                )
+                _save_state(store, state)
+                return True
+            _post_result(refreshed_auth_context, job, payload)
+    except Exception:
+        state.update(
+            state="result_pending", last_error="Guard command result delivery is pending. Retry synchronization."
+        )
+        _save_state(store, state)
+        raise
     state.pop("pending_result", None)
     state.pop("active_job", None)
     state.update(
@@ -360,6 +398,7 @@ def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[
         return command_queue_status(store)
     auth_context = _resolve_command_queue_auth_context(store)
     _record_leased_job(store, state, item)
+    result_delivery_binding = exact_result_delivery_binding(store) if uses_exact_transport(item) else None
     try:
         _heartbeat(auth_context, item)
     except urllib.error.HTTPError as error:
@@ -443,7 +482,12 @@ def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[
             state.update(
                 {
                     "state": "result_pending",
-                    "pending_result": {"job": item, "payload": payload, "recorded_at": _now()},
+                    "pending_result": {
+                        "job": item,
+                        "payload": payload,
+                        "recorded_at": _now(),
+                        "delivery_binding": result_delivery_binding,
+                    },
                 }
             )
             _save_state(store, state)
@@ -460,7 +504,12 @@ def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[
             state.update(
                 {
                     "state": "result_pending",
-                    "pending_result": {"job": item, "payload": payload, "recorded_at": _now()},
+                    "pending_result": {
+                        "job": item,
+                        "payload": payload,
+                        "recorded_at": _now(),
+                        "delivery_binding": result_delivery_binding,
+                    },
                 }
             )
             _save_state(store, state)
@@ -470,7 +519,12 @@ def poll_command_queue_once(store: GuardStore, context: HarnessContext) -> dict[
         state.update(
             {
                 "state": "result_pending",
-                "pending_result": {"job": item, "payload": payload, "recorded_at": _now()},
+                "pending_result": {
+                    "job": item,
+                    "payload": payload,
+                    "recorded_at": _now(),
+                    "delivery_binding": result_delivery_binding,
+                },
             }
         )
         _save_state(store, state)

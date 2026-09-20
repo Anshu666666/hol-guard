@@ -24,7 +24,7 @@ def test_timed_out_capacity_wave_returns_without_waiting_for_running_worker(
         time.sleep(0.2)
         return object()
 
-    session = cast(AdapterSession, SimpleNamespace(observe=slow_observe))
+    session = cast(AdapterSession, cast(object, SimpleNamespace(observe=slow_observe)))
     monkeypatch.setattr(capacity, "_CONCURRENT_WAVE_TIMEOUT_SECONDS", 0.01)
     executor = ThreadPoolExecutor(max_workers=1)
     started = time.perf_counter()
@@ -37,7 +37,7 @@ def test_timed_out_capacity_wave_returns_without_waiting_for_running_worker(
         executor.shutdown(wait=True, cancel_futures=True)
 
 
-def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseline(
+def test_capacity_proof_warms_resident_clients_before_isolated_c16_and_c64(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[tuple[str, ThreadPoolExecutor | None]] = []
@@ -45,7 +45,8 @@ def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseli
     class FakeSession:
         def __init__(self) -> None:
             runner = SimpleNamespace(stats=lambda: {})
-            self.daemon = SimpleNamespace(_server=SimpleNamespace(hook_process_runner=runner))
+            worker = SimpleNamespace(metrics=SimpleNamespace(snapshot=lambda: {"routes": {}}))
+            self.daemon = SimpleNamespace(_server=SimpleNamespace(hook_process_runner=runner, hook_worker=worker))
 
         def native_overload_count(self) -> int:
             return 0
@@ -57,11 +58,11 @@ def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseli
     def fake_prewarm(
         _session: object,
         _routes: object,
-        _concurrency: int,
+        concurrency: int,
         executor: ThreadPoolExecutor,
     ) -> tuple[list[object], int]:
-        calls.append(("baseline-warmup", executor))
-        return [], 0
+        calls.append(("worker-warmup", executor))
+        return [object() for _ in range(concurrency)], 0
 
     def fake_baseline(warmup: Callable[[], object], **_kwargs: object) -> int:
         calls.append(("baseline-start", None))
@@ -85,22 +86,38 @@ def test_capacity_proof_prestarts_isolated_c16_then_primes_c64_before_rss_baseli
     monkeypatch.setattr(capacity, "_run_concurrent", fake_concurrent)
     monkeypatch.setattr(capacity, "process_rss_bytes", lambda: 100)
 
-    session = cast(AdapterSession, FakeSession())
+    session = cast(AdapterSession, cast(object, FakeSession()))
     capacity.measure_capacity(session, (("codex", "PreToolUse"),), include_capacity=True)
 
     assert [name for name, _ in calls] == [
+        "prime-2",
+        "worker-warmup",
         "prime-16",
         "c16",
         "prime-64",
         "baseline-start",
-        "baseline-warmup",
+        "worker-warmup",
         "baseline-end",
         "c64",
     ]
     executor_by_call = {name: executor for name, executor in calls if executor is not None}
     assert executor_by_call["prime-16"] is executor_by_call["c16"]
     assert executor_by_call["c16"] is not executor_by_call["c64"]
-    assert executor_by_call["prime-64"] is executor_by_call["baseline-warmup"] is executor_by_call["c64"]
+    assert calls[0][1] is calls[1][1]
+    assert executor_by_call["prime-64"] is executor_by_call["worker-warmup"] is executor_by_call["c64"]
+
+
+@pytest.mark.parametrize("completed,errors", [(1, 0), (2, 1)])
+def test_capacity_prewarm_rejects_incomplete_worker_initialization(
+    monkeypatch: pytest.MonkeyPatch, completed: int, errors: int
+) -> None:
+    monkeypatch.setattr(
+        capacity,
+        "_prewarm_ready_hook_workers",
+        lambda *_args: ([object() for _ in range(completed)], errors),
+    )
+    with pytest.raises(RuntimeError, match="capacity prewarm did not complete every request"):
+        capacity._prewarm_capacity_workers(cast(AdapterSession, object()), (("codex", "PreToolUse"),), 2)
 
 
 def test_capacity_proof_supports_skip_capacity(monkeypatch: pytest.MonkeyPatch) -> None:

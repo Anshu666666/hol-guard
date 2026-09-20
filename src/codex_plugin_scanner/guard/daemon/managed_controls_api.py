@@ -6,10 +6,13 @@ import json
 from pathlib import Path
 from typing import Protocol
 
+from ...version import __version__
 from ..frozen_runtime_commands import frozen_windows_extension_control_commands
 from ..runtime.command_extensions import BUILT_IN_COMMAND_EXTENSION_REGISTRY, CommandSafetyExtensionRegistry
 from ..runtime.extension_control_authority import layers_to_json
-from ..runtime.extension_control_resolver import compose_control_layers
+from ..runtime.extension_control_catalog_guidance import catalog_upgrade_status
+from ..runtime.extension_control_contract import ControlSurface, ControlTargetKind
+from ..runtime.extension_control_resolver import compose_control_layers, resolve_extension_controls
 from ..runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
 from ..store_managed_controls_status import ManagedControlsStatusUnavailableError
 from .extension_control_projection import build_effective_extension_control_projection
@@ -51,6 +54,39 @@ def effective_controls_payload(
     store: ManagedControlsStatusStore,
 ) -> dict[str, object]:
     composed = compose_control_layers(snapshot.layers)
+    # Validate every retained target, including targets absent from the current
+    # catalog (which cannot appear in the catalog's per-item projection).
+    catalog_resolution = resolve_extension_controls(
+        snapshot.layers,
+        registry,
+        extension_ids=(),
+        permission_ids=(),
+        surface=ControlSurface.COMMAND_EVALUATION,
+        authority_failure=snapshot.authority_failure,
+    )
+    catalog_status = catalog_upgrade_status(
+        catalog_resolution,
+        registry=registry,
+        runtime_version=__version__,
+        observed_catalog_digest=snapshot.catalog_digest,
+        missing_permission_ids=tuple(
+            sorted(
+                control.target.target_id
+                for control in composed.controls
+                if control.target.kind is ControlTargetKind.PERMISSION
+                and registry.permission(control.target.target_id) is None
+            )
+        ),
+        missing_extension_ids=tuple(
+            sorted(
+                control.target.target_id
+                for control in composed.controls
+                if control.target.kind is ControlTargetKind.EXTENSION and registry.get(control.target.target_id) is None
+            )
+        ),
+    )
+    catalog_status["policy_catalog_digests"] = tuple(sorted({layer.catalog_digest for layer in snapshot.layers}))
+    catalog_status["observed_catalog_digest"] = snapshot.catalog_digest
     payload: dict[str, object] = {
         "schema_version": "guard.daemon.extension-controls.v1",
         "health": snapshot.health.value,
@@ -73,6 +109,7 @@ def effective_controls_payload(
             for failure in composed.failures
         ],
         "projection": build_effective_extension_control_projection(registry, snapshot),
+        "catalog_status": catalog_status,
     }
     terminal_commands = frozen_windows_extension_control_commands(store.guard_home)
     if terminal_commands is not None:

@@ -127,6 +127,17 @@ class ReadinessFixture(SignedPolicyFixture):
             return self.accept_observation(request)
         return super().response_for_request(path, request)
 
+    def configure_profile_stage(self, effect: str) -> None:
+        if effect not in {"block", "review", "allow"}:
+            raise ValueError("unsupported_profile_stage")
+        config = 'mode="enforce"\ndefault_action="review"\n'
+        if effect == "allow":
+            # An explicit artifact review is satisfiable by the exact signed
+            # allow. A bare review default relaxes verified pwd to warn, which
+            # signed allow correctly preserves rather than claiming to change.
+            config += '[artifacts."codex:project:Bash"]\naction="review"\n'
+        (self.store.guard_home / "config.toml").write_text(config, encoding="utf-8")
+
     def accept_observation(self, request: object) -> dict[str, JsonValue]:
         envelope = validate_wire(request, "observation")
         body = mapping(envelope["body"])

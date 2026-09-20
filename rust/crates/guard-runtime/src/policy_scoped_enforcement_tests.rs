@@ -124,8 +124,19 @@ fn readiness_profile_stage_defaults_make_all_three_exact_rules_causal() {
             let mut selected = row(7, "artifact", effect, "signed-bundle");
             selected["artifact_id"] = json!("codex:project:Bash");
             selected["exact_command_sha256"] = json!(exact_command_sha256(command));
-            let policy = snapshot(default, vec![selected.clone()]);
-            let baseline = evaluate(&snapshot(default, vec![]), &source);
+            let mut policy = snapshot(default, vec![selected.clone()]);
+            let mut baseline_policy = snapshot(default, vec![]);
+            if effect == "allow" {
+                // Match the fixture's explicit, satisfiable artifact review;
+                // bare default review intentionally relaxes verified pwd.
+                for configured in [&mut policy, &mut baseline_policy] {
+                    configured.effective_policy.artifact_actions.insert(
+                        "codex:project:Bash".to_owned(),
+                        "review".to_owned(),
+                    );
+                }
+            }
+            let baseline = evaluate(&baseline_policy, &source);
             let result = evaluate(&policy, &source);
             assert_ne!(baseline.result.policy_action, effect, "{command}/{effect}");
             assert_eq!(result.result.policy_action, effect, "{command}/{effect}");
@@ -151,6 +162,22 @@ fn readiness_profile_stage_defaults_make_all_three_exact_rules_causal() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn bare_default_review_keeps_verified_pwd_warn_without_causal_allow_credit() {
+    let mut source = envelope("pwd");
+    source.raw_payload["tool_name"] = json!("Bash");
+    source.raw_payload["source_scope"] = json!("project");
+    let mut selected = row(7, "artifact", "allow", "signed-bundle");
+    selected["artifact_id"] = json!("codex:project:Bash");
+    selected["exact_command_sha256"] = json!(exact_command_sha256("pwd"));
+    for rows in [vec![], vec![selected]] {
+        let result = evaluate(&snapshot("review", rows), &source);
+        assert_eq!(result.result.policy_action, "warn");
+        assert_eq!(result.result.decision, "allow");
+        assert_eq!(result.selected_decision_id, None);
     }
 }
 

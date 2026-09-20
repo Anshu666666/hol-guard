@@ -43,6 +43,15 @@ Guard does not meter local safety features. You can detect harnesses, install
 launchers, configure Extensions, diff changes, prompt for approval, and inspect
 receipts without signing in.
 
+Offline availability of local protection does not extend a signed policy's
+expiry, create a missing remote decision or renew a waiting action's deadline.
+Eligible cached policy and managed restrictions retain their existing authority
+checks. Inspect the current policy and request result using the
+[delivery recovery guide](policy-cloud-exceptions-boundary.md); the
+[offline lifetime controls](../../tests/test_policy_offline_lifetime_truth.py)
+cover the distinction between valid retained authority and expired or rejected
+input. Coverage remains limited to the installed [supported integration points](harness-support.md).
+
 Safe Decode runs locally too. It inspects encoded payload layers for review
 evidence, but never executes decoded payloads and only syncs redacted summaries
 when optional Cloud receipt sync is enabled.

@@ -19,7 +19,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -76,6 +76,31 @@ _CASES = frozenset(
     )
     for mode in ("enforce", "observe")
 ) | {"later-local-enable", "signed-enable-rejected"}
+
+
+@contextmanager
+def report_managed_readiness_stage(
+    *, stage: str, mode: str, control_revision: int, completed_cases: int
+) -> Iterator[None]:
+    """Project only fixed call-site context while preserving the original failure."""
+    try:
+        yield
+    except Exception:
+        record = {
+            "schema": "guard.installed-managed-readiness-stage.v1",
+            "stage": stage if stage in {"initial-policy", "case-policy", "approval-policy"} else "other",
+            "mode": mode if mode in {"enforce", "observe"} else "other",
+            "control_revision": control_revision
+            if type(control_revision) is int and 0 <= control_revision <= 1_000_000
+            else None,
+            "completed_cases": completed_cases
+            if type(completed_cases) is int and 0 <= completed_cases <= len(_CASES)
+            else None,
+            "readiness_call_failed": True,
+        }
+        with suppress(Exception):
+            print(json.dumps(record, sort_keys=True), flush=True)
+        raise
 
 
 class NativeFloorMismatchError(ProbeError):
@@ -330,8 +355,11 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         )
         update_guard_settings(home, {"mode": mode}, approval_gate_grant=grant)
 
-    def bound(mode: str, *, managed: bool = True) -> dict[str, object]:
-        binding = ready(daemon, workspace, revision)
+    def bound(mode: str, *, managed: bool = True, stage: str = "case-policy") -> dict[str, object]:
+        with report_managed_readiness_stage(
+            stage=stage, mode=mode, control_revision=revision, completed_cases=len(rows)
+        ):
+            binding = ready(daemon, workspace, revision)
         snapshot = present(publisher.current_snapshot(), "snapshot_missing")
         require(snapshot["version"] == 3, "command_authority_not_v3")
         require(binding.get("command_extensions_bound") is True and binding["mode"] == mode, "posture_not_bound")
@@ -477,7 +505,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
 
     with cleanup_preserving_failure(cleanup):
         daemon.start()
-        bound("enforce", managed=False)
+        bound("enforce", managed=False, stage="initial-policy")
         runner.sync_runtime_session(store, session={"harness": "claude-code", "workspace": str(workspace)})
         require(len(fixture.negotiated_capabilities) == 3, "managed_negotiation_missing")
         applied(1)
@@ -541,7 +569,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         # Obtain one actual action-bound approval through the protected local
         # store API. No simulated native result or prepopulated approval is used.
         set_mode("enforce")
-        bound("enforce")
+        bound("enforce", stage="approval-policy")
         approved_payload: dict[str, object] = {
             "request_id": "managed-approved-read",
             "hook_event_name": "PreToolUse",

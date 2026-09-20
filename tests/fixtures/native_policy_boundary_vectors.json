@@ -1,0 +1,984 @@
+{
+  "schema": "native-policy-boundary-fixtures.v1",
+  "scope": "Actual Python outer consumer and compiler; declared native result expectations require separate real Rust execution. Content-hash authority remains unavailable to this native scoped shell composition.",
+  "cases": [
+    {
+      "name": "enforce-default-allow",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "allow",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "enforce-default-review",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "review",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "review",
+        "minimumAction": "review",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "enforce-default-block",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "enforce-publisher-known",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-known"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "enforce-publisher-missing",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "enforce-publisher-foreign",
+      "inputMode": "enforce",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-foreign"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "prompt-default-allow",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "allow",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "prompt-default-review",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "review",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "review",
+        "minimumAction": "review",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "prompt-default-block",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "prompt-publisher-known",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-known"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "prompt-publisher-missing",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "prompt-publisher-foreign",
+      "inputMode": "prompt",
+      "compiledMode": "enforce",
+      "effectivePolicy": {
+        "protection_posture": "protected",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-foreign"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "block",
+        "minimumAction": "block",
+        "decision": "deny",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_scoped_policy_composed"
+      }
+    },
+    {
+      "name": "observe-default-allow",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "allow",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "observe-default-review",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "review",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": "review",
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "observe-default-block",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {},
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": "block",
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "observe-publisher-known",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-known"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": null,
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "observe-publisher-missing",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": []
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": "block",
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    },
+    {
+      "name": "observe-publisher-foreign",
+      "inputMode": "observe",
+      "compiledMode": "observe",
+      "effectivePolicy": {
+        "protection_posture": "watch",
+        "security_level": "balanced",
+        "default_action": "block",
+        "unknown_publisher_action": "block",
+        "changed_hash_action": "require-reapproval",
+        "new_network_domain_action": "warn",
+        "subprocess_action": "allow",
+        "risk_actions": {
+          "local_secret_read": "require-reapproval",
+          "credential_exfiltration": "require-reapproval",
+          "data_flow_exfiltration": "require-reapproval",
+          "destructive_shell": "require-reapproval",
+          "encoded_execution": "require-reapproval",
+          "network_egress": "warn",
+          "prompt_injection": "require-reapproval",
+          "mcp_dangerous_tool": "require-reapproval",
+          "malicious_skill": "require-reapproval",
+          "package_script": "warn",
+          "persistence": "require-reapproval",
+          "guard_bypass": "block",
+          "cloud_advisory": "warn",
+          "encoded_exfiltration": "require-reapproval"
+        },
+        "harness_risk_actions": {},
+        "harness_actions": {},
+        "publisher_actions": {
+          "synthetic-known": "allow"
+        },
+        "artifact_actions": {},
+        "sandbox_analysis": "off",
+        "receipt_redaction_level": "full"
+      },
+      "payload": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Shell",
+        "tool_input": {
+          "command": "printf '%s' Synthetic"
+        },
+        "source_scope": "project",
+        "approval_requests": [],
+        "publisher": "synthetic-foreign"
+      },
+      "pythonReasonCode": null,
+      "expected": {
+        "policyAction": "allow",
+        "minimumAction": "allow",
+        "decision": "allow",
+        "observedPolicyAction": "block",
+        "nativeReasonCode": "native_exact_safe_command"
+      }
+    }
+  ]
+}

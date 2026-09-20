@@ -34,6 +34,7 @@ from codex_plugin_scanner.guard.native_runtime import native_mode, native_runtim
 from codex_plugin_scanner.guard.policy_consumer_readiness_contract import PROFILE_ID, ConsumerReadinessError, mapping
 from codex_plugin_scanner.guard.policy_consumer_readiness_observation import capture_local_context, signed_observation
 from codex_plugin_scanner.guard.policy_consumer_readiness_sync import sync_consumer_readiness
+from codex_plugin_scanner.guard.policy_rule_identity import PolicyRuleIdentity
 from codex_plugin_scanner.guard.runtime import runner
 from codex_plugin_scanner.guard.runtime.hook_review_engine import HOOK_SCANNER_DEFAULT_BUDGET_MS
 
@@ -56,7 +57,39 @@ from scripts.native_publication_diagnostic import cleanup_preserving_failure  # 
 from scripts.native_slo_session import stop_native_resident  # noqa: E402
 
 
-def exercise(root, runtime):
+def _profile_enum(value: object, allowed: tuple[str, ...]) -> str | None:
+    return value if type(value) is str and value in allowed else None
+
+
+def _require_profile_rule(
+    selected: PolicyRuleIdentity | None,
+    expected_rule: str,
+    *,
+    command_ordinal: object,
+    effect: object,
+    decision: object,
+    policy_action: object,
+    failure_diagnostics: dict[str, object],
+) -> None:
+    """Retain only finite observations if the unchanged causal predicate fails."""
+    matches = selected is not None and selected.rule_id == expected_rule
+    try:
+        require(matches, "profile_rule_not_causal")
+    except ProbeError:
+        failure_diagnostics["profile_rule_observation"] = {
+            "command_ordinal": command_ordinal if type(command_ordinal) is int and 1 <= command_ordinal <= 3 else None,
+            "expected_effect": _profile_enum(effect, ("block", "review", "allow")),
+            "observed_decision": _profile_enum(decision, ("allow", "deny")),
+            "observed_policy_action": _profile_enum(policy_action, ("allow", "warn", "review", "block")),
+            "selected_rule_present": selected is not None,
+            "selected_rule_matches": matches,
+        }
+        raise
+
+
+def exercise(root, runtime, *, failure_diagnostics: dict[str, object] | None = None):
+    if failure_diagnostics is None:
+        failure_diagnostics = {}
     fixture = ReadinessFixture(root)
     store = fixture.store
     previous_ca = os.environ.get("SSL_CERT_FILE")
@@ -217,6 +250,7 @@ def exercise(root, runtime):
         for item in profile["commands"]:
             require(exact_command_sha256(item["text"]) == item["sha256"], "profile_digest_mismatch")
         for version, effect in enumerate(("block", "review", "allow"), 1):
+            fixture.configure_profile_stage(effect)
             bundle = fixture.signed_bundle(version, workspace=WORKSPACE)
             payload = bundle["payload"]
             assert isinstance(payload, dict) and isinstance(payload["spec"], dict)
@@ -238,7 +272,7 @@ def exercise(root, runtime):
                 and result.get("policy_application_status") == "applied",
                 "signed_profile_application_missing",
             )
-            for command in COMMANDS:
+            for command_ordinal, command in enumerate(COMMANDS, 1):
                 result = edge(command)
                 require(
                     result["authority"] == "rust"
@@ -263,9 +297,14 @@ def exercise(root, runtime):
                     "profile_source_input_mismatch",
                 )
                 selected = publisher.policy_rule_identity_for_result(result["policy_binding"])
-                require(
-                    selected is not None and selected.rule_id == "synthetic.profile." + effect + "." + command,
-                    "profile_rule_not_causal",
+                _require_profile_rule(
+                    selected,
+                    "synthetic.profile." + effect + "." + command,
+                    command_ordinal=command_ordinal,
+                    effect=effect,
+                    decision=result["result"]["decision"],
+                    policy_action=result["result"]["policy_action"],
+                    failure_diagnostics=failure_diagnostics,
                 )
                 cases.append("native-" + effect + "-" + command)
             handshake(4)
@@ -329,7 +368,7 @@ def main():
         )
         report.update(source_sha=capabilities.build_sha, runtime_sha256=identity.sha256)
         with tempfile.TemporaryDirectory(prefix="hg-readiness-", dir="/tmp") as temporary:
-            report.update(exercise(Path(temporary), identity.path))
+            report.update(exercise(Path(temporary), identity.path, failure_diagnostics=report))
         report["passed"] = True
     except ProbeError as error:
         report["failure"] = str(error)

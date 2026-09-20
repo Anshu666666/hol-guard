@@ -150,11 +150,14 @@ Guard uses the same product loop across the local daemon, the CLI, and Guard Clo
 
 1. **Home** answers whether this machine is protected right now. `hol-guard status` and the local Home view show the same next action, latest proof, and cloud sync state.
 2. **Protect** owns install, repair, remove, status, and first protected action proof. The local dashboard exposes Protect, Repair, Test, Audit, Sync, and Remove for paid Guard Cloud users with a paired daemon. Free users still see status, supported managers, education, and CLI fallback. The daemon handles these actions directly when available; the CLI commands stay visible as a fallback when the daemon is offline, unsupported, or missing a local session token.
-3. **Inbox** owns decisions that need judgment. Local approvals use the same categories and policy memory scopes that cloud review uses, so a scoped decision can be synced without changing meaning.
+3. **Inbox** owns decisions that need judgment. Only scopes and lifetimes supported by the selected target can become reusable policy. Exact Cloud Review resolves its bound pending request; it does not publish a remembered rule. See [policy capabilities and authority](policy-capabilities-and-authority.md).
 4. **Evidence** owns durable proof. Receipts from daemon actions, CLI actions, and cloud sync use the same local store before any optional upload.
-5. **Settings** owns policy. Local config remains the source of truth for offline protection, while cloud sync can distribute shared policy memory when you connect a workspace. The primary control is protection posture: Protected, Extra careful, or Watch. `hol-guard settings set protection protected` is the default.
+5. **Settings** owns policy. Local configuration and eligible authenticated policy inputs retain their separate authority rules while offline. A local setting cannot remove a managed restriction or native intrinsic floor, and loss of connectivity cannot renew an expired policy or approval. The primary control is protection posture: Protected, Extra careful, or Watch. `hol-guard settings set protection protected` is the default.
 
-The important handoff is that local protection does not depend on Guard Cloud being online. Cloud adds shared history and team policy, but the daemon and CLI still block risky actions, write receipts, and preserve approval continuity on this machine.
+Local protection at supported integration points does not require Guard Cloud to
+be online. Cloud delivery and remote decisions can remain unavailable during an
+outage. Check [delivery and recovery](policy-cloud-exceptions-boundary.md) and the
+specific request's continuation result before claiming recovery or completion.
 
 ## Troubleshooting
 
@@ -222,12 +225,13 @@ default_action = "block"
 
 Guard still reads the legacy `.ai-plugin-scanner-guard.toml` file if you already have one, but new local overrides should use `.hol-guard.toml`.
 
-Guard resolves decisions in this order:
-
-1. saved decisions from `hol-guard allow` or `hol-guard deny`
-2. project override file
-3. home config
-4. Guard's built-in recommendation
+Guard composes these inputs according to the selected authority path. Eligible
+generic stored rows use specificity and then recency; their Cloud or local source
+does not by itself establish priority. Configuration, saved decisions, managed
+restrictions and native intrinsic floors are not a single override list. A saved
+`allow` cannot remove a managed restriction or intrinsic native block. The
+[authority examples](policy-capabilities-and-authority.md#authority-path-examples-for-policy-help)
+link each supported case to its implementation and source controls.
 
 Use these actions in config or saved decisions:
 
@@ -472,11 +476,16 @@ When Guard blocks a launch, it opens a persistent approval link in the terminal 
    hol-guard approvals deny <request-id>
    ```
 
-5. After you resolve the request, Guard reports one of two honest outcomes:
-   - Codex resumed, Guard sent the exact blocked command context back into the same session, so watch the same chat for the next HOL Guard message.
-   - Guard could not find the Codex session to resume, return to Codex manually and follow the saved approval or block guidance.
+5. Read the request's continuation result separately from its decision:
+   - A Codex `sent` or `already_sent` result records notification of the bound chat; it does not prove that a tool executed. Guard does not launch `codex exec resume` when the trusted app-server channel is missing.
+   - A still-waiting original hook can proceed only after its exact current completion checks pass and before its existing deadline. A pending decision or notification is not that completion.
+   - A block, unavailable binding, expired wait, or failed channel retains its refusal or recovery guidance. Follow that guidance instead of treating a saved approval as successful resumption.
 
-   Grok PreToolUse hooks wait for that decision and then resume the original tool call when it is approved. For harnesses without resume support, Guard still saves the decision and shows the manual next step. No page reload is required.
+   Grok's supported PreToolUse waiting path likewise remains subject to its
+   original deadline and returned decision. See the [harness support matrix](harness-support.md)
+   for integration boundaries and source controls. Native V4 approvals also
+   require [enrolled authority and a matching credential](native-approval-enrollment.md);
+   signing in or approving through an unrelated local path does not create them.
 
 To inspect a pending request's details or get the approval URL, pass the request-id to the `approve` command with `--dry-run`, or visit the approval center URL shown in the block message directly.
 

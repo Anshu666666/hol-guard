@@ -106,3 +106,85 @@ def test_noncanonical_valid_json_retains_the_same_metadata(tmp_path: Path, monke
     compact = _load(tmp_path, monkeypatch, content)
     reformatted = json.dumps(json.loads(content), indent=2, ensure_ascii=True).encode()
     assert _load(tmp_path, monkeypatch, reformatted) == compact
+
+
+@pytest.mark.parametrize("token", ["NaN", "Infinity", "-Infinity", "1e999", "-1e999"])
+def test_nonfinite_atoms_are_refused_at_nested_values(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, token: str
+) -> None:
+    content = _artifact({"value": 0}).replace(b'"value":0', b'"value":' + token.encode())
+    with pytest.raises(NativePolicySnapshotError, match="native_command_program_artifact_invalid"):
+        _load(tmp_path, monkeypatch, content)
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("compiler_version", True),
+        ("compiler_version", 1.0),
+        ("compiler_version", "1"),
+        ("compiler_version", 2),
+        ("schema", None),
+        ("semantic_profile", False),
+        ("program_digest", "A" * 64),
+        ("catalog_digest", "b" * 63),
+        ("trust_digest", 0),
+        ("authoring_semantics_digest", ["a" * 64]),
+    ],
+)
+def test_metadata_atom_contracts_still_refuse_before_digest_admission(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str, replacement: object
+) -> None:
+    value = json.loads(_artifact({"scalars": [None, False, True, 0, -1, 1.5, "é"]}))
+    value[field] = replacement
+    content = json.dumps(value).encode()
+    with pytest.raises(NativePolicySnapshotError, match="native_command_program_artifact_invalid"):
+        _load(tmp_path, monkeypatch, content)
+
+
+def _mixed_million_node_artifact(extra: int) -> bytes:
+    # Charge the root and its twelve values. Each cell then contributes its
+    # dictionary, nested list and primitive: three nodes, regardless of width.
+    remaining = 1_000_000 + extra - 13
+    groups: list[object] = []
+    while remaining:
+        if remaining < 4:
+            groups.extend([None] * remaining)
+            break
+        remaining -= 1  # This group's list is a node as well.
+        count = min(16_384, remaining // 3)
+        groups.append([{"x": [0]} for _ in range(count)])
+        remaining -= 3 * count
+    return _artifact(groups)
+
+
+def test_mixed_container_and_primitive_children_consume_the_exact_node_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    content = _mixed_million_node_artifact(0)
+    assert len(content) < 4 * 1024 * 1024
+    assert _load(tmp_path, monkeypatch, content).catalog_digest == "b" * 64
+    with pytest.raises(NativePolicySnapshotError, match="native_command_program_artifact_invalid"):
+        _load(tmp_path, monkeypatch, _mixed_million_node_artifact(1))
+
+
+def test_success_cache_remains_bounded_and_keyed_by_each_complete_byte_value() -> None:
+    loader = binding._metadata_from_bytes
+    loader.cache_clear()
+    contents = [_artifact({"value": value}) for value in range(3)]
+    for content in contents[:2]:
+        assert loader(content).trust_digest == "c" * 64
+    assert loader.cache_info().currsize == 2 and loader.cache_info().misses == 2
+    assert loader(contents[0]).catalog_digest == "b" * 64
+    assert loader.cache_info().hits == 1
+    assert loader(contents[2]).trust_digest == "c" * 64
+    assert loader.cache_info().currsize == 2 and loader.cache_info().misses == 3
+    # The middle value was least recently used, so it must be parsed again.
+    assert loader(contents[1]).catalog_digest == "b" * 64
+    assert loader.cache_info().misses == 4
+    invalid = contents[1].replace(b'"value":1', b'"value":9')
+    for _ in range(2):
+        with pytest.raises(NativePolicySnapshotError, match="native_command_program_digest_mismatch"):
+            loader(invalid)
+    assert loader.cache_info().currsize == 2 and loader.cache_info().misses == 6
+    loader.cache_clear()

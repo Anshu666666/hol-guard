@@ -292,7 +292,9 @@ def test_extension_readiness_refusal_observes_the_actual_preexisting_publisher(
         assert "window=after_daemon_construction" in output.err
         assert "started=0; completed=0" in output.err
         assert "readiness_wait=not_ready" in output.err
-        assert "current_binding=missing" in output.err
+        # Publication wait now refuses before hook admission reads the binding.
+        assert "current_binding=unobserved" in output.err
+        assert "worker_snapshot=missing" in output.err
         assert "worker_thread=alive" in output.err
         assert "worker_phase=snapshot_transport; worker_stack=matched" in output.err
         assert "private" not in output.err and "canary" not in output.err and str(tmp_path) not in output.err
@@ -316,6 +318,18 @@ def test_extension_readiness_success_or_exception_preserves_call_and_methods(
     class Publisher:
         def __init__(self) -> None:
             self._client_request = None
+
+        def register_workspace(self, workspace: Path) -> None:
+            assert workspace == tmp_path
+            calls.append("register")
+
+        def start(self) -> None:
+            calls.append("start")
+
+        def wait_until_ready(self, deadline: float) -> bool:
+            assert deadline == 105.0
+            calls.append("wait")
+            return True
 
         def current_snapshot(self) -> dict[str, object]:
             calls.append("snapshot")
@@ -349,10 +363,10 @@ def test_extension_readiness_success_or_exception_preserves_call_and_methods(
     if raises:
         with pytest.raises(RuntimeError) as caught:
             extension_probe.ready(daemon, tmp_path, 7)
-        assert caught.value is failure and calls == ["prepare"]
+        assert caught.value is failure and calls == ["register", "start", "wait", "prepare"]
     else:
         assert extension_probe.ready(daemon, tmp_path, 7) is binding
-        assert calls == ["prepare", "snapshot"]
+        assert calls == ["register", "start", "wait", "prepare", "snapshot"]
     assert vars(publisher) == original
     output = capsys.readouterr()
     assert output.out == output.err == ""
@@ -364,7 +378,14 @@ def test_extension_publication_diagnostic_output_failure_preserves_original_refu
     def fail_print(*args, **kwargs):
         raise OSError("synthetic-private-diagnostic-output-error")
 
-    publisher = SimpleNamespace(_client_request=None, last_error=None)
+    publisher = SimpleNamespace(
+        _client_request=None,
+        last_error=None,
+        register_workspace=lambda workspace: None,
+        start=lambda: None,
+        wait_until_ready=lambda deadline: True,
+    )
+    original = dict(vars(publisher))
     calls: list[float] = []
 
     def prepare(workspace: Path, *, deadline: float) -> None:
@@ -389,7 +410,7 @@ def test_extension_publication_diagnostic_output_failure_preserves_original_refu
     monkeypatch.setattr(publication_diagnostic, "print", fail_print, raising=False)
     with pytest.raises(RuntimeError, match=r"^installed_native_extensions_failed:policy_not_ready$"):
         extension_probe.ready(daemon, tmp_path, 0)
-    assert calls == [105.0] and vars(publisher) == {"_client_request": None, "last_error": None}
+    assert calls == [105.0] and vars(publisher) == original
     output = capsys.readouterr()
     assert json.loads(output.out)["publisher_error"] == "missing"
     assert output.err == ""

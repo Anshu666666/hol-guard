@@ -376,3 +376,34 @@ def test_scoped_fixture_keeps_its_independent_local_review_floor(
         assert compiled["mode"] == "enforce"
     finally:
         value.close()
+
+
+def test_readiness_allow_stage_uses_explicit_artifact_review_and_clears_it_for_other_stages(tmp_path: Path) -> None:
+    value = ReadinessFixture(tmp_path)
+    try:
+        for effect in ("block", "review", "allow", "review", "allow", "block"):
+            value.configure_profile_stage(effect)
+            default = "review" if effect == "allow" else "warn"
+            compiled = _actual_compiled_fixture_policy(value, default)
+            assert compiled["default_action"] == default
+            assert compiled["artifact_actions"] == ({"codex:project:Bash": "review"} if effect == "allow" else {})
+            assert compiled["harness_actions"] == {}
+            assert compiled["mode"] == "enforce"
+            assert not value.store.list_policy_decisions()
+            assert value.store.get_sync_payload("policy_bundle") is None
+            assert value.store.get_sync_payload("policy_bundle_ack") is None
+    finally:
+        value.close()
+
+
+def test_readiness_unknown_stage_preserves_configuration(tmp_path: Path) -> None:
+    value = ReadinessFixture(tmp_path)
+    try:
+        value.configure_profile_stage("allow")
+        path = value.store.guard_home / "config.toml"
+        before = path.read_bytes()
+        with pytest.raises(ValueError, match=r"^unsupported_profile_stage$"):
+            value.configure_profile_stage("unknown")
+        assert path.read_bytes() == before
+    finally:
+        value.close()

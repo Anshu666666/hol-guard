@@ -357,3 +357,7 @@ mod sensitive_tests;
 #[cfg(test)]
 #[path = "policy_scoped_generic_tests.rs"]
 mod generic_tests;
+
+#[cfg(test)]
+#[path = "policy_scoped_boundary_tests.rs"]
+mod boundary_tests;

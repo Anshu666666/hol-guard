@@ -27,7 +27,7 @@ restriction or route a policy to another authority path.
 | Signed generic Cloud bundle with canonical row enforcement enabled | The same row compiler after verified installation-ID device filtering. Cloud envelope/signature/rollout/validity checks remain mandatory; they are not inferred from this inventory. | `devices` is a Cloud prefilter, not a local import matcher. Display labels are not installation IDs. A stale/invalid bundle or disabled canonical rollout does not become applied merely because its rule shape compiles. |
 | Command-expression runtime | Existing command capability reports `all`/`any` and exact, startsWith, contains, endsWith, glob, regex operators with its timeout. | A command expression cannot become a local SQLite row. Local validation may report a command-runtime requirement; do not treat its empty row count as an applied command policy. |
 | Managed extension controls | `guard.extension-controls.v1` and the target's negotiated catalog/control capabilities. Managed-restrictive controls are disable-only; shared enables require a configurable permission. | Catalog identity, delegation, runtime delivery and atomic application are separate checks. This local inventory does not certify a managed target or advertise generic rule lifetimes for it. |
-| Native hook policy | Authenticated `PolicySnapshotV3` / `EffectiveNativePolicyV3`, plus the native hook's intrinsic action floor. | Native snapshot fields are not an unrestricted GuardPolicy matcher API. A local compiler success is not native publication proof; policy allow cannot lower an intrinsic native block. |
+| Native hook policy | The actual negotiated path can use an authenticated V3 effective-policy snapshot or a V4 scoped snapshot; supported generic V4 composition retains the native hook's intrinsic floor. | Do not relabel V3 as V4 or infer a negotiated feature from a package version. Snapshot fields are not an unrestricted GuardPolicy matcher API. A local compiler success is not current native publication proof; policy allow cannot lower an intrinsic native block. |
 
 For the local row compiler, each row below permits every subset of the listed
 fields, including an explicitly empty match (global). Selector entries are nonempty strings; empty/absent fields and extension overrides still
@@ -93,3 +93,31 @@ Source references: `src/codex_plugin_scanner/guard/store_policy.py`,
 `tests/test_policy_authority_explanations.py`; native examples refer to the
 existing tests in `rust/crates/guard-runtime/src/policy_enforcement_tests.rs`.
 These examples do not substitute for a signed installed-runtime workflow test.
+
+## Deployment, offline lifetime and reviewer limits
+
+Record the actual runtime feature negotiation, authenticated publication and
+current application evidence for each intended target. An upload, acknowledgement,
+capability advertisement or saved approval alone does not establish those facts.
+The current [runtime-report producer](../../src/codex_plugin_scanner/guard/native_policy_runtime_reports.py)
+and its [capture controls](../../tests/test_native_policy_runtime_reports.py)
+describe the V4 report path; they do not certify every installed device.
+
+Cloud unavailability does not extend a cached bundle's validity or a pending
+approval's deadline. [Offline lifetime controls](../../tests/test_policy_offline_lifetime_truth.py)
+distinguish a current valid bundle, a still-valid retained bundle and expired or
+rejected input. Follow the returned recovery state while local protection remains
+available at supported hooks and proxies.
+
+Remote review requires the request's actual authorized actor and authentication
+checks. A native V4 decision additionally requires the release-root provenance,
+external signed enrollment and matching WebAuthn credential described in
+[native approval enrollment](native-approval-enrollment.md). A local decision,
+Cloud sign-in, Python control fixture or runtime feature flag cannot supply that
+authority. Inspect the exact consumed receipt and continuation result before
+claiming that the waiting action was released.
+
+The [policy boundary comparison](native-policy-boundary-parity.md) identifies
+supported component comparisons and explicit content-hash capability refusals.
+It does not establish universal process interception, every artifact producer's
+parity, literal Python/native reason-code equality or fleet-wide enforcement.

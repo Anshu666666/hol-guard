@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
 
+from ..version import __version__
 from .cli.desktop_policy_status import read_policy_application_evidence
 from .passive_status_store import PassiveStatusStore
 from .policy_bundle_parser import policy_bundle_rejection_message
@@ -62,6 +63,7 @@ def _build_support_export(store: GuardStore, *, observed_at: datetime) -> dict[s
     explained = explain_policy_runtime_error(error_code or "policy_support_export")
     export: dict[str, object] = {
         "kind": "hol-guard-policy-support-export.v1",
+        "guard_version": __version__,
         "observed_at": observed_at.isoformat(),
         "failure_classes": {
             "auth": explained["code"] in {"cloud_review_capability_revoked", "cloud_review_capability_missing"}
@@ -173,18 +175,39 @@ def _public_sync_summary(summary: object) -> dict[str, object]:
         return {}
     summary = cast(dict[str, object], summary)
     return {
-        "synced_at": summary.get("synced_at"),
-        "remote_policies_stored": summary.get("remote_policies_stored"),
-        "receipts_stored": summary.get("receipts_stored"),
-        "pain_signals_uploaded": summary.get("pain_signals_uploaded"),
-        "pain_signals_status": summary.get("pain_signals_upload_status"),
+        "synced_at": _public_timestamp(summary.get("synced_at")),
+        "remote_policies_stored": _public_count(summary.get("remote_policies_stored")),
+        "receipts_stored": _public_count(summary.get("receipts_stored")),
+        "pain_signals_uploaded": _public_count(summary.get("pain_signals_uploaded")),
+        "pain_signals_status": (
+            summary["pain_signals_upload_status"]
+            if summary.get("pain_signals_upload_status") in ("success", "degraded")
+            else None
+        ),
         "telemetry_degradation": (
             {"reason": "telemetry_degradation"}
             if summary.get("telemetry_status") == "degraded" or summary.get("telemetry_degradation") is not None
             else None
         ),
-        "remote_policy_sync_blocked": summary.get("remote_policy_sync_blocked"),
+        "remote_policy_sync_blocked": (
+            summary["remote_policy_sync_blocked"] if type(summary.get("remote_policy_sync_blocked")) is bool else None
+        ),
     }
+
+
+def _public_count(value: object) -> int | None:
+    # Preserve exact JSON integers, including zero, without treating bool as int.
+    return value if type(value) is int and 0 <= value <= 9_007_199_254_740_991 else None
+
+
+def _public_timestamp(value: object) -> str | None:
+    if not isinstance(value, str) or len(value) > 64:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.isoformat() if parsed.utcoffset() is not None else None
 
 
 def _public_diagnostics(value: object) -> dict[str, object]:

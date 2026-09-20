@@ -160,7 +160,7 @@ def test_actual_slo_barrier_preserves_predicates_budget_and_lifecycle(monkeypatc
             session.start()
         assert "private-error-canary" not in str(caught.value)
         assert ("native readiness exceeded budget" if ready else "native policy was not ready") in str(caught.value)
-    assert events == ["start", ("register", session.workspace), (session.workspace, 100.4)]
+    assert events == [("register", session.workspace), "start", (session.workspace, 100.4)]
     assert publisher._client_request is None
 
 
@@ -451,7 +451,7 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
         "window=after_daemon_construction; attached=True; publisher=missing; transport=missing; started=0; completed=0"
     )
     original_error = (
-        "native_installed_slo_failed: native readiness exceeded budget"
+        "native_installed_slo_failed: native readiness exceeded budget (401.000 ms)"
         if ready
         else "native_installed_slo_failed: native policy was not ready; " + observation
     )
@@ -462,7 +462,7 @@ def test_actual_slo_readiness_failure_emits_finite_lifecycle_and_preserves_origi
             with pytest.raises(RuntimeError) as caught:
                 session.start()
         assert str(caught.value) == original_error
-        assert events == ["start", ("register", session.workspace), (session.workspace, 100.4)]
+        assert events == [("register", session.workspace), "start", (session.workspace, 100.4)]
         assert session.readiness_ms == pytest.approx(401.0)
         assert publisher._client_request is None and publisher._record_error == original_record
         # Real registration advances authority before prepare records its
@@ -732,8 +732,8 @@ def test_actual_slo_refusal_emits_one_finite_observation_without_extra_calls(mon
         "window=after_daemon_construction; attached=True; publisher=missing; transport=missing; started=0; completed=0"
     )
     assert events == [
-        "start",
         ("register", session.workspace),
+        "start",
         ("prepare", session.workspace, 100.4),
         "publish",
         ("wait", 100.4),

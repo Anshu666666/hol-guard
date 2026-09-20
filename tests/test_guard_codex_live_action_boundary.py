@@ -16,6 +16,7 @@ import sys
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
@@ -160,6 +161,9 @@ class LiveAction:
 
     def start(self) -> None:
         self.daemon.start()
+        self.start_child()
+
+    def start_child(self, *, expected_marker: bytes | None = None) -> None:
         self.child = subprocess.Popen(
             [sys.executable, "-c", _CHILD],
             stdin=subprocess.PIPE,
@@ -189,7 +193,8 @@ class LiveAction:
             if pending:
                 assert len(pending) == 1
                 self.request_id = str(pending[0]["request_id"])
-                assert not _exited_without_reaping(self.child) and not self.marker.exists()
+                assert not _exited_without_reaping(self.child)
+                assert (self.marker.read_bytes() if self.marker.exists() else None) == expected_marker
                 operation = self.store.get_guard_operation_for_approval_request(self.request_id)
                 assert operation is not None
                 self.operation = cast(dict[str, Any], operation)
@@ -324,3 +329,48 @@ def test_cancelled_waiter_cannot_complete_after_signed_approval(
         assert not action.marker.exists()
         completion = action.store.get_request_resume(action.request_id)
         assert completion is None or completion.get("continuation_status") != "resumed"
+
+
+def test_identical_next_harness_action_requires_a_new_exact_review(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with live_action(tmp_path, monkeypatch) as action:
+        before = action.store.list_policy_decisions()
+        first_id = action.request_id
+        first = action.store.get_approval_request(first_id)
+        assert first is not None
+        action.approve()
+        assert action.finish()["allowed"] is True
+        assert action.marker.read_text() == "executed\n"
+        assert action.store.list_policy_decisions() == before
+        assert action.store.get_sync_payload("guard_review_memory_registry") is None
+        # Keep the same daemon, store, workspace, exact command and artifact.
+        # A second real bridge process must wait for its own fresh decision.
+        action.output = (tmp_path / "child.stdout").open("wb")
+        action.errors = (tmp_path / "child.stderr").open("wb")
+        action.start_child(expected_marker=b"executed\n")
+        second = action.store.get_approval_request(action.request_id)
+        assert second is not None and second["status"] == "pending"
+        assert action.request_id != first_id
+        assert second["artifact_id"] == first["artifact_id"]
+        assert second["artifact_hash"] != first["artifact_hash"]
+        first_envelope = deepcopy(first["action_envelope_json"])
+        assert isinstance(first_envelope, dict)
+        second_envelope = deepcopy(second["action_envelope_json"])
+        assert isinstance(second_envelope, dict)
+        first_process = first_envelope["raw_payload_redacted"].pop("guard_codex_browser_wait_process")
+        second_process = second_envelope["raw_payload_redacted"].pop("guard_codex_browser_wait_process")
+        assert first_process != second_process
+        assert second_envelope == first_envelope
+        assert action.marker.read_text() == "executed\n"
+        blocked = remote_approval(
+            action.store,
+            action.request_id,
+            receipt_id="second-action-block",
+            decision="block",
+        )
+        apply_exact_cloud_review(action.store, remote_approval=blocked, expected_harness="codex")
+        assert action.finish()["allowed"] is False
+        assert action.marker.read_text() == "executed\n"
+        assert action.store.list_policy_decisions() == before
+        assert action.store.get_sync_payload("guard_review_memory_registry") is None

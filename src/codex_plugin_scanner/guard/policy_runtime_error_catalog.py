@@ -128,22 +128,21 @@ def policy_runtime_error_entry(code: str) -> PolicyRuntimeErrorEntry | None:
 
 
 def explain_policy_runtime_error(code: str, *, detail: str | None = None) -> dict[str, object]:
+    """Return trusted guidance; arbitrary codes and exception details are private."""
     entry = policy_runtime_error_entry(code)
     if entry is None:
+        bundle_guidance = policy_bundle_rejection_message(code)
         return {
-            "code": code,
+            "code": code if bundle_guidance is not None else "unclassified_failure",
             "owner": "operator",
             "retryable": False,
             "retained_authority": "unknown",
-            "next_action": "Open policy support export and share the correlation identifiers with support.",
-            "explanation": "Guard could not apply this policy change. The raw exception is not the only guidance.",
+            "next_action": bundle_guidance
+            or "Open policy support export and share the correlation identifiers with support.",
+            "explanation": bundle_guidance or "Guard could not classify this policy observation.",
             "source": "policy_runtime_error_catalog.py",
-            "detail": detail,
         }
-    payload: dict[str, object] = dict(entry)
-    if detail:
-        payload["detail"] = detail
-    return payload
+    return dict(entry)
 
 
 def policy_runtime_error_catalog() -> tuple[Mapping[str, object], ...]:

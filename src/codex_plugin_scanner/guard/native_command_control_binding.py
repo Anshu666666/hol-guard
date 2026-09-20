@@ -135,27 +135,23 @@ def _metadata_from_bytes(content: bytes) -> NativeCommandProgramMetadata:
                 raise NativePolicySnapshotError("native_command_program_artifact_invalid")
         # Bound structural validation before canonical re-encoding; actual
         # matcher/IR admission remains the resident's responsibility.
-        # Count one complete depth at a time without allocating a stack
-        # tuple for every primitive. The next frontier remains node-bounded.
-        pending: list[object] = [raw]
-        remaining = 1_000_000
+        # Charge every child, including primitives, when its parent is read.
+        # Only containers need a later visit; retaining primitive frontiers
+        # repeats their type checks and stores references we never use again.
+        pending: list[dict[str, object] | list[object]] = [raw]
+        remaining = 999_999  # The artifact root itself consumes one node.
         depth = 0
         while pending:
-            remaining -= len(pending)
-            if remaining < 0 or depth > 64:
-                raise NativePolicySnapshotError("native_command_program_artifact_invalid")
-            children: list[object] = []
+            children: list[dict[str, object] | list[object]] = []
             for value in pending:
-                if isinstance(value, dict):
-                    if len(value) > 16_384:
-                        raise NativePolicySnapshotError("native_command_program_artifact_invalid")
-                    children.extend(value.values())
-                elif isinstance(value, list):
-                    if len(value) > 16_384:
-                        raise NativePolicySnapshotError("native_command_program_artifact_invalid")
-                    children.extend(value)
-                if len(children) > remaining:
+                values = value.values() if isinstance(value, dict) else value
+                count = len(values)
+                if count > 16_384 or count > remaining or (depth == 64 and count):
                     raise NativePolicySnapshotError("native_command_program_artifact_invalid")
+                remaining -= count
+                for child in values:
+                    if type(child) is dict or type(child) is list:
+                        children.append(child)
             pending = children
             depth += 1
         program_digest = cast(str, raw.pop("program_digest"))

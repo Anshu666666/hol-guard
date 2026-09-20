@@ -21,6 +21,11 @@ budget. c64 has no latency ceiling: every result must be either a resident
 allowed decision or an explicitly classified bounded capacity/overload
 response, with zero request errors and no hang.
 
+The workspace is registered before daemon startup so the first publication
+contains it. The 400 ms readiness measurement starts before registration and
+daemon startup, includes source capture and ACK, and rejects an already-ready
+result if the measured duration exceeds that bound.
+
 Recovery has two separately reported cases. `resident_recovery` retains the
 autonomous case: after stopping the resident, the first adapter request must
 return a native allowed decision without an explicit publisher notification.
@@ -30,6 +35,15 @@ window. Each case requires nonempty samples and the same 1,000 ms p95 bound.
 They use separate sessions so the additional notification case cannot consume
 the original case's resident restart budget. Neither case retries a refused
 first request or replaces it with a later successful response.
+
+Each resident-recovery sample first proves a resident allow decision, then
+requires the Rust stop command to verify containment of that resident. The
+installed adapter's persistent Rust client streams remain alive, matching a
+resident restart in production: their next request re-discovers and
+authenticates the new resident generation. The complete next adapter request
+is timed against the unchanged 1,000 ms budget. Cold one-shot probes and final
+session cleanup retain full client teardown. Aggregate per-sample diagnostics
+report both adapter time and the enclosing measurement time.
 
 The c16 latency proof uses a dedicated, fully started 16-thread client executor
 so thread creation and a larger benchmark-only client pool cannot distort the

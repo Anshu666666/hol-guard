@@ -459,17 +459,26 @@ def test_adapter_readiness_includes_registered_workspace_capture_and_ack(
 
     publisher = FakePublisher()
     daemon = SimpleNamespace(
-        start=start_daemon, port=1,
-        _server=SimpleNamespace(hook_worker=SimpleNamespace(
-            policy_snapshot_publisher=publisher, prepare_workspace_policy=prepare,
-        )),
+        start=start_daemon,
+        port=1,
+        _server=SimpleNamespace(
+            hook_worker=SimpleNamespace(
+                policy_snapshot_publisher=publisher,
+                prepare_workspace_policy=prepare,
+            )
+        ),
     )
     monkeypatch.setattr(native_slo_session, "GuardStore", lambda _path: object())
     monkeypatch.setattr(native_slo_session, "GuardDaemonServer", lambda _store, *, host, port: daemon)
     monkeypatch.setattr(native_slo_session, "HTTPConnection", lambda *_args, **_kwargs: object())
-    monkeypatch.setattr(native_slo_session, "time", SimpleNamespace(
-        perf_counter=lambda: clock[0], monotonic=lambda: clock[0],
-    ))
+    monkeypatch.setattr(
+        native_slo_session,
+        "time",
+        SimpleNamespace(
+            perf_counter=lambda: clock[0],
+            monotonic=lambda: clock[0],
+        ),
+    )
     observation = SimpleNamespace(describe=lambda _error: "finite controlled capture")
     monkeypatch.setattr(native_slo_session, "observe_publication", lambda _publisher: nullcontext(observation))
     monkeypatch.setattr(native_slo_session, "report_publication_failure", lambda *_args: None)
@@ -480,10 +489,12 @@ def test_adapter_readiness_includes_registered_workspace_capture_and_ack(
             assert session.readiness_ms == pytest.approx(capture_ms)
             assert acknowledged
         else:
-            with pytest.raises(RuntimeError, match="native policy was not ready"):
+            with pytest.raises(RuntimeError, match="native readiness exceeded budget"):
                 session.start()
-            assert session.readiness_ms == pytest.approx(MAX_READINESS_P95_MS)
-            assert not acknowledged
+            assert session.readiness_ms == pytest.approx(capture_ms)
+            # The ACK completed during startup, but it arrived after the
+            # original deadline and cannot satisfy readiness.
+            assert acknowledged
         assert registered == [session.workspace]
         assert prepared == [(session.workspace, MAX_READINESS_P95_MS / 1_000.0)]
     finally:

@@ -2438,7 +2438,11 @@ def _guard_home_from_command_parts(parts: list[str]) -> Path | None:
         return frozen_context[0]
     for index, part in enumerate(parts):
         if part == "--guard-home" and index + 1 < len(parts):
-            return Path(parts[index + 1])
+            value = parts[index + 1]
+            return Path(value) if value else None
+        if part.startswith("--guard-home="):
+            value = part.split("=", 1)[1]
+            return Path(value) if value else None
     return None
 
 
@@ -2482,7 +2486,12 @@ def _split_process_command(command: str) -> list[str] | None:
         return None
 
 
+_HOOK_LAUNCHER_ARGS = frozenset({"__guard-bounded-hook", "__guard-cursor-hook"})
+
+
 def _guard_daemon_command_parts_match(parts: list[str]) -> bool:
+    if any(part in _HOOK_LAUNCHER_ARGS for part in parts):
+        return False
     if _frozen_daemon_serve_context(parts) is not None:
         return True
     for index in range(len(parts) - 1):
@@ -2590,15 +2599,19 @@ def _guard_daemon_process_inventory_for_guard_home(
         if not _guard_daemon_command_parts_match(parts):
             continue
         command_guard_home = _guard_home_from_command_parts(parts)
-        port = _guard_daemon_port_from_command(command_line)
-        if command_guard_home is None or port is None:
+        if command_guard_home is None:
+            # The observer's HOME does not establish the target process's scope.
             return None
         try:
             matches_home = command_guard_home.resolve() == guard_home.resolve()
         except OSError:
             matches_home = command_guard_home == guard_home
-        if matches_home:
-            processes.append((pid, port))
+        if not matches_home:
+            continue
+        port = _guard_daemon_port_from_command(command_line)
+        if port is None:
+            return None
+        processes.append((pid, port))
     return sorted(processes, key=lambda item: item[1])
 
 
@@ -2874,7 +2887,24 @@ def _guard_daemon_pid_is_spawned_launch(
 def _guard_daemon_pid_is_proven_dead(pid: int) -> bool:
     if os.name == "nt":
         return windows_process_liveness(pid) is False
+    if _guard_daemon_child_has_exited(pid):
+        return True
     return not _guard_daemon_pid_is_running(pid)
+
+
+def _guard_daemon_child_has_exited(pid: int) -> bool:
+    """Observe an exited child without consuming its owner's process status."""
+    required = ("waitid", "P_PID", "WEXITED", "WNOHANG", "WNOWAIT", "CLD_EXITED", "CLD_KILLED", "CLD_DUMPED")
+    if pid <= 0 or not all(hasattr(os, name) for name in required):
+        return False
+    try:
+        result = os.waitid(os.P_PID, pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+    except (OSError, ValueError, OverflowError):
+        # Non-children and unsupported platforms retain the existing liveness proof.
+        return False
+    return (
+        result is not None and result.si_pid == pid and result.si_code in (os.CLD_EXITED, os.CLD_KILLED, os.CLD_DUMPED)
+    )
 
 
 def _wait_for_guard_daemon_pid_death(pid: int, *, timeout: float = 1.0) -> bool:

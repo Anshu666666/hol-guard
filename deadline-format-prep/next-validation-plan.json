@@ -1,0 +1,57 @@
+{
+  "schema": "pr2974.integrated-deadline-next-validation-plan.v1",
+  "formatting_precedes_source_binding": true,
+  "current_unformatted_tree": "7150f180d28be9df75e6acb726eba155bca81675",
+  "after_return": [
+    "Verify formatter/runner source identities and every returned byte/hash.",
+    "Compare all five outputs; require unchanged managed production bytes and no semantic changes from formatting. Preserve any nonzero/partial result.",
+    "Create a separately reviewed final candidate commit whose sole parent is exact4afa, with only the admitted three overlay paths.",
+    "Use a new candidate-only driver, pinned1.88/locked deps and independent per-platform target directories. Never rerun or accept before failures in that lane."
+  ],
+  "platforms": [
+    {
+      "label": "linux-x86_64",
+      "runner": "ubuntu-24.04",
+      "host": "x86_64-unknown-linux-gnu",
+      "python": "3.12.14",
+      "controls": 9
+    },
+    {
+      "label": "macos-x86_64",
+      "runner": "macos-15-intel",
+      "host": "x86_64-apple-darwin",
+      "python": "3.12.10",
+      "controls": 9
+    },
+    {
+      "label": "macos-arm64",
+      "runner": "macos-15",
+      "host": "aarch64-apple-darwin",
+      "python": "3.12.10",
+      "controls": 9
+    },
+    {
+      "label": "windows-x86_64",
+      "runner": "windows-2025",
+      "host": "x86_64-pc-windows-msvc",
+      "python": "3.12.10",
+      "controls": 7
+    }
+  ],
+  "required_gates": [
+    "Exact source HEAD/tree/sole4afa parent/clean status before and after; five image identities and Cargo.lock hash.",
+    "cargo fmt --check only; locked metadata.",
+    "Successful runtime cargo test --no-run --message-format=json and exact binary identity before test listing.",
+    "Exact seven managed and, on Unix, two connection nodes collected before execution, then strict unchanged after-result matrix/cleanup records.",
+    "Full default workspace/all-target tests with serial threads, default and all-feature/all-target Clippy -D warnings, release build and source-bound JSON self-test.",
+    "Preserve original stdout/stderr/exit/timeout/collection/admission and source/binary identity records even on failure."
+  ],
+  "prior_before_matrix_runs": [
+    35500586815,
+    35500925728
+  ],
+  "no_before_rerun": true,
+  "no_installed_workload_or_benchmark": true,
+  "qualification_complete": false,
+  "execution_requires_separately_frozen_driver": true
+}

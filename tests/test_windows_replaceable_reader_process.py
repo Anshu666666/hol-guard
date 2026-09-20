@@ -397,6 +397,8 @@ def _compare_original_audit(tmp_path, record_property, default_mode, route, refu
     record_property("original_report", json.dumps(original, sort_keys=True))
     record_property("candidate_report", json.dumps(candidate, sort_keys=True))
     assert original_code == candidate_code == 0
+    assert isinstance(original, dict)
+    assert isinstance(candidate, dict)
     assert candidate == original
     assert len(candidate["events"]) == 1
     assert candidate["refusal_same_object"] is refuse

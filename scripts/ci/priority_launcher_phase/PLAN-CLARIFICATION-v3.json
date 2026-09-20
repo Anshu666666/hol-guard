@@ -1,0 +1,30 @@
+{
+  "schema": "hol-guard.priority-launcher-phase-plan-clarification.v3",
+  "kind": "additive_preimplementation_clarification",
+  "source_sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "source_tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf",
+  "prior_plan_file": "plan-v2.json",
+  "prior_plan_sha256": "ed9e5815f07ad729a1f1c0a8832ee0550e6979870f47b105831c01abd0223c8b",
+  "original_plan_sha256": "22515ede4db2e044a0dc2a6c46f554d796bd61dae76760af7d46205bd276148a",
+  "source_bindings_sha256": "98697425ef51baa08f95f57f408e148e739646ebeee34849afa7c000706c74ce",
+  "parent_input_identity": {
+    "capture": "Capture the actual immutable input_text str argument at the existing native_slo_priority_launchers.run_isolated_hook_process invocation, retaining that same string reference for post-call parsing and hashing.",
+    "prohibited": "Do not regenerate launcher_payload, re-encode an outer payload, or substitute a semantically similar synthetic input for the actual helper argument.",
+    "forwarding": "Forward the identical argument objects exactly once; preserve the returned value or original exception. Recording failures only mark diagnostic observation incomplete.",
+    "join": "Only the bounded strictly validated projection of that captured actual input is eligible for matching the daemon entry projection. Keep original input, semantic projection, native envelope and response hash domains separate."
+  },
+  "timer_scope": {
+    "outer_context": "The outer observe_priority_launcher wrapper sets and resets diagnostic context outside its original timer.",
+    "helper_context": "The existing run_isolated_hook_process call occurs inside original elapsed_ms. Capturing its actual argument reference, wrapper entry/exit and post-call recording add diagnostic overhead inside that original interval.",
+    "interpretation": "Retain original elapsed_ms without subtraction or adjustment. Do not describe all wrapper work as outside the timer or treat instrumented timing as headline qualification."
+  },
+  "retained_requirements": [
+    "Freeze mutable daemon entry values as bounded immutable built-in projections before forwarding; preserve post-call mutation evidence separately.",
+    "Establish handler context after the ordinary request-executor queue transfer; reset in finally; preserve the actual live server alias and synchronous call sequence.",
+    "Preserve original function calls, argv, payloads, budgets, process count, order, all88 planned original calls and failure-tail behavior.",
+    "No added timing launch, new process, warmup, retry, native phase observer, product change or acceptance-gate change is authorized by this clarification."
+  ],
+  "implementation_written": false,
+  "timing_executed": false,
+  "qualification_complete": false
+}

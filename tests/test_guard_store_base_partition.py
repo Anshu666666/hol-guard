@@ -277,8 +277,6 @@ _OWNER_EXPORTS = {
         "_oauth_sync_url_from_issuer",
         "_allowed_origin_from_sync_url",
         "_secret_fingerprint",
-        "_legacy_secret_fingerprint",
-        "_legacy_secret_sha256",
         "_secret_matches_hash",
         "_should_warn_on_slow_store_transactions",
         "receipt_index_statements",
@@ -335,3 +333,33 @@ assert typing.get_args(typing.get_type_hints(facade._chunks)["values"]) == (faca
         timeout=30,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "expected_hash",
+    ["", "0" * 64, "pbkdf2-sha256$" + "0" * 64, "unsupported$fixture"],
+)
+def test_secret_hash_rejects_retired_formats_without_derivation(
+    expected_hash: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def unexpected_derivation(_value: str) -> str:
+        pytest.fail("retired formats must not derive a credential fingerprint")
+
+    monkeypatch.setattr(base, "_secret_fingerprint", unexpected_derivation)
+
+    assert base._secret_matches_hash("fixture-current-secret", expected_hash) is False
+
+
+@pytest.mark.parametrize("matches", [False, True])
+def test_secret_hash_uses_the_current_live_fingerprint(matches: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+    values: list[str] = []
+
+    def current_fingerprint(value: str) -> str:
+        values.append(value)
+        return "scrypt$current-fixture"
+
+    monkeypatch.setattr(base, "_secret_fingerprint", current_fingerprint)
+    expected = "scrypt$current-fixture" if matches else "scrypt$different-fixture"
+
+    assert base._secret_matches_hash("fixture-current-secret", expected) is matches
+    assert values == ["fixture-current-secret"]

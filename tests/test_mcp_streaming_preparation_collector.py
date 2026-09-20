@@ -257,3 +257,49 @@ def test_sample_count_cannot_silently_change_the_fixed_plan(collector, accountin
     with pytest.raises(ValueError, match="requires_30_samples"):
         collector.run_comparison(args)
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("module_name", "pilot_flag", "variant"),
+    [
+        ("profile_guard_mcp_session", "owned_preparation_pilot", "owned"),
+        ("profile_guard_mcp_streaming_session", "streaming_preparation_pilot", "streaming"),
+    ],
+)
+@pytest.mark.parametrize("enabled", [False, True])
+def test_wrapper_selects_its_own_variant_without_running_a_worker(
+    monkeypatch, module_name, pilot_flag, variant, enabled
+):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))
+    worker = importlib.import_module(module_name)
+    observed = []
+    marker = object()
+
+    def capture(**kwargs):
+        observed.append(kwargs)
+        return marker
+
+    monkeypatch.setattr(worker, "run_case_common", capture)
+    options = {
+        "catalog_size": 7,
+        "payload_bytes": 997,
+        "samples": 3,
+        "profile": True,
+        "uncached": True,
+        "child_delay_ms": 5,
+        "approval": "accept",
+        "approval_delay_ms": 9,
+        "refresh_every": 2,
+        "compact_result": True,
+        "payload_kind": "unicode",
+        "native_text_helper": Path("/inert-fixture/native-helper"),
+        "native_minimum_characters": 4096,
+    }
+
+    result = worker.run_case(**options, **{pilot_flag: enabled})
+
+    assert result is marker
+    assert len(observed) == 1
+    provider = observed[0].pop("fixture_arguments_provider")
+    assert provider() is worker.fixture_arguments
+    assert observed == [{**options, "preparation_variant": variant, "preparation_pilot": enabled}]

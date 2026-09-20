@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
+from codex_plugin_scanner.guard.daemon.hook_native_review_binding import NATIVE_REVIEW_BINDING_FIELD
 from tests.test_native_review_approval_coordination import _edge, _worker
 
 
@@ -41,6 +43,8 @@ def test_native_review_retry_is_atomic_between_two_consumers(
     )
     request = store.get_approval_request(request_id)
     assert request is not None
+    policy_binding = request["action_envelope_json"][NATIVE_REVIEW_BINDING_FIELD]
+    assert isinstance(policy_binding, Mapping)
     barrier = Barrier(2)
 
     def consume() -> bool:
@@ -53,6 +57,7 @@ def test_native_review_retry_is_atomic_between_two_consumers(
             launch_target=request["launch_target"],
             workspace=str(workspace),
             now=now,
+            policy_binding=policy_binding,
         )
 
     with ThreadPoolExecutor(max_workers=2) as executor:

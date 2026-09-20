@@ -13,9 +13,13 @@ import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
+if TYPE_CHECKING:
+    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, summarize
+else:
+    from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
+
 
 def run_remote_case(*, samples: int, server_delay_ms: float, payload_bytes: int = 1024) -> dict[str, Any]:
     """The shipped HTTP helper against loopback, not the draft hosted proxy."""
@@ -27,7 +31,7 @@ def run_remote_case(*, samples: int, server_delay_ms: float, payload_bytes: int 
     requests_seen: list[Any] = []
 
     class Handler(BaseHTTPRequestHandler):
-        def log_message(self, *_args: Any) -> None:
+        def log_message(self, *_args: Any, **_kwargs: Any) -> None:
             return
 
         def do_POST(self) -> None:
@@ -135,7 +139,15 @@ def performance_lock(lock_file: Path | None):
             fcntl.flock(descriptor, fcntl.LOCK_UN)
 
 
-def run_matrix_common(*, case_runner: Callable[..., dict[str, Any]], schema: str, samples: int, output: Path, lock_file: Path | None = None, resume: bool = False) -> dict[str, Any]:
+def run_matrix_common(
+    *,
+    case_runner: Callable[..., dict[str, Any]],
+    schema: str,
+    samples: int,
+    output: Path,
+    lock_file: Path | None = None,
+    resume: bool = False,
+) -> dict[str, Any]:
     """Alternating cache blocks followed by separate attribution/correctness runs."""
     cases: list[dict[str, Any]] = []
     for block in range(5):
@@ -273,5 +285,3 @@ def run_matrix_common(*, case_runner: Callable[..., dict[str, Any]], schema: str
     report["completed_cases"] = len(cases)
     write_checkpoint(output, report)
     return report
-
-

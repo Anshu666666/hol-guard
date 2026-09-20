@@ -1,0 +1,49 @@
+name: Public AES fixture exact known-answer validation
+on:
+  push:
+    branches: ["codex/pr2974-public-aes-vector-20260920"]
+permissions:
+  contents: read
+jobs:
+  linux-source-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PUBLIC_AES_CELL: linux-x64
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "c10030cc93490ec436537e89b3b489921c872ea4"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.14"
+      - name: Install exact native compiler and static tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+      - name: Bind candidate and run one original AES test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python driver/public-aes-validation/run.py --source candidate --driver driver \
+            --output "$RUNNER_TEMP/public-aes-output"
+      - name: Preserve all bounded original command streams and result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: public-aes-source-${{ env.PUBLIC_AES_CELL }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/public-aes-output/*.json
+            ${{ runner.temp }}/public-aes-output/*.stdout
+            ${{ runner.temp }}/public-aes-output/*.stderr

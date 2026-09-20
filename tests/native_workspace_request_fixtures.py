@@ -14,7 +14,7 @@ from codex_plugin_scanner.guard.native_decision_receipt import canonical_receipt
 from codex_plugin_scanner.guard.store_native_decision_receipts import (
     StoreNativeDecisionReceiptsMixin,
     ensure_native_command_receipt_binding_schema,
-    native_decision_receipt_schema_statement,
+    native_decision_receipt_schema_statements,
 )
 from scripts import native_slo_workspace_request_observer as request_observer
 from scripts.native_slo_mixed_request import request_attempt
@@ -129,10 +129,16 @@ class ReceiptStore(StoreNativeDecisionReceiptsMixin):
     def __init__(self, path):
         self.path = path
         with self._connect() as connection:
-            connection.execute(
-                "create table if not exists schema_migrations (version integer primary key, applied_at text not null)"
+            statements = native_decision_receipt_schema_statements(
+                """
+                create table if not exists schema_migrations (
+                  version integer primary key,
+                  applied_at text not null
+                )
+                """
             )
-            connection.execute(native_decision_receipt_schema_statement())
+            for statement in statements:
+                connection.execute(statement)
             ensure_native_command_receipt_binding_schema(connection, applied_at=datetime.now(timezone.utc).isoformat())
 
     @contextmanager

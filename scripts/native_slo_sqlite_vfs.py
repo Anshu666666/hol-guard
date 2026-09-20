@@ -29,6 +29,13 @@ _SCOPE: contextvars.ContextVar[str] = contextvars.ContextVar("guard_vfs_read_sco
 _RETAINED: list[SQLiteVFSObservation] = []
 
 
+def _require_supported_runtime() -> None:
+    if sys.version_info < (3, 12):
+        raise RuntimeError("SQLite VFS observation requires Python 3.12 extension entrypoint support")
+    if sys.platform != "linux" or not Path("/proc/self/fd").is_dir():
+        raise RuntimeError("SQLite VFS observation requires the admitted Linux descriptor loader")
+
+
 class _SQLiteProxy:
     def __init__(self, original: Any, observer: SQLiteVFSObservation) -> None:
         self.original, self.observer = original, observer
@@ -56,10 +63,7 @@ class SQLiteVFSObservation:
     """One explicitly loaded extension and one nondefault VFS for one owned store."""
 
     def __init__(self, *, database: Path, extension: Path, extension_sha256: str) -> None:
-        if sys.version_info < (3, 12):
-            raise RuntimeError("SQLite VFS observation requires Python 3.12 extension entrypoint support")
-        if sys.platform != "linux" or not Path("/proc/self/fd").is_dir():
-            raise RuntimeError("SQLite VFS observation requires the admitted Linux descriptor loader")
+        _require_supported_runtime()
         if not _ACTIVE.acquire(blocking=False):
             raise RuntimeError("another SQLite VFS observation is active")
         self._lock = threading.RLock()

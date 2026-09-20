@@ -118,6 +118,7 @@ def test_repeated_attempt_labels_receive_independent_opaque_native_ids() -> None
 @pytest.mark.parametrize("invalid", (None, 1, "private-path", "mixed-load-1000000", "mixed-policy-0\n"))
 def test_invalid_diagnostic_attempt_cannot_be_replaced_by_native_id(invalid: object) -> None:
     assert request_attempt({"native_slo_attempt": invalid, "tool_use_id": "mixed-load-0"}) is None
+    assert request_attempt({"tool_use_id": "mixed-load-0"}) is None
 
 
 @pytest.mark.parametrize("value", (None, [], {}, {"tool_use_id": "mixed-load-0"}, {"tool_call_id": "mixed-load-0"}))

@@ -319,7 +319,10 @@ def test_vfs_name_collision_refuses_without_changing_active_registry(
             duplicate.enable_load_extension(False)
             with pytest.raises(sqlite3.InterfaceError) as error:
                 duplicate.execute("select guard_sqlite_vfs(?, ?, ?)", ("register", observer.name, str(database)))
+            assert type(error.value) is sqlite3.InterfaceError
+            assert str(error.value) == "SQLite VFS observer admission or lifecycle refused"
             assert error.value.sqlite_errorcode == sqlite3.SQLITE_MISUSE
+            assert error.value.sqlite_errorname == "SQLITE_MISUSE"
             assert observer.report()["vfs"]["default_vfs_unchanged"] is True
             connection = observer.connect()
             connection.close()

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import hashlib as hashlib
 import json as json
 import threading
@@ -134,8 +133,10 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
             try:
                 queue_observation.attach(self)
             except BaseException:
-                with contextlib.suppress(BaseException):
+                try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.
                     queue_observation._hook_failed(self)
+                except BaseException:
+                    pass
         try:
             self._recover_journal()
             self._thread = threading.Thread(
@@ -147,8 +148,10 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
         except BaseException:
             observation = self._queue_observation
             if observation is not None:
-                with contextlib.suppress(BaseException):
+                try:  # noqa: SIM105 - Startup cleanup must preserve the original failure.
                     observation.detach(self)
+                except BaseException:
+                    pass
             raise
 
     def submit_command_activity(
@@ -191,8 +194,10 @@ class RuntimeHookEvidenceWriter(RuntimeHookEvidenceWriterJournalMixin):
                 observation._enqueued(self, record, origin)
         except BaseException:
             # Diagnostic faults never change queue admission or persistence.
-            with contextlib.suppress(BaseException):
+            try:  # noqa: SIM105 - Diagnostic fallback must not invoke a new context manager.
                 observation._hook_failed(self)
+            except BaseException:
+                pass
 
     def _derive_correlation(
         self,

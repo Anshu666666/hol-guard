@@ -8,10 +8,16 @@ import stat
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, cast
 
 MAX_LOADER_IMAGES = 16
 _LOCK = threading.Lock()
+
+
+class _LoadExtension(Protocol):
+    """Signature admitted by the caller's existing Python 3.12 runtime guard."""
+
+    def __call__(self, name: str, /, *, entrypoint: str | None = None) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -76,7 +82,8 @@ def load_verified_extension(connection: sqlite3.Connection, descriptor: int, ide
             except BaseException:
                 os.close(retained)
                 raise
-        connection.load_extension(image.alias, entrypoint="sqlite3_guardvfsext_init")
+        load_extension = cast(_LoadExtension, connection.load_extension)
+        load_extension(image.alias, entrypoint="sqlite3_guardvfsext_init")
 
 
 def loader_descriptor_report(identity: Mapping[str, Any], *, admitted_images: int) -> dict[str, Any]:

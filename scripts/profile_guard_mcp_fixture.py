@@ -160,5 +160,3 @@ def summarize(values: list[float]) -> dict[str, float | int]:
         "p99": ordered[math.ceil(len(values) * 0.99) - 1],
         "max": ordered[-1],
     }
-
-

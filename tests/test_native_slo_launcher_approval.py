@@ -20,6 +20,7 @@ from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_launcher_approval import LauncherApprovalControl, resolve_launcher_review
 
 from .native_review_approval_support import _bound_review_evidence
+from .native_slo_approval_support import _assert_recorded_policy_binding
 
 
 def _session(tmp_path):
@@ -57,6 +58,7 @@ def _queue(session, *, harness="claude-code", payload=None, workspace=None):
         verified_receipt=receipt,
     )
     assert row is not None
+    _assert_recorded_policy_binding(row, receipt)
     return row["request_id"]
 
 

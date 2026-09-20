@@ -8,24 +8,38 @@ import json
 import platform
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from profile_guard_mcp_case import run_case_common  # noqa: E402
-from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: E402, F401
-from profile_guard_mcp_fixture import summarize as _summary  # noqa: E402, F401
-from profile_guard_mcp_matrix import (  # noqa: E402, F401
-    performance_lock,
-    run_matrix_common,
-    run_remote_case,
-    runtime_source_identity,
-    write_checkpoint,
-)
-from profile_guard_mcp_worker import run_worker  # noqa: E402
-from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: E402, F401
+if TYPE_CHECKING:
+    from scripts.profile_guard_mcp_case import run_case_common
+    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments
+    from scripts.profile_guard_mcp_fixture import summarize as _summary
+    from scripts.profile_guard_mcp_matrix import (
+        performance_lock,
+        run_matrix_common,
+        run_remote_case,
+        runtime_source_identity,
+        write_checkpoint,
+    )
+    from scripts.profile_guard_mcp_worker import run_worker
+    from scripts.profile_guard_mcp_worker import tree_sample as _tree_sample
+else:
+    from profile_guard_mcp_case import run_case_common
+    from profile_guard_mcp_fixture import BenchmarkCaseError, Phases, fixture_arguments  # noqa: F401
+    from profile_guard_mcp_fixture import summarize as _summary  # noqa: F401
+    from profile_guard_mcp_matrix import (
+        performance_lock,
+        run_matrix_common,
+        run_remote_case,  # noqa: F401
+        runtime_source_identity,  # noqa: F401
+        write_checkpoint,  # noqa: F401
+    )
+    from profile_guard_mcp_worker import run_worker
+    from profile_guard_mcp_worker import tree_sample as _tree_sample  # noqa: F401
 
 
 def _worker(config_path: Path) -> int:

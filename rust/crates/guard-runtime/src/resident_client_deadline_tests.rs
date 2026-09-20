@@ -378,6 +378,40 @@ mod macos_closed_peer {
     }
 
     #[test]
+    fn completed_write_can_flush_after_peer_close_without_replaying_request() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        let deadline = Instant::now() + Duration::from_secs(1);
+        DeadlineStream::new(&mut client, deadline)
+            .write_all(b"{}")
+            .unwrap();
+        let mut request = [0u8; 2];
+        server.read_exact(&mut request).unwrap();
+        assert_eq!(request, *b"{}");
+        server
+            .write_all(&response_header(&REQUEST_ID, b"{}"))
+            .unwrap();
+        server.write_all(b"{}").unwrap();
+        drop(server);
+        let error = client
+            .set_write_timeout(Some(Duration::from_millis(250)))
+            .unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(nix::errno::Errno::EINVAL as i32));
+        assert_blocking(&client);
+        let error = DeadlineStream::new(&mut client, Instant::now())
+            .flush()
+            .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        let mut stream = DeadlineStream::new(&mut client, deadline);
+        stream.flush().unwrap();
+        assert_eq!(
+            read_committed_response(&mut stream, &REQUEST_ID).unwrap(),
+            b"{}"
+        );
+        assert_eq!(stream.read(&mut [0u8; 1]).unwrap(), 0);
+        assert_blocking(&client);
+    }
+
+    #[test]
     fn malformed_or_partial_buffered_responses_remain_fatal() {
         for (header, body, code) in [
             (
@@ -436,6 +470,9 @@ mod macos_closed_peer {
                 deadline
             )
             .is_none());
+        assert!(client
+            .flush_after_timeout_error(&io::Error::from_raw_os_error(22), deadline)
+            .is_none());
         assert_eq!(output, [0]);
         drop(server);
         assert!(client
@@ -444,6 +481,9 @@ mod macos_closed_peer {
                 &io::Error::from_raw_os_error(13),
                 deadline
             )
+            .is_none());
+        assert!(client
+            .flush_after_timeout_error(&io::Error::from_raw_os_error(13), deadline)
             .is_none());
         assert_eq!(output, [0]);
         assert_eq!(client.read(&mut output).unwrap(), 1);

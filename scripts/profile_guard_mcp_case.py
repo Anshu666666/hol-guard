@@ -14,10 +14,14 @@ from collections import Counter
 from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
-from profile_guard_mcp_worker import tree_sample
+if TYPE_CHECKING:
+    from scripts.profile_guard_mcp_fixture import BenchmarkCaseError, summarize
+    from scripts.profile_guard_mcp_worker import tree_sample
+else:
+    from profile_guard_mcp_fixture import BenchmarkCaseError, summarize
+    from profile_guard_mcp_worker import tree_sample
 
 
 def run_case_common(
@@ -84,6 +88,7 @@ def run_case_common(
             start_new_session=os.name == "posix",
         )
         assert process.stdin and process.stdout
+        client_stdin = process.stdin
         timings: list[float] = []
         memory: list[dict[str, float]] = []
         startup: dict[str, float] = {}
@@ -100,8 +105,8 @@ def run_case_common(
             nonlocal largest_client_frame_bytes
             encoded = json.dumps(message, ensure_ascii=False, separators=(",", ":")) + "\n"
             largest_client_frame_bytes = max(largest_client_frame_bytes, len(encoded.encode()))
-            process.stdin.write(encoded)
-            process.stdin.flush()
+            client_stdin.write(encoded)
+            client_stdin.flush()
 
         def read(timeout_seconds: float = 30) -> dict[str, Any]:
             line = _readline_with_timeout(process.stdout, timeout_seconds=timeout_seconds, source="benchmark_client")

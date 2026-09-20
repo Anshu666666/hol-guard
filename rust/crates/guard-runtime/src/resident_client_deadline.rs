@@ -76,9 +76,16 @@ impl Write for DeadlineStream<'_> {
 
     fn flush(&mut self) -> io::Result<()> {
         let deadline = self.write_deadline.get();
-        self.stream
-            .set_resident_write_timeout(Some(remaining(deadline)?))?;
-        let result = self.stream.flush();
+        let result = match self
+            .stream
+            .set_resident_write_timeout(Some(remaining(deadline)?))
+        {
+            Ok(()) => self.stream.flush(),
+            Err(error) => match self.stream.flush_after_timeout_error(&error, deadline) {
+                Some(result) => result,
+                None => return Err(error),
+            },
+        };
         remaining(deadline)?;
         result
     }

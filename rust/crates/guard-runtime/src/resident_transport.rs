@@ -22,6 +22,13 @@ pub(crate) trait ResidentStream: Read + Write + Send {
     ) -> Option<io::Result<usize>> {
         None
     }
+    fn flush_after_timeout_error(
+        &mut self,
+        _error: &io::Error,
+        _deadline: Instant,
+    ) -> Option<io::Result<()>> {
+        None
+    }
     fn try_read_available(&mut self, output: &mut [u8]) -> io::Result<usize> {
         self.set_resident_nonblocking(true)?;
         let result = self.read(output);
@@ -76,27 +83,10 @@ impl ResidentStream for UnixStream {
         error: &io::Error,
         deadline: Instant,
     ) -> Option<io::Result<usize>> {
-        use nix::errno::Errno;
-        use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
         use nix::sys::socket::{recv, MsgFlags};
-        use std::os::fd::{AsFd, AsRawFd};
+        use std::os::fd::AsRawFd;
 
-        // Darwin rejects SO_RCVTIMEO after a Unix peer closes, even when its
-        // complete response remains buffered. EINVAL alone is insufficient:
-        // independently require hangup on this same owned descriptor.
-        if error.raw_os_error() != Some(Errno::EINVAL as i32) {
-            return None;
-        }
-        let mut descriptors = [PollFd::new(self.as_fd(), PollFlags::POLLIN)];
-        if poll(&mut descriptors, PollTimeout::ZERO).ok()? != 1 {
-            return None;
-        }
-        let events = descriptors[0].revents()?;
-        if !events.contains(PollFlags::POLLHUP)
-            || events.intersects(PollFlags::POLLERR | PollFlags::POLLNVAL)
-        {
-            return None;
-        }
+        closed_unix_peer_after_timeout_error(self, error)?;
         if Instant::now() >= deadline {
             return Some(Err(io::Error::from(io::ErrorKind::TimedOut)));
         }
@@ -104,6 +94,46 @@ impl ResidentStream for UnixStream {
         // reuse an old blocking timeout, or wait for any further peer data.
         Some(recv(self.as_raw_fd(), output, MsgFlags::MSG_DONTWAIT).map_err(io::Error::from))
     }
+
+    #[cfg(target_os = "macos")]
+    fn flush_after_timeout_error(
+        &mut self,
+        error: &io::Error,
+        deadline: Instant,
+    ) -> Option<io::Result<()>> {
+        closed_unix_peer_after_timeout_error(self, error)?;
+        if Instant::now() >= deadline {
+            return Some(Err(io::Error::from(io::ErrorKind::TimedOut)));
+        }
+        // UnixStream has no buffered writes: its actual flush is a no-op.
+        // No request bytes are written again after the peer has closed.
+        Some(Write::flush(self))
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn closed_unix_peer_after_timeout_error(stream: &UnixStream, error: &io::Error) -> Option<()> {
+    use nix::errno::Errno;
+    use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
+    use std::os::fd::AsFd;
+
+    // Darwin rejects socket timeout setters after a Unix peer closes, even
+    // when its complete response remains buffered. EINVAL alone is insufficient:
+    // independently require hangup on this same owned descriptor.
+    if error.raw_os_error() != Some(Errno::EINVAL as i32) {
+        return None;
+    }
+    let mut descriptors = [PollFd::new(stream.as_fd(), PollFlags::POLLIN)];
+    if poll(&mut descriptors, PollTimeout::ZERO).ok()? != 1 {
+        return None;
+    }
+    let events = descriptors[0].revents()?;
+    if !events.contains(PollFlags::POLLHUP)
+        || events.intersects(PollFlags::POLLERR | PollFlags::POLLNVAL)
+    {
+        return None;
+    }
+    Some(())
 }
 
 pub(crate) type BoxedResidentStream = Box<dyn ResidentStream>;

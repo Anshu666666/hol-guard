@@ -24,9 +24,7 @@ for path in (ROOT_PATH, SRC_PATH, SUPPORT_PATH):
 
 existing_pythonpath = os.environ.get("PYTHONPATH", "")
 pythonpath_entries = [entry for entry in existing_pythonpath.split(os.pathsep) if entry]
-pythonpath_prefix = [
-    str(path) for path in (ROOT_PATH, SUPPORT_PATH, SRC_PATH) if str(path) not in pythonpath_entries
-]
+pythonpath_prefix = [str(path) for path in (ROOT_PATH, SUPPORT_PATH, SRC_PATH) if str(path) not in pythonpath_entries]
 if pythonpath_prefix:
     os.environ["PYTHONPATH"] = os.pathsep.join([*pythonpath_prefix, *pythonpath_entries])
 

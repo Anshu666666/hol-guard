@@ -1,0 +1,136 @@
+name: Native startup diagnostics
+run-name: Native startup diagnostics - unchanged 3780ad899ad6c42c91049b2a15fef138e911443f
+'on':
+  push:
+    branches:
+    - codex/pr2974-installed-validation-20260920-3780ad89
+    paths:
+    - .github/workflows/native-startup-diagnostics.yml
+permissions:
+  contents: read
+concurrency:
+  group: native-startup-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  macos-startup:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - runner: macos-15-intel
+          platform_tag: macosx_13_0_x86_64
+          target: x86_64-apple-darwin
+          deployment_target: '13.0'
+        - runner: macos-15
+          platform_tag: macosx_11_0_arm64
+          target: aarch64-apple-darwin
+          deployment_target: '11.0'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+    - name: Check out exact validation driver
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: ${{ github.sha }}
+        path: validation-src
+        persist-credentials: false
+    - name: Check out unchanged published candidate
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: 3780ad899ad6c42c91049b2a15fef138e911443f
+        path: candidate-src
+        persist-credentials: false
+    - name: Check out unchanged baseline for binding only
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+        path: baseline-src
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22'
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      with:
+        python-version: '3.12'
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+      with:
+        version: 0.9.26
+        enable-cache: false
+    - name: Verify unchanged checkouts before
+      env:
+        VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+        VALIDATION_RUN_ID: ${{ github.run_id }}
+        VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+      run: python ../validation-src/scripts/ci/record_native_qualification_checkouts.py --baseline ../baseline-src --candidate
+        . --phase before --output startup-evidence/checkouts-before.json
+    - run: uv sync --frozen --extra dev --python 3.12
+    - name: Install pinned Rust toolchain
+      run: |
+        rustup toolchain install 1.88.0 --profile minimal
+        rustup default 1.88.0
+    - name: Build pure Python wheel
+      run: uv run --no-sync python -m build --wheel --outdir pure-dist
+    - name: Build native runtime
+      env:
+        HOL_GUARD_BUILD_SHA: 3780ad899ad6c42c91049b2a15fef138e911443f
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+      run: |
+        VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+        export HOL_GUARD_PACKAGE_VERSION="$VERSION"
+        cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+        rust/target/release/hol-guard-runtime self-test --json
+    - name: Install unchanged wheel and capture ordinary startup failures
+      env:
+        SOURCE_SHA: 3780ad899ad6c42c91049b2a15fef138e911443f
+        PLATFORM_TAG: ${{ matrix.platform_tag }}
+        TARGET: ${{ matrix.target }}
+      run: |
+        VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+        runtime="rust/target/release/hol-guard-runtime"
+        RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+        uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
+          --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \
+          --runtime "$runtime" \
+          --output-dir native-dist \
+          --version "$VERSION" \
+          --platform-tag "$PLATFORM_TAG" \
+          --target "$TARGET" \
+          --source-sha "$SOURCE_SHA" \
+          --rule-digest "$RULE_DIGEST"
+        uv pip uninstall --python .venv/bin/python hol-guard
+        uv pip install --python .venv/bin/python --no-deps --force-reinstall native-dist/*.whl
+        unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+        unset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC
+        unset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY
+        unset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE
+        unset HOL_GUARD_PYTHON_ORACLE
+        unset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON
+        unset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST
+        unset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC
+        unset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY
+        unset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE
+        unset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT
+        unset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+        .venv/bin/python -I ci/native_runtime/probe_installed_runtime_identity.py --json startup-evidence/installed-identity.json
+        .venv/bin/python ../validation-src/ci/native_runtime/probe_native_default_auto.py --json startup-evidence/default-auto.json
+    - name: Verify unchanged checkouts after
+      env:
+        VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+        VALIDATION_RUN_ID: ${{ github.run_id }}
+        VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+      run: python ../validation-src/scripts/ci/record_native_qualification_checkouts.py --baseline ../baseline-src --candidate
+        . --phase after --output startup-evidence/checkouts-after.json
+      if: always()
+    - name: Retain original installed wheel and bounded startup evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: native-startup-diagnostics-3780-${{ matrix.target }}-attempt-${{ github.run_attempt }}
+        path: |
+          candidate-src/startup-evidence/**
+          candidate-src/native-dist/*.whl
+        if-no-files-found: warn
+        retention-days: 30
+    defaults:
+      run:
+        working-directory: candidate-src

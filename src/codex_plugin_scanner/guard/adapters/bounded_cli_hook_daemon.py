@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlencode, urlparse, urlsplit, urlunsplit
 
 from ..action_lattice import is_guard_action
-from ..daemon.hook_availability_policy import hook_reason_continues_session
+from ..daemon.hook_availability_policy import hook_event_is_permission_request, hook_reason_continues_session
 from ..private_file_io import read_private_regular_text
 from .bounded_cli_hook_bridge import _event_name, _json_object
 
@@ -273,6 +273,14 @@ def _daemon_response_to_native(
     """Transform daemon policy data into harness-native output."""
     canonical = harness.strip().lower().replace("_", "-")
     compact_event = event_name.replace("_", "").replace("-", "").lower()
+    if (
+        canonical == "copilot"
+        and hook_event_is_permission_request(event_name)
+        and daemon_response.get("behavior") == "deny"
+    ):
+        # The native permission handoff denies this tool without necessarily
+        # stopping the turn. A session-continuation reason is not tool approval.
+        return json.dumps(daemon_response, ensure_ascii=True, separators=(",", ":")), "", 0
     if canonical == "copilot" and compact_event in {"pretooluse", "posttooluse"}:
         return _copilot_command_response(daemon_response, event_name=event_name)
     if canonical == "grok" and not daemon_response:

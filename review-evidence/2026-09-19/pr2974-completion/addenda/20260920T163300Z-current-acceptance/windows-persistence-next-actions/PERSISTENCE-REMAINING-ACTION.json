@@ -1,0 +1,68 @@
+{
+  "schema": "pr2974.remaining-persistence-evidence.v1",
+  "source": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "verified_result_tree": "4b0758ea6fd1a47af834a01b7ecd4a57a4f6dd04",
+  "historical_normal_results": {
+    "ad9d": "444eb1438badf4cbdcfcf60f3e470c9ba16aaa66",
+    "f8": "62b1239f02e1066b0b0d5371e6c76c56fdc76319"
+  },
+  "facts": [
+    "The one journal observer workload did not reproduce journal_checkpoint/os_permission; its empty events and zero original journal counter reconcile.",
+    "The original workload instead retained command_activity_persistence/sqlite_busy:1 while all21 native receipts processed without native receipt failure/drop/pending.",
+    "Classifier sqlite_busy proves an exact built-in SQLite exception carrying a numeric primary code5. The extended code, failing SQLite operation and holder are not retained.",
+    "The command persistence catch spans pre/post activity persistence and the connection transaction lifecycle under the original50ms override. It records a failed command attempt, sticky degraded state, and the existing durable retry path; later success does not clear the failure counter.",
+    "Journal permission remains unattributed; the new private token writer is not the journal replacement primitive."
+  ],
+  "source_guards": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "git_blob": "ae31c08a395b083e992fc1c06a0badc0f972f243",
+      "lf_sha256": "3d60fe7c6df6722da46f4d366a8bb35c701acca632f2e083da2d461cdce8db7a"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_operations.py",
+      "git_blob": "7870a0edbd2119feb695a941ee91abae0cdf64c5",
+      "lf_sha256": "d38b9a5a8bc8215d471a7afbd5299423122eca925dcb72f4da3a383e520f41a2"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py",
+      "git_blob": "0385f2e5b2fd52856fb91acd330258b68e22d537",
+      "lf_sha256": "76328d2c2bde87ce341d0a4d7462fdd1e246202a6fd041bda3a8f47fb6c2122e"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py",
+      "git_blob": "76940e6f527b3199942d87d2edc8b551c2f48a76",
+      "lf_sha256": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_command_activity.py",
+      "git_blob": "f5b65a733afd01eab34b6cac2761d12888c19f2f",
+      "lf_sha256": "283486e386346e9426802c3efd6030f2f5c86a0439cb23e591f3d19c568c37d0"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "git_blob": "9b75a55ffad19896846e82c206e0cf3ffd5a3be8",
+      "lf_sha256": "d1a6948b0eef4f8340ffe52d5bdaf57cf1f1dc0b13dd29e71111db4fe2bf4f36"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/sqlite_tuning.py",
+      "git_blob": "ab1723c210f0fbbab105d4b9e2910ae712daf1c7",
+      "lf_sha256": "4f1ecb3a38afb8de2baa9cae8f80afd7ef81b7bfbd609c7be38ef78959fca86f"
+    }
+  ],
+  "unexecuted_options": [
+    {
+      "scope": "Original journal lock overlap control on Windows",
+      "design": "Use separate bounded holder/client processes with the unchanged actual _journal_lock and one original operation per declared uncontended, held and released cell. Preserve real byte-lock ownership, original error/scalars, holder release and process retirement. No full corpus replay or source repair.",
+      "purpose": "Test whether pre-lock ftruncate fails while another legitimate holder owns byte0, before the original serialization lock can be acquired.",
+      "limit": "A controlled failure would establish that API/implementation contract; it cannot identify the old jobs unobserved holder or attribute their os_permission event."
+    },
+    {
+      "scope": "Command persistence cause observation only if separately selected",
+      "design": "Reuse the existing classifier boundary with exact command-phase caller and a separately reviewed fixed SQLite source/operation allowlist. Retain built-in numeric extended/primary codes without SQL text, bound parameters, payload, private paths, exception text or locals. Preserve original50ms timeout, original retry schedule, callback/exception identity and separate original result.",
+      "purpose": "Distinguish actual connection admission/PRAGMA, BEGIN IMMEDIATE, write and commit failure only when an original command failure occurs.",
+      "limit": "No such observer is implemented or launched; journal-only empty events do not provide command attribution."
+    }
+  ],
+  "scope": "Design/read-only source continuation only. No second workload, new retry, permission/deadline change or product repair."
+}

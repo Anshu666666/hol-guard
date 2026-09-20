@@ -1,0 +1,47 @@
+{
+  "blocking_findings": [],
+  "findings": [
+    "Original role invokes exact original _journal_lock with module-local forwarding proxies; one original open/guards/truncate/offset/LK_LOCK byte0 and cleanup unchanged.",
+    "The separate blocking/nonblocking primitive intentionally omits ftruncate; open, regular-file/single-link/private-mode checks and byte0 range are preserved. No replacement primitive is presented as the original journal path.",
+    "Original pre-acquisition failure remains strict held-cell failure with fixed operation/kind/errno/WinError; no specific code is guessed.",
+    "Emitting a pre-call event cannot suppress the original OS call; explicit recording-failure count prevents admission of lost observations.",
+    "Parent waits for original holder entered event, preserves real held and released states, releases on acquisition event or finally, and reaps both direct children. Released holder reports only after original unlock/close.",
+    "The 250 ms interval proves only observed completion ordering, not scheduler-independent time blocked in the CRT.",
+    "Descriptor inspection distinguishes original closure from emergency cleanup; a close/unlock gap cannot be promoted to original cleanup success.",
+    "Finite enum/scalar protocol and strict reader export no arguments, paths, error strings, or native policy."
+  ],
+  "limits": [
+    "No Windows controls or product workload executed by peer.",
+    "The owner’s 21 portable passes and 5 Windows skips is separate owner validation, not new Windows evidence.",
+    "No historical checkpoint cause or proposed product repair follows from this source review.",
+    "Operational workflow/lineage and actual hosted result admission remain separate."
+  ],
+  "reviewed_files": [
+    {
+      "bytes": 20638,
+      "git_blob": "76940e6f527b3199942d87d2edc8b551c2f48a76",
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py",
+      "sha256": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988"
+    },
+    {
+      "bytes": 7371,
+      "git_blob": "0361803883f67a6f428bd749ab4b5316760e0e42",
+      "path": "ci/native_runtime/journal_lock_child.py",
+      "sha256": "7ce59c59ee3ddcd9be2c87aa7f86c2d013a41de427b6d4b29891ff5a37839095"
+    },
+    {
+      "bytes": 9568,
+      "git_blob": "dfe459e69f654a7100723cbfc029f3377e2a01b1",
+      "path": "ci/native_runtime/journal_lock_process.py",
+      "sha256": "cf1239d68d753e40019c7e2a59f5d16b2b88bdedeea9a2e60ab2a22d56d42b06"
+    },
+    {
+      "bytes": 12196,
+      "git_blob": "fc78f95a88f493a18d2a1a1fde5ba9d1225d677f",
+      "path": "tests/test_journal_lock_overlap.py",
+      "sha256": "9bbe99e0c4d32be9aee4fecd0995d0571e37bc7a3386ce06106a72953c9bc9f5"
+    }
+  ],
+  "schema": "pr2974.windows-journal-overlap-source-peer.v1",
+  "source_tuple": "44fccd1eed0233adf5293ee30c93ccc0ea002a60"
+}

@@ -1,0 +1,66 @@
+{
+  "schema": "pr2974.journal-lock-overlap-preparation.v1",
+  "base": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "base_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+  "source_files": [
+    {
+      "path": "ci/native_runtime/journal_lock_child.py",
+      "bytes": 7096,
+      "lines": 178,
+      "sha256": "2de67df7992f0e62cd5a1f1e7fbf4512ff6afcd9d70bf50266c428d970bd5ed2",
+      "git_blob": "c6c1a03a99d6a6acbeeab5295d5add63354e46b2"
+    },
+    {
+      "path": "ci/native_runtime/journal_lock_process.py",
+      "bytes": 9379,
+      "lines": 241,
+      "sha256": "12b2bce797b71e2a82c1bf1a993666082c8d8509dc4d518f20516c0295547e7f",
+      "git_blob": "7b466110ff1d919c392078dff01fc15f95bdd3e1"
+    },
+    {
+      "path": "ci/native_runtime/journal_lock_run.py",
+      "bytes": 7340,
+      "lines": 192,
+      "sha256": "75fee5fb76bb20ef9e230de164e8aa85a8039ed019164930b64cd592ff7860b4",
+      "git_blob": "8917a1c1bc51530f3be5c42446910ba3dfe2dc22"
+    },
+    {
+      "path": "tests/test_journal_lock_overlap.py",
+      "bytes": 11181,
+      "lines": 251,
+      "sha256": "8a7f64e10fae41460b16c673fe074ee5427ddb956adc1e1c6af9dba89202da76",
+      "git_blob": "10978b6f5a3516666b93adada98a4ec0b5b9a29b"
+    }
+  ],
+  "workflow": {
+    "path": ".github/workflows/pr2974-windows-journal-lock-overlap.yml",
+    "template_sha256": "bec2de3d263b0048f463c888b87b54c7a2a852cb254fe0ea88580975a3cd4460",
+    "placeholders": {
+      "__DRIVER_BRANCH__": 1,
+      "__SOURCE_SHA__": 2,
+      "__SOURCE_TREE__": 1
+    }
+  },
+  "validation": {
+    "local_pytest_passed": 20,
+    "local_windows_skipped": 5,
+    "windows_actual_executed": false,
+    "types": {
+      "filesAnalyzed": 4,
+      "errorCount": 0,
+      "warningCount": 170,
+      "informationCount": 0,
+      "timeInSec": 0.99
+    },
+    "lint_returncode": 0,
+    "format_returncode": 0
+  },
+  "limits": [
+    "Source-only control, not installed qualification or historical journal attribution",
+    "One original contender per declared cell; original pre-lock failure remains failed",
+    "Primitive controls omit truncate explicitly; same real open/guard/lock range",
+    "250ms observation is not a scheduler-proof blocking duration",
+    "No product edit, corpus replay, retry or deadline change",
+    "Separate sqlite_busy event remains unattributed"
+  ]
+}

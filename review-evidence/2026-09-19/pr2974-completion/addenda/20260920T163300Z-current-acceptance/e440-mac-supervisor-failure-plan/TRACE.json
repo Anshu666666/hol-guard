@@ -1,0 +1,24 @@
+{
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "build": "07ae77b50b6c98e844403c2ee3f4447f7958ebe4",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "run": 35519707645,
+  "job": 106101568924,
+  "failed_stage": "Validate real native client lifecycle",
+  "selector": "ci/native_runtime/test_native_hook_client.py::test_native_hook_client_recovers_after_supervisor_exit",
+  "test_failure_line": 143,
+  "trace": [
+    "initial _invoke returned at line137",
+    "test read initial resident state and original owner PID",
+    "_terminate_process returned; its bounded poll has no final death assertion",
+    "recovered _invoke called _push_snapshot",
+    "resident-client returned nonzero with collapsed native_resident_live_request_failed",
+    "recovery hook-client never started"
+  ],
+  "limits": [
+    "No retained full native stderr, detailed error code, selected recovery generation or actual final owner-death witness.",
+    "Fatal pre-collapse branch differs from allowed teardown retries; no ambiguous authentication/committed response replay.",
+    "No new run, deadline change, added delay or product repair."
+  ],
+  "proposed_reuse": "Original reviewed b364 Linux collector adapted explicitly for macOS at actual current fatal boundary; historical Linux nonreproduction separate."
+}

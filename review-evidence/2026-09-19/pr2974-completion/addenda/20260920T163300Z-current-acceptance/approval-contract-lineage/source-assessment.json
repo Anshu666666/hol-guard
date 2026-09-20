@@ -1,0 +1,30 @@
+{
+  "schema": "hol-guard-approval-retry-contract-lineage.v1",
+  "scope": "read-only historical source comparison; no new product execution or qualification",
+  "corpus_introduction": "81ef6195c9231bd3fca5efb2aa987edfbd0c5fa6",
+  "corpus_vector": "git diff --output=/tmp/guard-qualification.diff README.md",
+  "corpus_oracle": "Claude resolved retry expects policy_action=allow and approval_reuse_status=accepted",
+  "contemporaneous_source": "81ef helper matches policy binding but has no _DIRECT_REUSABLE_COMMANDS or _command_reuse_is_payload_bound gate",
+  "separate_security_change": {
+    "commit": "dbdf40dcb2c69617ad3fd02d6a89f391beba0679",
+    "pull_request": 2950,
+    "parent": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+    "intent": "Bind native retry reuse to Rust-owned request evidence and reject mutable local code; allowlist omits git",
+    "reinforcement": "633465cb234137a81ef315bbda5b7a3ec0fc65c0"
+  },
+  "integration": {
+    "commit": "f8bae76423f8120cb7c496f57407f7d47945f73d",
+    "parents": [
+      "9162dcbec92f04675e597a16f3e0c77ec1c30715",
+      "d104ac325eba464bd82bd3fcae5c736de60fe1fb",
+      "a001b2691f481b7b5a66dd14d68e48d61c44cb78"
+    ],
+    "observed": "Current narrow gate appears in extracted hook_native_review_retry.py; original retry oracle remains"
+  },
+  "conclusion": "Separately evolving production security and installed corpus expectations were retained together. The current git command cannot receive compatibility retry reuse. Preserve actual failed corpus, test a genuinely supported positive path plus original-command nonreuse, and retain full RSP080 continuation obligation.",
+  "limits": [
+    "History API commits/path and exact contents are retained; integration commit file list is API paginated, not a complete changed-file census.",
+    "Author timestamps alone are not an ancestry claim.",
+    "No oracle was weakened, no allowlist changed, no workload rerun."
+  ]
+}

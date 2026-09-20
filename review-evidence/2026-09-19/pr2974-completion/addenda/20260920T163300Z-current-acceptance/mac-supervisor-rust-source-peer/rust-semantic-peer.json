@@ -1,0 +1,37 @@
+{
+  "schema": "hol-guard.mac-recovery-rust-semantic-peer.v1",
+  "verdict": "clear",
+  "source_commit": "100bc21be99a0fedab605b95d6c35e0f7fb160e8",
+  "source_tree": "3c19fb57290cf2128e24d4434ee5db8f8cc2799b",
+  "base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "formatted_return_tree": "299c2c7b138a93713bc5a25f386addb60e10dae8",
+  "images": [
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "git_blob": "9f116263c7248ca1fb7a1b8fa5678ba2ce24f429"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "git_blob": "94e6f09e3b0eeb0f6147b9b301f9ac9435a8d13f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/native_client_failure_observation.rs",
+      "git_blob": "0a4f9a0142378508345868cd150364fb73514523"
+    }
+  ],
+  "review": [
+    "Read the complete returned collector and exact staged diff for main and managed_resident against e440. Only the existing nonretryable live-exchange collapse arm observes the borrowed existing error/state. The earlier is_retryable_live_request_error decision and all original exchange operations remain unchanged.",
+    "Feature-disabled or non-macOS macro erases both new argument expressions and returns the identical generic native_resident_live_request_failed string. Enabled macro evaluates each argument once, borrows it, records fixed fields, then returns the same string. No deadline, authentication budget, protocol, replay, owner validation, or request Result classification changes.",
+    "Recorder uses one compare_exchange to claim the first tuple, stores its scalar code/retry/generation/process/owner/transport fields, then publishes ready with Release. Snapshot Acquire prevents reading partially initialized first state. Other observations only set additional_observation_lost. No waiting, retries, allocation, clock or OS/probe read is added at this boundary.",
+    "KNOWN_CODES is strictly sorted and includes every native error literal in resident_client and resident_client_deadline; nonmatching or oversized input maps to unknown. Known codes are also allowed for upstream identity errors. This is a closed vocabulary, not a guarantee that every known code reaches the selected nonretryable arm. Raw request, endpoint, token, path, marker and exception text are not exported.",
+    "Main emits only after the original run error and original stderr error line. Encoding is capped at 1024 JSON bytes, and the output performs one write call with no flush or retry. A partial/failed write remains missing/incomplete evidence to the external reader. No diagnostic write precedes the original result or changes exit2.",
+    "Seven collector controls cover absent/unpublished state, concurrent coherent first tuple, fixed code/retry roundtrip, privacy/oversize, no write retry and additional loss. The eighth config-specific macro control proves erasure or once-only borrowing. This peer inspected controls but did not compile or execute them.",
+    "Generation/PID/owner values come from the already selected authenticated state; state_fields_coherent does not mean live owner proof or an atomic whole-run snapshot. Complete_run, headline timing and owner-liveness flags remain false. The diagnostic cannot by itself explain the earlier Mac failure unless that boundary is actually reproduced."
+  ],
+  "limits": [
+    "Formatter success is not compilation/control or original-selector evidence.",
+    "This receipt covers Rust semantics only; final Python capture and hosted operational admission are separate reviewed scopes.",
+    "Diagnostic instrumentation overhead is not default-artifact timing.",
+    "No source/ref mutation or native execution by peer."
+  ]
+}

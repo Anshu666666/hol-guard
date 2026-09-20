@@ -1,0 +1,79 @@
+{
+  "schema": "pr2974.macos-supervisor-recovery-diagnostic-plan.v1",
+  "state": "source-bound preparation; no new selector execution or product repair",
+  "source_sha": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "observed": {
+    "run": 35519707645,
+    "job": 106101568924,
+    "platform": "macos-14 ARM64",
+    "build_sha": "07ae77b50b6c98e844403c2ee3f4447f7958ebe4",
+    "selector": "ci/native_runtime/test_native_hook_client.py::test_native_hook_client_recovers_after_supervisor_exit",
+    "outcome": "Initial _invoke returned. Original termination helper returned. Recovery _invoke failed inside resident-client policy push; recovery hook-client was not invoked.",
+    "failure": "native_resident_live_request_failed",
+    "suite": "1 failed,14 passed",
+    "source_limit": "SIGTERM plus the original at-most-two-second polling helper has no terminal disappearance assertion. Helper return does not prove death."
+  },
+  "question": "Which exact existing live-client error is collapsed during recovery, and how do actual original termination observations and selected resident generation relate to the initial owned state?",
+  "preserved": {
+    "original_test_body": true,
+    "original_request_builder": true,
+    "original_signed_snapshot": true,
+    "original_argv_env_cwd_inputs": true,
+    "termination_poll_seconds": 2,
+    "policy_push_subprocess_seconds": 8,
+    "hook_subprocess_seconds": 3,
+    "fixture_stop_subprocess_seconds": 2,
+    "absolute_native_deadline_handoff": true,
+    "auth_phase_budget_ms": 250,
+    "no_retries_or_extra_policy_pushes": true,
+    "selector_invocations": 1
+  },
+  "native_observer": {
+    "base_pattern": "Reviewed finite pre-collapse collector from b364159fa17e1dc57c1ba1e85658ee52eda4a428, adapted explicitly for diagnostic-phases plus target_os=macos against current absolute-deadline source.",
+    "seam": "Actual nonretryable Err branch in managed_resident::try_home_states, immediately before unchanged public collapse. Existing retry allowlist remains exactly unchanged.",
+    "data": "Closed known error-code index, original retryable_teardown boolean, selected typed state generation/process_id/owner_process_id and transport enum only; no endpoint/token/start-marker/path/payload/error text.",
+    "first_only": "One bounded atomic first-record claim; subsequent events set loss. Publish record-ready only after scalar fields; report snapshot/loss scope honestly. No locks, retries, new clock calls or extra process/state reads in this seam.",
+    "export": "One bounded best-effort stderr write after run returned and after original public error line, before original nonzero exit. No output on success or default feature-disabled binary. Partial/failed export is incomplete, never success.",
+    "limits": "Code leaf may still collapse multiple underlying OS or authentication/read phases. Do not infer raw errno, serving child cause, exact phase or successful policy evaluation from it.",
+    "default_semantics": "Default macro erases diagnostic input; current public error, original Result ordering, deadline/auth settings and return fences unchanged."
+  },
+  "python_observer": {
+    "activation": "Only exact admitted pytest node, exact unmodified test/support source and owned runtime/state_dir fixture. Install local module-alias proxies, not global os/json/subprocess replacements; unknown calls forward unchanged and are not attributed.",
+    "actual_operations": [
+      "Forward support.os.kill original calls once, retain only the already executed target-owner SIGTERM/zero-probe result or fixed exception category; no added liveness probe and no new wait.",
+      "Observe exact original test-module json.loads state result without copying private fields or substituting the dict; freeze typed process_id/owner_process_id/generation only.",
+      "Forward actual owned support.subprocess.run invocations with identical positional/keyword object identities. Retain argv role/ordinal, input byte length/digest, return code and output byte length/digest; parse only closed native diagnostic frames from already returned stderr.",
+      "Retain original setup/call/teardown pytest outcomes and original fixture resident-stop result if its original subprocess occurs. Local proxies stay installed until original teardown completes, then restore and export to an owned sidecar."
+    ],
+    "bounds": {
+      "maximum_records": 512,
+      "maximum_report_bytes": 262144,
+      "maximum_stderr_bytes": 8192,
+      "native_record_bytes": 1024
+    },
+    "privacy": "No raw request, stdout, stderr, state JSON, private path, token, exception text or arbitrary object formatting exported. Typed builtin projections only; malformed/oversized/custom values mark incomplete while original forwarding continues.",
+    "failure_behavior": "Capture/setup/restore/export failures cannot replace original completed result or raised object. Separate diagnostic-admission gate rejects missing/lost/ambiguous records; original pytest result retained independently.",
+    "joins": "Exact observed initial owner/generation and subprocess ordinals, plus selected native state in that same returned process frame. No nearest-time join, no child-state/liveness inference from missing fields.",
+    "timing": "Observer work is inside this diagnostic attempt; no latency credit, default-artifact attribution or overhead subtraction."
+  },
+  "controls": [
+    "Default macro erasure and exact unchanged public error; feature input evaluated once; all fixed code/typed state fields round-trip; unknown code never leaks; first-only loss and bounded one-write/short-write/error behavior.",
+    "Exact selected-test source registry and one target selector; actual original termination helper against fake kill/time operations proves unchanged sequence, two-second bound and no final inferred death on timeout.",
+    "Original support subprocess forwarding argument/result identity, initial/recovery phase order and no extra pushes; original exception identity and nonzero return preserved through capture/export/restore failures.",
+    "Local proxies leave global os/json/subprocess untouched; nonowned subprocess/PID forwards without collection; partial installation unwinds.",
+    "Strict duplicate/unknown/oversized/nonfinite frame rejection, typed state and private sentinel projection controls, ambiguous generation/owner and excess record rejection.",
+    "Original fixture cleanup remains after original assertion failure; separate diagnostic completeness cannot promote a failing original selector."
+  ],
+  "driver": {
+    "platform": "macos-14 ARM64 as original edge lane",
+    "toolchains": "Exact Rust1.88 plus Python3.12.10 and frozen uv dev dependencies, verify observed versions/source/driver/binary identities.",
+    "source": "Isolated sole-e440 diagnostic source child, separate driver child/unique branch; no PR or evidence ref mutation.",
+    "preflight": "Exact-source formatter/lint/types and meaningful Rust/Python controls before diagnostic release build and single original selector. No full native corpus or soak.",
+    "original_invocation": "Same original pytest selector and HOL_GUARD_NATIVE_BINARY release artifact; add only the reviewed pytest diagnostic plugin and independent output destination.",
+    "retention": "Always preserve raw original command outputs/JUnit, exact source/driver/binary hashes and bounded decoded sidecar. Separate admission rejects missing diagnostics while preserving original failure/nonreproduction.",
+    "no_cause_claim_on_nonreproduction": true,
+    "cleanup": "Original pytest fixture stop plus actual command/process containment evidence; no claim of all escaped descendants from an original helper return.",
+    "next_gate": "Concrete source, controls and operational peer before one bounded selector execution. Plan review itself grants no execution credit."
+  }
+}

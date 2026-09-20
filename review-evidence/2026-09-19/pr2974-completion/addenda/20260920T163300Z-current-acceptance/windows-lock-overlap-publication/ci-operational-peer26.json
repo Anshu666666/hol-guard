@@ -1,0 +1,47 @@
+{
+  "schema": "pr2974.journal-lock-operational-peer.v2",
+  "verdict": "clear",
+  "prior_peer_tree": "e8507449bc01a6fc5bbf85e07bf919897c7fe256",
+  "final_packet": "44fccd1eed0233adf5293ee30c93ccc0ea002a60",
+  "source_files": [
+    {
+      "path": "ci/native_runtime/journal_lock_child.py",
+      "bytes": 7371,
+      "lines": 183,
+      "sha256": "7ce59c59ee3ddcd9be2c87aa7f86c2d013a41de427b6d4b29891ff5a37839095",
+      "git_blob": "0361803883f67a6f428bd749ab4b5316760e0e42"
+    },
+    {
+      "path": "ci/native_runtime/journal_lock_process.py",
+      "bytes": 9568,
+      "lines": 244,
+      "sha256": "cf1239d68d753e40019c7e2a59f5d16b2b88bdedeea9a2e60ab2a22d56d42b06",
+      "git_blob": "dfe459e69f654a7100723cbfc029f3377e2a01b1"
+    },
+    {
+      "path": "ci/native_runtime/journal_lock_run.py",
+      "bytes": 7340,
+      "lines": 192,
+      "sha256": "38ac5cfd1b25743ce8dc775e4a56684ea27c899623642b121cbe9914d4c6596f",
+      "git_blob": "19b1903dcc052e1acb74bba3d33724288c2b0a93"
+    },
+    {
+      "path": "tests/test_journal_lock_overlap.py",
+      "bytes": 12196,
+      "lines": 282,
+      "sha256": "9bbe99e0c4d32be9aee4fecd0995d0571e37bc7a3386ce06106a72953c9bc9f5",
+      "git_blob": "fc78f95a88f493a18d2a1a1fde5ba9d1225d677f"
+    }
+  ],
+  "observations": [
+    "Read exact four-file delta against prior hash-bound 25-control peer.",
+    "Pre-call event export now catches its own failure and increments a bounded counter, then invokes the original operation once. New positive and exception-identity control covers both original outcomes.",
+    "Strict child schema bounds the recording-failure counter and actual Windows assertions require zero; recording loss therefore cannot pass silently.",
+    "Runner changes only 25 to 26 unique cases. The original five Windows cells, timers, source binding, static-first order and cleanup limits remain unchanged.",
+    "Workflow template is unchanged."
+  ],
+  "limits": [
+    "No source or Windows control execution by this peer.",
+    "Original 25-control source and initial peer are preserved; native primitive semantics remain separately reviewed."
+  ]
+}

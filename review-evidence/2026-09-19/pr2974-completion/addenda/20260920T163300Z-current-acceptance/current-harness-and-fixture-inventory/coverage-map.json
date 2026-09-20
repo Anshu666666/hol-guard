@@ -1,0 +1,118 @@
+{
+  "schema": "hol-guard.rsp015-source-fixture-map.v1",
+  "source_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "product_imports": 0,
+  "product_tests": 0,
+  "performance_runs": 0,
+  "groups": [
+    {
+      "id": "frozen-daemon-projections",
+      "covers": "All generated frozen corpus projections, both native and delivered expectations, setup/size/source-ref checks and semantic mutation controls",
+      "test_paths": [
+        "tests/test_guard_native_qualification_corpus.py"
+      ],
+      "scope_limit": "Renderer + parser/body-limit contract; native producer vectors modeled; no installed process verdict or exit proof.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "native-watch-posture",
+      "covers": "ACK mode and compatibility posture reads; native block retained while Watch output continues; off/unavailable; post-tool proof/empty/excerpt",
+      "test_paths": [
+        "tests/test_hook_worker_observe_pretool.py",
+        "tests/test_hook_worker_native_post_tool_watch.py"
+      ],
+      "scope_limit": "Real worker orchestration with modeled native edges; no all-platform installed native claim.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "availability-integrity-permission-lifecycle",
+      "covers": "Native unavailable/disabled/not-ready and unknown miss, integrity reference/retained-byte failures, PermissionDenied versus request aliases, lifecycle continuity",
+      "test_paths": [
+        "tests/test_native_runtime_delivery_contract.py",
+        "tests/test_hook_availability_policy.py",
+        "tests/test_daemon_session_continuity_edges.py"
+      ],
+      "scope_limit": "46 mandatory renderer cases are only one subset; existing additional source fixtures must be accounted for by node identity.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "bounded-cli-json-and-exit",
+      "covers": "Timeout/empty/malformed child, oversize, Watch, Grok observation, restrictive action/authority consistency and exact return status",
+      "test_paths": [
+        "tests/test_bounded_cli_hook_bridge.py",
+        "tests/test_bounded_cli_hook_daemon.py",
+        "tests/test_bounded_cli_hook_watch_continue.py",
+        "tests/test_bounded_cli_hook_native_consistency.py",
+        "tests/test_bounded_cli_hook_copilot_delivery.py"
+      ],
+      "scope_limit": "Mix of real bridge/emitter calls and modeled child/HTTP results; per-test modeling must remain explicit.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "claude-generated-command-exit",
+      "covers": "Generated argv plus real bridge output/exit, malformed/oversize/authenticated failure, completion distinct from decision; session handler distinct",
+      "test_paths": [
+        "tests/test_guard_claude_hook_argv.py",
+        "tests/test_claude_hook_exit_paths.py",
+        "tests/test_claude_hook_completion_contract.py",
+        "tests/test_claude_daemon_hook_bridge.py"
+      ],
+      "scope_limit": "Some daemon/fallback helpers mocked; emitted stdout + returned status still asserted; current installer removes legacy prompt registration.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "codex-generated-command-exit",
+      "covers": "Authenticated registered hook inventory, native supported denial/permission shapes, unavailable prompt, integrity, schema-exact post output and live bridge",
+      "test_paths": [
+        "tests/test_codex_hook_inventory.py",
+        "tests/test_codex_daemon_hook_bridge.py"
+      ],
+      "scope_limit": "Many existing real-daemon tests; separate browser continuation currently fails in installed RSP136 corpus and is not satisfied by shape tests.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "cursor-generated-json-exit",
+      "covers": "Real generated script Watch/protected/empty/read/shell/event override and observation-only after hooks",
+      "test_paths": [
+        "tests/test_cursor_watch_hook_script.py"
+      ],
+      "scope_limit": "Preserve empty {} post output, deny exit 2 versus availability/Watch exit 0; generic daemon JSON is insufficient.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "cline-generated-json-exit",
+      "covers": "Generated isolated native hook: unavailable read versus mutation, multi-command fanout, oversize; alternate plugin syntax/block/replacement",
+      "test_paths": [
+        "tests/test_cline_hook_transports.py"
+      ],
+      "scope_limit": "Current tests cover native PreToolUse and one plugin pre/post pair, but do not enumerate the installed TaskStart/TaskError/SessionShutdown/UserPromptSubmit native-worker outputs and exits.",
+      "status": "partial_current_capture"
+    },
+    {
+      "id": "installed-readback-and-inputs",
+      "covers": "Read exact registered argv/environment/digests, reject mutation, freeze normal alias delivery; four priority input categories x two events x two harnesses",
+      "test_paths": [
+        "tests/test_native_slo_registered_surfaces.py",
+        "tests/test_native_slo_launcher_input.py"
+      ],
+      "scope_limit": "Source controls model process/native outcomes where indicated. Original 62 actual installed controls are a separate scoped result; 29-alias runner only selects normal pre/post cells.",
+      "status": "existing_source_fixture"
+    },
+    {
+      "id": "remaining-current-event-exits",
+      "covers": "Kimi/Grok/ZCode registered prompt/lifecycle and Pi/OMP extension return semantics",
+      "test_paths": [
+        "tests/test_kimi_adapter.py",
+        "tests/test_grok_adapter.py",
+        "tests/test_guard_phase04_harness_contracts.py",
+        "tests/test_guard_copilot_adapter.py",
+        "tests/test_pi_extension_response_contract.py"
+      ],
+      "scope_limit": "Existing registration, emitter and some lifecycle assertions are distributed; no closed roster currently binds every registered event to a full JSON+exit/extension-return fixture.",
+      "status": "requires_closed_roster"
+    }
+  ],
+  "static_test_function_count": 396,
+  "not_claimed": "Static function census is not pytest collection or pass evidence."
+}

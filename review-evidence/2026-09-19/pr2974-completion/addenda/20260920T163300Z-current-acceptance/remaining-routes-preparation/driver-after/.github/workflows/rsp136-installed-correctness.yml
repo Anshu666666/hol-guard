@@ -1,0 +1,136 @@
+name: Bounded installed route correctness
+
+on:
+  push:
+    branches: [codex/pr2974-rsp136-installed-correctness-20260920-v2]
+    paths: [.github/workflows/rsp136-installed-correctness.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rsp136-installed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  correctness:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: linux-x64
+            runner: ubuntu-latest
+            artifact: 10607167344
+          - cell: mac-arm64
+            runner: macos-15
+            artifact: 10606424536
+          - cell: mac-x64
+            runner: macos-15-intel
+            artifact: 10606991867
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 50
+    defaults:
+      run:
+        shell: bash
+        working-directory: driver
+    env:
+      BUILD_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+      CELL: ${{ matrix.cell }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 4
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.BUILD_SHA }}
+          path: artifact-source
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Retain exact input contract and allocated paths
+        run: |
+          mkdir "$GITHUB_WORKSPACE/rsp136-evidence"
+          cp scripts/ci/rsp136_installed_routes/input-contract.json "$GITHUB_WORKSPACE/rsp136-evidence/"
+          echo "OUT=$GITHUB_WORKSPACE/rsp136-evidence" >> "$GITHUB_ENV"
+          echo "DRIVER_TREE=$(git rev-parse HEAD^{tree})" >> "$GITHUB_ENV"
+      - name: Download selected original native artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          artifact-ids: ${{ matrix.artifact }}
+          run-id: 35516487925
+          github-token: ${{ github.token }}
+          path: retained-artifact
+          merge-multiple: true
+      - name: Bind actual source and every retained artifact member
+        run: |
+          python scripts/ci/rsp136_installed_routes/driver.py before --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Install frozen test dependencies without the source project
+        run: uv sync --frozen --extra dev --no-install-project --python 3.12
+      - name: Run bounded source controls before installing the native wheel
+        run: |
+          PYTHONPATH=src .venv/bin/python -m pytest -q \
+            tests/test_native_slo_pi_sources.py tests/test_native_slo_pi_receipts.py \
+            tests/test_native_slo_pi_callbacks.py tests/test_installed_route_controls_entry.py \
+            tests/test_native_slo_launcher_review.py tests/test_native_slo_current_approval.py \
+            tests/test_rsp136_installed_driver.py --junitxml="$OUT/source-controls.xml" > "$OUT/source-controls.txt" 2>&1
+          python - "$OUT/source-controls.xml" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          rows = list(ET.parse(sys.argv[1]).iter("testcase"))
+          assert len(rows) == 121 and not any(r.find(k) is not None for r in rows for k in ("failure", "error", "skipped"))
+          PY
+      - name: Install only the selected hash-enforced native wheel
+        run: |
+          python - "$OUT" <<'PY'
+          import hashlib, json, os, pathlib, signal, subprocess, sys
+          out = pathlib.Path(sys.argv[1])
+          requirement = out / "wheel-requirements.txt"
+          command = ["uv", "--no-config", "pip", "install", "--python", str(pathlib.Path(".venv/bin/python").absolute()),
+                     "--no-index", "--no-deps", "--force-reinstall", "--require-hashes", "--only-binary", ":all:",
+                     "-r", str(requirement)]
+          record = {"require_hashes": True, "requirement": {"bytes": requirement.stat().st_size,
+                    "sha256": hashlib.sha256(requirement.read_bytes()).hexdigest()}, "command": command}
+          with (out / "install.stdout").open("wb") as stdout, (out / "install.stderr").open("wb") as stderr:
+              process = subprocess.Popen(command, stdout=stdout, stderr=stderr, start_new_session=True)
+              try:
+                  record["return_code"] = process.wait(timeout=180)
+              except subprocess.TimeoutExpired:
+                  record.update(return_code=None, timed_out=True)
+                  os.killpg(process.pid, signal.SIGKILL)
+                  record["reaped_return_code"] = process.wait(timeout=10)
+          (out / "install-record.json").write_text(json.dumps(record, indent=2) + "\n")
+          raise SystemExit(0 if record["return_code"] == 0 else 1)
+          PY
+      - name: Admit installation and prepare the exact owned interpreter
+        run: |
+          .venv/bin/python -I scripts/ci/rsp136_installed_routes/driver.py provision --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Execute each remaining current correctness cohort once
+        run: |
+          .venv/bin/python -I scripts/ci/rsp136_installed_routes/driver.py run --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$OUT"
+      - name: Preserve after bindings without another workload
+        if: always()
+        run: |
+          python scripts/ci/rsp136_installed_routes/driver.py after --cell "$CELL" \
+            --built-source "$GITHUB_WORKSPACE/artifact-source" --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/rsp136-evidence"
+      - name: Retain partial results, source controls and original failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rsp136-installed-${{ matrix.cell }}-${{ github.run_id }}
+          path: rsp136-evidence/
+          if-no-files-found: error
+          retention-days: 30

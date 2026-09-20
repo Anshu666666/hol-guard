@@ -1,0 +1,95 @@
+{
+  "schema": "hol-guard-sonar-source-assessment.v1",
+  "created_at": "2026-09-20T15:24:20.291789+00:00",
+  "source_sha": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+  "source_tree": "341d2c02c79b0c510544df5297600d5a3a47f211",
+  "source_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+      "git_blob": "f753f4f8f0e92b321884af90597e0f0736405821",
+      "bytes": 20864,
+      "sha256": "a6d81e569e781db0cf2566d167405e491a89433cb69c5e57bb4c5702d360917a"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_stdlib.py",
+      "git_blob": "776d873cbf0e6e1131ef26923ea953c38a1e3152",
+      "bytes": 2905,
+      "sha256": "201b5a1678709e4245089860eb7dad362ecf1dd12bc0547caf96195887ec8c82"
+    }
+  ],
+  "original_issues_sha256": "ad1d99cff75348aed0862d3e2088d255570864d073d898d505ed3cbf6c932a94",
+  "original_issues_count": 3,
+  "rule": "python:S8495",
+  "assessment": "Intentional variable-arity tagged immutable fingerprint values; no fixed-arity return contract defect found in the inspected consumers.",
+  "findings": [
+    {
+      "issue": "AaC_VXpF4jtq7QCmNklu",
+      "function": "_default_state",
+      "lines": [
+        79,
+        85,
+        120
+      ],
+      "reason": "Absent defaults use (none,); positional and keyword defaults carry their tag and immutable nested payload. The result is embedded in the function fingerprint, never unpacked as a fixed-width record."
+    },
+    {
+      "issue": "AaC_VXpF4jtq7QCmNklv",
+      "function": "_state",
+      "lines": [
+        123,
+        131,
+        147,
+        152,
+        216,
+        230
+      ],
+      "reason": "Tags select different exact-type identity/code/default/class/container payloads. Recursive callers retain opaque nested state. tuple[object,...] explicitly allows different tag-specific widths."
+    },
+    {
+      "issue": "AaC_VX7V4jtq7QCmNklw",
+      "function": "stdlib_leaf_state",
+      "lines": [
+        35,
+        46,
+        70
+      ],
+      "reason": "The immutable native attrgetter needs three entries; the mutable CPython sentinel binds six entries including class and instance state. State is explicitly tuple[object,...], and None means this leaf form is not admitted here."
+    }
+  ],
+  "consumer_evidence": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+      "lines": [
+        244,
+        246,
+        250
+      ],
+      "observation": "_HelperBinding.capture stores the complete state; unchanged first requires exact value identity and then compares complete tuple equality."
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py",
+      "lines": [
+        134,
+        136,
+        151,
+        156,
+        157,
+        164,
+        170,
+        176,
+        189,
+        434,
+        450
+      ],
+      "observation": "Other state uses recurse or carry opaque values; registry consumption combines unchanged booleans, not tuple positions."
+    }
+  ],
+  "rule_scope": "A generic fixed-length tuple API recommendation is not a demonstrated unpacking or authority bug for these private tagged fingerprints.",
+  "status": "Three original open code-smell findings are preserved; this source assessment does not mark them resolved or change the quality gate.",
+  "actions": {
+    "source_edits": 0,
+    "tests_rerun": 0,
+    "sonar_issue_mutations": 0,
+    "task_promotions": 0
+  }
+}

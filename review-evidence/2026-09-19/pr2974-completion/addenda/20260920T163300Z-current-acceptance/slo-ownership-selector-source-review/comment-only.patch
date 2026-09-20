@@ -1,0 +1,16 @@
+--- a/scripts/native_slo_contract.py
++++ b/scripts/native_slo_contract.py
+@@ -273,9 +273,10 @@
+     return {
+         "resident_share": resident_share >= MIN_RESIDENT_SHARE,
+         "safe_corpus": safe_fail_rate <= MAX_SAFE_FAIL_RATE,
+-        # These samples cross the installed adapter boundary.  The direct
+-        # native 20/50/120/350 ms ceilings belong to the release gate that
+-        # calls Rust directly and must not be applied to this path.
++        # These samples measure normalized DAEMON_INGRESS, including Python
++        # transport. The release benchmark measures NATIVE_CLIENT through its
++        # Python adapter; it does not measure the declared native size ceilings.
++        # Keep those separate targets out of these adapter smoke predicates.
+         "warm_latency": warm_p95_ms <= MAX_INSTALLED_ADAPTER_P95_MS,
+         "250k_latency": size_p95_ms.get("250k", float("inf")) <= MAX_INSTALLED_ADAPTER_P95_MS,
+         "1m_latency": size_p95_ms.get("1m", float("inf")) <= MAX_INSTALLED_ADAPTER_P95_MS,

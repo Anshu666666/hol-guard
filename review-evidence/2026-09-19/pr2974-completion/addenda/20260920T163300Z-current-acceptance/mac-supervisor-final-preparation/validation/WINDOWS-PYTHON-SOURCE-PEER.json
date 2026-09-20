@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "reviewer": "windows_persistence_audit",
+  "scope": "Read-only Python observation source peer; no Rust enum/driver or workload execution claim",
+  "base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "files": [
+    {
+      "path": "ci/native_runtime/mac_recovery_capture.py",
+      "bytes": 6952,
+      "sha256": "f91bceb1373b8977906cb697da02e8cc691011f2948d73a6d77103e6f90ca577",
+      "git_blob": "23d79d5dddece0cb249054616e85ae16d4ef23b1"
+    },
+    {
+      "path": "ci/native_runtime/mac_recovery_plugin.py",
+      "bytes": 4846,
+      "sha256": "4660c589de0a623984096c58a6c9ed5cb42c0a245688eea9e1124461baeb3cfd",
+      "git_blob": "e4bdb46e722595e8c453bc23a4a1f42ac6fe5ef6"
+    },
+    {
+      "path": "ci/native_runtime/mac_recovery_record.py",
+      "bytes": 3748,
+      "sha256": "060d2643abea78c19dee71c62849f91c70063af4fd16ebce8c87cda691c985d8",
+      "git_blob": "e5b7a13d8ace3714420c794e63d1b2b3a39c0cfa"
+    },
+    {
+      "path": "tests/test_mac_recovery_observation.py",
+      "bytes": 10374,
+      "sha256": "9a37f40264c62ee98a5eaa42ed29ec3580c4c6ff1537001f7a22314d1755fb81",
+      "git_blob": "e411d44b5ad2bafa51931ab29b3497efc2f0ccb8"
+    }
+  ],
+  "findings": "No remaining concrete blocker in the four exact Python images",
+  "verified_boundaries": [
+    "Only original test/support module aliases are replaced; actual imported module origins and original byte hashes are checked.",
+    "Original subprocess arguments are forwarded once; returned object and raised exception remain unchanged even if recording fails.",
+    "Only original owner kill/poll calls are observed; original two-second helper return is not asserted to prove owner death.",
+    "Strict bounded fixed native-frame keys/enums/scalars reject duplicates, unexpected placement, excess records and invalid types; arbitrary stdout/stderr is represented by length and digest only.",
+    "Native observation loss, local capture faults, overflow and sticky alias-restoration failure prevent observation_complete.",
+    "Partial attachment failure immediately unwinds installed aliases; attachment persists through original fixture teardown, with export only afterward.",
+    "Export failure does not replace the original test/teardown outcome; separate driver admission must reject missing/incomplete output."
+  ],
+  "resolved_review_findings": [
+    "Native additional_observation_lost now makes Python observation incomplete.",
+    "Actual imported test/support origins are verified as well as source hashes.",
+    "Partial attachment is unwound immediately.",
+    "A later restore cannot erase an earlier restoration failure."
+  ],
+  "producer_validation": {
+    "pytest": "27 passed in 0.24s",
+    "basedpyright": {
+      "errors": 0,
+      "warnings": 192
+    },
+    "ruff": "reported pass",
+    "format": "reported pass",
+    "independent_peer_execution": false
+  },
+  "limits": [
+    "Rust emission, closed enum correspondence and operational driver are separately reviewed.",
+    "original_test_outcome records call phase; original JUnit remains authoritative for setup/teardown outcomes.",
+    "Unknown fixed native code is retained as unknown and is not causal attribution.",
+    "No complete descendant cleanup, timing qualification, serving-child cause, or actual diagnostic workload execution is established by this source peer."
+  ]
+}

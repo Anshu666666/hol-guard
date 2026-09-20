@@ -1,0 +1,67 @@
+# RSP-014 / RSP-015 current source inventory
+
+This is a read-only source and existing-evidence assessment of product `e44008445630aad28ccc291ec234f55a14892e6d`, tree `addf0c1daf8ceb6313d6805ee4d05e216d6fdac8`. It does not run product code, install adapters, exercise native evaluation, or launch a performance campaign. `source-check.json` binds every inspected file to the exact current Git blob; the checkout used for reading has an older HEAD, so that per-file verification is essential. `static-test-index.json` is an AST index, not a pytest collection or result.
+
+The original task objects and dependencies are reproduced without edits in `original-task-extract.json`. In particular, RSP-015 asks to capture current harness JSON and exit behavior for mode/posture, native misses, integrity/size failures, permission requests, and lifecycle events. Its only dependency is RSP-014. Neither task introduces a whole-program performance or RSP-137 prerequisite. Original PRD A6 also requires the current results to be captured before changing ownership. The historical 2e672d2 oracle remains immutable; a supplemental current capture must carry its own source identity and must not silently replace that oracle.
+
+## Current inventory and the RSP-013 dependency
+
+`surface-inventory.json` contains all 16 canonical harnesses, and independently checks their complete install aliases against the AST of `adapters/contracts.py`. Each row names the actual installer/generator, registered event spellings, generated launcher, and the limits of the resulting claim. This is an inventory of what current source installs; it does not claim every host callback was activated or executed.
+
+The inspected current ordinary call chain is `HookWorker.review_http_payload` -> `_review_native_edge` in auto/force -> the native raw-edge client -> `native_resident_client_request`. The latter obtains `_client_pool_for(executable, guard_home/native-runtime, environment)`; the global pool leases reusable `_PersistentNativeClient` streams, with bounded capacity and explicit retirement. Thus an ordinary request is dispatched inside the daemon and uses persistent native client streams, rather than proving one fresh guardian/evaluator process per request. The off/shadow branch and explicit test oracle remain separate; compatibility and browser approval functions must not be inferred to disappear from the ordinary-chain inventory. The source review supports the current ordinary-chain portion of RSP-013. It is not new process-count or performance evidence.
+
+| Harness | Current generated hook/callback set | Scope that must remain separate |
+| --- | --- | --- |
+| Claude Code | PreToolUse, PermissionRequest, PostToolUse, Notification, Stop; separate SessionStart handler with four matchers | Current installer removes managed UserPromptSubmit and PermissionDenied; normalization of those labels is not installed registration |
+| Codex | PreToolUse, PermissionRequest, UserPromptSubmit, PostToolUse in authenticated TOML | Browser continuation is a separate authority/consumer result |
+| Cursor | beforeShellExecution, beforeMCPExecution, beforeReadFile, beforeWriteFile, afterShellExecution, afterMCPExecution | Both after hooks are observation-only; CLI shim and editor installation are separate surfaces |
+| Copilot | userPromptSubmitted, preToolUse, postToolUse, permissionRequest, permissionRequestV2; global and project registrations | Detected sessionStart/sessionEnd/errorOccurred are not managed registrations; permission response is not the binary pre/post response |
+| Cline native hooks | PreToolUse, PostToolUse, UserPromptSubmit, TaskStart, TaskError, SessionShutdown | Native post/lifecycle cannot cancel; the separately selected plugin transport can replace model-visible output |
+| Kimi | PreToolUse, UserPromptSubmit, PostToolUse, SessionStart, Stop | Restrictive pre/prompt exit status differs from nonblocking lifecycle |
+| Grok | Catch-all PreToolUse plus UserPromptSubmit, SubagentStart, SessionStart | The three observe events are not enforcement; additional normalized lifecycle/post events are not additional managed registrations |
+| Hermes | Configured pre_tool_call through bounded bridge | Generated descriptor alone is not registered YAML/runtime proof; no managed post hook |
+| OpenClaw | Generated pre-tool descriptor and launch overlay | Gateway activation is a separate witness; no managed post hook |
+| OpenCode | tool.execute.before TypeScript plugin | No managed post-output hook; runtime activation and MCP companions are distinct |
+| Pi | input, tool_call, tool_result, message_end extension callbacks | Callback return/replacement semantics, not standalone hook stdout/exit |
+| OMP | Same four callbacks from shared generator with OMP identity/settings | A Pi execution is not automatically an OMP execution |
+| ZCode | 18 PreToolUse matchers plus UserPromptSubmit under hooks.events | Additional normalized post/lifecycle labels are not installed; Windows shell-comment command remains explicitly unqualified |
+| Paseo | Installs supported detected native providers and retains a provider receipt | No direct Paseo native-hook identity; source receipt explicitly does not claim runtime verification |
+| Gemini | Settings/extensions/hooks/MCP discovery and launch/preflight | Does not install a native Guard hook |
+| Antigravity | Discovery and launch/preflight | Does not install a native Guard hook |
+
+The frozen `corpus.v1.json` and ownership v2 `harness_routes` intentionally remain their existing pre/post-oriented matrix. They omit installed prompt/lifecycle details and do not represent alternate Cline transport or current Paseo provider delegation. The current supplemental inventory records those distinctions without editing or promoting the frozen matrix.
+
+## Existing RSP-015 coverage
+
+`coverage-map.json` maps ten response/transport groups to exact existing test paths. Their bodies contain independent expected fields and return-code assertions; their modeled native/HTTP/process boundaries are stated explicitly. Notable existing coverage is stronger than the previously cited 46-case renderer subset:
+
+- `test_guard_native_qualification_corpus.py::test_every_frozen_delivered_projection_matches_existing_contract` traverses the full frozen case builder, including Watch, native misses, expired/revoked/off policy, queue failure, integrity/retained-byte failure, empty outputs, content sizes, source references and HTTP oversize. It is a renderer/parser contract against frozen synthetic native vectors, not an installed native run. The builder includes lifecycle aliases only for Grok/Claude and permission aliases only for Copilot. Cursor file/MCP aliases currently add normal/Watch cases and then skip the generic fault setup loop.
+- Native Watch worker controls keep the native block independent of delivered continuation, and check ACK posture and compatibility behavior. The additional post-tool controls cover proof digests, empty/excerpt transformations and source identity.
+- Availability and session-continuity controls cover ordinary unavailable versus designated integrity failures, native-off/not-ready/unknown misses, and `PermissionDenied` versus `permissionRequestV2`/`copilotPermissionRequest`. They preserve the original failure classification instead of recording a completed native allow.
+- Bounded bridge controls assert both JSON and return codes for timeout, empty/malformed child results, oversize, Watch, restrictive actions and conflicting authority. Copilot controls separately preserve its top-level pre/post protocol and permission-request protocol.
+- Claude controls distinguish a returned deny payload from process completion: native stdout can deny while exit status is zero. Its oversize tests do not contact the daemon. Cursor generated-script controls distinguish deny/exit 2 from Watch or availability/exit 0 and empty post-hook `{}`. Cline generated-worker tests run actual generated Python for pre-tool unavailability, unsafe mutation, command fanout and size rejection; the plugin test is separate.
+- Pi/OMP response-contract tests include generated JavaScript and actual callback return/replacement behavior, source-reference Unicode, large-output/excerpt behavior, and ambiguous-success refusal. These should be selected by identity; a generic renderer count cannot substitute for them.
+- The registered-surface source controls verify actual configuration readback, argv, environment and worker/wrapper digests. The installed 29-attempt alias runner deliberately selects only normal pre/post cases. It does not offer Watch, policy misses, permissions or lifecycle coverage.
+
+The existing 118-test/46-mandatory RSP-024 packet is therefore valid bounded renderer evidence, but it is not the complete fixture/exit inventory. The separate actual installed RSP-136 priority corpus passed 62 offered controls before the approval continuation work. Its later Codex browser continuation failure and the separate Cline alias failure remain real scoped failures; neither automatically changes whether a response-shape fixture exists. All such installed outcomes must retain their exact installed build and fixture source.
+
+## Specific remaining gaps and the smallest validation
+
+The concrete gap is a closed mapping from each current registered event/transport shape to a retained current JSON plus exit status (or extension return). Existing tests are scattered and the pre/post-only installed runner does not supply this mapping. In particular, the inspected Cline native transport tests do not enumerate generated `UserPromptSubmit`, `TaskStart`, `TaskError` or `SessionShutdown` output/exit behavior. The current worker is explicitly nonblocking for these events, including malformed/oversize/invalid-child paths; those must be frozen as such, rather than assuming pre-tool cancellation semantics.
+
+`validation-plan.json` proposes a bounded source contract run, not another qualification campaign. It first selects the existing fixture/exit test groups by exact source and retains real pytest node IDs, skips and original outputs. It then adds only the uncovered current event shapes identified by the registration roster. Golden fixtures should contain the entire synthetic JSON response and actual exit code or extension return; independently review those expected values before evaluating a successor. Capture native vectors separately from delivered transformations, and label any modeled daemon/native child boundary.
+
+The first additive control set should cover:
+
+1. Every generated Cline nonblocking event (the four lifecycle/prompt events and PostToolUse), with a fixed completed denial, unavailable child, malformed input and oversize input, plus a blocking PreToolUse contrast. Execute the actual generated worker in a disposable private home with a deliberately modeled child; record that model explicitly. Assert `cancel:false` and exit 0 for nonblocking events, retained reason/context fields, and no claim of native enforcement. Also assert pre-tool denial stays `cancel:true` where the existing contract requires it.
+2. A closed registration-event roster that fails if an installer adds/removes an event without a corresponding fixture or an explicit non-native/unavailable classification. Reuse actual installer/configuration readers and existing registration tests. Preserve separate Claude SessionStart behavior, Copilot permission variants, Kimi/Grok observation or prompt distinctions, and Pi/OMP callback identity. Do not execute unsupported foreign hosts merely to claim registration coverage.
+3. Only if the roster finds a currently uncovered distinct JSON/exit branch, add its exact fixture through the real bridge/emitter. The existing frozen corpus, native delivery, session-continuity, Cursor, Copilot and Pi/OMP controls should be reused rather than reimplemented. Do not manufacture a harness × platform × mode Cartesian product not required by the original task.
+
+The current artifact does not assert that this additive control set has been implemented or passed. The plan keeps the original command/approval failures visible and prohibits changing a frozen expectation merely to obtain a green run. A product change is warranted only by a separately demonstrated defect; recording an existing observation-only result is not such a change.
+
+## Derived acceptance recommendation
+
+- RSP-014 own inventory deliverable is now concrete for exact e440, subject to independent source peer and the stated RSP-013 dependency assessment. This is source inventory acceptance, not installed enforcement/performance acceptance.
+- RSP-015 remains open until the closed roster and the uncovered generated-event response/exit captures are implemented, reviewed and actually validated. This is a specific fixture gap; it is not blocked by RSP-137 or the full release campaign.
+- RSP-022 and RSP-133 own source/selection findings remain supported by the separate `bb791e9e` receipt. Their full original dependency closure remains pending RSP-015. RSP-006 has a supported current predicate/document reconciliation, with the separately prepared source comment correction still pending integration. Do not silently label that wording correction complete.
+- Preserve all archived task statuses, original task hashes and the 144-object ledger. Any later accepted status belongs in a new derived current decision field with its source/evidence scope.

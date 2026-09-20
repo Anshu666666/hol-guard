@@ -1,0 +1,69 @@
+{
+  "schema": "pr2974.receipt-busy-contract-investigation.v1",
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "build_merge": "07ae77b50b6c98e844403c2ee3f4447f7958ebe4",
+  "source_guards": [
+    {
+      "path": "ci/native_runtime/probe_native_default_auto.py",
+      "git_blob": "9d4e11d4f5b4affcfc4e07289d5b8f03a2bcabd9",
+      "lf_sha256": "552db3dc5699068cd849d4ba9201cc7f5d293ffc6d57ae576d55364f3907e316"
+    },
+    {
+      "path": "scripts/native_probe_receipts.py",
+      "git_blob": "3040416b65c1f319f44fc113bbba8c658ac632da",
+      "lf_sha256": "deef72aee9b5171d9898d04fc6a8ed393a142464b1a333383511e4c0c4169562"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "git_blob": "ae31c08a395b083e992fc1c06a0badc0f972f243",
+      "lf_sha256": "3d60fe7c6df6722da46f4d366a8bb35c701acca632f2e083da2d461cdce8db7a"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "git_blob": "3066367b806d148e2fe94678a673262c08261d08",
+      "lf_sha256": "2d4f0d8d0d135c8a761322ec5d505a688087a58ca9000f8ba5ba7ed636624761"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py",
+      "git_blob": "0385f2e5b2fd52856fb91acd330258b68e22d537",
+      "lf_sha256": "76328d2c2bde87ce341d0a4d7462fdd1e246202a6fd041bda3a8f47fb6c2122e"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_native_decision_receipts.py",
+      "git_blob": "ec091e569557b25d79a7d45c0e13d7cc579f623c",
+      "lf_sha256": "457d6eee7d15574a126c4ce1e60811b6346fccd16143421e23bd45624c03a0ba"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "git_blob": "9b75a55ffad19896846e82c206e0cf3ffd5a3be8",
+      "lf_sha256": "d1a6948b0eef4f8340ffe52d5bdaf57cf1f1dc0b13dd29e71111db4fe2bf4f36"
+    }
+  ],
+  "observed": {
+    "accepted": 21,
+    "processed": 21,
+    "failures": 1,
+    "dropped": 0,
+    "durable_pending": 0,
+    "all_evidence": {
+      "receipt_persistence/sqlite_busy": 1
+    },
+    "native_receipts": {
+      "receipt_persistence/sqlite_busy": 1
+    }
+  },
+  "source_contract": [
+    "The producer increments failed-record units on a caught receipt persistence attempt; failure counters and diagnostic keys are sticky and successful retry never clears them.",
+    "If not stopping, the same admitted durable record is requeued with the existing bounded retry delay; the50ms SQLite override remains unchanged.",
+    "Processed increments only after the single receipt call acknowledges or the batch returns the exact expected record-id tuple after its transaction. Checkpoint success then removes completed identities from durable pending.",
+    "The original probe waits up to5s for accepted=processed=expected, dropped=0 and durable_pending=0. It does not require receipt_failures=0, which explains the green job with the retained failed attempt."
+  ],
+  "interpretation": "The retained aggregate satisfies the original completion contract after an earlier failed receipt attempt; it is evidence of eventual acknowledged processing and checkpoint retirement, not zero persistence errors. This report does not reconstruct which request/transaction failed or independently query retained database rows. No durable receipt loss is reported by these counters; do not call the failed attempt a lost receipt.",
+  "limits": [
+    "sqlite_busy is primary SQLite code5 after masking; extended code and exact connect/PRAGMA/begin/statement/commit operation are not retained.",
+    "No actual lock holder, per-record attempt join or final database artifact is available here.",
+    "The separate observer command_activity/sqlite_busy1 and historical journal permission1 are different observed phases, not one assigned cause.",
+    "No corpus replay, retry addition, busy-timeout increase, product change or new installed qualification."
+  ],
+  "next_source_scope": "Trace exact record_native_decision_receipts and _connect transaction boundaries; if a failure-only operation observer is subsequently selected, retain original error/extended numeric code at a fixed source seam without SQL, parameter, payload or private path retention."
+}

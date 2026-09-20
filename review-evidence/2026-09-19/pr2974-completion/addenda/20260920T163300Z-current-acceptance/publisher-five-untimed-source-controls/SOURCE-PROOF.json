@@ -1,0 +1,94 @@
+{
+  "controls": [
+    {
+      "node": "tests.test_native_publisher_acked_input_proof::test_real_overlay_is_in_full_acknowledged_effective_policy",
+      "outcome": "passed"
+    },
+    {
+      "node": "tests.test_native_publisher_acked_input_proof::test_real_run_initial_ack_remains_ready_at_following_reconciliation",
+      "outcome": "passed"
+    },
+    {
+      "node": "tests.test_native_publisher_acked_input_proof::test_same_already_published_overlay_metadata_revokes_ack",
+      "outcome": "passed"
+    },
+    {
+      "node": "tests.test_native_publisher_acked_input_proof::test_lost_metadata_fault_does_not_expose_that_overlay_hint",
+      "outcome": "passed"
+    },
+    {
+      "node": "tests.test_native_publisher_acked_input_proof::test_original_await_ack_accepts_same_signed_full_strict_snapshot",
+      "outcome": "passed"
+    }
+  ],
+  "historical_limit": "The 35518521594 lost-hint/key-rotation failures do not retain individual await_ack predicate results or invalidation reasons. None of these controls assigns their cause. An earlier ready observation and later cleanup-visible false barrier are not transition timestamps.",
+  "native_processes_started": 0,
+  "next_boundary": "Any further diagnostic should capture actual existing prepare/getter/readback outcomes and fixed invalidation reasons once without extra getters or changing the 400ms deadline; no next workload is executed here.",
+  "production_changes": false,
+  "proof_scope": [
+    "Real GuardStore, real atomic overlay writes, original config capture/compilation/signed publication with an exact ACK protocol double.",
+    "The full original await_ack predicate runs with real Python-written signed fixture persistence and both MAC readbacks. This does not claim Rust persistence or native evaluation.",
+    "A delayed metadata hint for an already-ACKed strict overlay triggers the current unconditional force_republish path, withdrawing the unchanged ACK.",
+    "LostMetadataHints masks that exact overlay metadata change; its control and stable initial _run reconciliation retain readiness.",
+    "Full merged strict/default/subprocess policy and generation are correct under the controlled actual filesystem inputs."
+  ],
+  "source": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+  "source_paths": [
+    {
+      "bytes": 23151,
+      "git_blob": "18c384a6fa02ae908fa74e8b72d697291984bd1e",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+      "sha256": "e30ce1a73960bb402fc6ff71f42a91fa8e499ffc72f31a84944dc217e182f127"
+    },
+    {
+      "bytes": 22556,
+      "git_blob": "f9b14f6add30a34f95a4acd94f1429adccb7f415",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+      "sha256": "9213fb01a14bed034ca26efc5c5f5d6237a46b0e27292de5079c31ed7b13398e"
+    },
+    {
+      "bytes": 13901,
+      "git_blob": "d1a07021b5ddd6a05a05f9d5a19b71a7a4114bee",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_policy.py",
+      "sha256": "7d986a2f4f224142800ab5b8a710ce18f0a5292d13f7e04837f540921639ce2d"
+    },
+    {
+      "bytes": 19320,
+      "git_blob": "8f8fa18249101ab0edd0cb2b472b4458528967e9",
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+      "sha256": "cc68db1ab6d11d40f9c0c08781aa61592451997c5c4e8805029450ecee66f786"
+    },
+    {
+      "bytes": 2642,
+      "git_blob": "e920549a292066f00a21026b04fbcc81804fac7d",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_acked.py",
+      "sha256": "7df24e80631db37ef7d151bab897a5ee32e554c182e91b8afd401cab05883915"
+    },
+    {
+      "bytes": 21054,
+      "git_blob": "caa6f120a233152cc71865851cff61b8b42e3699",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_storage.py",
+      "sha256": "9033fd4431efb99f266c75b77a302404dc699cf4495fce4d0970a5a4ab5e11f7"
+    },
+    {
+      "bytes": 16880,
+      "git_blob": "2228638126776fa992a482375f472acc9e9bc927",
+      "path": "scripts/native_slo_workspace_lifecycle.py",
+      "sha256": "0ad8d7b4ee33a885e11ea3dac11f5865a97b20edaa6c28aa2bda2268404b2baf"
+    },
+    {
+      "bytes": 11733,
+      "git_blob": "ada09527e01bfbdbb71dee593675f501ea95aa1d",
+      "path": "scripts/native_slo_workspace_lifecycle_faults.py",
+      "sha256": "9be7b3365f7e56b39a8cfd8703a28a40f8ac63e89a6dbbacc16e11f616b9e794"
+    },
+    {
+      "bytes": 11591,
+      "git_blob": "8759bb85098697a17181775c73a327b774eaa62c",
+      "path": "scripts/native_slo_expiry.py",
+      "sha256": "47e16f370197b5161f411087580d539a5ced41500a48555b4c3129e2735db0f4"
+    }
+  ],
+  "source_tree": "341d2c02c79b0c510544df5297600d5a3a47f211",
+  "workload_replays": 0
+}

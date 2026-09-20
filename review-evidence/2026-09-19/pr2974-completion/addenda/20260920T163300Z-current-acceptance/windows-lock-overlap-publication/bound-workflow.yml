@@ -1,0 +1,71 @@
+name: Windows journal lock overlap contract
+on:
+  push:
+    branches: ["codex/pr2974-windows-journal-lock-overlap-20260920"]
+permissions:
+  contents: read
+jobs:
+  journal-lock-overlap:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    env:
+      DIAGNOSTIC_SOURCE_SHA: "68db7b905ccabbb504360c366264a503e95440de"
+      DIAGNOSTIC_SOURCE_TREE: "c932d1a536954b9e1571f905d385c0b450376417"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "68db7b905ccabbb504360c366264a503e95440de"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Bind exact source and driver
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          if ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE) { throw 'checkout_binding_failed' }
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree} | ConvertTo-Json | Set-Content evidence/checkouts-before.json
+      - name: Prepare frozen Python environment
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run static checks then original lock contract once
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          & .venv/Scripts/python.exe -I ci/native_runtime/journal_lock_run.py --output ../evidence
+          exit $LASTEXITCODE
+      - name: Retain final source and driver binding
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          $dirty = @(git -C candidate diff --name-only) + @(git -C candidate diff --cached --name-only) + @(git -C driver diff --name-only) + @(git -C driver diff --cached --name-only)
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; tracked_changes=$dirty} | ConvertTo-Json | Set-Content evidence/checkouts-after.json
+          if ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $dirty.Count -ne 0) { throw 'final_checkout_binding_failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: windows-journal-lock-overlap
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 14

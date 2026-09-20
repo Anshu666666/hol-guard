@@ -1,0 +1,9 @@
+{
+  "schema": "pr2974.journal-lock-primary-contract.v1",
+  "read_utc_date": "2026-09-20",
+  "sources": [
+    {"url": "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking?view=msvc-170", "facts": ["_locking starts at the current file offset for the requested byte count and permits locking past end of file.", "LK_LOCK retains its documented one-second retry interval and ten-attempt limit; LK_NBLCK reports failure immediately when the bytes cannot be locked."]},
+    {"url": "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/chsize-s?view=msvc-170", "facts": ["_chsize_s documents EACCES when the file is locked against access."]}
+  ],
+  "limit": "These API contracts motivate the isolated overlap control. They do not prove that the exact equal-size ftruncate operation fails on the retained Windows runner, and do not establish the historical journal event cause. No product repair follows before actual evidence."
+}

@@ -1,0 +1,53 @@
+{
+  "schema": "pr2974.six-file-rehearsal-source-peer.v1",
+  "reviewed_packet": "a47a3bb16e35100fa7681a0176782dd732903c45",
+  "images": [
+    {
+      "path": "scripts/ci/rehearse_release_set.py",
+      "bytes": 11578,
+      "git_blob": "4d00f46bcb47f88286c556dabf6f3b9c65182640",
+      "sha256": "8bca65e7ef2c4a4504d511b93e789048721c1cdec2ecf6e5bfc413a8c453b831"
+    },
+    {
+      "path": "scripts/ci/release_rehearsal_inputs.py",
+      "bytes": 6810,
+      "git_blob": "50951a104e5f172f93bd89411b193863af6dc016",
+      "sha256": "2f0f62ac3d3fe6d970c731a7102423ac6d98e8274eb3eb8d2c1dcb26581ccdbc"
+    },
+    {
+      "path": "scripts/ci/release_rehearsal_process.py",
+      "bytes": 2880,
+      "git_blob": "619c659f67e2ccb762ac72332cd7fc26cfe6f2e5",
+      "sha256": "c3d8876a92f5bac5b03cba0e9c09e965386067a9525647fd4ddec1fd6e2a5ceb"
+    },
+    {
+      "path": "scripts/ci/release_rehearsal_sdist.py",
+      "bytes": 4409,
+      "git_blob": "6016e048c8ef01fb6ebde2b1237f714183fafd21",
+      "sha256": "0b0f5c56ea7b2eaa3bae4567b77ca0783af5d922818f929c4c211d02cdf7de2b"
+    },
+    {
+      "path": "tests/test_release_rehearsal.py",
+      "bytes": 13031,
+      "git_blob": "97c509e1d46846133538346a41d67ebf181f3b6b",
+      "sha256": "bfecbb7097a862be55f939f14f6b69ff36f5e1a87eddfd8c87883103831f9dc1"
+    }
+  ],
+  "verdict": "clear_for_bounded_offline_rehearsal_after_exact_input_and_operational_admission",
+  "review": [
+    "Read all four implementation bodies and focused tests from the isolated source; independently hashed the final five files and matched all five published leaves.",
+    "Exact source/build tree, canonical name/version, locked local dependency wheels and unchanged existing verifier Git blobs are checked before builders. Four archives must share run/build/product identity and exact target membership; original archive bytes are hashed before/after extraction.",
+    "Both build checkouts now require actual clean HEAD equal to the bound build commit before and after sdist creation. The added control proves merely retaining the expected object in Git does not admit a different current checkout.",
+    "Sdists accept bounded regular members under the exact version root only; traversal, duplicates, links, wrong metadata and unknown/different source members refuse. Extraction follows no archive links. Independent sdist bytes and retained-versus-rebuilt pure wheel bytes/member hashes remain separate evidence.",
+    "Admitted original native and pure wheel bytes are rechecked after staging, original validators run with all four targets and no Windows waiver, and local output inventory is exactly the original five wheels plus the newly built sdist.",
+    "Real dependency metadata name normalization applies the standard case/dash/underscore/dot equivalence and retains exact versions and file hashes; three PathDistribution controls cover actual jaraco namespace names.",
+    "Child execution is Linux-only with process-group/time/output/resource bounds and original stdout/stderr retention for the exercised nonzero/timeout/output-limit paths. A surviving owned process group makes the stage fail; escaped sessions are not claimed contained."
+  ],
+  "limits": [
+    "The final four fresh f8 artifact input contract was not ready at this review; no build, sdist, install, validator or workload was executed by the peer.",
+    "Owner reports66 passing controls and static checks; this read-only peer did not rerun them.",
+    "Installed build-tool file identity is captured before each environment's first use only. Final checks rebind input wheelhouses/locks/archives/verifiers/source, not installed tool files after use; owner explicitly accepted this scope.",
+    "Local rehearsal is not canonical publisher metadata, signed/frozen release, distribution publication, installed transition, canary, distinct-version rollback or performance qualification.",
+    "Setup/Popen or preflight errors can occur before a per-child or top-level result record exists; original outer failure/output must remain retained by the eventual execution wrapper."
+  ]
+}

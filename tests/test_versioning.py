@@ -24,8 +24,6 @@ def test_source_distribution_and_package_versions_match():
         installed_version = distribution_version("hol-guard")
     except PackageNotFoundError:
         pytest.skip("install the project to validate distribution metadata")
-    if installed_version != source_version:
-        pytest.skip("install the project to validate distribution metadata")
     assert installed_version == source_version
 
 

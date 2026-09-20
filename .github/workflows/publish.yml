@@ -1521,6 +1521,7 @@ jobs:
             done
             if [[ "${#missing_files[@]}" -gt 0 ]]; then
               gh release upload "$tag" "${missing_files[@]}"
+              existing_dir=$(mktemp -d)
               gh release download "$tag" --dir "$existing_dir"
             fi
             for local_file in "${local_files[@]}"; do

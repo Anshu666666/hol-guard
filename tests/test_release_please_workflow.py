@@ -118,6 +118,7 @@ def test_existing_notes_only_github_release_receives_stable_assets() -> None:
     assert 'gh release view "$tag" --json isDraft,isPrerelease,assets' in stable_run
     assert 'gh release upload "$tag" "${missing_files[@]}"' in stable_run
     assert 'missing_files+=("$local_file")' in stable_run
+    assert stable_run.count("existing_dir=$(mktemp -d)") >= 2
     assert 'gh release create "$tag"' in stable_run
 
 

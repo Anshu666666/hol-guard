@@ -1,0 +1,28 @@
+{
+  "schema": "pr2974.daemon-lazy-existing-first-export-controls.v1",
+  "source_manifest_sha256": "8c689b5cc4f8f7ac834e1a5ddaaeb11701fa24a2d490a50065bc3f85ac2e1a31",
+  "scope": "Three additional untimed actual fresh-process first accesses to unchanged existing lazy branches; no product object instantiated or timing population.",
+  "rows": [
+    {
+      "first_export": "GuardDaemonServer",
+      "provider": "server",
+      "passed": true,
+      "program_sha256": "d4c10f787c04c8e977ca078a3b9ae9629fed3a3d757db1772f1c983b29b65c96",
+      "program": "\nimport importlib\npackage=importlib.import_module(\"codex_plugin_scanner.guard.daemon\")\nassert \"codex_plugin_scanner.guard.daemon.manager\" not in sys.modules\nvalue=getattr(package,'GuardDaemonServer')\nprovider=importlib.import_module(\"codex_plugin_scanner.guard.daemon.\"+'server')\nassert value is getattr(provider,'GuardDaemonServer')\n"
+    },
+    {
+      "first_export": "GuardSurfaceDaemonClient",
+      "provider": "client",
+      "passed": true,
+      "program_sha256": "729d5947389e26f877b54eef4310c3f83c0435e402ecec070589c032546b668f",
+      "program": "\nimport importlib\npackage=importlib.import_module(\"codex_plugin_scanner.guard.daemon\")\nassert \"codex_plugin_scanner.guard.daemon.manager\" not in sys.modules\nvalue=getattr(package,'GuardSurfaceDaemonClient')\nprovider=importlib.import_module(\"codex_plugin_scanner.guard.daemon.\"+'client')\nassert value is getattr(provider,'GuardSurfaceDaemonClient')\n"
+    },
+    {
+      "first_export": "repair_guard_daemon_runtime",
+      "provider": "runtime_repair",
+      "passed": true,
+      "program_sha256": "a0e5a1a00906fa88a2b7ce4d0b2734ba633f2df9754d59e5ade1f67b4d2304df",
+      "program": "\nimport importlib\npackage=importlib.import_module(\"codex_plugin_scanner.guard.daemon\")\nassert \"codex_plugin_scanner.guard.daemon.manager\" not in sys.modules\nvalue=getattr(package,'repair_guard_daemon_runtime')\nprovider=importlib.import_module(\"codex_plugin_scanner.guard.daemon.\"+'runtime_repair')\nassert value is getattr(provider,'repair_guard_daemon_runtime')\n"
+    }
+  ]
+}

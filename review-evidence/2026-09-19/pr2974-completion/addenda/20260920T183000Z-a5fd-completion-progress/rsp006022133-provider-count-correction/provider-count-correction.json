@@ -1,0 +1,18 @@
+{
+  "schema": "pr2974.rsp006-022-133-provider-count-correction.v1",
+  "reviewer": "qualification_audit",
+  "prior_assessment_tree": "f6260636da45a30b71a7446e851f8b7d2f878b6a",
+  "prior_assessment_blob": "83a965f1aede5e6f1713096975d76209a22a7b9c",
+  "unchanged_provider_manifest_blob": "1fcf956b0826c9e77ef6eee4847149cdb63e0693",
+  "source_commit": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "correction": {
+    "total_providers": 30,
+    "byte_unchanged": 29,
+    "changed": 1,
+    "changed_path": "scripts/native_slo_contract.py",
+    "changed_git_blob": "93d5e4d5e44b02096e326cc9fd30d0d48fee258a",
+    "ast_identical": true
+  },
+  "explanation": "The full manifest correctly retained all30 provider rows. My derived count in the assessment and messages was off by one: it must read30 providers,29 unchanged plus the one integrated comment-only afterimage. No provider was omitted from the actual hash comparison. Root independently detected the derived count error.",
+  "scope": "Count-only additive correction; original assessment and all source identities remain preserved. Scoped recommendations and separate qualification limits are unchanged."
+}

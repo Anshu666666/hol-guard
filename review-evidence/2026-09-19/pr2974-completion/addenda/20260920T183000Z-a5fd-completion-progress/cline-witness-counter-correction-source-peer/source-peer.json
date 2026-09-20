@@ -1,0 +1,37 @@
+{
+  "schema": "hol-guard.cline-callback-saturation-independent-peer.v1",
+  "verdict": "clear_for_bounded_functional_diagnostic_followup",
+  "reviewed_preparation_tree": "a93df82ac488fb7ae857b978a5cf0f0277bcf133",
+  "prior_source_peer": "4fcd835d8f7511d2d24114d501316943e81697c8",
+  "changes": [
+    {
+      "path": "scripts/ci/cline_witness/profile_runtime.py",
+      "before": "53163da1442a2895f0e592ae375794877dc13032",
+      "after": "1258edbcff617934009ee49b8b3f402b123e000f"
+    },
+    {
+      "path": "scripts/ci/cline_witness/run.py",
+      "before": "2d7c425e30ecda2a2e7a95fe02c8aa5782abede9",
+      "after": "cb3f059dc14a822ebf3e77bd3550d297c29bd7df"
+    },
+    {
+      "path": "tests/test_cline_child_witness.py",
+      "before": "ce7c2a0864ebbe6ff0e84a648d012dcc245c16e3",
+      "after": "dfd2034f7fa7f1234dd79101eb24de6315051365"
+    }
+  ],
+  "readback": "All three local afterimages independently matched manifest byte counts,SHA256 and Git blob hashes; complete before/after diff and surrounding event/reconciliation bodies read.",
+  "findings": [
+    "The former all-event cutoff consumed its budget during unrelated startup imports. The fixed2M counter now saturates without ceasing exact-frame inspection; no callback is sampled or skipped because of saturation.",
+    "Retained state remains bounded: two selected roles, one call/return per role, first duplicate disables capture, bounded fault list, and unchanged payload/return snapshots and final original oracle. The counter now measures a lower bound once saturated, explicitly disclosed in v2.",
+    "Consumer requires exact v2 schema, exact scope/bound, integer count, boolean saturation, coherent saturation/count and all previous exact selected counts, original-values stability, route/receipt/request/policy validation, restoration and cleanup.",
+    "Tests exercise real sys.setprofile callbacks saturating before both original result and exception, preserve exact return/exception identity, and retain duplicate rejection after saturation. Oldv1/count-loss reports, changed bounds, scalar-type tricks and premature saturation fail.",
+    "Original four offers, registered argv, native validator, process/deadline budgets and cleanup are unchanged."
+  ],
+  "limits": [
+    "Saturation bounds counter storage; it does not prove a fixed total callback CPU budget. Instrumentation continues on all callbacks until existing process lifetime/restoration, so no headline timing claim.",
+    "First run35525771987 and failure packet09544c4bcc6d2e554875d4d64d90293b18e35139 remain actual failures and cannot be admitted by this v2 schema.",
+    "Owner113 controls and0typeerrors are reported source validation, not repeated by this peer. No installed route/native success is inferred until the separately reviewed successor executes.",
+    "No runtime product edit, workload execution, ref mutation or launch by this peer."
+  ]
+}

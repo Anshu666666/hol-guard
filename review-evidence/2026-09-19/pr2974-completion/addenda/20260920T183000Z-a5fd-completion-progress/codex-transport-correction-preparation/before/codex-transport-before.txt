@@ -1,0 +1,91 @@
+.FFF.                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_resume_preserves_original_ingress_native_input[original-ms] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-331/test_resume_preserves_original1')
+hints = {'guard_remaining_ms': 4000}
+
+    @pytest.mark.parametrize(
+        "hints",
+        ({}, {"guard_remaining_ms": 4000}, {"guard_remaining_seconds": 4},
+         {"guard_remaining_ms": 4000, "guard_remaining_seconds": 4}),
+        ids=("no-original-hint", "original-ms", "original-seconds", "both-original-hints"),
+    )
+    def test_resume_preserves_original_ingress_native_input(tmp_path: Path, hints: dict[str, object]) -> None:
+        retained, ingress, resumed = _paths(hints)
+        # The original retained hint is distinct from the HTTP transport's new
+        # hint. Ingress already consumes both root aliases before native review.
+        assert all(retained[key] == value for key, value in hints.items())
+        assert ingress["tool_input"] == resumed["tool_input"] == {
+            "command": "cat .env", "guard_remaining_ms": 17,
+        }
+>       assert _envelope(resumed, tmp_path) == _envelope(ingress, tmp_path)
+E       AssertionError: assert {'deadline_bu...tion': 1, ...} == {'deadline_bu...tion': 1, ...}
+E         
+E         Omitting 8 identical items, use -vv to show
+E         Differing items:
+E         {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_wait_timeout_seconds': 8, 'guard_remaining_ms': 4000, 'hook_event_name': 'PreToolUse', ...}} != {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_w...ut_seconds': 8, 'hook_event_name': 'PreToolUse', 'tool_input': {'command': 'cat .env', 'guard_remaining_ms': 17}, ...}}
+E         Use -v to get more diff
+
+tests/test_native_codex_transport_identity.py:69: AssertionError
+____ test_resume_preserves_original_ingress_native_input[original-seconds] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-331/test_resume_preserves_original2')
+hints = {'guard_remaining_seconds': 4}
+
+    @pytest.mark.parametrize(
+        "hints",
+        ({}, {"guard_remaining_ms": 4000}, {"guard_remaining_seconds": 4},
+         {"guard_remaining_ms": 4000, "guard_remaining_seconds": 4}),
+        ids=("no-original-hint", "original-ms", "original-seconds", "both-original-hints"),
+    )
+    def test_resume_preserves_original_ingress_native_input(tmp_path: Path, hints: dict[str, object]) -> None:
+        retained, ingress, resumed = _paths(hints)
+        # The original retained hint is distinct from the HTTP transport's new
+        # hint. Ingress already consumes both root aliases before native review.
+        assert all(retained[key] == value for key, value in hints.items())
+        assert ingress["tool_input"] == resumed["tool_input"] == {
+            "command": "cat .env", "guard_remaining_ms": 17,
+        }
+>       assert _envelope(resumed, tmp_path) == _envelope(ingress, tmp_path)
+E       AssertionError: assert {'deadline_bu...tion': 1, ...} == {'deadline_bu...tion': 1, ...}
+E         
+E         Omitting 8 identical items, use -vv to show
+E         Differing items:
+E         {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_wait_timeout_seconds': 8, 'guard_remaining_seconds': 4, 'hook_event_name': 'PreToolUse', ...}} != {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_w...ut_seconds': 8, 'hook_event_name': 'PreToolUse', 'tool_input': {'command': 'cat .env', 'guard_remaining_ms': 17}, ...}}
+E         Use -v to get more diff
+
+tests/test_native_codex_transport_identity.py:69: AssertionError
+___ test_resume_preserves_original_ingress_native_input[both-original-hints] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-331/test_resume_preserves_original3')
+hints = {'guard_remaining_ms': 4000, 'guard_remaining_seconds': 4}
+
+    @pytest.mark.parametrize(
+        "hints",
+        ({}, {"guard_remaining_ms": 4000}, {"guard_remaining_seconds": 4},
+         {"guard_remaining_ms": 4000, "guard_remaining_seconds": 4}),
+        ids=("no-original-hint", "original-ms", "original-seconds", "both-original-hints"),
+    )
+    def test_resume_preserves_original_ingress_native_input(tmp_path: Path, hints: dict[str, object]) -> None:
+        retained, ingress, resumed = _paths(hints)
+        # The original retained hint is distinct from the HTTP transport's new
+        # hint. Ingress already consumes both root aliases before native review.
+        assert all(retained[key] == value for key, value in hints.items())
+        assert ingress["tool_input"] == resumed["tool_input"] == {
+            "command": "cat .env", "guard_remaining_ms": 17,
+        }
+>       assert _envelope(resumed, tmp_path) == _envelope(ingress, tmp_path)
+E       AssertionError: assert {'deadline_bu...tion': 1, ...} == {'deadline_bu...tion': 1, ...}
+E         
+E         Omitting 8 identical items, use -vv to show
+E         Differing items:
+E         {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_wait_timeout_seconds': 8, 'guard_remaining_ms': 4000, 'guard_remaining_seconds': 4, ...}} != {'raw_payload': {'guard_codex_browser_wait_process': {'pid': 5, 'startToken': 'linux:2315098'}, 'guard_codex_browser_w...ut_seconds': 8, 'hook_event_name': 'PreToolUse', 'tool_input': {'command': 'cat .env', 'guard_remaining_ms': 17}, ...}}
+E         Use -v to get more diff
+
+tests/test_native_codex_transport_identity.py:69: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_native_codex_transport_identity.py::test_resume_preserves_original_ingress_native_input[original-ms]
+FAILED tests/test_native_codex_transport_identity.py::test_resume_preserves_original_ingress_native_input[original-seconds]
+FAILED tests/test_native_codex_transport_identity.py::test_resume_preserves_original_ingress_native_input[both-original-hints]
+3 failed, 2 passed in 0.26s

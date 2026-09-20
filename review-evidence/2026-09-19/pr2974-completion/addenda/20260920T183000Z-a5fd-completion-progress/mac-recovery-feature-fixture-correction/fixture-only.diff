@@ -1,0 +1,29 @@
+--- before/rust/crates/guard-runtime/src/native_client_failure_observation.rs
++++ after/rust/crates/guard-runtime/src/native_client_failure_observation.rs
+@@ -419,16 +419,16 @@
+             state_mac: "private".to_owned(),
+         };
+         let calls = std::cell::Cell::new(0);
+-        let result: Result<(), String> = crate::observe_native_live_failure!(
+-            {
+-                calls.set(calls.get() + 1);
+-                &error
+-            },
+-            {
+-                calls.set(calls.get() + 1);
+-                &state
+-            }
+-        );
++        let observe_error = || {
++            calls.set(calls.get() + 1);
++            &error
++        };
++        let observe_state = || {
++            calls.set(calls.get() + 1);
++            &state
++        };
++        let result: Result<(), String> =
++            crate::observe_native_live_failure!(observe_error(), observe_state());
+         assert_eq!(calls.get(), 2);
+         assert_eq!(
+             result,

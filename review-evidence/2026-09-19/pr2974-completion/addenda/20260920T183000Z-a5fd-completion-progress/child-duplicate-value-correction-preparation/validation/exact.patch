@@ -1,0 +1,422 @@
+--- before/scripts/ci/priority_launcher_child/PLAN-CLARIFICATION-v4.json
++++ after/scripts/ci/priority_launcher_child/PLAN-CLARIFICATION-v4.json
+@@ -0,0 +1,40 @@
++{
++  "schema": "hol-guard.priority-child-duplicate-registration-correction.v1",
++  "predecessor_source": "6fee5ac629f86a9a46402b15a754d32d55f9a56c",
++  "predecessor_driver": "3b0968b56c1b3aa0ac755d6c89b87e18b8cd03e1",
++  "retained_run": 35525153035,
++  "retained_result_tree": "966f2c63e29341de895c8be363db46697bda15dd",
++  "actual_predecessor": {
++    "source_controls_passed": 105,
++    "type_errors": 0,
++    "original_offers": 24,
++    "completed_original_contracts": 24,
++    "allow": 20,
++    "deny": 4,
++    "complete_parent_daemon_native_joins": 24,
++    "admitted_child_reports": 0,
++    "collapsed_child_refusals": 24,
++    "cleanup_complete": true
++  },
++  "source_reason": [
++    "Real Claude and Codex adapters generate the same original argv value for PreToolUse and PostToolUse, while retaining distinct registration metadata and parent request coordinates.",
++    "The preceding activate() demanded exactly one matching registration row; both identical pre/post rows therefore made it return before Profile startup. The four actual generated-registration controls demonstrate this source defect without launching product commands.",
++    "The failed record discarded sidecar availability/refusal details before cleanup. This source diagnosis does not retrospectively establish the observed leaf or create child phase data."
++  ],
++  "correction": [
++    "Accept exactly one unique original argv tuple among registrations whose full mapped observed argv matches. Repeated identical original values are accepted; two distinct original argv0 values with the same mapped tail remain ambiguous and refused.",
++    "Keep strict observed argv, original argv hash, executable, parent PID, Python version, isolated flag, sealed configuration, registration/coordinate/native receipt joins, and all profiler resource bounds unchanged.",
++    "After all original work, rejected child evidence gains a closed source-declared refusal label and read stage plus captured byte length/SHA/within-read-limit for report/footer bytes already read by the original reader. No extra reads, product calls, retries, post-refusal footer reads, or raw rejected values are exported.",
++    "A limit+1 capture is explicitly a bounded prefix, not a complete file identity. A null capture means the original read did not return; only a fixed file_missing refusal identifies a missing path. Unknown exceptions export unclassified without stringification.",
++    "The original rejection category, accepted row set, observation_complete predicate, offer population and cleanup behavior are unchanged."
++  ],
++  "controls": [
++    "Four actual generated Claude/Codex pre/post registration positives; one real synthetic child with duplicate identical registrations; distinct-original-argv ambiguity negative retained.",
++    "Nine real-file rejection projection cases prove unchanged one-read/short-circuit behavior, bounded prefix hashes, fixed labels and no private raw value or path export; an exception stringifier control proves arbitrary messages are not read."
++  ],
++  "scope": [
++    "This supersedes only the duplicate-registration refusal described in v3; original v3 and all prior failed observations remain frozen.",
++    "The common framework metadata helper and its actual argv0 proof remain unchanged. No product, native protocol, installed artifact, registration argv, deadline, expected result or benchmark ceiling changes.",
++    "The subsequent single at-most24 explanatory population still requires exact source/driver review and unchanged installed artifact admission. It is instrumented diagnostic evidence, not default timing or qualification."
++  ]
++}
+--- before/scripts/ci/priority_launcher_child/profile_runtime.py
++++ after/scripts/ci/priority_launcher_child/profile_runtime.py
+@@ -324,10 +324,10 @@
+             or list(sys.version_info[:3]) != config["python"]
+         ):
+             return
+-        matches = [argv for argv in config["argv"] if [config["observed_argv0"], *argv[1:]] == sys.orig_argv]
++        matches = {tuple(argv) for argv in config["argv"] if [config["observed_argv0"], *argv[1:]] == sys.orig_argv}
+         if len(matches) != 1:
+             return
+-        config["active_registered_argv"] = matches[0]
++        config["active_registered_argv"] = list(next(iter(matches)))
+         config["configuration_sha256"] = expected_sha256
+         config["bootstrap_started_ns"] = started_ns
+         config["modules_before_bootstrap"] = sorted(modules_before)
+--- before/scripts/ci/priority_launcher_child/reader.py
++++ after/scripts/ci/priority_launcher_child/reader.py
+@@ -215,6 +215,87 @@
+     return value
+ 
+ 
++# Only exact, source-declared labels are exported. Never stringify an exception:
++# parser/OS/custom exception messages can contain private report bytes or paths.
++REFUSALS = {
++    "argv",
++    "boolean",
++    "bytes",
++    "callback_count",
++    "callback_threads",
++    "child",
++    "complete_claim",
++    "configuration",
++    "coordinate",
++    "counter",
++    "current_threads",
++    "document",
++    "end",
++    "faults",
++    "footer",
++    "footer_binding",
++    "footer_bytes",
++    "index",
++    "isolation",
++    "keys",
++    "main_thread_unique",
++    "missing_termination",
++    "module_roster",
++    "open_spans",
++    "parent",
++    "parent_end",
++    "parent_thread",
++    "pid",
++    "registered_argv",
++    "row_fields",
++    "row_type",
++    "rows",
++    "schema",
++    "scope",
++    "sibling_overlap",
++    "stage",
++    "start",
++    "thread",
++    "thread_indices",
++    "thread_kind_changed",
++    "unique_pid",
++    "withheld_scope",
++}
++
++
++def failure_projection(error: BaseException, stage: str, body: bytes | None, footer: bytes | None) -> dict[str, Any]:
++    label = "unclassified"
++    if type(error) is ValueError and len(error.args) == 1 and type(error.args[0]) is str:
++        declared = {"child_reader_" + value for value in REFUSALS}
++        declared |= {"child_duplicate_key", "child_observer_path_admission"}
++        if error.args[0] in declared:
++            label = error.args[0]
++    elif type(error) is FileNotFoundError:
++        label = "file_missing"
++    elif type(error) is json.JSONDecodeError:
++        label = "invalid_json"
++    elif type(error) is UnicodeDecodeError:
++        label = "invalid_encoding"
++    elif isinstance(error, OSError):
++        label = "file_io_error"
++
++    def capture(value: bytes | None, limit: int) -> dict[str, Any]:
++        # A limit+1 capture is a bounded prefix, not the full file's identity.
++        return {
++            "read_returned": value is not None,
++            "captured_bytes": len(value) if value is not None else None,
++            "captured_sha256": hashlib.sha256(value).hexdigest() if value is not None else None,
++            "within_read_limit": len(value) <= limit if value is not None else None,
++        }
++
++    return {
++        "refusal": label,
++        "stage": stage,
++        "report_capture": capture(body, MAX_BYTES),
++        "footer_capture": capture(footer, 4096),
++    }
++
++
+ def read_profiles(
+     directory: Path,
+     parent: dict[str, Any],
+@@ -236,6 +317,9 @@
+     for row in parent["rows"]:
+         key = coordinate(row["coordinate"])
+         pid: int | None = None
++        body: bytes | None = None
++        footer_body: bytes | None = None
++        stage = "parent_binding"
+         try:
+             require(key in wanted and key not in offered, "coordinate")
+             offered.add(key)
+@@ -246,9 +330,11 @@
+             pid = cast(int, pid)
+             seen.add(pid)
+             path = directory / (str(pid) + ".json")
++            stage = "report_read"
+             owned(path, directory=False)
+             with path.open("rb") as stream:
+                 body = stream.read(MAX_BYTES + 1)
++            stage = "report_validation"
+             require(len(body) <= MAX_BYTES, "bytes")
+             value = validate(
+                 json.loads(body, object_pairs_hook=pairs),
+@@ -260,9 +346,11 @@
+                 observed_argv0=observed_argv0,
+             )
+             done = path.with_suffix(".json.done")
++            stage = "footer_read"
+             owned(done, directory=False)
+             with done.open("rb") as stream:
+                 footer_body = stream.read(4097)
++            stage = "footer_validation"
+             require(len(footer_body) <= 4096, "footer_bytes")
+             footer = json.loads(footer_body, object_pairs_hook=pairs)
+             require(
+@@ -277,6 +365,7 @@
+                 and integer(footer["finish_through_report_export_ns"], value["finish_prewrite_ns"]),
+                 "footer_binding",
+             )
++            stage = "source_coverage"
+             stages = Counter(item["stage"] for item in value["records"])
+             harness = key[0]
+             bridge = "claude" if harness == "claude-code" else "codex"
+@@ -307,8 +396,15 @@
+                     "source_stage_coverage": source_coverage,
+                 }
+             )
+-        except BaseException:
+-            failures.append({"coordinate": row["coordinate"], "pid": pid, "category": "child_evidence_rejected"})
++        except BaseException as error:
++            failures.append(
++                {
++                    "coordinate": row["coordinate"],
++                    "pid": pid,
++                    "category": "child_evidence_rejected",
++                    "evidence": failure_projection(error, stage, body, footer_body),
++                }
++            )
+     names = {path.name for path in directory.iterdir()}
+     expected_names = {str(pid) + suffix for pid in seen for suffix in (".json", ".json.done")}
+     return {
+--- before/tests/test_priority_child_registration.py
++++ after/tests/test_priority_child_registration.py
+@@ -0,0 +1,60 @@
++"""Use real generated registrations; never launch the product commands."""
++
++from __future__ import annotations
++
++import hashlib
++import os
++import sys
++from pathlib import Path
++from types import SimpleNamespace
++from typing import Any, cast
++
++import pytest
++
++from scripts.ci.priority_launcher_child import profile_runtime
++from tests import test_native_slo_priority_launchers as registration_controls
++
++
++@pytest.mark.parametrize("harness", ("claude-code", "codex"))
++@pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
++def test_actual_generated_pre_post_registrations_admit_one_original_value(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: str, event: str
++) -> None:
++    # These existing fixtures call both real adapters and read back their actual
++    # registrations. The owned Codex executable fixture is never launched.
++    session = cast(Any, registration_controls.session).__wrapped__(tmp_path)
++    registrations = cast(Any, registration_controls.registrations).__wrapped__(session, monkeypatch)
++    assert len(registrations) == 4
++    argv = [list(row.argv) for row in registrations]
++    assert len({tuple(value) for value in argv}) == 2
++    selected = next(row for row in registrations if (row.harness, row.event) == (harness, event))
++    selected_argv = list(selected.argv)
++    assert argv.count(selected_argv) == 2
++    config = {
++        "argv": argv,
++        "observed_argv0": selected_argv[0],
++        "executable": selected_argv[0],
++        "parent_pid": os.getppid(),
++        "python": list(sys.version_info[:3]),
++    }
++    path = tmp_path / "profile-config.json"
++    body = profile_runtime.encoded(config)
++    path.write_bytes(body)
++    starts: list[str] = []
++    admitted: list[dict[str, Any]] = []
++
++    def profile(value: dict[str, Any]) -> Any:
++        admitted.append(value)
++        return SimpleNamespace(start=lambda: starts.append("start"), finish=lambda: None)
++
++    with monkeypatch.context() as scoped:
++        scoped.setattr(profile_runtime, "Profile", profile)
++        scoped.setattr(profile_runtime.atexit, "register", lambda *_args: None)
++        scoped.setattr(sys, "executable", selected_argv[0])
++        scoped.setattr(sys, "orig_argv", selected_argv)
++        scoped.setattr(sys, "flags", SimpleNamespace(isolated="-I" in selected_argv[1:2]))
++        profile_runtime.activate(str(path), hashlib.sha256(body).hexdigest(), 1, ())
++    assert starts == ["start"] and len(admitted) == 1
++    assert admitted[0]["active_registered_argv"] == selected_argv
++    assert admitted[0]["argv"] == argv
++    assert len({row.registration_sha256 for row in registrations}) == 4
+--- before/tests/test_priority_child_sidecar_join.py
++++ after/tests/test_priority_child_sidecar_join.py
+@@ -118,3 +118,107 @@
+     result = read_profiles(tmp_path, parent, registrations, "a" * 64, registry, 98)
+     assert result["observation_complete"] is False
+     assert "PRIVATE_VALUE" not in json.dumps(result)
++
++
++@pytest.mark.parametrize(
++    ("fault", "stage", "refusal"),
++    [
++        ("report_missing", "report_read", "file_missing"),
++        ("footer_missing", "footer_read", "file_missing"),
++        ("private_field", "report_validation", "child_reader_keys"),
++        ("invalid_json", "report_validation", "invalid_json"),
++        ("duplicate_key", "report_validation", "child_duplicate_key"),
++        ("oversized_report", "report_validation", "child_reader_bytes"),
++        ("oversized_footer", "footer_validation", "child_reader_footer_bytes"),
++        ("footer_binding", "footer_validation", "child_reader_footer_binding"),
++        ("unknown_error", "report_validation", "unclassified"),
++    ],
++)
++def test_rejection_projects_only_original_captured_bytes_and_closed_label(tmp_path, monkeypatch, fault, stage, refusal):
++    from pathlib import Path
++
++    from scripts.ci.priority_launcher_child import reader
++
++    parent, registrations, registry = fixture(tmp_path)
++    path = tmp_path / "101.json"
++    done = path.with_suffix(".json.done")
++    secret = "PRIVATE_SENTINEL_NOT_EXPORTED"
++    if fault == "report_missing":
++        path.unlink()
++    elif fault == "footer_missing":
++        done.unlink()
++    elif fault == "private_field":
++        document = json.loads(path.read_bytes())
++        document["private_field"] = secret
++        path.write_bytes(canonical(document))
++    elif fault == "invalid_json":
++        path.write_bytes(secret.encode())
++    elif fault == "duplicate_key":
++        path.write_bytes(b'{"schema":"' + secret.encode() + b'","schema":0}')
++    elif fault == "oversized_report":
++        path.write_bytes(secret.encode() + b"x" * reader.MAX_BYTES)
++    elif fault == "oversized_footer":
++        done.write_bytes(secret.encode() + b"x" * 4096)
++    elif fault == "footer_binding":
++        footer = json.loads(done.read_bytes())
++        footer["report_sha256"] = secret
++        done.write_bytes(canonical(footer))
++    else:
++        original_validate = reader.validate
++
++        def refused(document, **kwargs):
++            if kwargs["pid"] == 101:
++                raise ValueError("child_reader_keys_" + secret + str(path))
++            return original_validate(document, **kwargs)
++
++        monkeypatch.setattr(reader, "validate", refused)
++    original_body = path.read_bytes() if path.exists() else None
++    original_footer = done.read_bytes() if done.exists() else None
++    opened = []
++    original_open = Path.open
++
++    def opened_once(self, *args, **kwargs):
++        if self in (path, done):
++            opened.append(self)
++        return original_open(self, *args, **kwargs)
++
++    monkeypatch.setattr(Path, "open", opened_once)
++    result = read_profiles(tmp_path, parent, registrations, "a" * 64, registry, 98)
++    assert result["observation_complete"] is False and len(result["rows"]) == 23
++    assert len(result["failures"]) == 1
++    failure = result["failures"][0]
++    assert failure["category"] == "child_evidence_rejected"
++    assert failure["evidence"]["stage"] == stage
++    assert failure["evidence"]["refusal"] == refusal
++    expected_opened = [] if fault == "report_missing" else [path]
++    if stage == "footer_validation":
++        expected_opened.append(done)
++    assert opened == expected_opened  # No retry, footer-after-refusal, or hashing reread.
++    for name, raw, limit, was_read in (
++        ("report", original_body, reader.MAX_BYTES, path in opened),
++        ("footer", original_footer, 4096, done in opened),
++    ):
++        if was_read:
++            assert raw is not None
++        captured = raw[: limit + 1] if raw is not None and was_read else None
++        assert failure["evidence"][name + "_capture"] == {
++            "read_returned": was_read,
++            "captured_bytes": len(captured) if captured is not None else None,
++            "captured_sha256": hashlib.sha256(captured).hexdigest() if captured is not None else None,
++            "within_read_limit": len(captured) <= limit if captured is not None else None,
++        }
++    exported = json.dumps(result)
++    assert secret not in exported and str(tmp_path) not in exported
++
++
++def test_unknown_error_stringifier_is_never_called_by_failure_projection():
++    from scripts.ci.priority_launcher_child.reader import failure_projection
++
++    class PrivateError(Exception):
++        def __str__(self):
++            raise AssertionError("must not inspect private exception message")
++
++    result = failure_projection(PrivateError("PRIVATE_SENTINEL"), "report_validation", b"private", None)
++    assert result["refusal"] == "unclassified"
++    assert result["report_capture"]["captured_sha256"] == hashlib.sha256(b"private").hexdigest()
++    assert "PRIVATE_SENTINEL" not in json.dumps(result)
+--- before/tests/test_priority_child_startup.py
++++ after/tests/test_priority_child_startup.py
+@@ -134,7 +134,7 @@
+     )
+ 
+ 
+-@pytest.mark.parametrize("mismatch", ["argv", "parent", "interpreter", "version", "observed_argv0", "duplicate"])
++@pytest.mark.parametrize("mismatch", ["argv", "parent", "interpreter", "version", "observed_argv0", "ambiguous"])
+ def test_nonmatching_invocation_is_noop(interpreter, tmp_path, mismatch):
+     _, output, argv, installed = fixture_config(tmp_path, interpreter)
+     if mismatch == "argv":
+@@ -148,10 +148,28 @@
+     elif mismatch == "observed_argv0":
+         installed.config["observed_argv0"] += "other"
+     else:
+-        installed.config["argv"] = [argv, argv]
++        installed.config["argv"] = [argv, [argv[0] + "-different-original", *argv[1:]]]
+     with installed:
+         result = run(argv)
+     assert result.returncode == 0 and not list(output.iterdir())
++
++
++def test_repeated_identical_registration_preserves_real_child(interpreter, tmp_path):
++    _, output, argv, installed = fixture_config(tmp_path, interpreter)
++    installed.config["argv"] = [argv, list(argv)]
++    original = run(argv)
++    with installed:
++        observed = run(argv)
++        report = reports(output)
++    assert (observed.returncode, observed.stdout, observed.stderr) == (
++        original.returncode,
++        original.stdout,
++        original.stderr,
++    )
++    assert report["observation_complete"] is True
++    assert (
++        report["registered_argv_sha256"] == hashlib.sha256(json.dumps(argv, separators=(",", ":")).encode()).hexdigest()
++    )
+ 
+ 
+ @pytest.mark.parametrize("ending", ["raise RuntimeError('PRIVATE_EXCEPTION_SENTINEL')", "raise SystemExit(7)"])

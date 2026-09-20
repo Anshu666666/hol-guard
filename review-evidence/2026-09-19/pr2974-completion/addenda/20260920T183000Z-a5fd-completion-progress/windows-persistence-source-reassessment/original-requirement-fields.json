@@ -1,0 +1,62 @@
+{
+  "source_overlay_sha256": "c86b945eb7e58d8f055ef33b64a12c404ddf48019e23d1cdcd32a98cb401bd1b",
+  "scope": "Only preserved original fields are copied; stale checkpoint status/actions are not used as current outcomes.",
+  "requirements": [
+    {
+      "id": "RSP-121",
+      "title": "Measure foreground evidence submission cost",
+      "original_object_sha256": "fae8ae7a5aaa11d911892cf599e9a7c64d8c105c9344266056f53caabe4326fb",
+      "original_acceptance": "Attribute full payload copies/JSON before response, queue admission, native receipt validation and rejected work; use maximum envelopes.",
+      "original_dependencies": "RSP-008."
+    },
+    {
+      "id": "RSP-122",
+      "title": "Use bounded compact evidence before queue admission",
+      "original_object_sha256": "69805d61916fcc5850cf77b105ba1c310040dbd089920fae22dc87716d3f2924",
+      "original_acceptance": "Avoid unnecessary full payload copying; preserve correlation/attempt identity and explicit aggregate degraded counters.",
+      "original_dependencies": "RSP-121,RSP-016."
+    },
+    {
+      "id": "RSP-123",
+      "title": "Define persistence milestones and loss window",
+      "original_object_sha256": "052a2ec5e5c519333196f891bcb28a8ab6d4daa469afdc550a210d9096d80df5",
+      "original_acceptance": "Document memory accepted versus journal durable versus DB committed; specify deduplication, crash cut points and single-writer ownership.",
+      "original_dependencies": "RSP-024,RSP-121."
+    },
+    {
+      "id": "RSP-124",
+      "title": "Implement real SQL transaction batching",
+      "original_object_sha256": "fe0fc49bc6681547fda22c0312c59b1917631decb47d38f534bb0ebd39077bd8",
+      "original_acceptance": "Group inserts within bounded latency/size limits; preserve uniqueness and per-record outcomes without silently changing durability promises.",
+      "original_dependencies": "RSP-123."
+    },
+    {
+      "id": "RSP-125",
+      "title": "Replace per-record whole-journal rewrites",
+      "original_object_sha256": "efd27b3b4c5e9115bd0fadf078cc7d8a2ebdcd0e91b9f9f51a7ad4d2f600b623",
+      "original_acceptance": "Use bounded checkpoint/segment compaction or equivalent; keep exact replay and sidecar consistency under crash and backlog.",
+      "original_dependencies": "RSP-123,RSP-124."
+    },
+    {
+      "id": "RSP-126",
+      "title": "Exercise persistence fault recovery",
+      "original_object_sha256": "d6ab3c8dfd8b3f10e2279c0413a8631396fac9258f8c32e302b83b04734c72eb",
+      "original_acceptance": "Test duplicate IDs, SQLite busy/corrupt, read-only/full disk, truncated journal and death at append/commit/checkpoint; decisions must not be rerun.",
+      "original_dependencies": "RSP-125."
+    },
+    {
+      "id": "RSP-131",
+      "title": "Qualify real receipt ingestion under mixed load",
+      "original_object_sha256": "444cc85ac211b4f2a9b15cdc19a254531e0ee6833ca963317617a02da9da1bd3",
+      "original_acceptance": "Drive actual native receipts alongside mixed pre/post hooks and policy updates; report fsyncs, bytes rewritten, queue age and process-tree resources.",
+      "original_dependencies": "RSP-126,RSP-129,RSP-130."
+    },
+    {
+      "id": "RSP-140",
+      "title": "Verify evidence privacy and truthful status",
+      "original_object_sha256": "440d862cacc76bb99e8a46e1d8bbd6a2723f2952af38de626b7a24e72b2f6f4b",
+      "original_acceptance": "Probe exported metrics, error paths and receipts for raw secrets, commands, output and private paths; separate availability continuations from evaluated allows.",
+      "original_dependencies": "RSP-136,RSP-138."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "pr2974.first-admission-terminal-scope-peer.v1",
+  "recorded_at_utc": "2026-09-20 18:11:39 UTC",
+  "verdict": "clear as original deadline failure with incomplete capture",
+  "packet_tree": "0ac1e46cbb289cd4d3a171de59edac4a4acfb501",
+  "result_blob": "7978308204744612a2181487acb31de2aa1d090d",
+  "interpretation_blob": "db8258138a60d38ce98eca2b922bbc026bc6eca1",
+  "selected_rows_blob": "0ef165292a254fa6075231dd7b5259377f9fcd62",
+  "run": 35527492687,
+  "job": 106122101381,
+  "driver": "177036f13e60e8d0f7d4b2ef46b641b86868a179",
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "actual_wheel_build": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+  "checks": [
+    "Read original result, selected raw rows, README, interpretation and data-only verifier; rehashed local evidence bodies against the final remote tree.",
+    "Independently reconstructed all four original JSONL parts, verified their digest, and exactly matched the reconstructed cell. Every selected predicate row equals its original indexed row in the 272-row report.",
+    "Read original await_ack, prepare_service, replacement constructor boundaries and LifecycleClocks. The accepted clock occurs before the cold_registrations_return marker; subtracting that later marker gives conservative lower bounds, not a cross-origin subtraction.",
+    "Read Capture.state: the recorded null before-state samples at rows 245 and 246 correspond to its nonblocking publisher-condition refusal path, which marks loss. The complete-capture refusal remains mandatory."
+  ],
+  "observations": {
+    "original_main_calls": 1,
+    "original_exit": 1,
+    "original_readiness_ms": 400,
+    "accepted_absolute": 72.201560703,
+    "deadline_absolute": 72.601560703,
+    "final_original_clock_absolute": 72.65542461,
+    "final_lateness_ms": 53.863906999993105,
+    "constructor_return_lower_bound_after_acceptance_ms": 431.3112059999895,
+    "recovered_await_lower_bound_after_acceptance_ms": 444.1174959999897,
+    "rows": 272,
+    "unknown_sites": 0,
+    "missing_before_states": [
+      245,
+      246
+    ],
+    "capture_admitted": false,
+    "recovered_requests": 0,
+    "full_matrix_passed": false
+  },
+  "limits": [
+    "The original finite fault/publication records show the deliberately discarded accepted reply and later forwarded valid ACK/ready observation; those observations do not erase the original caller deadline failure.",
+    "A publication ready observation is not an exact internal commit instant. Inclusive constructor and wait spans do not isolate native CPU, transport or individual subsequent Python constructor costs.",
+    "Missing states prevent complete observation admission and do not establish that no other loss occurred.",
+    "This bounded peer did not redownload or independently rehash the full archive/runtime nor rerun the 110 controls; those remain explicitly owner's evidence. It executed only read-only data reconciliation, not the workload or the writing verifier.",
+    "No new request, retry, native probe, source change, default timing claim, SQL-loss inference or task qualification."
+  ]
+}

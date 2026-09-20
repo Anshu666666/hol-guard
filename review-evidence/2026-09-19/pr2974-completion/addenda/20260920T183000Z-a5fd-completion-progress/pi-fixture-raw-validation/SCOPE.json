@@ -1,0 +1,108 @@
+{
+  "schema": "hol-guard.pi-fixture-compact-ack-correction.v1",
+  "base_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "base_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "source_tree": "fedbe65254a2b63937ae38c0b835a55a5efdab3f",
+  "imported_pi_beforeimages_tree": "5fbbed173e7f05a7cef4a787b5a61730a3459a9e",
+  "files": [
+    {
+      "path": "ci/native_runtime/probe_installed_pi_daemon.py",
+      "bytes": 9405,
+      "sha256": "024fb45ca367a1d70fe7cfb97d64aeaaa73cc523cdc46c0396aa0896404bd340",
+      "git_blob": "150cbc6e60dc7929294ffbbecade599e3db55d3d"
+    },
+    {
+      "path": "scripts/ci/verify_installed_pi_sources.py",
+      "bytes": 11506,
+      "sha256": "40276d339109049bba0bd3358b78cb8b335bc22f35fac70d2175a284ca5bed36",
+      "git_blob": "d288ce0eba3ca6c363b66510aeb4cc0351f0bc36"
+    },
+    {
+      "path": "scripts/native_slo_pi_receipts.py",
+      "bytes": 12575,
+      "sha256": "ef0a5d247cd2f7621036474c65856a1e849f9372acd3c4fb714be6a029a2a2ef",
+      "git_blob": "ff448d949420c9b6b1c4ff73e6e310003e19aac9"
+    },
+    {
+      "path": "scripts/native_slo_pi_sources.mjs",
+      "bytes": 3464,
+      "sha256": "cb654871c7a4d5f5ed4f2a3e5c0172a7cd88f34f47ac98d1882d013204543f5f",
+      "git_blob": "39fc5b9091b65e6a037d31590aac2017f5402ce7"
+    },
+    {
+      "path": "scripts/native_slo_pi_sources.py",
+      "bytes": 8678,
+      "sha256": "dea26416122df25541430b6a3e7e3bef3b207486c035415603d22e7b3a65f373",
+      "git_blob": "bf73d1dbeacf2ebcc93e43792f9d59fafc4268ad"
+    },
+    {
+      "path": "tests/test_installed_pi_command_fixture.py",
+      "bytes": 3247,
+      "sha256": "ee18dd68431022f34989c7ee1d1bef47ff6a24c02fb7ce1b37427de371b6871e",
+      "git_blob": "9ff1ea25d6d2fa2f3d256a178d9e22c5197c8a86"
+    },
+    {
+      "path": "tests/test_native_slo_pi_receipts.py",
+      "bytes": 14183,
+      "sha256": "fc9748f8cfb15094241b0d9be280029dc0339466ca193fd0c3a9c26aeb9a5a31",
+      "git_blob": "023d62c1ebe0a1b124e3e3fbaddb79faea2cdcd6"
+    },
+    {
+      "path": "tests/test_native_slo_pi_sources.py",
+      "bytes": 7257,
+      "sha256": "f07d7ddb2079d90f2ba3c1c11c8dd7d5ea83266f59f81510ac02e6ae6995dd7f",
+      "git_blob": "1f41a7c54cddda353ca1e220cccfc584f0084ae0"
+    }
+  ],
+  "runtime_product_changes": 0,
+  "actual_corrections": [
+    "Existing CI-only _start_installed_daemon receives explicit prepare_command_authority=False opt-in; only the registered synthetic Pi/OMP source runner passes True. It uses the existing generated-key empty-authority fixture before daemon construction, then independently verifies the returned actual store and records the non-enrollment provisioning receipt.",
+    "PiReceipts requires a valid independently admitted installed_rule_digest. Rule joins use that fixed capability/manifest identity, while compact ACK joins retain generation, policy_digest, runtime_identity and enforce mode plus before/after immutability. Missing/invalid/wrong installed rule, changed ACK, receipt corruption, incomplete commit, missing native result and duplicate calls still fail.",
+    "Previously synthetic full-ACK fixtures now model the compact API; a positive calls the actual publisher.current_snapshot_binding method and proves that rule_digest is absent without inventing a field.",
+    "Type-only casts preserve existing modeled receipt/control semantics; additional ciphertext-key/nonce assertions only strengthen private evidence controls."
+  ],
+  "changed_vs_imported_pi_baseline": [
+    "ci/native_runtime/probe_installed_pi_daemon.py",
+    "scripts/ci/verify_installed_pi_sources.py",
+    "scripts/native_slo_pi_receipts.py",
+    "tests/test_native_slo_pi_receipts.py",
+    "tests/test_installed_pi_command_fixture.py"
+  ],
+  "untouched_imported_files": [
+    "scripts/native_slo_pi_sources.py",
+    "scripts/native_slo_pi_sources.mjs",
+    "tests/test_native_slo_pi_sources.py"
+  ],
+  "validation": {
+    "initial_controls": "31 passed",
+    "final_cohort": "100 passed,0 failed/errors/skips,1.49 seconds",
+    "cohorts": [
+      "tests/test_native_slo_pi_receipts.py",
+      "tests/test_native_slo_pi_sources.py",
+      "tests/test_installed_pi_command_fixture.py",
+      "tests/test_installed_pi_output_probe.py",
+      "tests/test_native_slo_command_fixture.py"
+    ],
+    "ruff": "5 changed Python files pass",
+    "format": "5 changed Python files pass",
+    "types": "5 changed Python files:0 errors,503 warnings,0 notes; warnings not claimed resolved",
+    "original_type_attempt": "15 errors retained, including2 missing pytest imports because the new checkout had no configured interpreter; corrected command explicitly selects the frozen venv and fixes actual narrow argument/fixture annotations"
+  },
+  "original_failure": {
+    "run": 35522812444,
+    "packet": "aa0388ff0826ebe3e24bf4173e53685cd4ff1652",
+    "assessment": "8ad7cb65e89b5aae8e09f3e8dcf0b2ece849be5d",
+    "offered_per_platform": 5,
+    "native_receipts_per_platform": 2,
+    "omp_offered": 0,
+    "ollama_offered": 0,
+    "rewritten": false
+  },
+  "limits": [
+    "No installed/native workload executed for these corrected source bytes.",
+    "Native edge calls in receipt tests are deliberately modeled; SQLite readback and disposable command authority use real local stores.",
+    "All ten selected Pi/OMP callback cases, exact delivery/source verdicts, output hashes, ciphertext joins and durable receipt requirements remain unchanged.",
+    "Encrypted guard_payload_ref remains rejected by current Rust edge; this patch neither hydrates in Python nor alters the digest, native oracle, source scan or size cap.",
+    "Not an enrollment flow, host application execution, latency qualification or RSP136 completion."
+  ]
+}

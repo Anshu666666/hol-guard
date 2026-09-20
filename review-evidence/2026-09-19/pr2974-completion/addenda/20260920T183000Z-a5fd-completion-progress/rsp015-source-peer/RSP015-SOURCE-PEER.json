@@ -1,0 +1,59 @@
+{
+  "schema": "pr2974-rsp015-source-peer.v1",
+  "reviewer": "ci_review_audit",
+  "verdict": "clear_with_scope_limits",
+  "base_sha": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "first_six_additions_tree": "75caf36b5eec64301bf04aed6d9bd9e7215fb522",
+  "final_seven_path_tree": "591ac8825a68decbef94c9648579d78f2c8a1cdd",
+  "files": [
+    {
+      "path": "tests/fixtures/guard-hook-responses/auxiliary-events.v1.json",
+      "git_blob": "b6e8d20f031e016cdade74a88a332b355f9b9848",
+      "bytes": 29500
+    },
+    {
+      "path": "tests/fixtures/guard-hook-responses/current-cline-native.v1.json",
+      "git_blob": "1128bef6c13c30df23d796d228b0265c515eae7a",
+      "bytes": 5363
+    },
+    {
+      "path": "tests/fixtures/guard-hook-responses/registration-roster.v1.json",
+      "git_blob": "f10dbae7a795d69a90c1f3cfabcf37d43e759083",
+      "bytes": 17450
+    },
+    {
+      "path": "tests/test_cline_nonblocking_response_fixtures.py",
+      "git_blob": "489b468b3b187a122c7cec5bc1031b86d9355b7f",
+      "bytes": 5032
+    },
+    {
+      "path": "tests/test_hook_registration_response_roster.py",
+      "git_blob": "2de3b1e1b1c395107b222535ee5c6664f21eb816",
+      "bytes": 6148
+    },
+    {
+      "path": "tests/test_kimi_adapter.py",
+      "git_blob": "6651226d0074eba16f8be689e621f1c73d8a0f42",
+      "bytes": 16583
+    },
+    {
+      "path": "tests/test_registered_auxiliary_response_fixtures.py",
+      "git_blob": "bbc1a9a061d67ad4274f3b8eed1e7f2048bbfe5b",
+      "bytes": 4066
+    }
+  ],
+  "review": [
+    "Read all three added test modules, complete Cline fixture, all80 auxiliary case mappings and 16-surface registration roster. Independently checked JSON duplicate keys and local byte hashes against exact Git tree entries.",
+    "Cline tests execute the actual generated worker in isolated subprocesses while explicitly modeling the guard child. Six events and ten conditions compare full stdout bytes/JSON, stderr, exit0, child invocation/forwarded payload and completion proof. Nonblocking cancellation stays false and native execution is not claimed.",
+    "Auxiliary controls use actual bounded bridge response behavior with modeled daemon/child outcomes. Ten registered auxiliary events times two postures times four failure conditions have exact response/exit and invocation expectations. Input-limit cases exercise the real bounded reader; protected permission behavior remains distinct from watch/lifecycle behavior.",
+    "Roster maps16 canonical harnesses and aliases, uses actual installers/builders/generator callbacks for the tested event sets and explicitly separates observation, delegated providers, descriptors and discovery-only surfaces. Fixture path existence is a map, not an executed coverage certificate.",
+    "Read actual Cline generator, bounded failure response implementation and selected Claude/Kimi installer source to confirm the frozen response and registration assumptions.",
+    "Kimi follow-up replaces only the accidental checkout-name/legacy-CLI substring assertion. Actual parsed TOML must contain exactly five original events, the generated isolated bounded-bridge command/config with the correct private home and harness, and30-second timeout. No production implementation changed."
+  ],
+  "limits": [
+    "This is source review, not new pytest execution or RSP015 task closure.",
+    "Owner's direct62/81/9 case results remain separately scoped evidence. The initial broad cohort with unguarded pytest.main spawn recursion is not accepted as product evidence; its preserved failures must remain separate from the corrected wrapper run.",
+    "Generated worker/model-child and response-fixture controls do not prove installed host activation, actual native policy execution, approval continuation or post-output withholding.",
+    "The three existing fixture mapping checks for unexecuted/native-limited harnesses retain their explicit claim limits; no missing host evidence is promoted."
+  ]
+}

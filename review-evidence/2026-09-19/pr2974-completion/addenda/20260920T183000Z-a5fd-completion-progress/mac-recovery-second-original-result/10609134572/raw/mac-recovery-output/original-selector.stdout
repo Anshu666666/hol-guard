@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_native_hook_client_recovers_after_supervisor_exit ____________
+ci/native_runtime/test_native_hook_client.py:143: in test_native_hook_client_recovers_after_supervisor_exit
+    recovered = _invoke(runtime, state_dir, request)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ci/native_runtime/native_hook_client_support.py:145: in _invoke
+    _push_snapshot(runtime, state_dir, request)
+ci/native_runtime/native_hook_client_support.py:135: in _push_snapshot
+    raise AssertionError(f"native policy push failed: {_native_diagnostic(result.stderr)}")
+E   AssertionError: native policy push failed: native_resident_live_request_failed
+=========================== short test summary info ============================
+FAILED ci/native_runtime/test_native_hook_client.py::test_native_hook_client_recovers_after_supervisor_exit - AssertionError: native policy push failed: native_resident_live_request_failed
+1 failed in 1.35s

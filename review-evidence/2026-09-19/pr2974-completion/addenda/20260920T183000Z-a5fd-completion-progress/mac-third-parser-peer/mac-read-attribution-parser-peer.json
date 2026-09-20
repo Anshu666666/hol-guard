@@ -1,0 +1,41 @@
+{
+  "schema": "pr2974.macos-read-attribution-parser-peer.v1",
+  "source_tree": "d587e5a4d90307952b94fade40e7ae498c129e88",
+  "reviewer": "windows_persistence_audit",
+  "verdict": "clear",
+  "scope": "Read-only narrow Python parser and test delta; no Rust semantic, driver, or runtime clearance.",
+  "members": [
+    {
+      "path": "ci/native_runtime/mac_recovery_record.py",
+      "blob": "4e8b39425bf219e862069f59b4151e46b437870b",
+      "bytes": 5607,
+      "sha256": "56e095138f725e58dfbb0b0e843b8a78a12153618323c7313c9e95b2ee27c397"
+    },
+    {
+      "path": "tests/test_mac_recovery_observation.py",
+      "blob": "63848113b9073b1fa1627e5758fcd46b1670289b",
+      "bytes": 12270,
+      "sha256": "6ffb196893f5d0efb0dfee4bbc70c0f2df84660696fdb84db89c9b10580b03de"
+    }
+  ],
+  "unchanged": {
+    "capture": "23d79d5dddece0cb249054616e85ae16d4ef23b1",
+    "plugin": "e4bdb46e722595e8c453bc23a4a1f42ac6fe5ef6"
+  },
+  "checks": [
+    "Both complete local afterimages independently hashed to declared Git blobs and fetched exact from GitHub.",
+    "V2 prefix and schema are explicit; original V1 frame is not silently reinterpreted.",
+    "Existing 8192-byte stderr and 1024-byte frame bounds, exact key set, duplicate-key rejection, placement and type checks remain.",
+    "Closed read phase/origin/kind sets match the exact producer's declared string tables by source inspection; signed i32 bounds reject booleans and preserve null.",
+    "Unobserved phase requires all other attribution fields unobserved/null. Observed phase requires original native_client_frame_read_failed code and non-unobserved origin/kind.",
+    "Eleven new parser cells preserve old forwarding/cleanup controls; known-code test uses unobserved fields for non-read errors.",
+    "Conservative maximum legal scalar/string shape using longer unrelated known code serializes to 753 bytes, below unchanged 1024-byte frame bound; data-only AST/literal calculation.",
+    "Capture and plugin bytes are unchanged from prior narrow source peer."
+  ],
+  "limits": [
+    "No application imports, controls, type checks, native build, selector, or workload were run by this peer.",
+    "Producer's 38-control pass, types 0 errors/199 warnings and Ruff/format pass are not independent execution results.",
+    "Parser admits closed combinations without claiming every cross-product combination is emitted by Rust; native collector semantics are separately peered.",
+    "Actual historical read phase and OS origin remain unknown until the once-only original selector produces attributable evidence."
+  ]
+}

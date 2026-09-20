@@ -1,0 +1,222 @@
+{
+  "schema": "pr2974.rsp006-022-133-current-reassessment.v1",
+  "reviewer": "qualification_audit",
+  "source_commit": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "source_tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+  "prior_assessment": "bb791e9ec28495bffd0f3123d4b5951dc703a5ea",
+  "original_task_objects": [
+    {
+      "id": "RSP-003",
+      "number": 3,
+      "title": "Trace and name the four timing boundaries",
+      "original_object_sha256": "01d5c247d87f32ca6093d72dd50e321863a578cbe2c34f9bbf3d3123c4a9f9d6",
+      "original_acceptance": "Separate KERNEL, NATIVE_CLIENT, DAEMON_INGRESS and INSTALLED_LAUNCHER in benchmark output and docs. Verify each timer's callers against source.",
+      "original_dependencies": "RSP-001.",
+      "parsed_dependency_ids": [
+        "RSP-001"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep kernel, Python native-client wrapper, daemon ingress and installed launcher clocks separate. Ordinary smoke uses 1000 ms c16/recovery limits; original launcher qualification remains 50/100/200 ms and authority readiness remains 400 ms."
+    },
+    {
+      "id": "RSP-004",
+      "number": 4,
+      "title": "Repair the Python semantic reference",
+      "original_object_sha256": "02a09cec8a8c7b0c48f6c2123de98a4f8b4d3c0621517164ce439b41766aa829",
+      "original_acceptance": "Construct an explicit isolated benchmark-only oracle or equivalent pinned installed version. An off-mode availability response must fail the reference validation.",
+      "original_dependencies": "RSP-003.",
+      "parsed_dependency_ids": [
+        "RSP-003"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-005",
+      "number": 5,
+      "title": "Assert semantic work on both benchmark arms",
+      "original_object_sha256": "b15120576a10279ae34e23fe4fd8637bbe6ef3ebb07101fa814bd01a96016d24",
+      "original_acceptance": "Require expected route, verdict and reason class for benign and malicious fixtures. A payload-only check cannot pass. Never expose the oracle in production.",
+      "original_dependencies": "RSP-004.",
+      "parsed_dependency_ids": [
+        "RSP-004"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Require declared corpus identity and actual semantic work on both arms. Read the fresh 3ffa paired reports on original 2e versus 8f; preserve incomplete arms and every sampling gate. Producer-derived fixture controls are tests, not benchmark qualification."
+    },
+    {
+      "id": "RSP-006",
+      "number": 6,
+      "title": "Correct existing SLO descriptions",
+      "original_object_sha256": "5b82a8a2266b15873357f222525f9d6d59e9403aeba234b2bcce0394939d2cf2",
+      "original_acceptance": "Document warm \u226420 ms OR \u22651.15x and cold \u2264150 ms AND \u22655x as current script logic; distinguish 1000 ms adapter budget and absent direct c16 runner. Reconcile docs and code.",
+      "original_dependencies": "RSP-003,RSP-005.",
+      "parsed_dependency_ids": [
+        "RSP-003",
+        "RSP-005"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Keep kernel, Python native-client wrapper, daemon ingress and installed launcher clocks separate. Ordinary smoke uses 1000 ms c16/recovery limits; original launcher qualification remains 50/100/200 ms and authority readiness remains 400 ms."
+    },
+    {
+      "id": "RSP-022",
+      "number": 22,
+      "title": "Expand source ownership gates",
+      "original_object_sha256": "4504245ce5bd38057d3dbc4544d8fee5c447d7e885533a4df8eabc018870237f",
+      "original_acceptance": "Follow the current recording-mode caller and proposed new routes; prevent synchronous configuration reads being mislabeled as background work.",
+      "original_dependencies": "RSP-013,RSP-015.",
+      "parsed_dependency_ids": [
+        "RSP-013",
+        "RSP-015"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Retain the full original byte, identity, generation, deadline, replay and independent-vector contract. Tests and partial platform observations do not satisfy unresolved technical-contract review or dependent qualification."
+    },
+    {
+      "id": "RSP-133",
+      "number": 133,
+      "title": "Audit workflow dependency selection",
+      "original_object_sha256": "8e6e33bae5c053c81132fc0fcb008b5d3848e64d476e59fe125bd70d63686474",
+      "original_acceptance": "Ensure changes to native code, wrappers, publisher, evidence and benchmark helpers select the necessary checks; inspect combined workflow coverage.",
+      "original_dependencies": "RSP-006,RSP-022.",
+      "parsed_dependency_ids": [
+        "RSP-006",
+        "RSP-022"
+      ],
+      "archived_status": "DONE",
+      "status_at_this_checkpoint": "DONE",
+      "final_head_acceptance_revalidated": false,
+      "current_action": "Final integrated workflowc260136c retains strict four-platform aggregation, the separate always-uploaded Windows XML artifact, the existing manager atomic selector, and new inactive namespace selection in Linux/bothMac/Windows source-control steps. Reversing only three new selections yields exacte0626681; reversing its manager selection yields72714fff. Riskc532 retains three actual collection dependency trigger paths. The full53-path peer verifies all source bytes and all remaining workflow behavior. Fresh normal CI selection/results remain to be observed; no global500-line gate."
+    }
+  ],
+  "original_task_objects_unchanged": true,
+  "provider_verification": {
+    "prior_providers": 29,
+    "byte_unchanged": 28,
+    "sole_change": "scripts/native_slo_contract.py: exact previously reviewed comment-only afterimage93d5e4d; AST identical.",
+    "manifest": "rsp006-022-133-current-providers.json"
+  },
+  "dependency_review": {
+    "RSP-003": {
+      "scope_supported": true,
+      "basis": "Release benchmark explicitly reports KERNEL unmeasured, NATIVE_CLIENT Python adapter/authenticated IPC, ingress/installed unmeasured. Installed SLO reporting independently labels normalized HTTP ingress and registered argv. Timers and source callers match these labels; no clock is renamed as kernel.",
+      "dependency": "RSP001 current source scope accepted in root checkpoint3c84, independently referenced by root d9db decision."
+    },
+    "RSP-004_and_RSP-005": {
+      "scope_supported": true,
+      "basis": "Scripts-only isolated child explicitly constructs HookReviewEngine rather than accepting production off-mode availability. validate_semantic_result requires exact route, decision, model_output_action and reason_code for both benign and synthetic secret inputs. Both native warm/oneshot and Python cold/warm producers call it outside headline measurements; wrong route/availability/reason controls remain in exact provider7e96. No production src import of the benchmark oracle was found in the prior unchanged source review.",
+      "limit": "Source/oracle contract reconciliation; no new relative performance, paired distribution or installed qualification."
+    },
+    "RSP-013_and_RSP-014": {
+      "root_current_source_decision_tree": "d9dbf889d7eb33d7a738cba781580d72c85aa3f9",
+      "root_receipt_blob": "89f0170d5705b08c5f1fe1fc7599b3e46cbabc36",
+      "readback_reviewed": true,
+      "current_delta": "Nine of ten original graph providers unchanged. Sole codex_native_live_decision provider29163ff changes only two root transport-hint pops before original Rust-bound resume review; ordinary direct HookWorker dispatch, pool reuse and separate approval ownership remain the mapped graph. No installed continuation success is inferred."
+    },
+    "RSP-015": {
+      "result_tree": "7364f722f7184bcfd17210c20e3e90653185bf9e",
+      "result_blob": "54b22516b3b7bab8438f77264376a1f6ba3e309b",
+      "seven_integrated_images_exact": [
+        {
+          "path": "tests/fixtures/guard-hook-responses/auxiliary-events.v1.json",
+          "bytes": 29500,
+          "sha256": "719727e111913e3d9a9bd62aec6f4596cea2b25592f73ec88d86f0e914ff0380",
+          "git_blob": "b6e8d20f031e016cdade74a88a332b355f9b9848"
+        },
+        {
+          "path": "tests/fixtures/guard-hook-responses/current-cline-native.v1.json",
+          "bytes": 5363,
+          "sha256": "ee6a839795b2a2b2a1957fdfe79c8ba57240eeeb0dd2cf5c561298dec4917732",
+          "git_blob": "1128bef6c13c30df23d796d228b0265c515eae7a"
+        },
+        {
+          "path": "tests/fixtures/guard-hook-responses/registration-roster.v1.json",
+          "bytes": 17450,
+          "sha256": "7ba4a9a5c15f1b4657b4e919f9b3cdf3a04a05be19deacd7a2998a4e2af94e32",
+          "git_blob": "f10dbae7a795d69a90c1f3cfabcf37d43e759083"
+        },
+        {
+          "path": "tests/test_cline_nonblocking_response_fixtures.py",
+          "bytes": 5032,
+          "sha256": "158ed272ed8c064cf7b6c0972163274cb270762cc3809b327019b7dbb6960274",
+          "git_blob": "489b468b3b187a122c7cec5bc1031b86d9355b7f"
+        },
+        {
+          "path": "tests/test_hook_registration_response_roster.py",
+          "bytes": 6148,
+          "sha256": "a7cb586575710f706f0868597665f66664778368e10610ad5716e20ea2b24bcf",
+          "git_blob": "2de3b1e1b1c395107b222535ee5c6664f21eb816"
+        },
+        {
+          "path": "tests/test_kimi_adapter.py",
+          "bytes": 16583,
+          "sha256": "bd121887083384a0a916b0765cf1178758f0e2e53ef6ecbb18c342ef8eee30d2",
+          "git_blob": "6651226d0074eba16f8be689e621f1c73d8a0f42"
+        },
+        {
+          "path": "tests/test_registered_auxiliary_response_fixtures.py",
+          "bytes": 4066,
+          "sha256": "a95df6cb2b3e8a9dc3597c89c1d6ab926f417d300c754673226146a4c7e366e1",
+          "git_blob": "bbc1a9a061d67ad4274f3b8eed1e7f2048bbfe5b"
+        }
+      ],
+      "independent_xml_recount": {
+        "unique_total": 862,
+        "passed": 861,
+        "skipped": 1,
+        "failures": 0,
+        "errors": 0
+      },
+      "skip": "Existing real Win32 CommandLineToArgvW ABI control is platform-skipped on Linux; no Windows execution claimed.",
+      "basis": "Final source fixture inventory now covers original mode/posture, native miss, integrity/size, permission/lifecycle JSON and exit requirements with actual generated callbacks/CLI captures and declared modeled native edges. This closes the earlier assessment's missing full fixture inventory dependency within source-capture scope."
+    }
+  },
+  "recommendations": [
+    {
+      "task": "RSP-006",
+      "current_scoped_acceptance": "recommend accepted",
+      "dependencies": [
+        "RSP-003",
+        "RSP-005"
+      ],
+      "basis": "Warm native-client p95 <=20ms OR >=1.15x, cold <=150ms AND >=5x, ordinary adapter1000ms and direct c16 not_measured are reconciled in exact executable predicates/output/docs. The only stale comment is now integrated correctly. Original installed50/100/200 ceilings remain distinct.",
+      "remaining_own_scope_gap": null
+    },
+    {
+      "task": "RSP-022",
+      "current_scoped_acceptance": "recommend accepted",
+      "dependencies": [
+        "RSP-013",
+        "RSP-015"
+      ],
+      "basis": "Current synchronous hook_review_is_recording_only caller and injected HookConfigReadScope roots are explicitly walked. Reachable asynchronous_policy I/O is promoted to synchronous_posture_config; closed lexical-function/primitive grants leave new operations failing. The source/fixture dependencies are now bound to integrated bytes.",
+      "remaining_own_scope_gap": null
+    },
+    {
+      "task": "RSP-133",
+      "current_scoped_acceptance": "recommend accepted",
+      "dependencies": [
+        "RSP-006",
+        "RSP-022"
+      ],
+      "basis": "Combined unfiltered decision-critical-IO/rust-authority/native-wheel workflows and expanded performance/recovery/risk path selection cover native crates, wrappers, publishers, evidence/benchmark helpers and their required check dependencies. All six prior workflow providers remain byte-identical on current a5fdde.",
+      "remaining_own_scope_gap": null
+    }
+  ],
+  "limits": [
+    "Recommendations are new derived scoped acceptances; original archived DONE task objects/hashes remain untouched. Root owns acceptance-ledger decisions.",
+    "No workflow, test, native benchmark or installed workload executed by this reassessment; only source/AST/hash and retained XML parsing.",
+    "RSP133 selects checks; it does not assert all selected checks pass, eligible approval, installed coverage, release/signing or full performance/resource gates. RSP134/136/137/144 remain separately assessed.",
+    "No invented global500-line requirement or global performance dependency is attached to these original source/documentary tasks."
+  ]
+}

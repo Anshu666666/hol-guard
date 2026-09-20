@@ -1,0 +1,33 @@
+{
+  "schema": "pr2974.daemon-lazy-export-candidate.v1",
+  "source_base": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "source_base_tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+  "candidate_tree": "50e5ce00f8207df8f4a6b36c875a0fabf05bbcae",
+  "product_scope": "One package initializer; seven originally eager manager function exports become lazy. Existing runtime-repair, server and client lazy branches remain unchanged.",
+  "public_exports": ["ensure_guard_daemon", "guard_daemon_url_for_home", "load_guard_daemon_auth_token", "load_guard_daemon_url", "recover_guard_daemon_after_hook_failure", "repair_approval_center_locator", "schedule_guard_daemon_recovery"],
+  "count_correction": "The early proposal mistakenly called these eight manager exports. Exact original source has seven; repair_guard_daemon_runtime is already lazy from a different module and is unchanged.",
+  "source_cause": [
+    "Claude bridge imports claude_daemon_state, which imports daemon.discovery. Importing that submodule first executes daemon/__init__, which eagerly loads manager even though discovery uses only private-file and cryptographic helpers.",
+    "Manager imports mdm.file_lock and initializes the MDM package, including integrity/policy/supervisor exports. Actual child trace contains nested manager and MDM imports before bridge main.",
+    "Codex separately imports config for its approval timeout constant; changing that constant provider is not selected by this candidate."
+  ],
+  "measurement_basis": {"packet": "1a8e358473af98ff14260f7fe5f5a41965fee987", "run": 35526804206, "scope": "Original four serial Claude examples show inclusive manager import204.934-229.366ms inside bridge import. All values include profiler overhead and nested work; no predicted savings or current-a5fd timing is inferred."},
+  "behavior_preserved": [
+    "Each public function resolves to the original manager function object, cached without a forwarding wrapper; pickle and explicit from-import identity remain.",
+    "Reload clears only the seven formerly eager cached exports, so subsequent lookup obtains current manager values, including after manager implementation reload. Explicit package monkeypatches remain visible until reload.",
+    "Manager module lock/registry initialization remains before its13 implementation imports; those modules retain the same manager object. Python import serialization supplies concurrent first-access ownership.",
+    "All11 __all__ values remain unchanged and discoverable through dir. Existing non-manager lazy paths are unchanged.",
+    "No registration argv, transport, authentication, persistence, source selection, deadline, retry, policy or native route changes."
+  ],
+  "intentional_boundary_changes": [
+    "Manager dependencies and initialization now occur on the first manager-export or explicit manager-submodule import. Import failures/side effects are delayed to that access and original error objects remain visible; a failed access is not cached.",
+    "The seven names are absent from the package dictionary before first lookup. Static repository search found no direct vars/__dict__ consumer of imported daemon package public functions; arbitrary external dictionary introspection is not preserved by a lazy export.",
+    "The candidate does not change underlying manager singleton or import-lock ownership, but callers measuring import order may observe deferred initialization."
+  ],
+  "controls": [
+    "Four real fresh-process package/discovery/Claude-state/Claude-bridge imports reject any attempted manager or MDM import; exact original initializer fails all four.",
+    "Fresh-process real public/star import, pickle/cache identity, all11 exports/dir, unknown name, reload of actual manager implementation, explicit package patching, concurrent first lookup, unchanged ImportError identity/retry, and initialization-before13-implementation checks.",
+    "Existing eight-module daemon manager/API/authenticated bridge/resume regressions; Windows-only liveness/argv/handle tests remain explicit skips on Linux."
+  ],
+  "measurement_policy": "No additional timing workload or qualification run is part of this candidate. Independent source peer precedes root integration; any later measurement must declare exact selected source/artifact and retain original populations/ceilings."
+}

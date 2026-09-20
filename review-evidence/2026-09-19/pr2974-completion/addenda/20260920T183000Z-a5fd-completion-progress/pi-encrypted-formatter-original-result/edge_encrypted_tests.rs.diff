@@ -1,0 +1,418 @@
+--- before
++++ after
+@@ -21,13 +21,20 @@
+ impl Fixture {
+     pub(super) fn new(bytes: &[u8]) -> Self {
+         let root = std::env::temp_dir().join(format!(
+-            "hol-guard-hook-payload-test-{}-{}", std::process::id(),
++            "hol-guard-hook-payload-test-{}-{}",
++            std::process::id(),
+             FIXTURE_ID.fetch_add(1, Ordering::Relaxed)
+         ));
+         DirBuilder::new().mode(0o700).create(&root).unwrap();
+         let path = root.join("payload.json");
+-        OpenOptions::new().write(true).create_new(true).mode(0o600)
+-            .open(&path).unwrap().write_all(bytes).unwrap();
++        OpenOptions::new()
++            .write(true)
++            .create_new(true)
++            .mode(0o600)
++            .open(&path)
++            .unwrap()
++            .write_all(bytes)
++            .unwrap();
+         Self { root, path }
+     }
+ 
+@@ -39,7 +46,12 @@
+     fn encoded(bytes: &[u8], chars: usize, outer: &Value) -> (Self, Value) {
+         let mut ciphertext = bytes.to_vec();
+         let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &KEY).unwrap());
+-        key.seal_in_place_append_tag(Nonce::assume_unique_for_key(NONCE), Aad::empty(), &mut ciphertext).unwrap();
++        key.seal_in_place_append_tag(
++            Nonce::assume_unique_for_key(NONCE),
++            Aad::empty(),
++            &mut ciphertext,
++        )
++        .unwrap();
+         let fixture = Self::new(&ciphertext);
+         let mut payload = json!({"hook_event_name":"PostToolUse", "guard_payload_ref": {
+             "version":1, "path": fixture.path, "sha256":hex::encode(Sha256::digest(&ciphertext)),
+@@ -47,14 +59,18 @@
+             "nonce":"A".repeat(16), "serialized_chars":chars
+         }});
+         for name in ["tool_name", "config_path", "is_error"] {
+-            if let Some(value) = outer.get(name) { payload[name] = value.clone(); }
++            if let Some(value) = outer.get(name) {
++                payload[name] = value.clone();
++            }
+         }
+         (fixture, payload)
+     }
+ }
+ 
+ impl Drop for Fixture {
+-    fn drop(&mut self) { fs::remove_dir_all(&self.root).unwrap(); }
++    fn drop(&mut self) {
++        fs::remove_dir_all(&self.root).unwrap();
++    }
+ }
+ 
+ fn inner() -> Value {
+@@ -88,9 +104,17 @@
+ fn canonical_fixed_base64url_rejects_aliases_and_wrong_lengths() {
+     assert_eq!(fixed_base64url::<32>(&"A".repeat(43)).unwrap(), KEY);
+     assert_eq!(fixed_base64url::<12>(&"A".repeat(16)).unwrap(), NONCE);
+-    for value in ["A".repeat(42), "A".repeat(44), format!("{}=", "A".repeat(43)),
+-        format!("{}B", "A".repeat(42)), format!("{}+", "A".repeat(42))] {
+-        assert_eq!(fixed_base64url::<32>(&value).unwrap_err(), error("key_or_nonce_invalid"));
++    for value in [
++        "A".repeat(42),
++        "A".repeat(44),
++        format!("{}=", "A".repeat(43)),
++        format!("{}B", "A".repeat(42)),
++        format!("{}+", "A".repeat(42)),
++    ] {
++        assert_eq!(
++            fixed_base64url::<32>(&value).unwrap_err(),
++            error("key_or_nonce_invalid")
++        );
+     }
+ }
+ 
+@@ -100,10 +124,16 @@
+     let mut changed = fs::read(&fixture.path).unwrap();
+     changed[0] ^= 1;
+     fs::write(&fixture.path, &changed).unwrap();
+-    assert_eq!(hydrate(&payload, None).unwrap_err(), error("digest_mismatch"));
++    assert_eq!(
++        hydrate(&payload, None).unwrap_err(),
++        error("digest_mismatch")
++    );
+     let mut rebound = payload;
+     rebound["guard_payload_ref"]["sha256"] = json!(hex::encode(Sha256::digest(&changed)));
+-    assert_eq!(hydrate(&rebound, None).unwrap_err(), error("authentication_failed"));
++    assert_eq!(
++        hydrate(&rebound, None).unwrap_err(),
++        error("authentication_failed")
++    );
+ }
+ 
+ #[test]
+@@ -112,29 +142,44 @@
+         let (_fixture, mut payload) = Fixture::encrypted(&inner());
+         let old = payload["guard_payload_ref"][name].as_str().unwrap();
+         payload["guard_payload_ref"][name] = json!(format!("B{}", &old[1..]));
+-        assert_eq!(hydrate(&payload, None).unwrap_err(), error("authentication_failed"));
++        assert_eq!(
++            hydrate(&payload, None).unwrap_err(),
++            error("authentication_failed")
++        );
+     }
+     let (fixture, mut payload) = Fixture::encrypted(&inner());
+     let mut bytes = fs::read(&fixture.path).unwrap();
+     *bytes.last_mut().unwrap() ^= 1;
+     fs::write(&fixture.path, &bytes).unwrap();
+     payload["guard_payload_ref"]["sha256"] = json!(hex::encode(Sha256::digest(bytes)));
+-    assert_eq!(hydrate(&payload, None).unwrap_err(), error("authentication_failed"));
++    assert_eq!(
++        hydrate(&payload, None).unwrap_err(),
++        error("authentication_failed")
++    );
+ }
+ 
+ #[test]
+ fn reference_schema_types_and_closed_fields_are_checked() {
+     let (_fixture, payload) = Fixture::encrypted(&inner());
+-    for (name, value) in [("version",json!(2)), ("version",json!(true)), ("encoding",json!("raw")),
+-        ("encryption",json!("none")), ("unexpected",json!(1)), ("path",json!(null))] {
++    for (name, value) in [
++        ("version", json!(2)),
++        ("version", json!(true)),
++        ("encoding", json!("raw")),
++        ("encryption", json!("none")),
++        ("unexpected", json!(1)),
++        ("path", json!(null)),
++    ] {
+         let mut changed = payload.clone();
+         changed["guard_payload_ref"][name] = value;
+-        assert_eq!(hydrate(&changed, None).unwrap_err(), error("metadata_invalid"));
+-    }
+-    for value in [json!(0),json!(-1),json!(MAX_BYTES+1),json!(1.5)] {
++        assert_eq!(
++            hydrate(&changed, None).unwrap_err(),
++            error("metadata_invalid")
++        );
++    }
++    for value in [json!(0), json!(-1), json!(MAX_BYTES + 1), json!(1.5)] {
+         let mut changed = payload.clone();
+         changed["guard_payload_ref"]["serialized_chars"] = value;
+-        assert_eq!(hydrate(&changed,None).unwrap_err(),error("size_invalid"));
++        assert_eq!(hydrate(&changed, None).unwrap_err(), error("size_invalid"));
+     }
+ }
+ 
+@@ -142,32 +187,50 @@
+ fn authenticated_json_event_length_and_outer_copies_remain_bound() {
+     let (_fixture, payload) = Fixture::encrypted(&inner());
+     for name in ["tool_name", "config_path", "is_error"] {
+-        let mut changed = payload.clone(); changed[name] = json!("changed");
+-        assert_eq!(hydrate(&changed,None).unwrap_err(),error("metadata_mismatch"));
++        let mut changed = payload.clone();
++        changed[name] = json!("changed");
++        assert_eq!(
++            hydrate(&changed, None).unwrap_err(),
++            error("metadata_mismatch")
++        );
+     }
+     let mut wrong_length = payload;
+     wrong_length["guard_payload_ref"]["serialized_chars"] = json!(1);
+-    assert_eq!(hydrate(&wrong_length,None).unwrap_err(),error("size_mismatch"));
+-    for (value, expected) in [(json!([]),"inner_invalid"),
+-        (json!({"hook_event_name":"PreToolUse"}),"event_mismatch"),
+-        (json!({"hook_event_name":"PostToolUse","guard_payload_ref":{}}),"inner_invalid")] {
++    assert_eq!(
++        hydrate(&wrong_length, None).unwrap_err(),
++        error("size_mismatch")
++    );
++    for (value, expected) in [
++        (json!([]), "inner_invalid"),
++        (json!({"hook_event_name":"PreToolUse"}), "event_mismatch"),
++        (
++            json!({"hook_event_name":"PostToolUse","guard_payload_ref":{}}),
++            "inner_invalid",
++        ),
++    ] {
+         let (_fixture, wrapped) = Fixture::encrypted(&value);
+-        assert_eq!(hydrate(&wrapped,None).unwrap_err(),error(expected));
+-    }
+-    let (_fixture, invalid) = Fixture::encoded(&[0xff],1,&json!({}));
+-    assert_eq!(hydrate(&invalid,None).unwrap_err(),error("json_invalid"));
+-    let (_fixture, invalid) = Fixture::encoded(b"{",1,&json!({}));
+-    assert_eq!(hydrate(&invalid,None).unwrap_err(),error("json_invalid"));
++        assert_eq!(hydrate(&wrapped, None).unwrap_err(), error(expected));
++    }
++    let (_fixture, invalid) = Fixture::encoded(&[0xff], 1, &json!({}));
++    assert_eq!(hydrate(&invalid, None).unwrap_err(), error("json_invalid"));
++    let (_fixture, invalid) = Fixture::encoded(b"{", 1, &json!({}));
++    assert_eq!(hydrate(&invalid, None).unwrap_err(), error("json_invalid"));
+ }
+ 
+ #[test]
+ fn original_expired_deadline_wins_before_reference_access() {
+-    assert_eq!(hydrate(&json!({}),Some(Instant::now()-Duration::from_millis(1))).unwrap_err(),
+-        "native_request_deadline_exceeded");
+-}
+-
+-fn edge_result(payload: Value, harness: &str, cwd: Option<&Path>) -> (GuardHookEdgeResultV2,String) {
+-    let mut request = envelope("PostToolUse",payload);
++    assert_eq!(
++        hydrate(&json!({}), Some(Instant::now() - Duration::from_millis(1))).unwrap_err(),
++        "native_request_deadline_exceeded"
++    );
++}
++
++fn edge_result(
++    payload: Value,
++    harness: &str,
++    cwd: Option<&Path>,
++) -> (GuardHookEdgeResultV2, String) {
++    let mut request = envelope("PostToolUse", payload);
+     request.harness = harness.to_owned();
+     request.deadline_budget_ms = Some(1000);
+     if let Some(root) = cwd {
+@@ -176,19 +239,27 @@
+     }
+     let digest = crate::edge::request_identity(&request).unwrap().1;
+     let bytes = evaluate_isolated(request).unwrap();
+-    (serde_json::from_slice(&bytes).unwrap(),digest)
++    (serde_json::from_slice(&bytes).unwrap(), digest)
+ }
+ 
+ #[test]
+ fn both_producer_harnesses_scan_inner_output_but_receipt_commits_outer() {
+-    for harness in ["pi","omp"] {
++    for harness in ["pi", "omp"] {
+         let original = inner();
+-        let (_fixture,payload) = Fixture::encrypted(&original);
+-        let (result,digest) = edge_result(payload.clone(),harness,None);
+-        assert_eq!(result.result["reason_code"],"output_scan_allow");
+-        assert_eq!(result.receipt.request_digest,digest);
+-        assert_eq!(result.receipt.payload_kind,GuardHookPayloadKindV2::EncryptedPayloadRef);
+-        assert_eq!(result.receipt.reviewed_output_sha256,Some(hex::encode(Sha256::digest(original["tool_response"].as_str().unwrap().as_bytes()))));
++        let (_fixture, payload) = Fixture::encrypted(&original);
++        let (result, digest) = edge_result(payload.clone(), harness, None);
++        assert_eq!(result.result["reason_code"], "output_scan_allow");
++        assert_eq!(result.receipt.request_digest, digest);
++        assert_eq!(
++            result.receipt.payload_kind,
++            GuardHookPayloadKindV2::EncryptedPayloadRef
++        );
++        assert_eq!(
++            result.receipt.reviewed_output_sha256,
++            Some(hex::encode(Sha256::digest(
++                original["tool_response"].as_str().unwrap().as_bytes()
++            )))
++        );
+         let serialized = serde_json::to_string(&result).unwrap();
+         assert!(!serialized.contains(payload["guard_payload_ref"]["key"].as_str().unwrap()));
+         assert!(!serialized.contains("ordinary café"));
+@@ -199,42 +270,81 @@
+ #[test]
+ fn source_full_read_tail_secret_and_changed_source_oracles_remain_active() {
+     for (contents, replacement, reason) in [
+-        ("clean content\n".to_owned(),None,"source_full_scan_allow"),
+-        (format!("{}\n{}{}", "ordinary\n".repeat(10_000),["gh","p_"].concat(),"b".repeat(30)),None,"source_secret_match"),
+-        ("clean content\n".to_owned(),Some("changed"),"no_output_to_review")
++        ("clean content\n".to_owned(), None, "source_full_scan_allow"),
++        (
++            format!(
++                "{}\n{}{}",
++                "ordinary\n".repeat(10_000),
++                ["gh", "p_"].concat(),
++                "b".repeat(30)
++            ),
++            None,
++            "source_secret_match",
++        ),
++        (
++            "clean content\n".to_owned(),
++            Some("changed"),
++            "no_output_to_review",
++        ),
+     ] {
+-        let workspace=Fixture::new(b"placeholder");
+-        fs::write(workspace.root.join("source.txt"),replacement.unwrap_or(&contents)).unwrap();
+-        let value=json!({"hook_event_name":"PostToolUse","tool_name":"Read","is_error":false,
++        let workspace = Fixture::new(b"placeholder");
++        fs::write(
++            workspace.root.join("source.txt"),
++            replacement.unwrap_or(&contents),
++        )
++        .unwrap();
++        let value = json!({"hook_event_name":"PostToolUse","tool_name":"Read","is_error":false,
+             "tool_input":{"file_path":"source.txt"},"guard_source_ref":{"version":1,"path":"source.txt",
+                 "output_sha256":hex::encode(Sha256::digest(contents.as_bytes())),"output_chars":contents.chars().count()}});
+-        let (_cipher,payload)=Fixture::encrypted(&value);
+-        let (result,digest)=edge_result(payload,"pi",Some(&workspace.root));
+-        assert_eq!(result.result["reason_code"],reason);
+-        assert_eq!(result.receipt.request_digest,digest);
+-        assert_eq!(result.receipt.decision,if reason=="source_full_scan_allow" {"allow"} else {"deny"});
+-        assert_eq!(result.receipt.payload_kind,GuardHookPayloadKindV2::EncryptedPayloadRef);
++        let (_cipher, payload) = Fixture::encrypted(&value);
++        let (result, digest) = edge_result(payload, "pi", Some(&workspace.root));
++        assert_eq!(result.result["reason_code"], reason);
++        assert_eq!(result.receipt.request_digest, digest);
++        assert_eq!(
++            result.receipt.decision,
++            if reason == "source_full_scan_allow" {
++                "allow"
++            } else {
++                "deny"
++            }
++        );
++        assert_eq!(
++            result.receipt.payload_kind,
++            GuardHookPayloadKindV2::EncryptedPayloadRef
++        );
+     }
+ }
+ 
+ #[test]
+ fn pretool_and_other_harness_references_remain_unsupported() {
+-    let (_fixture,payload)=Fixture::encrypted(&inner());
+-    let mut pre = envelope("PreToolUse",payload.clone());
+-    pre.harness="pi".to_owned(); pre.raw_payload["hook_event_name"]=json!("PreToolUse");
+-    assert_eq!(evaluate_isolated(pre).unwrap_err(),"native_hook_encrypted_payload_unsupported");
+-    assert_eq!(evaluate_isolated(envelope("PostToolUse",payload)).unwrap_err(),"native_hook_encrypted_payload_unsupported");
++    let (_fixture, payload) = Fixture::encrypted(&inner());
++    let mut pre = envelope("PreToolUse", payload.clone());
++    pre.harness = "pi".to_owned();
++    pre.raw_payload["hook_event_name"] = json!("PreToolUse");
++    assert_eq!(
++        evaluate_isolated(pre).unwrap_err(),
++        "native_hook_encrypted_payload_unsupported"
++    );
++    assert_eq!(
++        evaluate_isolated(envelope("PostToolUse", payload)).unwrap_err(),
++        "native_hook_encrypted_payload_unsupported"
++    );
+ }
+ 
+ #[test]
+ fn authenticated_inner_uses_unchanged_policy_join_and_intrinsic_floor() {
+     use crate::policy_enforcement::AdmittedPolicySnapshot;
+-    use guard_policy_snapshot::{PolicySnapshotV3,POLICY_SNAPSHOT_SCHEMA,POLICY_SNAPSHOT_INTEGRITY_ALGORITHM};
+-    for mode in ["enforce","observe"] {
+-        for secret in [false,true] {
+-            let mut value=inner();
+-            if secret { value["tool_response"]=json!(format!("{}{}",["gh","p_"].concat(),"b".repeat(30))); }
+-            let (_fixture,wrapped)=Fixture::encrypted(&value);
++    use guard_policy_snapshot::{
++        PolicySnapshotV3, POLICY_SNAPSHOT_INTEGRITY_ALGORITHM, POLICY_SNAPSHOT_SCHEMA,
++    };
++    for mode in ["enforce", "observe"] {
++        for secret in [false, true] {
++            let mut value = inner();
++            if secret {
++                value["tool_response"] =
++                    json!(format!("{}{}", ["gh", "p_"].concat(), "b".repeat(30)));
++            }
++            let (_fixture, wrapped) = Fixture::encrypted(&value);
+             let snapshot:PolicySnapshotV3=serde_json::from_value(json!({
+                 "schema":POLICY_SNAPSHOT_SCHEMA,"version":3,"generation":1,
+                 "policy_digest":"a".repeat(64),"config_digest":"b".repeat(64),
+@@ -253,24 +363,38 @@
+             })).unwrap();
+             // This existing constructor compiles an already-admitted test snapshot;
+             // this control does not claim a signed publisher/install exchange.
+-            let admitted=AdmittedPolicySnapshot::new(snapshot).unwrap();
+-            let evaluate=|payload| {
+-                let mut request=envelope("PostToolUse",payload);
+-                request.harness="pi".to_owned(); request.deadline_budget_ms=Some(1000);
+-                let home=request.source.guard_home.clone();
+-                let digest=crate::edge::request_identity(&request).unwrap().1;
+-                let validated=crate::edge::validate_envelope_shape(request,Instant::now()).unwrap();
+-                let result=crate::edge::evaluate_validated_envelope(validated,Some(&admitted));
++            let admitted = AdmittedPolicySnapshot::new(snapshot).unwrap();
++            let evaluate = |payload| {
++                let mut request = envelope("PostToolUse", payload);
++                request.harness = "pi".to_owned();
++                request.deadline_budget_ms = Some(1000);
++                let home = request.source.guard_home.clone();
++                let digest = crate::edge::request_identity(&request).unwrap().1;
++                let validated =
++                    crate::edge::validate_envelope_shape(request, Instant::now()).unwrap();
++                let result = crate::edge::evaluate_validated_envelope(validated, Some(&admitted));
+                 fs::remove_dir_all(home).unwrap();
+-                let result:GuardHookEdgeResultV2=serde_json::from_slice(&result.unwrap()).unwrap();
+-                assert_eq!(result.receipt.request_digest,digest);
++                let result: GuardHookEdgeResultV2 =
++                    serde_json::from_slice(&result.unwrap()).unwrap();
++                assert_eq!(result.receipt.request_digest, digest);
+                 result
+             };
+-            let plain=evaluate(value); let encrypted=evaluate(wrapped);
+-            assert_eq!(encrypted.result,plain.result);
+-            assert_eq!(encrypted.receipt.policy_action,plain.receipt.policy_action);
+-            assert_eq!(encrypted.receipt.payload_kind,GuardHookPayloadKindV2::EncryptedPayloadRef);
+-            assert_eq!(encrypted.receipt.decision,if secret || mode=="enforce" {"deny"} else {"allow"});
++            let plain = evaluate(value);
++            let encrypted = evaluate(wrapped);
++            assert_eq!(encrypted.result, plain.result);
++            assert_eq!(encrypted.receipt.policy_action, plain.receipt.policy_action);
++            assert_eq!(
++                encrypted.receipt.payload_kind,
++                GuardHookPayloadKindV2::EncryptedPayloadRef
++            );
++            assert_eq!(
++                encrypted.receipt.decision,
++                if secret || mode == "enforce" {
++                    "deny"
++                } else {
++                    "allow"
++                }
++            );
+         }
+     }
+ }

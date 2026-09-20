@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="29" time="1.238" timestamp="2026-09-20T14:35:01.595013-03:00" hostname="localhost"><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_original_members_and_source_providers" time="0.117"><failure message="AssertionError: assert 35 == 33&#10; +  where 35 = len({'scripts/ci/priority_launcher_child/PLAN-CLARIFICATION-v2.json': {'bytes': 3096, 'sha256': 'e8179c81df0fd0dd34087e07a...ild/PLAN-v1.json': {'bytes': 11663, 'sha256': '5478d399a3545e5b7d7e8b3811f295a761d25c20c1aa6cc32c2f572d81bed24f'}, ...})">admitted = (Namespace(source=PosixPath('/tmp/pytest-of-root/pytest-362/test_exact_original_members_an0/source'), driver=PosixPath...tching_invocation_is_noop[interpreter]'}, ...]}, 'current_pr_source': 'f8f190a286159b46bf14a624a62ba52b5d2371a3', ...})
+
+    def test_exact_original_members_and_source_providers(admitted: tuple[argparse.Namespace, dict[str, Any]]) -&gt; None:
+        args, contract = admitted
+        result = MODULE._verify(args)
+        assert len(result["artifact_members"]) == 8
+        assert len(result["providers"]) == 44
+&gt;       assert len(result["observer_files"]) == 33
+E       AssertionError: assert 35 == 33
+E        +  where 35 = len({'scripts/ci/priority_launcher_child/PLAN-CLARIFICATION-v2.json': {'bytes': 3096, 'sha256': 'e8179c81df0fd0dd34087e07a...ild/PLAN-v1.json': {'bytes': 11663, 'sha256': '5478d399a3545e5b7d7e8b3811f295a761d25c20c1aa6cc32c2f572d81bed24f'}, ...})
+
+qualification-recovered/child-duplicate-driver/test_verify_inputs.py:106: AssertionError</failure></testcase><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_new_sole_parent_and_delta_are_required[wrong_parent]" time="0.062" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_new_sole_parent_and_delta_are_required[second_parent]" time="0.067" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_new_sole_parent_and_delta_are_required[extra_path]" time="0.066" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_cause_defining_provider37_is_required" time="0.075" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_observer_only_addition_scope_is_required[wrong_parent]" time="0.084" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_observer_only_addition_scope_is_required[changed_product]" time="0.084" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_observer_only_addition_scope_is_required[not_addition]" time="0.080" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_admission_rejects_changed_inputs[extra_member]" time="0.084" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_admission_rejects_changed_inputs[missing_member]" time="0.085" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_admission_rejects_changed_inputs[changed_member]" time="0.120" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_admission_rejects_changed_inputs[changed_provider]" time="0.072" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_exact_admission_rejects_changed_inputs[changed_observer]" time="0.074" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_duplicate_keys_refused" time="0.002" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_json_read_bound_refused" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_symlink_file_refused" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_existing_receipt_is_preserved" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[none]" time="0.009"><failure message="ValueError: child_input_controls_exact_order">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-362/test_hosted_control_gate_requi0')
+mutation = 'none'
+
+    @pytest.mark.parametrize("mutation", ["none", "missing", "reordered", "duplicate", "skip", "type_error"])
+    def test_hosted_control_gate_requires_exact_order_and_zero_errors(tmp_path, mutation):
+        import xml.etree.ElementTree as ET
+    
+        body = (WORKSPACE / "qualification-recovered/child-invocation-controls-final.xml").read_bytes()
+        root = ET.fromstring(body)
+        suite = next(root.iter("testsuite"))
+        rows = list(suite)
+        cases = [item for item in rows if item.tag == "testcase"]
+        if mutation == "missing":
+            suite.remove(cases[-1])
+        elif mutation == "reordered":
+            suite.remove(cases[0])
+            suite.append(cases[0])
+        elif mutation == "duplicate":
+            suite.remove(cases[-1])
+            suite.append(cases[0])
+        elif mutation == "skip":
+            ET.SubElement(cases[0], "skipped")
+        (tmp_path / "child-controls.xml").write_bytes(ET.tostring(root))
+        types = json.loads((WORKSPACE / "qualification-recovered/child-invocation-types-final.json").read_bytes())
+        if mutation == "type_error":
+            types["summary"]["errorCount"] = 1
+        (tmp_path / "child-types.json").write_text(json.dumps(types))
+        if mutation == "none":
+&gt;           result = MODULE._controls(tmp_path)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+qualification-recovered/child-duplicate-driver/test_verify_inputs.py:264: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+qualification-recovered/child-duplicate-driver/verify_inputs.py:238: in _controls
+    _require(actual == expected and len(rows) == 120, "controls_exact_order")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, label = 'controls_exact_order'
+
+    def _require(value: bool, label: str) -&gt; None:
+        if not value:
+&gt;           raise ValueError("child_input_" + label)
+E           ValueError: child_input_controls_exact_order
+
+qualification-recovered/child-duplicate-driver/verify_inputs.py:29: ValueError</failure></testcase><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[missing]" time="0.008" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[reordered]" time="0.007" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[duplicate]" time="0.007" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[skip]" time="0.006" /><testcase classname="qualification-recovered.child-duplicate-driver.test_verify_inputs" name="test_hosted_control_gate_requires_exact_order_and_zero_errors[type_error]" time="0.007" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_calls_existing_helper_once_with_unchanged_invocation" time="0.002" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_incomplete_preparation_is_rejected[identical_bytes]" time="0.002" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_incomplete_preparation_is_rejected[original_target_preserved]" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_incomplete_preparation_is_rejected[managed_integrity_validated]" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_wrong_invocation_refuses_before_helper" time="0.001" /><testcase classname="qualification-recovered.child-duplicate-driver.test_preparation" name="test_original_helper_error_survives_after_metadata_failure" time="0.001" /></testsuite></testsuites>

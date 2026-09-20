@@ -1,0 +1,86 @@
+{
+  "schema": "pr2974.first-admission-predicate-core-peer.v1",
+  "reviewer": "qualification_audit",
+  "source_tuple": "aa33c944510898791b5a0fa37ede05f57f6e5b24",
+  "manifest_blob": "df22f76eb486068f299b8fc6b2f0dc914ed0833d",
+  "prior_key_core_peer": "15ccd459ccec443036a4a614927afe75e48e0bb4",
+  "clear": true,
+  "verification": {
+    "all27_remote_blobs_equal_local_declared_images": true,
+    "all18_exact_source_providers_rehashed": true,
+    "controls": 108,
+    "unique_passing_no_skips": true,
+    "types": {
+      "filesAnalyzed": 23,
+      "errorCount": 0,
+      "warningCount": 1323,
+      "informationCount": 0,
+      "timeInSec": 1.837
+    },
+    "independent_test_or_workload_execution": false
+  },
+  "reviewed_delta": [
+    {
+      "path": "workspace-predicate-validation/predicate/bindings.py",
+      "bytes": 3219,
+      "sha256": "1b0872a59c36c6b16ac92c92554096c35eda49abda850e34e48071bdd58dd763",
+      "git_blob": "4c40f3c7283e50a1f8230f5620ab09def34bd41b"
+    },
+    {
+      "path": "workspace-predicate-validation/predicate/capture.py",
+      "bytes": 9758,
+      "sha256": "5156ffd796a8ebf0c3b96a23224288815c2c9edc9ad1c735e1ac974633093242",
+      "git_blob": "9d48ec12e861c8ff59df81afb1636c25e7b839de"
+    },
+    {
+      "path": "workspace-predicate-validation/predicate/hooks.py",
+      "bytes": 9575,
+      "sha256": "10d8119c178b7e1d351fba092a84a7e1b51941c7c1ca585ace32c40f9457c1a3",
+      "git_blob": "92ae1c9fd3fac417e4a224a603311cf88a54ed96"
+    },
+    {
+      "path": "workspace-predicate-validation/read_result.py",
+      "bytes": 10321,
+      "sha256": "092e961bfae1dbba2e043b05e95134d5e7e9c74649f56b352291d836cfa5b8f2",
+      "git_blob": "ea197cdb59683a85e803e2c8d7bfcb94d302ab16"
+    },
+    {
+      "path": "workspace-predicate-validation/reader_controls/test_replacement.py",
+      "bytes": 13627,
+      "sha256": "ffd21f38f8e06d3440f628eb1a2c26d6047ced0ba59208734fc796632e389212",
+      "git_blob": "7f794d1b1c77160445eda86e4adf923a63d8a1b1"
+    }
+  ],
+  "checks": [
+    "Actual original replace_service closes and verifies old publisher/service containment before its new factory; observer never invokes an additional readiness/getter/transport probe.",
+    "Factory forwarding remains exactly once with original arguments and returned object/exception. Adoption is restricted to owned service_replacement context and source-bound prepare_owned_publisher nested factory caller. Stored publisher/store identities authorize a single0-to1 handoff; later worker admission uses its stored matching publisher/store without getters.",
+    "Original contextmanager generator and its nested caller code are included through a bounded __wrapped__ chain with shape/depth refusal. The actual cold helper control covers this source boundary.",
+    "The new reader joins factory parent to the sole replacement, requires factory interval containment and successful0-to1 publisher state, then requires recovered await on instance1 after replacement. It still admits complete observation of an original failed cell without claiming original success.",
+    "If the original cell reports pass, existing first-fault evidence and recovered request proof must remain present and true; no successful ACK is fabricated.",
+    "Source wrappers retain fixed bounds and no new wait or lock held across original calls; projected state remains a lock-read interval, not an atomic internal commit timestamp."
+  ],
+  "resolved_finding": "Initial recovered_owner_join checked counts alone. Final source and six mutation negatives reject wrong parent,old/new owner,await owner and crossing factory/await intervals; successful failed-cell observation remains controlled.",
+  "evidence": {
+    "controls_v2": {
+      "bytes": 15813,
+      "sha256": "ab5bd0e2d3888c9b03b33adcb27a46eeee1e1855a4cfb6669f381b2daffa813e",
+      "git_blob": "a99c7a06d663ebc882d2ed62e4e94b18f9640a8c"
+    },
+    "types_v2": {
+      "bytes": 793622,
+      "sha256": "46a77d34fc121b7cf6655fa188f6a3ade9baee4f736efda9fe4328f2228c6db3",
+      "git_blob": "92c07d6082e48a1c0d998bcdd4dd63dfa01d125a"
+    },
+    "preflight": {
+      "bytes": 7383,
+      "sha256": "6d249a3ea9869fc4c68683e37465c764125b0ea1320b357d6a1af28e5696c63d",
+      "git_blob": "6740593ae2057ad97e2aec623b0a8d672a6b8fae"
+    }
+  },
+  "limits": [
+    "This is the narrow new ownership/reader core peer; root owns full operational binding and fresh-run guards.",
+    "Modeled ACK/fault controls are untimed source tests, not installed execution or actual first-admission reproduction.",
+    "The original400ms readiness acceptance,100-workspace cell and original workload/result semantics remain unchanged. No qualification or historical causal promotion.",
+    "Actual final types JSON has1323warnings, not the1313 in an earlier owner message."
+  ]
+}

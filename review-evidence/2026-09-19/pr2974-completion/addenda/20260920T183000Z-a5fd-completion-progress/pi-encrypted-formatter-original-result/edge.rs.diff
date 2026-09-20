@@ -1,0 +1,15 @@
+--- before
++++ after
+@@ -16,10 +16,10 @@
+ const MAX_EVENT_BYTES: usize = 64;
+ const MAX_PATH_BYTES: usize = 32 * 1024;
+ 
++#[path = "edge_encrypted.rs"]
++mod encrypted;
+ #[path = "edge_identity.rs"]
+ mod identity;
+-#[path = "edge_encrypted.rs"]
+-mod encrypted;
+ #[path = "edge_serialization.rs"]
+ mod serialization;
+ use identity::request_identity_for_event;

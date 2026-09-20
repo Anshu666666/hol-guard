@@ -1,0 +1,129 @@
+{
+  "schema": "hol-guard.first-admission-constructor-phase-plan.v1",
+  "state": "proposal_only_no_implementation_no_additional_run",
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "basis": {
+    "original_run": 35527492687,
+    "result_packet": "0ac1e46cbb289cd4d3a171de59edac4a4acfb501",
+    "peer": "52b5f3c7cbe3aab308dd02ee135a583135fb9310",
+    "fact": "The fault was offered; the first real accepted ACK was discarded and the second real ACK validated. The recovered caller missed the original 400 ms deadline. The complete original PublicationObserver coexists with incomplete new predicate snapshots.",
+    "observed_after_acceptance_ms": {
+      "first_invalid_ack": 266.867459,
+      "first_not_ready_observation": 267.005126,
+      "second_valid_ack": 363.508941,
+      "second_ready_observation": 390.78957,
+      "constructor_return_lower_bound": 431.311206,
+      "recovered_await_entry_lower_bound": 444.117496
+    },
+    "unassigned": "No leaf cost or Rust cause follows from inclusive constructor/wait spans. Same-process initial service already imported daemon/server/worker."
+  },
+  "question": "Which existing constructor region between the actual publisher wait and caller return consumes the remaining original readiness interval?",
+  "minimal_boundary_set": [
+    {
+      "label": "service_constructor",
+      "live_owner": "codex_plugin_scanner.guard.daemon.server_service.GuardDaemonServer.__init__",
+      "alias_proof": "server.GuardDaemonServer aliases this original class; replace_service invokes that class once for the new owned store."
+    },
+    {
+      "label": "http_constructor",
+      "live_owner": "codex_plugin_scanner.guard.daemon.server_http._GuardDaemonHTTPServer.__init__",
+      "alias_proof": "server._GuardDaemonHttpServer aliases this original class; original service constructor passes the same owned store."
+    },
+    {
+      "label": "request_services",
+      "live_owner": "codex_plugin_scanner.guard.daemon.server_http._GuardDaemonHTTPServer._initialize_request_services",
+      "alias_proof": "Actual bound method called once from the original HTTP constructor."
+    },
+    {
+      "label": "hook_worker_constructor",
+      "live_owner": "codex_plugin_scanner.guard.daemon.hook_worker.HookWorker.__init__",
+      "alias_proof": "Actual class imported locally in original request-services initializer; original store keyword identity required."
+    },
+    {
+      "label": "publisher_wait",
+      "live_owner": "codex_plugin_scanner.guard.native_policy_snapshot_publisher.NativePolicySnapshotPublisher.wait_until_ready",
+      "alias_proof": "Original HookWorker constructor's actual call only, after the original cold publisher factory return; same original2s startup cap and deadline argument."
+    }
+  ],
+  "scope_choices": [
+    "Wrap these five original methods, preserving class objects, bindings, args, kwargs, return None/bool and exception object identity. Do not replace class aliases with factory functions.",
+    "Only the declared replacement invocation and its exact source caller/method nesting may be recorded. Initial service/setup and unrelated objects are forwarded untouched.",
+    "At replacement constructor entry retain the actual store argument by object identity, tentatively; join it to the actual original cold factory result/store before admitting rows. Existing original service-replacement report must independently prove same home and old containment. Never add a new filesystem/home validation probe.",
+    "Reuse source-bound original replacement/factory/acceptance observation seams only to establish ownership and original absolute acceptance. Any instrumentation setup may not construct or start a publisher.",
+    "Use one constructor-thread ContextVar and finite stack IDs; no assumption that publisher background work inherits this context. Original PublicationObserver retains its own independent background observations.",
+    "Do not reuse the old all-predicate state sampler for these new phase rows. The new fixed phase schema records actual call entry/exit, original result class and exception enum only; it does not sample publisher private state, acquire its condition, or call a readiness getter. This is a separately declared observation scope, not admission of the old lost rows.",
+    "At most 32 phase rows and 64 KiB, with strict roles, ownership, nesting and a one-call census. Nonblocking recorder loss or an unknown site makes the observation incomplete. Do not claim individual resource/CPU attribution or timing without observer overhead."
+  ],
+  "derivable_regions": [
+    {
+      "region": "worker after publisher wait",
+      "bounds": "hook_worker_constructor.exit minus publisher_wait.exit",
+      "meaning": "Original post-wait return path plus recorder overhead; no native cost attribution."
+    },
+    {
+      "region": "request services after worker",
+      "bounds": "request_services.exit minus hook_worker_constructor.exit",
+      "meaning": "Original extension authority/runtime/API, local CLI, approval attention and two executor constructions as one inclusive group; individual leaves remain unknown."
+    },
+    {
+      "region": "HTTP constructor after services",
+      "bounds": "http_constructor.exit minus request_services.exit",
+      "meaning": "Original request_executors_stopped assignment and inherited HTTP/TCP constructor including bind/activation; no extra socket operation is added."
+    },
+    {
+      "region": "service constructor after HTTP",
+      "bounds": "service_constructor.exit minus http_constructor.exit",
+      "meaning": "Original lifecycle assignment, daemon_port lookup and remaining service attributes; do not call these getters again for observation."
+    }
+  ],
+  "clock_contract": [
+    "Phase clocks use one declared diagnostic origin captured before replacement entry. The original acceptance/deadline remain unchanged. Added entry/exit clock and recording work during the constructor is included in original elapsed time and is never subtracted; preparation before acceptance is separately identified.",
+    "Retain the actual existing lifecycle acceptance monotonic result once, without a second invocation. Translate origins only through this explicit captured reference; otherwise keep absolute values/relative origins separate.",
+    "Original LifecycleClocks and PublicationObserver remain unchanged. Ready-state observations are not exact internal commit times.",
+    "Keep the original cold 100 registrations, first accepted reply discard, real subsequent transport, 400 ms acceptance deadline and strict current-authority/readback/receipt predicates unchanged.",
+    "No new retry, pause, sleep, warmup, timeout extension, forced progress after setup failure, or additional native/HTTP/database/config/readiness operation."
+  ],
+  "original_execution_contract": {
+    "proposed_only": true,
+    "selected_scenarios": [
+      "first_admission_fault"
+    ],
+    "counts": [
+      100
+    ],
+    "original_main_calls_if_later_authorized": 1,
+    "other_cell_replays": 0,
+    "original_full_census": "Canonical five unique scenarios at counts 1, 10 and 100 remain 15 cells.",
+    "original_exit_and_partial_matrix": "Original main normally returns1 for this selected subset; retain full15=false and independently report cell/fault/receipt/phase admission. Original cell failure remains failure.",
+    "original_cleanup": "Original fault restoration, publication/receipt context cleanup, publisher containment, service/resident/client retirement remain unchanged; no full descendant cleanup inference."
+  },
+  "untimed_controls": [
+    "Exact source-code/alias registry rejects changed or unknown provider bytes before observation.",
+    "Actual nested original-style constructors demonstrate one invocation with identical args/kwargs and the same return or raised object; class identity and existing descriptors remain unchanged.",
+    "Cold factory/store identity join refuses repeated factory, wrong store, unrelated constructor, wrong parent, wrong thread and unmatched before/after owner.",
+    "A meaningful actual HookWorker/publisher fixture with existing modeled ACK transport proves no additional start, wait, getter or native call is introduced; no native workload is performed by this control.",
+    "Short-circuit/exception controls retain partial constructor paths and original cleanup, refusing invented downstream spans.",
+    "Finite loss/overflow/recorder failure/restore/export failure retain original operations/results and refuse observation completeness.",
+    "Strict reader admits only exact five roles/nesting and original fault/acceptance/results; rejects forged phase interval, duplicate row, wrong clock/owner, extra field and private value.",
+    "Preserve the canonical 15-cell matrix and first_admission_fault selection independently. The prior 110 reader controls are not silently relabeled as controls for the new collector."
+  ],
+  "artifact_identity": {
+    "retained_original_wheel_build": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+    "retained_original_wheel_sha256": "cd6a5ed8ac264da3aa1e9d8419b3e18183dba4f51e20bb26ac469bfd4c81dae6",
+    "source_comparison": "For this exact historical diagnostic, retain e440 and the authentic ad9d/be612 wheel identities separately. If a newer product candidate is selected, verify its own installed package/source binding; do not label execution of the old wheel as a current-product result."
+  },
+  "promotion_rules": [
+    "No implementation or execution is authorized by this plan artifact. Concrete source/control/operational peer and a separately agreed exact input tuple precede any additional attempt.",
+    "Phase evidence may identify a constructor region for subsequent source review. It does not authorize deleting initialization, weakening authority/currentness, moving acceptance or lengthening the 400 ms deadline.",
+    "No current product fix is selected from the old incomplete predicate report."
+  ],
+  "distinct_intel_gap": {
+    "plan_tree": "26489cd3458f40be920f2935b29ed0807102e2d3",
+    "plan_blob": "8654b251368d429328fd1418de8d6fdd9e2ffad2",
+    "peer_tree": "1e3edef7a6608f3d61547b6a665e02f4f61bdc6e",
+    "peer_blob": "ef6cbd6a78f9b568d6eae3784f7bb15252545509",
+    "scope": "Unimplemented original Mac Intel normal-SLO recovery proposal. Preserve separate cold 2 and active warmup 21 + warm 42 + size 24 prefix, then the original two recovery iterations; observe only recovery. Investigates prepare_workspace_policy returning None/native_policy_not_ready before scheduler admission after a contained stop, under the original 2 s/incoming HTTP deadline. It is separate from this 100-workspace 400 ms constructor requirement.",
+    "historical_failure": "The second recovery sample failed after 90 resident routes; no publisher last_error, current generation or deadline detail was retained. No cause or current fix is assigned."
+  }
+}

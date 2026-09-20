@@ -1,0 +1,108 @@
+{
+  "schema": "hol-guard.pi-encrypted-reference-ownership-trace.v1",
+  "product_source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "product_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "source_edits": 0,
+  "workload_runs": 0,
+  "original_acceptance": {
+    "prd_blob": "39d27bfa693117f8df3816d44b106921ca8efc94",
+    "sections": [
+      "11.E2: selected Pi/OMP source-reference flow",
+      "11.E4: preserve private source-reference rules and harness deadline"
+    ],
+    "task": "RSP-136 actual launchers, no-env auto, aliases, source refs, Watch, availability and approval flow from each selected package; dependencies135/015"
+  },
+  "observed": {
+    "run": 35522812444,
+    "packet": "aa0388ff0826ebe3e24bf4173e53685cd4ff1652",
+    "independent_assessment": "8ad7cb65e89b5aae8e09f3e8dcf0b2ece849be5d",
+    "per_platform": "5 Pi offered,2 pre receipts;3 encrypted source post calls return availability with no receipt; no OMP/Ollama offered",
+    "limit": "The original runtime leaf error was erased; no individual call is proven to have reached the unconditional Rust refusal rather than an earlier failure."
+  },
+  "chain": [
+    {
+      "owner": "generated Pi/OMP extension",
+      "paths": [
+        "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py",
+        "src/codex_plugin_scanner/guard/adapters/pi_extension_content_source.py"
+      ],
+      "behavior": "With enforceSizeCap and serialized payload >24,000 characters, writes AES-256-GCM ciphertext+tag under hol-guard-hook-payload-* temporary directory (requested0700), file0600; outer guard_payload_ref binds version/path/SHA256/key/nonce/json/encryption/serialized_chars. Outer event/tool metadata remains. Cleanup is retained until callback completion."
+    },
+    {
+      "owner": "authenticated HTTP admission",
+      "paths": [
+        "src/codex_plugin_scanner/guard/daemon/server_handler_hook_admission.py"
+      ],
+      "behavior": "Validates reference metadata/path and reserves MAX_HOOK_PAYLOAD_REFERENCE_BYTES=5MiB via hook_payload_reference_size; does not decrypt/hydrate. Keeps existing absolute deadline and scheduler admission."
+    },
+    {
+      "owner": "ordinary Python worker and client",
+      "paths": [
+        "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+        "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py",
+        "src/codex_plugin_scanner/guard/native_hook_edge.py"
+      ],
+      "behavior": "Auto/force raw native route forwards outer payload to the Rust envelope. No production hydration before that call; failure goes to availability rather than Python semantic evaluation."
+    },
+    {
+      "owner": "Rust edge",
+      "paths": [
+        "rust/crates/guard-runtime/src/edge.rs",
+        "rust/crates/guard-runtime/src/edge_identity.rs"
+      ],
+      "behavior": "Validates envelope/event/source and establishes original deadline and v3 request commitment. payload_kind classifies any object guard_payload_ref as EncryptedPayloadRef before source-ref classification. evaluate_validated_envelope unconditionally returns native_hook_encrypted_payload_unsupported for that kind."
+    },
+    {
+      "owner": "compatibility Python only",
+      "paths": [
+        "src/codex_plugin_scanner/guard/cli/commands_hook.py",
+        "src/codex_plugin_scanner/guard/cli/commands_support_hook_payload_loader.py",
+        "src/codex_plugin_scanner/guard/runtime/hook_payload_reference.py",
+        "src/codex_plugin_scanner/guard/runtime/local_temp_paths.py"
+      ],
+      "behavior": "Explicit compatibility/normalized CLI loader reads/decrypts local reference with bounded hash validation. Ordinary native raw route returns before compatibility loader. Ownership contract's hook_request_projection entry labels semantic hydration unreachable in ordinary production semantics."
+    },
+    {
+      "owner": "existing Rust source scan",
+      "paths": [
+        "rust/crates/guard-hook-core/src/lib.rs",
+        "rust/crates/guard-runtime/src/policy_enforcement.rs"
+      ],
+      "behavior": "Can validate inner guard_source_ref and full source text, keep intrinsic block stronger than policy, and emit reviewed_output_sha256; currently never receives the decrypted inner payload from the encrypted edge."
+    }
+  ],
+  "smallest_reviewable_product_design": {
+    "status": "proposed_only_not_implemented_or_approved_as_final_source",
+    "location": "Rust PostToolUse envelope evaluation, not Python hydration",
+    "requirements": [
+      "Keep encrypted PreToolUse unsupported unless a separate original accepted requirement justifies it; current actual Pi source cases are PostToolUse.",
+      "Admit a finite exact reference schema/encoding/version/AEAD key+nonce shape and the existing maximum ciphertext/plaintext sizes before allocation.",
+      "Retain trusted temporary-root/private-directory and file ownership/path rules, descriptor-bound no-follow/nonblocking regular-file reading, hash/identity checks, and terminal refusal on ambiguity. The existing generic secure-fs read is not by itself an owner-private encrypted-payload reader and lacks O_NONBLOCK at open; do not blindly reuse it.",
+      "Use already-locked ring AES_256_GCM with the original tag/no-AAD producer contract; only successful authentication yields inner JSON. Verify bounded inner object/event agreement, reject nested encrypted-reference recursion, and retain inner source/tool/correlation inputs.",
+      "Preserve the captured absolute deadline across file read, decryption, JSON bounds, inner source scan/policy join and receipt. Do not reset it after preparation.",
+      "Retain original outer request commitment and encrypted_payload_ref receipt kind; outer digest/hash/key/nonce commits the authenticated plaintext without silently changing v3 identity. Evaluate source/policy against actual decoded inner payload and retain outer attribution separately.",
+      "Continue exact native receipt validation and source output proof; never accept an availability allow as scanned output or relabel missing receipts."
+    ],
+    "available_primitives": [
+      "ring is an existing direct runtime workspace dependency",
+      "guard-secure-fs has descriptor/path identity and bounded-source patterns",
+      "Windows process crate has owner-private handle/DACL file readers",
+      "claude_launcher_pilot_files demonstrates POSIX no-follow/nonblocking private-file identity but is private pilot code, not an already-qualified reusable encrypted reader"
+    ],
+    "required_controls": [
+      "Actual generator-compatible AES-GCM known-answer success with inner source clean/tail-secret/changed-source verdicts",
+      "Corrupt ciphertext/hash/tag/key/nonce and invalid encoding/version/JSON",
+      "Symlink/hardlink/wrong owner/nonprivate directory or file, path replacement and FIFO nonblocking refusal",
+      "Oversize ciphertext/plaintext and nested-reference refusal",
+      "Outer/inner event mismatch and semantic/source/correlation mutation",
+      "Deadline expiry at read/decrypt/scan boundaries with unchanged absolute budget",
+      "Receipt outer kind/commitment plus actual inner reviewed-output hash",
+      "Supported platform-specific private-file behavior with no automatic portability claim"
+    ]
+  },
+  "limits": [
+    "This trace identifies a concrete missing native capability, not a completed implementation.",
+    "The separate fixture-authority and compact-ACK corrections must not mask this missing product path.",
+    "No old campaign reactivation, alias/Ollama replay or installed rerun occurred."
+  ]
+}

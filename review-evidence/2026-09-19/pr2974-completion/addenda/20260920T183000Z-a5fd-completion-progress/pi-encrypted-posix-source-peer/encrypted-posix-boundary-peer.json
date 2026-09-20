@@ -1,0 +1,64 @@
+{
+  "schema": "hol-guard.encrypted-posix-boundary-source-peer.v1",
+  "verdict": "clear_for_formatting_compilation_and_scoped_controls_not_execution_credit",
+  "source_tree": "5eb510908286f8b6db1cf83c8eb1785535c13165",
+  "base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "independent_scope": [
+    "POSIX held-directory and file descriptors, ownership/mode/type/link-count, bounded read and named/descriptor final fences",
+    "AES-256-GCM metadata/key/nonce/hash/tag/JSON/UTF-16 validation against exact Node producer",
+    "meaningful actual-filesystem draft controls and original Instant preservation"
+  ],
+  "bound_images": [
+    {
+      "path": "edge_encrypted.rs",
+      "blob": "09ec73d78de823229af1c6025ef8da3d6449bae0",
+      "bytes": 5509,
+      "sha256": "07f63c0b200f9489ebdfe4cbd0e0ecb35490631cb03f24e6b27a8e29fa347f71"
+    },
+    {
+      "path": "edge_encrypted_file.rs",
+      "blob": "ada5dccefa98351dd263d1b07651ab8d2082139e",
+      "bytes": 6533,
+      "sha256": "d433556f5fd0be7bae2d7f9aa6e3899040ad0acb0fc61f2c9662206c8753c656"
+    },
+    {
+      "path": "edge_encrypted_file_tests.rs",
+      "blob": "1cef7e7af39858f8273bec73da8b1151f68896bb",
+      "bytes": 6200,
+      "sha256": "1c14e2db3ef5d1277d96b68b8827a16b5a63ed1854bfbf7d529d140cf0d6cb62"
+    }
+  ],
+  "verification": {
+    "all_six_local_source_manifest_images_rehashed": true,
+    "three_boundary_blobs_fetched_and_exact_local_equal": true,
+    "native_compilation": false,
+    "tests_executed": 0,
+    "workloads_executed": 0
+  },
+  "resolved_findings": [
+    {
+      "finding": "Original draft canonicalized arbitrary supplied grandparent before checking trusted roots, admitting an arbitrary lexical alias to a temporary root.",
+      "resolution": "Final source first requires exact generated temporary-root location/platform alias shape, then canonicalizes; actual symlink alias negative demonstrates same reachable bytes are refused, genuine generated path remains accepted."
+    },
+    {
+      "finding": "The after-open deadline control admitted its real filesystem work with only100ms.",
+      "resolution": "The fixture now allows a bounded5s setup window, then consumes that same Instant before the actual read; no product or original workload deadline changes."
+    }
+  ],
+  "findings": [
+    "Root is resolved only within the allowed generated temporary-root layout, opened read-only/no-follow as held descriptor; private child and payload open relative to held descriptors with no-follow. No path reopen is used to read contents.",
+    "Private child and regular file must belong to current real UID, have no group/other mode access, and payload must have one link. Payload open is nonblocking before regular-file refusal, so FIFO test does not block waiting for a writer.",
+    "Bounded read caps actual bytes and checks the original Instant each iteration. Before/after file identity includes device,inode,UID,mode,link count,size,mtime,ctime; named entries are compared to held child/file descriptors after reading.",
+    "Return/error paths use owned File RAII. There is no permission repair, payload write, process launch, retry, or raw error/path export.",
+    "Fixed canonical unpadded base64url rejects length/alphabet/nonzero-padding aliases. Ciphertext SHA256 is checked before GCM authentication; generated Node cipher appends its16-byte authentication tag and uses empty AAD, matching ring open_in_place.",
+    "Authenticated plaintext must be UTF-8 JSON object with no recursive payload reference, correct PostToolUse event and exact tool_name/config_path/is_error copies, plus JavaScript UTF-16 code-unit count. Outer source identity/request digest remains the separate edge/receipt peer scope.",
+    "Deadline is an original absolute Instant throughout; metadata/read/crypto results do not restart it. Final hydrate and existing edge checks retain late-result refusal."
+  ],
+  "limits": [
+    "This is source review of unformatted/uncompiled Rust; hosted pinned compilation and declared positive/negative controls remain required.",
+    "Synchronous filesystem syscalls cannot be forcibly interrupted by these checks; no hard per-syscall cancellation or complete adversarial scheduling proof is claimed.",
+    "POSIX privacy here is UID/mode plus held descriptor/path identity. This does not establish additional platform ACL or remote-filesystem semantics beyond those checks.",
+    "Windows intentionally retains unsupported behavior; no Windows handle/ACL admission is claimed.",
+    "No new source reader can turn prior failed original Pi/OMP delivery into retrospective success. Actual installed original contract validation remains separate."
+  ]
+}

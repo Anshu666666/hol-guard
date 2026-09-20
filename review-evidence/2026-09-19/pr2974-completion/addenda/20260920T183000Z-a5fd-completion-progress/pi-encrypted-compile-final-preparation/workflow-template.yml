@@ -1,0 +1,100 @@
+name: Bound encrypted post-envelope native source controls
+on:
+  push:
+    branches: ["codex/pr2974-encrypted-post-source-20260920-v1"]
+permissions:
+  contents: read
+jobs:
+  linux-source-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PI_ENCRYPTED_CELL: linux-x64
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "__SOURCE_SHA__"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.14"
+      - name: Install exact native compiler and static tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+      - name: Bind candidate and run native source controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python driver/encrypted-validation/run.py --source candidate --driver driver \
+            --output "$RUNNER_TEMP/encrypted-source-output"
+      - name: Preserve all bounded original command streams and result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: encrypted-post-source-${{ env.PI_ENCRYPTED_CELL }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/encrypted-source-output/*.json
+            ${{ runner.temp }}/encrypted-source-output/*.stdout
+            ${{ runner.temp }}/encrypted-source-output/*.stderr
+  mac-source-controls:
+    needs: linux-source-admission
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: mac-arm
+            runner: macos-15
+          - cell: mac-intel
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      PI_ENCRYPTED_CELL: ${{ matrix.cell }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "__SOURCE_SHA__"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - name: Install exact native compiler and static tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+      - name: Bind candidate and run native source controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python driver/encrypted-validation/run.py --source candidate --driver driver \
+            --output "$RUNNER_TEMP/encrypted-source-output"
+      - name: Preserve all bounded original command streams and result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: encrypted-post-source-${{ env.PI_ENCRYPTED_CELL }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/encrypted-source-output/*.json
+            ${{ runner.temp }}/encrypted-source-output/*.stdout
+            ${{ runner.temp }}/encrypted-source-output/*.stderr

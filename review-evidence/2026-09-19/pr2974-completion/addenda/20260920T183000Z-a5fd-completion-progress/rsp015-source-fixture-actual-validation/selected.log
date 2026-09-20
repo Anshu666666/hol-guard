@@ -1,0 +1,1095 @@
+........................................................................ [  8%]
+........................................................................ [ 16%]
+........................................................................ [ 25%]
+........................................................................ [ 33%]
+........................................................................ [ 41%]
+...............FFFFFFFFFFFFFFF.......................................... [ 50%]
+........................................................................ [ 58%]
+....................................s................................... [ 66%]
+...................F.................................................... [ 75%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+......................................................................   [100%]
+=================================== FAILURES ===================================
+__________ test_bridge_authenticates_real_daemon_before_hook_delivery __________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_authenticates_real0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614de8d220>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e208d10>
+
+    def test_bridge_authenticates_real_daemon_before_hook_delivery(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        daemon = GuardDaemonServer(GuardStore(guard_home), host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:458: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e24bc50>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+______ test_bridge_real_daemon_uses_payload_cwd_for_bounded_compound_read ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_uses_p0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e20a810>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e2e5b20>
+
+    def test_bridge_real_daemon_uses_payload_cwd_for_bounded_compound_read(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        daemon = GuardDaemonServer(GuardStore(guard_home), host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:501: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e1a0830>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+________ test_bridge_real_daemon_emits_schema_exact_post_tool_response _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_emits_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e2e68d0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e20b8f0>
+
+    def test_bridge_real_daemon_emits_schema_exact_post_tool_response(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        daemon = GuardDaemonServer(GuardStore(guard_home), host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:538: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e162e70>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+______ test_bridge_real_daemon_prefers_payload_cwd_for_verified_git_fetch ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_prefer0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e3713a0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e371f40>
+
+    def test_bridge_real_daemon_prefers_payload_cwd_for_verified_git_fetch(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        configured_workspace = tmp_path / "projects"
+        repository = configured_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/example/project.git",
+            ],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:594: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e14a6c0>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e20b8f0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e12db20>
+command = 'git fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e12c680>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --no-pager fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e0f5220>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e0f4cb0>
+command = 'git --no-pager fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614de52a20>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -c credential.helper='!echo pwn' fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e18e690>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e18db20>
+command = "git -c credential.helper='!echo pwn' fetch origin main"
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614de91b80>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[/usr/bin/git fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614dec2ed0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614dec5b20>
+command = '/usr/bin/git fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e19d880>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git fetch origin main; true] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e12e9c0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e12d310>
+command = 'git fetch origin main; true'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e0f70b0>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[true && git fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e77dc40>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e77f1a0>
+command = 'true && git fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e77ec90>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[GIT_DIR=example/.git git fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e77d640>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e2e91f0>
+command = 'GIT_DIR=example/.git git fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e2eb110>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --exec-path=/tmp fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e77e630>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e77dc70>
+command = 'git --exec-path=/tmp fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614d8a0380>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -P fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review8')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614e2569c0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e257e00>
+command = 'git -P fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614e373350>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -p fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review9')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614dd1d070>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614e257440>
+command = 'git -p fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614d911cd0>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+_ test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --no-lazy-fetch fetch origin main] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_bridge_real_daemon_review10')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f614de530e0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f614d747dd0>
+command = 'git --no-lazy-fetch fetch origin main'
+
+    @pytest.mark.parametrize(
+        "command",
+        (
+            "git fetch origin main",
+            "git --no-pager fetch origin main",
+            "git -c credential.helper='!echo pwn' fetch origin main",
+            "/usr/bin/git fetch origin main",
+            "git fetch origin main; true",
+            "true && git fetch origin main",
+            "GIT_DIR=example/.git git fetch origin main",
+            "git --exec-path=/tmp fetch origin main",
+            "git -P fetch origin main",
+            "git -p fetch origin main",
+            "git --no-lazy-fetch fetch origin main",
+            "git --no-optional-locks fetch origin main",
+            "git --no-advice fetch origin main",
+            "git --literal-pathspecs fetch origin main",
+        ),
+    )
+    def test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+        command: str,
+    ) -> None:
+        guard_home = tmp_path / "guard-home"
+        session_workspace = tmp_path / "projects"
+        repository = session_workspace / "example"
+        repository.mkdir(parents=True)
+        _ = subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        _ = subprocess.run(
+            ["git", "-C", str(repository), "remote", "add", "origin", "https://github.com/example/project.git"],
+            check=True,
+        )
+        store = GuardStore(guard_home)
+        daemon = GuardDaemonServer(store, host="127.0.0.1", port=0)
+>       _start_daemon(daemon, monkeypatch)
+
+tests/test_codex_daemon_hook_bridge.py:664: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_codex_daemon_hook_bridge.py:42: in _start_daemon
+    daemon.start()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:50: in start
+    self._begin_service()
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:125: in _begin_service
+    _server.begin_service(self, publish_before_workers=publish_before_workers)
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:113: in begin_service
+    _begin_owned_service_with_store_recovery(
+src/codex_plugin_scanner/guard/daemon/service_lifecycle.py:41: in _begin_owned_service_with_store_recovery
+    server._begin_owned_service(
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:168: in _begin_owned_service
+    self._complete_owned_service_after_listen(generation, already_locked=True)
+src/codex_plugin_scanner/guard/daemon/server_service_lifecycle.py:179: in _complete_owned_service_after_listen
+    self._server.hook_process_runner.require_initial_capacity()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <codex_plugin_scanner.guard.daemon.hook_process_runner.HookProcessRunner object at 0x7f614d59bbf0>
+
+    def require_initial_capacity(self) -> None:
+        """Refuse readiness until one isolated worker completes its handshake."""
+    
+        if not self.wait_for_capacity(minimum_workers=1, timeout_seconds=_HOOK_PROCESS_READY_TIMEOUT_SECONDS):
+>           raise RuntimeError("initial isolated hook worker did not become ready")
+E           RuntimeError: initial isolated hook worker did not become ready
+E           Guard retained daemon ownership because partial-start containment was unconfirmed.
+
+src/codex_plugin_scanner/guard/daemon/hook_process_runner_lifecycle.py:62: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+.........................................................
+__________ TestKimiInstallUninstall.test_install_writes_managed_hooks __________
+
+self = <tests.test_kimi_adapter.TestKimiInstallUninstall object at 0x7f614e8c64b0>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-257/test_install_writes_managed_ho0')
+
+    def test_install_writes_managed_hooks(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path)
+        manifest = KimiHarnessAdapter().install(ctx)
+        assert manifest["harness"] == "kimi"
+        assert manifest["active"] is True
+        config_path = Path(str(manifest["config_path"]))
+        assert config_path.is_file()
+        text = config_path.read_text(encoding="utf-8")
+        assert "# BEGIN HOL GUARD MANAGED HOOKS" in text
+        assert "# END HOL GUARD MANAGED HOOKS" in text
+        assert 'event = "PreToolUse"' in text
+        assert 'event = "UserPromptSubmit"' in text
+>       assert "hol-guard" in text or "codex_plugin_scanner.cli" in text
+E       assert ('hol-guard' in '# BEGIN HOL GUARD MANAGED HOOKS\n# The hooks below are managed by HOL Guard. Do not edit manually.\n[[hooks]]\nevent ...\\":\\"kimi\\",\\"timeout_seconds\\":25,\\"frozen_launcher\\":false}\'"\ntimeout = 30\n# END HOL GUARD MANAGED HOOKS\n' or 'codex_plugin_scanner.cli' in '# BEGIN HOL GUARD MANAGED HOOKS\n# The hooks below are managed by HOL Guard. Do not edit manually.\n[[hooks]]\nevent ...\\":\\"kimi\\",\\"timeout_seconds\\":25,\\"frozen_launcher\\":false}\'"\ntimeout = 30\n# END HOL GUARD MANAGED HOOKS\n')
+
+tests/test_kimi_adapter.py:186: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_authenticates_real_daemon_before_hook_delivery
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_uses_payload_cwd_for_bounded_compound_read
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_emits_schema_exact_post_tool_response
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_prefers_payload_cwd_for_verified_git_fetch
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --no-pager fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -c credential.helper='!echo pwn' fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[/usr/bin/git fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git fetch origin main; true]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[true && git fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[GIT_DIR=example/.git git fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --exec-path=/tmp fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -P fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git -p fetch origin main]
+FAILED tests/test_codex_daemon_hook_bridge.py::test_bridge_real_daemon_reviews_git_fetch_without_repository_bound_cwd[git --no-lazy-fetch fetch origin main]
+FAILED tests/test_kimi_adapter.py::TestKimiInstallUninstall::test_install_writes_managed_hooks
+16 failed, 845 passed, 1 skipped in 841.90s (0:14:01)

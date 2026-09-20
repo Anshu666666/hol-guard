@@ -1,0 +1,117 @@
+{
+  "schema": "pr2974-cline-child-witness-source-peer.v1",
+  "reviewer": "partition_regression",
+  "verdict": "clear within the declared four-case instrumented functional scope",
+  "preparation_tree": "3c60640dac11469e1f80cfeadb1957ba21953506",
+  "source_tree": "585faee87e2b277529f3e2fb1af2e091f7db1a4e",
+  "parent": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "base_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "source_files": [
+    {
+      "bytes": 2075,
+      "git_blob": "90cbb0af0a45019ae81cfa6ea2c75ae04bb1019b",
+      "lines": 48,
+      "path": "scripts/ci/cline_witness/identity.py",
+      "sha256": "049d8679ef2ed3a78706f4736ac9497239aa416b9220aa06d63bd9a3018fa3b7"
+    },
+    {
+      "bytes": 7961,
+      "git_blob": "ab5cb6de808ca0f8dac6cf8c13cbdb9cf5089fab",
+      "lines": 185,
+      "path": "scripts/ci/cline_witness/installation.py",
+      "sha256": "0d9b6f1fb87aa2792bf58a07f0ae5623086a037b978b2ab8d7b8b01aaa4436ae"
+    },
+    {
+      "bytes": 4727,
+      "git_blob": "716855d225d222e2f2333c6ab78b1d243cacf092",
+      "lines": 111,
+      "path": "scripts/ci/cline_witness/invocation.py",
+      "sha256": "8356fc316a679ded012c2dd76746d9ee0fa09c6ff1a1136e9b4000c92e246488"
+    },
+    {
+      "bytes": 10970,
+      "git_blob": "53163da1442a2895f0e592ae375794877dc13032",
+      "lines": 288,
+      "path": "scripts/ci/cline_witness/profile_runtime.py",
+      "sha256": "06e2ddd558a2184e9a5589c81b66216ba4588c63165e33140b424f260bc6b38f"
+    },
+    {
+      "bytes": 13735,
+      "git_blob": "2d7c425e30ecda2a2e7a95fe02c8aa5782abede9",
+      "lines": 281,
+      "path": "scripts/ci/cline_witness/run.py",
+      "sha256": "7a5d4872338e77e85dc4d10d939ca81e59dbb6d8e4bade641ca79f0dd8f04f42"
+    },
+    {
+      "bytes": 5728,
+      "git_blob": "d8066a07ec4572354ce5238f390694c1c0bfec3e",
+      "lines": 139,
+      "path": "scripts/ci/cline_witness/validation.py",
+      "sha256": "1f1f06155f7fc17a9006890522c0238f668ce5e97e2f34a62724eaa1acb8109c"
+    },
+    {
+      "bytes": 22430,
+      "git_blob": "ce7c2a0864ebbe6ff0e84a648d012dcc245c16e3",
+      "lines": 547,
+      "path": "tests/test_cline_child_witness.py",
+      "sha256": "ccba17b7ec306cbe781e12fe66c36a37ac238e38137231ebbf403e662cb5de77"
+    },
+    {
+      "bytes": 3599,
+      "git_blob": "3688b4d1edc183ea729844bb226d0ca9287c4c67",
+      "lines": 96,
+      "path": "tests/test_cline_invocation.py",
+      "sha256": "3f8d0be9218bcaa1fd4f7f7038623831395143bea4042969999c4ef4488d8f45"
+    }
+  ],
+  "identity_review": {
+    "all_eight_local_bytes_match_manifest": true,
+    "all_eight_remote_blobs_read": true,
+    "complete_source_tree_independently_recomputed": true,
+    "exactly_eight_additions": true,
+    "all_base_leaves_preserved": true
+  },
+  "review": [
+    "Read all six source modules, both test modules, the original registered-surface invocation/delivery helper, original worker edge boundary and full semantic validator flow.",
+    "The original four Cline cases retain their registered shell slot, generated worker and attested CLI argv, existing payload, 10-second original process budget, setup, output, exit and complete native-result oracle. No product method is replaced and no daemon HTTP rerouting or repeated earlier25-case cohort is introduced.",
+    "The source-bound main-thread profile observes only the two original HookWorker code identities. It records each entry/return pair once, catches observer faults, restores the original profile, and rejects duplicates, overflow, replacement, missing/open frames. Return/unwind events alone do not imply a successful native return.",
+    "Entry and native/worker return snapshots are sealed at the selected boundary. Post-call validation first requires retained original objects to remain equal to those immutable snapshots; nested mutation fails before the oracle. The complete unchanged native-result oracle receives the actual original returned native object exactly once, after profile restoration.",
+    "The receipt is validated against the original edge and same worker acceptance; route accounting is child-local, exact native_resident once. Payload/source context and actual compact ACK generation/policy/runtime are checked. Rule digest is checked against separately admitted installed runtime identity, not invented as a compact ACK field.",
+    "Startup activation binds private venv, exact registered and observed argv hashes, isolation flags, captured parent-worker-child PID chain, sealed configuration and selected source images. The copied invocation helper is byte-identical to716855 and separately root-cleared by e9865fd5/e4219714; its metadata preflight is not a product workload or historical argv observation.",
+    "Observer export contains fixed labels, booleans, counts, PIDs and digests; raw payloads/results remain private and are released after validation. Original delivered streams remain handled by the existing privacy-preserving surface helper.",
+    "Installation owns exclusive sidecars and exact newly generated cache. Existing customizations are refused. Partial setup and safe post-process cleanup are bounded; a process-stage failure leaves sidecars retained and reports unknown containment rather than adding waits or claiming cleanup. Original exception identity is preserved.",
+    "Reviewed meaningful controls for actual isolated child startup and unrelated-command inertness, original exception/return identity, all original oracle field semantics, snapshot mutation, child/parent/argv/call and compact-policy joins, tamper/refusal, export/restoration loss and containment-deferred cleanup."
+  ],
+  "validation": {
+    "owner_controls": "........................................................................ [ 71%]\n.............................                                            [100%]\n101 passed in 2.41s",
+    "owner_types": {
+      "errorCount": 0,
+      "filesAnalyzed": 10,
+      "informationCount": 0,
+      "timeInSec": 1.489,
+      "warningCount": 656
+    },
+    "owner_ruff": "All checks passed!",
+    "owner_format": "10 files already formatted",
+    "peer_reran_tests": false,
+    "peer_imported_product": false,
+    "peer_executed_installed_workload": false
+  },
+  "related_peers": {
+    "common_invocation": {
+      "blob": "e4219714ae83e41119ef66473ef56cdf023af2c9",
+      "tree": "e9865fd50b3682cc9fe410e0d494969e9e690d05"
+    },
+    "narrow_findings": {
+      "tree": "168e5e5b6f9a5c3bfe90b50b760fc57a65901cfe",
+      "receipt": "6dd22fa186c050ccddcb762cef1c8f04e40b6eab"
+    }
+  },
+  "limits": [
+    "Source review only. Final concrete source/driver/sole-parent/ref and artifact admission need their operational readbacks before one authorized run.",
+    "101 owner controls are modeled/source-level evidence, not actual installed native correctness.",
+    "Instrumentation and metadata preflight perturb process/cache/timing; no clean latency, full external Cline host activation, Windows, or full RSP136 qualification credit.",
+    "The original three alias failures remain unknown child-native outcomes; this successor does not retroactively reclassify them.",
+    "The bounded source-controlled JSON snapshots serve these four owned inputs; this is not a general-purpose hostile arbitrary-object observation sandbox."
+  ]
+}

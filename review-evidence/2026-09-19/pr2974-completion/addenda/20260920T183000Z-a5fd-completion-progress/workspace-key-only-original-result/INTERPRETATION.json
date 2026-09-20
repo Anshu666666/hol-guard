@@ -1,0 +1,117 @@
+{
+  "initial_before_injection": {
+    "actual_force_call": 12,
+    "argument_branch": "non_database_metadata_force",
+    "await_id": 2,
+    "await_returned": true,
+    "current_snapshot_rows": [
+      10,
+      17,
+      27,
+      35
+    ],
+    "epoch_after_republish": 104,
+    "epoch_before": 103,
+    "first_final_fence_returns_none": 17,
+    "generation": 2,
+    "marker_not_called_in_that_branch": true,
+    "path_categories": [
+      "database",
+      "other_metadata"
+    ],
+    "scope": "initial setup before generated command-key fault; not the accepted recovered request boundary"
+  },
+  "limits": [
+    "This fresh key-only cell passed. It does not retrospectively identify the branch or root cause of the earlier incomplete key-rotation failure.",
+    "Rows are allocated at entry; their array order is not completion order. Use entry/exit/read intervals and parent IDs.",
+    "ACK/epoch/marker samples are read intervals. The marker is not written exclusively under the sampled condition, so no atomic mutation instant is claimed.",
+    "Publisher/dispatch/lifecycle/receipt origins differ; the absolute original clock is compared only with its actual original absolute deadline. Reported 330.940492 ms remains the producer metric.",
+    "All capture assertions are bounded to calls entered after dispatch activation. Observer overhead is included and no headline timing conclusion follows.",
+    "No additional policy getter, database query, filesystem probe, retry or original workload invocation was added to obtain the branch facts.",
+    "Same-generation republication does not authorize ignoring authority changes or replacing prepublication fingerprints with postpublication hints.",
+    "Full 15-cell, cross-platform and performance qualification remain false; the prior lost-hint cell was not replayed."
+  ],
+  "observed_outcome": {
+    "accept_to_ack_ms": 330.9404919999963,
+    "all_84_controls_passed": true,
+    "complete_capture_rows": 143,
+    "key_rotation_passed": true,
+    "lost": false,
+    "original_limit_ms": 400,
+    "overflow": false,
+    "scoped_types_errors": 0,
+    "scoped_types_warnings": 1133,
+    "unknown_sites": 0
+  },
+  "recovered": {
+    "acked_at_nested_compile_entry": false,
+    "acked_before": true,
+    "argument_branch": "database_paths_marker",
+    "await_id": 90,
+    "await_returned": true,
+    "compiled_row": 102,
+    "deadline_absolute_monotonic": 64.91361878000001,
+    "epoch_after_request": 110,
+    "epoch_during_invalidation": 109,
+    "final_current_none_row": 106,
+    "force_call": 100,
+    "initial_current_row": 98,
+    "initial_snapshot_generation": 3,
+    "marker_changed": true,
+    "original_marker_call": 101,
+    "path_categories": [
+      "control_marker",
+      "database",
+      "database",
+      "database"
+    ],
+    "post_republish_current_rows": [
+      116,
+      124
+    ],
+    "previous_marker": "30b175e078127b3420ac6c2d5ccbb148c8e12e9ff8c658e765d214601843d412",
+    "remaining_ms_at_original_check": 69.18486400000745,
+    "republish_request_row": 112,
+    "republish_row": 113,
+    "returned_marker": "99f52e692d546e8b0e72c6fe08259b819c3102ff7a2a330fbb0671ece4496255",
+    "same_full_snapshot_hash_before_after": "da844aff93f0dd5a7f12cbd417a5a0724c003986c36c65494093afe83b2364ae",
+    "successful_final_original_clock": 64.844433916,
+    "successful_final_original_clock_row": 125
+  },
+  "run_id": 35525001764,
+  "schema": "pr2974.key-predicate.interval-interpretation.v1",
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_bindings": [
+    {
+      "bytes": 22556,
+      "git_blob": "f9b14f6add30a34f95a4acd94f1429adccb7f415",
+      "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher_inputs.py",
+      "sha256": "9213fb01a14bed034ca26efc5c5f5d6237a46b0e27292de5079c31ed7b13398e"
+    },
+    {
+      "bytes": 62062,
+      "git_blob": "432188f77c4dcf67b4e28c99c4724354dfb39fe6",
+      "path": "src/codex_plugin_scanner/guard/store_extension_control_authority.py",
+      "sha256": "1ce3772c8fc2d83464992168e06eff4d20826da05d2d474e25c461b6e5329dbc"
+    },
+    {
+      "bytes": 11733,
+      "git_blob": "ada09527e01bfbdbb71dee593675f501ea95aa1d",
+      "path": "scripts/native_slo_workspace_lifecycle_faults.py",
+      "sha256": "9be7b3365f7e56b39a8cfd8703a28a40f8ac63e89a6dbbacc16e11f616b9e794"
+    },
+    {
+      "bytes": 16880,
+      "git_blob": "2228638126776fa992a482375f472acc9e9bc927",
+      "path": "scripts/native_slo_workspace_lifecycle.py",
+      "sha256": "0ad8d7b4ee33a885e11ea3dac11f5865a97b20edaa6c28aa2bda2268404b2baf"
+    }
+  ],
+  "source_explanation": [
+    "The marker reads only policy_integrity, managed_controls_active, managed_controls_revision and managed_controls_manifest_context sync_state rows, plus authenticated extension-control snapshot and latest transition fields. Ordinary receipt/activity rows are outside its SQL domain.",
+    "The original generated-key recovery deletes the key, then invokes the existing recover_extension_control_authority path. The missing-key branch resets and bootstraps a new authenticated revision-0 snapshot under a new key, changing marker-covered snapshot JSON/digest/MAC. An authority-domain marker change is therefore expected for this fixture; the opaque aggregate does not identify individual changed SQL fields.",
+    "The database-only path compares the already executed marker return with the stored prior marker, records the new marker, and withdraws ACK before compilation when they differ. The retained call arguments, original marker return and nested compilation state establish this branch in this run.",
+    "After that call returns true, the original publisher loop requests publication and republishes the same generation/full snapshot; a later fresh snapshot and original clock pass inside the existing deadline.",
+    "The earlier initial-setup refusal instead occurs in the non-database metadata force branch with one database and one other_metadata path. The fixed category/digest does not identify the exact metadata file; no private path was exported."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "schema": "pr2974.windows-sqlite-attribution-source-review.v1",
+  "review_scope": "Read-only source/requirement/test inventory; no imports, test execution, new workload or product change.",
+  "source": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "source_tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+  "source_binding": "All16 selected bodies are byte-identical across124472b8949805e0dd36052df6894b335d8b519d, e44008445630aad28ccc291ec234f55a14892e6d and current a5fd; the separately read working copies match. No full-repository equivalence is claimed.",
+  "prior_contract_report": {
+    "local_name": "windows-normal-e440/RECEIPT-BUSY-CONTRACT.json",
+    "sha256": "bbe5dbd3bdec45c5df9faac18ebbf8b8ae7cb8e060ab7d19cf70d195410b5247",
+    "bytes": 4220
+  },
+  "observations_retained": [
+    "Original e440 installed receipt phase reports21 accepted/processed, one sticky failed-record attempt, zero dropped/pending and receipt_persistence/sqlite_busy:1. Aggregate completion is not zero errors or an independent retained database query.",
+    "The separate journal diagnostic reports command_activity_persistence/sqlite_busy:1. Historical journal_checkpoint/os_permission:1 is a different operation and remains unexplained.",
+    "Current a5fd native default-auto reports21 accepted/processed and both diagnostic maps empty; this later observation does not resolve either historical cause.",
+    "The real Windows journal overlap control passed the original held-lock truncate path; it did not reproduce the proposed journal cause and justified no product fix."
+  ],
+  "requirement_findings": [
+    "RSP122 explicitly requires degraded counters; RSP123 separates accepted, journal-durable and DB-committed milestones; RSP124 requires uniqueness/per-record outcomes and unchanged durability; RSP126 explicitly exercises busy/crash recovery without rerunning decisions.",
+    "Those original fields support retaining recovered failed attempts. They do not require every transient storage attempt to succeed, and do not authorize clearing failures or relaxing the original installed qualification.",
+    "RSP131 mixed-load/resource and RSP140 error-path privacy obligations remain independent. The older native receipt contract explicitly scopes itself to non-Windows and cannot exclude Windows from this user task."
+  ],
+  "transaction_path": [
+    {
+      "boundary": "validation",
+      "source": "store_native_decision_receipts._record_native_decision_receipts",
+      "fact": "All receipts validate and nested command bindings detach before opening the connection. Batch maximum50. Empty input returns without a transaction."
+    },
+    {
+      "boundary": "connect_prepare",
+      "source": "StoreConnectionSchemaMixin._connect/_connect_once",
+      "fact": "Shared storage gate precedes sqlite3.connect and fixed connection PRAGMAs. The writer supplies original0.05s context override. A busy/locked exception before the context yields can take the existing single additional connection attempt; this is existing source behavior, not a newly proposed retry."
+    },
+    {
+      "boundary": "receipt_and_scope_writes",
+      "source": "store_native_decision_receipts._record_native_decision_receipts",
+      "fact": "The same connection executes receipt INSERT OR IGNORE and optional review-scope INSERT OR IGNORE. No acknowledgement tuple is returned until the connection context exits."
+    },
+    {
+      "boundary": "before_commit",
+      "source": "store_review_event_outbox_schema.finalize_review_event_payload_hashes",
+      "fact": "The connection then selects pending outbox hashes and updates them in the existing transaction. An exception here remains before successful commit."
+    },
+    {
+      "boundary": "commit",
+      "source": "store_review_event_outbox_schema.commit_review_event_transaction",
+      "fact": "The original connection.commit occurs before optional outbox-generation reads. A fixed failing commit traceback would identify an attempted commit, not prove its durable outcome."
+    },
+    {
+      "boundary": "post_commit",
+      "source": "store_review_event_wake_schema.review_event_outbox_generation",
+      "fact": "After successful commit, changed connections read schema/generation, then take in-memory notification, close, repair permissions and publish wake/listener notifications. A later exception can prevent acknowledgement after DB commit; idempotent retry is intentional."
+    },
+    {
+      "boundary": "writer_ack_checkpoint",
+      "source": "RuntimeHookEvidenceWriter._run/_record_committed/_checkpoint_completed_records",
+      "fact": "Writer marks processed only after a successful single acknowledgement or exact batch identity tuple. Failed records retain sticky counters and use unchanged retry scheduling. Journal checkpoint later retires durable pending; checkpoint failure is separately classified."
+    }
+  ],
+  "existing_meaningful_controls": [
+    {
+      "path": "tests/test_guard_evidence_failure_diagnostics.py",
+      "selector": "test_actual_sqlite_busy_retains_failure_after_idempotent_drain",
+      "coverage": "Real begin-immediate competing connection; receipt failure/pending before release; original timeout0.05 across attempts; eventual acknowledged drain/checkpoint; exactly one final DB row; sticky failure reconciliation."
+    },
+    {
+      "path": "tests/test_guard_evidence_failure_diagnostics.py",
+      "selector": "test_committed_receipt_retry_keeps_failure_and_never_counts_a_second_processed_receipt",
+      "coverage": "After-commit, missing single acknowledgement and missing batch acknowledgement cases retain failure while deduplicating actual persisted rows."
+    },
+    {
+      "path": "tests/test_guard_evidence_batching.py",
+      "selector": "test_late_sqlite_batch_failure_rolls_back_every_insert",
+      "coverage": "Actual SQLite trigger failure after first batch row leaves zero rows."
+    },
+    {
+      "path": "tests/test_guard_evidence_batching.py",
+      "selector": "test_process_death_recovers_only_journaled_receipts",
+      "coverage": "Separate real subprocess deaths at append/commit/checkpoint prove declared replay boundaries."
+    },
+    {
+      "path": "tests/test_guard_evidence_batching.py",
+      "selector": "test_checkpoint_retry_never_reinserts_or_redecides_receipts",
+      "coverage": "Checkpoint failure does not cause receipt reinsertion or a second decision."
+    }
+  ],
+  "conclusion": "No source-provable SQLite transaction correctness defect was found in this bounded read. Do not add a busy timeout, retry, connection rewrite or duplicate lock test merely because an original aggregate retains primary code5.",
+  "missing_attribution": [
+    "The classifier masks sqlite_errorcode to its primary8bits; original extended code is lost.",
+    "The aggregate does not distinguish connect, PRAGMA, either INSERT, outbox hash finalization, commit, post-commit read, or later cleanup/notification.",
+    "A callback count is not the failed-record unit count for a batch. Successful inner retry and final terminal error also differ.",
+    "No original lock-holder identity, SQL operation, per-record attempt join or final retained database is available. These cannot be reconstructed from a later successful run."
+  ],
+  "smallest_next_step_design_only": {
+    "status": "Proposed, not implemented or dispatched.",
+    "seam": "Wrap only the original evidence_failure_code alias at the writer terminal failure boundary, forward once and return the identical classification/result/exception. Scan the existing traceback through fixed reviewed code-object/line identities; no connection factory, sqlite method, SQL or retry behavior is replaced.",
+    "retained_fields": "Finite persistence phase/operation label, exact built-in exception class label, original integer sqlite_errorcode (or null), derived primary code, bounded occurrence count and terminal-versus-known-context status. Fixed source hashes identify the mapping; no message, filename, SQL, parameter, path, receipt identifier or frame locals retained.",
+    "bounds": "At most128 terminal observations and32 traceback frames per observation; nonblocking best-effort recording. Overflow, unknown site, recorder failure or restoration failure remain explicit loss/incomplete flags. No best-effort recording may replace the original failure.",
+    "counter_join": "Reconcile callback occurrences separately from existing failed-record counts. Any optional phase/unit bridge must call the original method exactly once with identical arguments and retain its return/exception; never infer one callback equals one receipt.",
+    "deterministic_control_plan": "Reuse the existing real receipt-busy drain control under the observer; add only attribution/forwarding/privacy/overflow/cleanup tests needed for the observer, including exact exception identity, unavailable3.10 code, an unregistered site, commit-vs-postcommit boundary, and a secondary cleanup failure kept distinct from its original context.",
+    "workload_selection": "After independent seam/operational peers, attach to an independently required future qualification population with original bytes/budgets. Do not replay the original default-auto corpus solely to seek a zero failure counter. No new workload is authorized by this report.",
+    "limitations": "Terminal traceback identifies the failing fixed operation only, not the competing lock holder or complete transaction timeline. An absent event is a nonreproduction. Commit outcome remains unknown unless an independently source-proven postcommit call is actually retained."
+  },
+  "independent_source_read": {
+    "reviewer": "native_runtime_audit",
+    "scope": "Read-only five exact source/test blobs independently matched; agreed commit-before-ack and intentional idempotent retry after postcommit failure; no defect found or controls executed.",
+    "receipt_status": "Agent message received; no separate durable peer body claimed in this report."
+  }
+}

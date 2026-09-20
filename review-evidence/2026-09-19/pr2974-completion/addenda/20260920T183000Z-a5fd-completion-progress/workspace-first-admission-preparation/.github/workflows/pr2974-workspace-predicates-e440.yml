@@ -1,0 +1,71 @@
+name: PR2974 exact installed Linux first-admission predicate diagnostic
+
+on:
+  push:
+    branches: [codex/pr2974-workspace-first-predicates-e440-20260920]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pr2974-workspace-predicates-e440-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-first-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout immutable validation driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: validation-driver
+          persist-credentials: false
+      - name: Checkout exact current source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: e44008445630aad28ccc291ec234f55a14892e6d
+          path: validation-source
+          persist-credentials: false
+      - name: Install original supported Linux Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.14"
+      - name: Install pinned dependency manager
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Download admitted native wheel from the cancelled normal job
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api --method GET /repos/hashgraph-online/hol-guard/actions/artifacts/10607167344/zip
+          > "$RUNNER_TEMP/pr2974-retained-linux-native.zip"
+      - name: Verify exact wheel and controls then invoke the original first-admission cell once
+        shell: bash
+        run: >-
+          python validation-driver/workspace-predicate-validation/run.py
+          --source "$GITHUB_WORKSPACE/validation-source"
+          --driver "$GITHUB_WORKSPACE/validation-driver"
+          --driver-sha "$GITHUB_SHA"
+          --manifest-sha256 "ebb34eb363f1093b218cffb8395bca264c103c1ad3cf51e7267d34f0006278a2"
+          --archive "$RUNNER_TEMP/pr2974-retained-linux-native.zip"
+          --output "$RUNNER_TEMP/pr2974-workspace-predicates-result"
+      - name: Preserve bounded original reports and command log projection
+        if: always()
+        shell: bash
+        run: >-
+          python validation-driver/workspace-predicate-validation/retain_results.py
+          --output "$RUNNER_TEMP/pr2974-workspace-predicates-result"
+      - name: Retain all original outputs and the admitted exact wheel
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-workspace-first-predicates-e440-linux
+          path: ${{ runner.temp }}/pr2974-workspace-predicates-result/**
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,25 @@
+{
+  "schema": "hol-guard.pi-fixture-compact-ack-independent-peer.v1",
+  "verdict": "clear_with_explicit_unresolved_encrypted_reference_scope",
+  "reviewed_source_tree": "fedbe65254a2b63937ae38c0b835a55a5efdab3f",
+  "preparation_tree": "ab9fec0cff22f5e6758a0e3f79eea66b3b6847ad",
+  "scope_blob": "f95d60f64b746de63df30d78b9b89de1a97fda8d",
+  "base_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "independent_checks": [
+    "Read all five corrected source/control bodies against imported 5fbbed beforeimages, plus existing generated-key authority helper and the complete receipt reconciliation.",
+    "Hash-verified all eight local afterimages against SCOPE, then independently rebuilt the full source tree from exact e440 with a private Git index; result is fedbe65254a2b63937ae38c0b835a55a5efdab3f. Remote preparation tree is untruncated and binds the same eight blobs.",
+    "Read owner original final JUnit:100 cases,0 failure/error/skip. No controls or native workload rerun by this peer."
+  ],
+  "findings": [
+    "The CI-only daemon helper adds false-default opt-in. Existing ordinary probe calls retain unenrolled behavior. Only the synthetic Pi/OMP runner explicitly provisions an empty generated-key authority before daemon construction, then independently reads its real returned store. Existing nonfresh authority is rejected rather than reset.",
+    "The receipt witness no longer asks compact current_snapshot_binding for an absent rule_digest. It still joins generation,policy_digest,runtime_identity,enforce mode and entry/exit compact ACK equality. Receipt rule_digest must separately equal the validated installed capability identity; malformed or mismatched admitted rule cannot be inferred from the receipt.",
+    "Existing entry-payload freeze, ciphertext/source attribution, exact full receipt versus SQLite readback, writer admission, active-call/extra-call/drain checks and original native forwarding remain unchanged.",
+    "New meaningful controls exercise real compact publisher API, actual disposable GuardStore authority/default unchanged ordering, nonfresh authority rejection, wrong or missing installed rule and compact ACK mutation. Native calls in receipt tests and daemon process construction in authority tests remain modeled."
+  ],
+  "limits": [
+    "No product runtime change, enrollment proof, installed native execution or acceptance promotion.",
+    "Actual prior run35522812444 and packetaa0388ff0826ebe3e24bf4173e53685cd4ff1652 remain failed and immutable.",
+    "This resolves two independent fixture/witness defects. Current encrypted guard_payload_ref native incompatibility remains unchanged and prevents claiming all ten selected callbacks pass.",
+    "No dispatch, branch/ref mutation or workload execution by this peer."
+  ]
+}

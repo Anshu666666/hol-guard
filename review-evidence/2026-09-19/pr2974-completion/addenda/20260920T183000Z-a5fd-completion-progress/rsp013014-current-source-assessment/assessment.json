@@ -1,0 +1,111 @@
+{
+  "schema": "hol-guard.rsp013-014-current-source-assessment.v1",
+  "source_commit": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "source_binding": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/server_http.py",
+      "bytes": 13836,
+      "sha256": "f76b9e4fa1e64692b0153ebdaaf82b996ecd5785c449178d3c3d44732280dcb1",
+      "git_blob": "9fcaf658c78cfbd5930bfba8bfa2084400674316"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/server_handler_hook_execution.py",
+      "bytes": 10114,
+      "sha256": "42ec3cdcd335bb1146ace3fdfb556fa26ea179599301920063446274ab99a3e2",
+      "git_blob": "cf005d8b1396639ee5689e4aeada5d6727c8f4f0"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+      "bytes": 19320,
+      "sha256": "cc68db1ab6d11d40f9c0c08781aa61592451997c5c4e8805029450ecee66f786",
+      "git_blob": "8f8fa18249101ab0edd0cb2b472b4458528967e9"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_worker_native.py",
+      "bytes": 20216,
+      "sha256": "a9c490155992d36830ad839a528cc1323b387b39124887470772e9bfcf044005",
+      "git_blob": "22e0ec99acd425d45b7936e3075bf8a2f3a6c29c"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_hook_edge.py",
+      "bytes": 11835,
+      "sha256": "1280c1a344562a2c664fb31fd3c6b4b9abbab3da7e5aae8589b3d6024d67373e",
+      "git_blob": "015638e94a6beaf6c8c8e87b9de5f4c2b5575c42"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_resident_client.py",
+      "bytes": 11035,
+      "sha256": "bdbc3fb444e28d4e679b21c160d39a9c67a6a989eab9a82123952fc0dcd87c0b",
+      "git_blob": "5a01f12386e6fc772a26ba862eecb4a0d8f6812d"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/native_mode.py",
+      "bytes": 2192,
+      "sha256": "dd67fbd283dda0069d86af77842421dce278c06ac73a3596336539b449176e17",
+      "git_blob": "545e059638123363a104b98c43633172bcdc796a"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_process_entrypoint.py",
+      "bytes": 13868,
+      "sha256": "f111a1d41df1d254da73f3ae311d5fcba007080b3c44760ae464a4b746cd63b5",
+      "git_blob": "946a204a965ba1097d20e62cf02abcef9a5dc696"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_process_worker.py",
+      "bytes": 5756,
+      "sha256": "183ff68b0bae96a528ff7b0b30328c0a6d5da67f37e2f68e74527b80f1a457ad",
+      "git_blob": "c977b9410d78b87fa3e599df81a9583a9ff09fac"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+      "bytes": 10581,
+      "sha256": "d3a9356754d1bde5c42143317871311ae57ed2fb9c318ee367ba7ebf7ca40d96",
+      "git_blob": "9c466fa3ef7baebaf9934e11b6f8bab04058632c"
+    }
+  ],
+  "original_objects_preserved": true,
+  "recommendations": [
+    {
+      "task": "RSP-013",
+      "original_acceptance": "Document direct in-daemon HookWorker dispatch and persistent helper reuse. Keep guardian/evaluator IPC only on verified compatibility/approval paths.",
+      "original_dependency": "RSP-001",
+      "dependency_state": "Root separately accepted current RSP001 with complete baseline/current census; no downstream015 dependency.",
+      "current_own_scope": "SUPPORTED for current documented call graph",
+      "evidence": [
+        "server_http._initialize_request_services creates one resident HookWorker using the daemon store/config scope.",
+        "server_handler_hook_execution._execute_runtime_hook selects the direct worker for native-required production; its _handle_runtime_hook_fast directly invokes worker.review_http_payload and returns native fail-safe for unavailable/unsupported/exception paths without invoking compatibility CLI.",
+        "HookWorker.review_http_payload auto/force dispatches _review_native_edge; ACKed policy and native_review_fence feed _review_native_edge_with_snapshot, then the exact raw-hook native wrapper.",
+        "native_hook_edge.review_raw_hook_native requires admitted runtime capabilities and positive ACK generation, encodes the exact envelope and calls native_resident_client_request under the same absolute deadline.",
+        "native_resident_client_request dispatches through _client_pool_for. The per-executable/state-root pool leases idle persistent streams, bounds concurrency, retires failed streams and generation-changed pools; ordinary dispatch does not construct a guardian/evaluator pair per request.",
+        "Compatibility CLI/process scheduler and guardian/evaluator remain explicit methods. The HTTP path can reach them only after the explicit Python oracle/compatibility surface; auto/force handles native absence mechanically. Codex live approval remains a distinct native revalidation/authority-consume path with separate unresolved installed continuation evidence."
+      ],
+      "not_claimed": [
+        "No ordinary-route latency, installed canary or all process lifecycle acceptance.",
+        "No claim that current Codex browser continuation succeeds; graph description preserves that separate failure."
+      ]
+    },
+    {
+      "task": "RSP-014",
+      "original_acceptance": "Map actual generated launcher, aliases, pre/post support and observation-only routes. Preflight detection must not count as installed enforcement.",
+      "original_dependency": "RSP-013",
+      "current_own_scope": "SUPPORTED by exact current 16-harness inventory and source aliases",
+      "evidence_tree": "56c22f3aa04d8f10d9ed1610aec172720686f9f2",
+      "evidence": [
+        "Inventory binds93 source/test bodies to exacte440 and all16 canonical aliases.",
+        "It separates generated registered events from merely normalized events; Cursor/Cline alternate surfaces, Copilot permission variants, Pi/OMP callback semantics, and Paseo provider delegation retain distinct ownership.",
+        "Gemini/Antigravity are explicitly discovery/preflight only; OpenClaw generated descriptor is not host activation; no synthetic installed-enforcement claim."
+      ],
+      "not_claimed": [
+        "RSP015 fixture validation is downstream and does not prevent this own inventory acceptance.",
+        "Inventory documents supported/limited routes and does not prove all installed runtime verdicts."
+      ]
+    }
+  ],
+  "execution_by_this_assessment": {
+    "source_reads": true,
+    "new_product_runs": 0,
+    "performance_runs": 0
+  },
+  "acceptance_authority": "Recommendation to root for derived current acceptance only; do not edit archived original task statuses/hashes."
+}

@@ -1,0 +1,135 @@
+--- before
++++ after
+@@ -37,7 +37,9 @@
+ mod enabled {
+     use serde::Serialize;
+     use std::io::Write;
+-    use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU16, AtomicU32, AtomicU64, AtomicU8, Ordering};
++    use std::sync::atomic::{
++        AtomicBool, AtomicI32, AtomicU16, AtomicU32, AtomicU64, AtomicU8, Ordering,
++    };
+ 
+     const MAX_CODE_BYTES: usize = 128;
+     const MAX_RECORD_BYTES: usize = 1024;
+@@ -113,7 +115,15 @@
+             owner_process_id: u32,
+             transport: &str,
+         ) {
+-            self.record_with_read(code, retryable_teardown, generation, process_id, owner_process_id, transport, None);
++            self.record_with_read(
++                code,
++                retryable_teardown,
++                generation,
++                process_id,
++                owner_process_id,
++                transport,
++                None,
++            );
+         }
+ 
+         fn record_with_read(
+@@ -162,8 +172,10 @@
+                 self.read_phase.store(read.phase, Ordering::Relaxed);
+                 self.read_origin.store(read.origin, Ordering::Relaxed);
+                 self.read_kind.store(read.kind, Ordering::Relaxed);
+-                self.read_raw_present.store(read.raw_os_error.is_some(), Ordering::Relaxed);
+-                self.read_raw.store(read.raw_os_error.unwrap_or(0), Ordering::Relaxed);
++                self.read_raw_present
++                    .store(read.raw_os_error.is_some(), Ordering::Relaxed);
++                self.read_raw
++                    .store(read.raw_os_error.unwrap_or(0), Ordering::Relaxed);
+             }
+             self.ready.store(true, Ordering::Release);
+         }
+@@ -198,10 +210,16 @@
+                 },
+                 state_fields_coherent: true,
+                 owner_liveness_observed: false,
+-                read_phase: crate::native_client_read_observation::PHASES[self.read_phase.load(Ordering::Relaxed) as usize],
+-                read_origin: crate::native_client_read_observation::ORIGINS[self.read_origin.load(Ordering::Relaxed) as usize],
+-                read_error_kind: crate::native_client_read_observation::KINDS[self.read_kind.load(Ordering::Relaxed) as usize],
+-                read_raw_os_error: self.read_raw_present.load(Ordering::Relaxed).then(|| self.read_raw.load(Ordering::Relaxed)),
++                read_phase: crate::native_client_read_observation::PHASES
++                    [self.read_phase.load(Ordering::Relaxed) as usize],
++                read_origin: crate::native_client_read_observation::ORIGINS
++                    [self.read_origin.load(Ordering::Relaxed) as usize],
++                read_error_kind: crate::native_client_read_observation::KINDS
++                    [self.read_kind.load(Ordering::Relaxed) as usize],
++                read_raw_os_error: self
++                    .read_raw_present
++                    .load(Ordering::Relaxed)
++                    .then(|| self.read_raw.load(Ordering::Relaxed)),
+             })
+         }
+     }
+@@ -237,7 +255,9 @@
+         state: &crate::resident_state::ResidentState,
+     ) {
+         let observed_read = crate::native_client_read_observation::take();
+-        let observed_read = (error.code == "native_client_frame_read_failed").then_some(observed_read).flatten();
++        let observed_read = (error.code == "native_client_frame_read_failed")
++            .then_some(observed_read)
++            .flatten();
+         OBSERVER.record_with_read(
+             &error.code,
+             error.retryable_teardown,
+@@ -326,15 +346,55 @@
+         #[test]
+         fn read_fields_are_published_with_the_claimed_state() {
+             let observer = Observer::new();
+-            observer.record_with_read("native_client_frame_read_failed", false, 42, 123, 456, "unix", Some(crate::native_client_read_observation::Failure { phase: 3, origin: 5, kind: 14, raw_os_error: Some(i32::MIN) }));
++            observer.record_with_read(
++                "native_client_frame_read_failed",
++                false,
++                42,
++                123,
++                456,
++                "unix",
++                Some(crate::native_client_read_observation::Failure {
++                    phase: 3,
++                    origin: 5,
++                    kind: 14,
++                    raw_os_error: Some(i32::MIN),
++                }),
++            );
+             let report = observer.snapshot().unwrap();
+-            assert_eq!((report.generation, report.process_id, report.owner_process_id), (42, 123, 456));
+-            assert_eq!((report.read_phase, report.read_origin, report.read_error_kind), ("response_body", "post_read_deadline", "timed_out"));
++            assert_eq!(
++                (
++                    report.generation,
++                    report.process_id,
++                    report.owner_process_id
++                ),
++                (42, 123, 456)
++            );
++            assert_eq!(
++                (
++                    report.read_phase,
++                    report.read_origin,
++                    report.read_error_kind
++                ),
++                ("response_body", "post_read_deadline", "timed_out")
++            );
+             assert_eq!(report.read_raw_os_error, Some(i32::MIN));
+             let mut bytes = Vec::new();
+             write_report(&mut bytes, &report);
+             assert!(!bytes.is_empty() && bytes.len() <= MAX_RECORD_BYTES + 20);
+-            observer.record_with_read("native_client_frame_read_failed", false, 99, 1, 2, "loopback", Some(crate::native_client_read_observation::Failure { phase: 1, origin: 4, kind: 4, raw_os_error: Some(54) }));
++            observer.record_with_read(
++                "native_client_frame_read_failed",
++                false,
++                99,
++                1,
++                2,
++                "loopback",
++                Some(crate::native_client_read_observation::Failure {
++                    phase: 1,
++                    origin: 4,
++                    kind: 4,
++                    raw_os_error: Some(54),
++                }),
++            );
+             let report = observer.snapshot().unwrap();
+             assert_eq!(report.generation, 42);
+             assert_eq!(report.read_phase, "response_body");

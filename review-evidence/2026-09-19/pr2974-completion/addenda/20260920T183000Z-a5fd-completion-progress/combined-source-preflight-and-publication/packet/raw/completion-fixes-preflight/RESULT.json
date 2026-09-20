@@ -1,0 +1,119 @@
+{
+  "source_unchanged": true,
+  "expected_tree": "ee96f00e4e97fe38ab9e6782b35f92ab0aebb5e9",
+  "tracked_files": 4795,
+  "imports": {
+    "decision": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+    "native_edge": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src/codex_plugin_scanner/guard/native_hook_edge.py"
+  },
+  "ordered_case_membership_matches_owner": true,
+  "cases": 65,
+  "types_summary": {
+    "filesAnalyzed": 1434,
+    "errorCount": 0,
+    "warningCount": 30181,
+    "informationCount": 0,
+    "timeInSec": 50.438
+  },
+  "checks": [
+    {
+      "name": "source-imports",
+      "argv": [
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "-c",
+        "import json; import codex_plugin_scanner.guard.daemon.codex_native_live_decision as d; import codex_plugin_scanner.guard.native_hook_edge as n; print(json.dumps({'decision':d.__file__,'native_edge':n.__file__}))"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 1.7341341972351074
+    },
+    {
+      "name": "codex-regression",
+      "argv": [
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_native_codex_transport_identity.py",
+        "tests/test_native_codex_live_continuation.py",
+        "tests/test_native_codex_continuation_binding.py",
+        "-q",
+        "--junitxml=/workspace/scratch/745337b67ff9/root-checkpoint/completion-fixes-preflight/codex-regression.xml"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 15.395535945892334
+    },
+    {
+      "name": "ruff",
+      "argv": [
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "tests/test_cline_nonblocking_response_fixtures.py",
+        "tests/test_hook_registration_response_roster.py",
+        "tests/test_kimi_adapter.py",
+        "tests/test_registered_auxiliary_response_fixtures.py",
+        "scripts/native_slo_contract.py",
+        "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+        "tests/test_native_codex_transport_identity.py"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 0.044623613357543945
+    },
+    {
+      "name": "format",
+      "argv": [
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "tests/test_cline_nonblocking_response_fixtures.py",
+        "tests/test_hook_registration_response_roster.py",
+        "tests/test_kimi_adapter.py",
+        "tests/test_registered_auxiliary_response_fixtures.py",
+        "scripts/native_slo_contract.py",
+        "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+        "tests/test_native_codex_transport_identity.py"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 0.047971248626708984
+    },
+    {
+      "name": "types-full-src",
+      "argv": [
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "-m",
+        "basedpyright",
+        "--pythonpath",
+        "/workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python",
+        "--outputjson"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 52.209856271743774
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "cwd": "/workspace/scratch/745337b67ff9/completion-fixes-e440",
+      "pythonpath": "/workspace/scratch/745337b67ff9/completion-fixes-e440/src",
+      "exit_code": 0,
+      "elapsed_seconds": 0.009475231170654297
+    }
+  ],
+  "all_checks_pass": true
+}

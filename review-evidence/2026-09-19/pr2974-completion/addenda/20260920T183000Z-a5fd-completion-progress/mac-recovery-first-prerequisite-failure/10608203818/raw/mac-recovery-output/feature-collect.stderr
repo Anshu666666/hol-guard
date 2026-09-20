@@ -1,0 +1,27 @@
+   Compiling hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/candidate/rust/crates/guard-runtime)
+error[E0308]: mismatched types
+   --> crates/guard-runtime/src/native_client_failure_observation.rs:425:17
+    |
+425 |                 &error
+    |                 ^^^^^^ expected `ResidentClientError`, found `&ResidentClientError`
+    |
+help: consider removing the borrow
+    |
+425 -                 &error
+425 +                 error
+    |
+
+error[E0308]: mismatched types
+   --> crates/guard-runtime/src/native_client_failure_observation.rs:429:17
+    |
+429 |                 &state
+    |                 ^^^^^^ expected `ResidentState`, found `&ResidentState`
+    |
+help: consider removing the borrow
+    |
+429 -                 &state
+429 +                 state
+    |
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `hol-guard-runtime` (bin "hol-guard-runtime" test) due to 2 previous errors

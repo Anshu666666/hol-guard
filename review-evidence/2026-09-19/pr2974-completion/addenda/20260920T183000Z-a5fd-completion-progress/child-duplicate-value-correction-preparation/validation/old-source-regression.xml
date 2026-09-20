@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="1.242" timestamp="2026-09-20T14:31:41.113344-03:00" hostname="localhost"><testcase classname="tests.test_priority_child_registration" name="test_actual_generated_pre_post_registrations_admit_one_original_value[PreToolUse-claude-code]" time="0.110"><failure message="AssertionError: assert ([] == ['start']&#10;  &#10;  Right contains one more item: 'start'&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-352/test_actual_generated_pre_post0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8f20b28a40&gt;
+harness = 'claude-code', event = 'PreToolUse'
+
+    @pytest.mark.parametrize("harness", ("claude-code", "codex"))
+    @pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
+    def test_actual_generated_pre_post_registrations_admit_one_original_value(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: str, event: str
+    ) -&gt; None:
+        # These existing fixtures call both real adapters and read back their actual
+        # registrations. The owned Codex executable fixture is never launched.
+        session = cast(Any, registration_controls.session).__wrapped__(tmp_path)
+        registrations = cast(Any, registration_controls.registrations).__wrapped__(session, monkeypatch)
+        assert len(registrations) == 4
+        argv = [list(row.argv) for row in registrations]
+        assert len({tuple(value) for value in argv}) == 2
+        selected = next(row for row in registrations if (row.harness, row.event) == (harness, event))
+        selected_argv = list(selected.argv)
+        assert argv.count(selected_argv) == 2
+        config = {
+            "argv": argv,
+            "observed_argv0": selected_argv[0],
+            "executable": selected_argv[0],
+            "parent_pid": os.getppid(),
+            "python": list(sys.version_info[:3]),
+        }
+        path = tmp_path / "profile-config.json"
+        body = profile_runtime.encoded(config)
+        path.write_bytes(body)
+        starts: list[str] = []
+        admitted: list[dict[str, Any]] = []
+    
+        def profile(value: dict[str, Any]) -&gt; Any:
+            admitted.append(value)
+            return SimpleNamespace(start=lambda: starts.append("start"), finish=lambda: None)
+    
+        with monkeypatch.context() as scoped:
+            scoped.setattr(profile_runtime, "Profile", profile)
+            scoped.setattr(profile_runtime.atexit, "register", lambda *_args: None)
+            scoped.setattr(sys, "executable", selected_argv[0])
+            scoped.setattr(sys, "orig_argv", selected_argv)
+            scoped.setattr(sys, "flags", SimpleNamespace(isolated="-I" in selected_argv[1:2]))
+            profile_runtime.activate(str(path), hashlib.sha256(body).hexdigest(), 1, ())
+&gt;       assert starts == ["start"] and len(admitted) == 1
+E       AssertionError: assert ([] == ['start']
+E         
+E         Right contains one more item: 'start'
+E         Use -v to get more diff)
+
+tests/test_priority_child_registration.py:57: AssertionError</failure></testcase><testcase classname="tests.test_priority_child_registration" name="test_actual_generated_pre_post_registrations_admit_one_original_value[PreToolUse-codex]" time="0.119"><failure message="AssertionError: assert ([] == ['start']&#10;  &#10;  Right contains one more item: 'start'&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-352/test_actual_generated_pre_post1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8f20b28ad0&gt;
+harness = 'codex', event = 'PreToolUse'
+
+    @pytest.mark.parametrize("harness", ("claude-code", "codex"))
+    @pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
+    def test_actual_generated_pre_post_registrations_admit_one_original_value(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: str, event: str
+    ) -&gt; None:
+        # These existing fixtures call both real adapters and read back their actual
+        # registrations. The owned Codex executable fixture is never launched.
+        session = cast(Any, registration_controls.session).__wrapped__(tmp_path)
+        registrations = cast(Any, registration_controls.registrations).__wrapped__(session, monkeypatch)
+        assert len(registrations) == 4
+        argv = [list(row.argv) for row in registrations]
+        assert len({tuple(value) for value in argv}) == 2
+        selected = next(row for row in registrations if (row.harness, row.event) == (harness, event))
+        selected_argv = list(selected.argv)
+        assert argv.count(selected_argv) == 2
+        config = {
+            "argv": argv,
+            "observed_argv0": selected_argv[0],
+            "executable": selected_argv[0],
+            "parent_pid": os.getppid(),
+            "python": list(sys.version_info[:3]),
+        }
+        path = tmp_path / "profile-config.json"
+        body = profile_runtime.encoded(config)
+        path.write_bytes(body)
+        starts: list[str] = []
+        admitted: list[dict[str, Any]] = []
+    
+        def profile(value: dict[str, Any]) -&gt; Any:
+            admitted.append(value)
+            return SimpleNamespace(start=lambda: starts.append("start"), finish=lambda: None)
+    
+        with monkeypatch.context() as scoped:
+            scoped.setattr(profile_runtime, "Profile", profile)
+            scoped.setattr(profile_runtime.atexit, "register", lambda *_args: None)
+            scoped.setattr(sys, "executable", selected_argv[0])
+            scoped.setattr(sys, "orig_argv", selected_argv)
+            scoped.setattr(sys, "flags", SimpleNamespace(isolated="-I" in selected_argv[1:2]))
+            profile_runtime.activate(str(path), hashlib.sha256(body).hexdigest(), 1, ())
+&gt;       assert starts == ["start"] and len(admitted) == 1
+E       AssertionError: assert ([] == ['start']
+E         
+E         Right contains one more item: 'start'
+E         Use -v to get more diff)
+
+tests/test_priority_child_registration.py:57: AssertionError</failure></testcase><testcase classname="tests.test_priority_child_registration" name="test_actual_generated_pre_post_registrations_admit_one_original_value[PostToolUse-claude-code]" time="0.113"><failure message="AssertionError: assert ([] == ['start']&#10;  &#10;  Right contains one more item: 'start'&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-352/test_actual_generated_pre_post2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8f20de9700&gt;
+harness = 'claude-code', event = 'PostToolUse'
+
+    @pytest.mark.parametrize("harness", ("claude-code", "codex"))
+    @pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
+    def test_actual_generated_pre_post_registrations_admit_one_original_value(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: str, event: str
+    ) -&gt; None:
+        # These existing fixtures call both real adapters and read back their actual
+        # registrations. The owned Codex executable fixture is never launched.
+        session = cast(Any, registration_controls.session).__wrapped__(tmp_path)
+        registrations = cast(Any, registration_controls.registrations).__wrapped__(session, monkeypatch)
+        assert len(registrations) == 4
+        argv = [list(row.argv) for row in registrations]
+        assert len({tuple(value) for value in argv}) == 2
+        selected = next(row for row in registrations if (row.harness, row.event) == (harness, event))
+        selected_argv = list(selected.argv)
+        assert argv.count(selected_argv) == 2
+        config = {
+            "argv": argv,
+            "observed_argv0": selected_argv[0],
+            "executable": selected_argv[0],
+            "parent_pid": os.getppid(),
+            "python": list(sys.version_info[:3]),
+        }
+        path = tmp_path / "profile-config.json"
+        body = profile_runtime.encoded(config)
+        path.write_bytes(body)
+        starts: list[str] = []
+        admitted: list[dict[str, Any]] = []
+    
+        def profile(value: dict[str, Any]) -&gt; Any:
+            admitted.append(value)
+            return SimpleNamespace(start=lambda: starts.append("start"), finish=lambda: None)
+    
+        with monkeypatch.context() as scoped:
+            scoped.setattr(profile_runtime, "Profile", profile)
+            scoped.setattr(profile_runtime.atexit, "register", lambda *_args: None)
+            scoped.setattr(sys, "executable", selected_argv[0])
+            scoped.setattr(sys, "orig_argv", selected_argv)
+            scoped.setattr(sys, "flags", SimpleNamespace(isolated="-I" in selected_argv[1:2]))
+            profile_runtime.activate(str(path), hashlib.sha256(body).hexdigest(), 1, ())
+&gt;       assert starts == ["start"] and len(admitted) == 1
+E       AssertionError: assert ([] == ['start']
+E         
+E         Right contains one more item: 'start'
+E         Use -v to get more diff)
+
+tests/test_priority_child_registration.py:57: AssertionError</failure></testcase><testcase classname="tests.test_priority_child_registration" name="test_actual_generated_pre_post_registrations_admit_one_original_value[PostToolUse-codex]" time="0.124"><failure message="AssertionError: assert ([] == ['start']&#10;  &#10;  Right contains one more item: 'start'&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-352/test_actual_generated_pre_post3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8f20de8380&gt;
+harness = 'codex', event = 'PostToolUse'
+
+    @pytest.mark.parametrize("harness", ("claude-code", "codex"))
+    @pytest.mark.parametrize("event", ("PreToolUse", "PostToolUse"))
+    def test_actual_generated_pre_post_registrations_admit_one_original_value(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, harness: str, event: str
+    ) -&gt; None:
+        # These existing fixtures call both real adapters and read back their actual
+        # registrations. The owned Codex executable fixture is never launched.
+        session = cast(Any, registration_controls.session).__wrapped__(tmp_path)
+        registrations = cast(Any, registration_controls.registrations).__wrapped__(session, monkeypatch)
+        assert len(registrations) == 4
+        argv = [list(row.argv) for row in registrations]
+        assert len({tuple(value) for value in argv}) == 2
+        selected = next(row for row in registrations if (row.harness, row.event) == (harness, event))
+        selected_argv = list(selected.argv)
+        assert argv.count(selected_argv) == 2
+        config = {
+            "argv": argv,
+            "observed_argv0": selected_argv[0],
+            "executable": selected_argv[0],
+            "parent_pid": os.getppid(),
+            "python": list(sys.version_info[:3]),
+        }
+        path = tmp_path / "profile-config.json"
+        body = profile_runtime.encoded(config)
+        path.write_bytes(body)
+        starts: list[str] = []
+        admitted: list[dict[str, Any]] = []
+    
+        def profile(value: dict[str, Any]) -&gt; Any:
+            admitted.append(value)
+            return SimpleNamespace(start=lambda: starts.append("start"), finish=lambda: None)
+    
+        with monkeypatch.context() as scoped:
+            scoped.setattr(profile_runtime, "Profile", profile)
+            scoped.setattr(profile_runtime.atexit, "register", lambda *_args: None)
+            scoped.setattr(sys, "executable", selected_argv[0])
+            scoped.setattr(sys, "orig_argv", selected_argv)
+            scoped.setattr(sys, "flags", SimpleNamespace(isolated="-I" in selected_argv[1:2]))
+            profile_runtime.activate(str(path), hashlib.sha256(body).hexdigest(), 1, ())
+&gt;       assert starts == ["start"] and len(admitted) == 1
+E       AssertionError: assert ([] == ['start']
+E         
+E         Right contains one more item: 'start'
+E         Use -v to get more diff)
+
+tests/test_priority_child_registration.py:57: AssertionError</failure></testcase><testcase classname="tests.test_priority_child_startup" name="test_repeated_identical_registration_preserves_real_child" time="0.164"><failure message="assert 0 == 1&#10; +  where 0 = len([])">interpreter = (PosixPath('/tmp/pytest-of-root/pytest-352/child-venv0/bin/python'), PosixPath('/tmp/pytest-of-root/pytest-352/child-v...es': 30894944, 'sha256': 'fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7'}, 'framework': False, ...})
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-352/test_repeated_identical_regist0')
+
+    def test_repeated_identical_registration_preserves_real_child(interpreter, tmp_path):
+        _, output, argv, installed = fixture_config(tmp_path, interpreter)
+        installed.config["argv"] = [argv, list(argv)]
+        original = run(argv)
+        with installed:
+            observed = run(argv)
+&gt;           report = reports(output)
+                     ^^^^^^^^^^^^^^^
+
+tests/test_priority_child_startup.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+output = PosixPath('/tmp/pytest-of-root/pytest-352/test_repeated_identical_regist0/reports')
+
+    def reports(output):
+        paths = list(output.glob("*.json"))
+&gt;       assert len(paths) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_priority_child_startup.py:70: AssertionError</failure></testcase></testsuite></testsuites>

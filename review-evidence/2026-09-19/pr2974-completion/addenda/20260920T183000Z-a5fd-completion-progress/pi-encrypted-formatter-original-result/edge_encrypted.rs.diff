@@ -1,0 +1,93 @@
+--- before
++++ after
+@@ -16,7 +16,14 @@
+ const MAX_BYTES: usize = 5 * 1024 * 1024;
+ #[cfg(unix)]
+ const KEYS: &[&str] = &[
+-    "version", "path", "sha256", "encoding", "encryption", "key", "nonce", "serialized_chars",
++    "version",
++    "path",
++    "sha256",
++    "encoding",
++    "encryption",
++    "key",
++    "nonce",
++    "serialized_chars",
+ ];
+ 
+ #[cfg(unix)]
+@@ -33,7 +40,10 @@
+ 
+ #[cfg(unix)]
+ fn text<'a>(value: &'a Value, name: &str) -> Result<&'a str, String> {
+-    value.get(name).and_then(Value::as_str).ok_or_else(|| error("metadata_invalid"))
++    value
++        .get(name)
++        .and_then(Value::as_str)
++        .ok_or_else(|| error("metadata_invalid"))
+ }
+ 
+ /// The generated Node producer uses canonical unpadded base64url for fixed-size keys.
+@@ -57,7 +67,9 @@
+         bits += 6;
+         if bits >= 8 {
+             bits -= 8;
+-            let target = output.get_mut(written).ok_or_else(|| error("key_or_nonce_invalid"))?;
++            let target = output
++                .get_mut(written)
++                .ok_or_else(|| error("key_or_nonce_invalid"))?;
+             *target = (buffer >> bits) as u8;
+             written += 1;
+         }
+@@ -81,8 +93,12 @@
+     }
+     #[cfg(unix)]
+     {
+-        let reference = payload.get("guard_payload_ref").ok_or_else(|| error("metadata_invalid"))?;
+-        let record = reference.as_object().ok_or_else(|| error("metadata_invalid"))?;
++        let reference = payload
++            .get("guard_payload_ref")
++            .ok_or_else(|| error("metadata_invalid"))?;
++        let record = reference
++            .as_object()
++            .ok_or_else(|| error("metadata_invalid"))?;
+         if record.len() != KEYS.len()
+             || !KEYS.iter().all(|key| record.contains_key(*key))
+             || reference.get("version").and_then(Value::as_u64) != Some(1)
+@@ -96,10 +112,16 @@
+             return Err(error("path_invalid"));
+         }
+         let expected = text(reference, "sha256")?;
+-        if expected.len() != 64 || !expected.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)) {
++        if expected.len() != 64
++            || !expected
++                .bytes()
++                .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
++        {
+             return Err(error("digest_invalid"));
+         }
+-        let chars = reference.get("serialized_chars").and_then(Value::as_u64)
++        let chars = reference
++            .get("serialized_chars")
++            .and_then(Value::as_u64)
+             .filter(|value| *value > 0 && *value <= MAX_BYTES as u64)
+             .ok_or_else(|| error("size_invalid"))?;
+         let key = fixed_base64url::<32>(text(reference, "key")?)?;
+@@ -109,8 +131,15 @@
+             return Err(error("digest_mismatch"));
+         }
+         deadline_check(deadline)?;
+-        let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &key).map_err(|_| error("key_or_nonce_invalid"))?);
+-        let plaintext = key.open_in_place(Nonce::assume_unique_for_key(nonce), Aad::empty(), &mut ciphertext)
++        let key = LessSafeKey::new(
++            UnboundKey::new(&AES_256_GCM, &key).map_err(|_| error("key_or_nonce_invalid"))?,
++        );
++        let plaintext = key
++            .open_in_place(
++                Nonce::assume_unique_for_key(nonce),
++                Aad::empty(),
++                &mut ciphertext,
++            )
+             .map_err(|_| error("authentication_failed"))?;
+         deadline_check(deadline)?;
+         let plaintext = std::str::from_utf8(plaintext).map_err(|_| error("json_invalid"))?;

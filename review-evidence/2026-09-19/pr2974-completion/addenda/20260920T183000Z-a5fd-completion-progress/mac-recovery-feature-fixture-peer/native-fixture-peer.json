@@ -1,0 +1,21 @@
+{
+  "schema": "hol-guard.mac-recovery-macro-fixture-peer.v1",
+  "verdict": "clear",
+  "correction_tree": "764aa2f09a0121069ba2de357ce0e22f3f1c7dbb",
+  "before_blob": "0a4f9a0142378508345868cd150364fb73514523",
+  "after": {
+    "bytes": 16464,
+    "sha256": "218ed688a757dd5ad50f4e9f9ebf9ffd033b47fed8ca43edd9746eb747c3018c",
+    "git_blob": "11babd29914e5dcafe97defbffef57b5a7f72782"
+  },
+  "findings": [
+    "Only the feature_macro_tests fixture expression changes: two closures return references to the same error/state and each increments the existing Cell once; the unchanged macro receives the two call expressions.",
+    "The production collector/macros and all text before feature_macro_tests are byte-identical; all assertions from calls==2 through the end are byte-identical.",
+    "Borrowed call expressions preserve original object identity and once-only evaluation without changing production macro expansion. This is a concrete response to hosted E0308 at feature test compilation, not runtime behavior repair."
+  ],
+  "limits": [
+    "First attempt retains 16 driver,27 Python and8 default controls passed, but zero feature controls/release/original-selector execution.",
+    "This peer is source-only; corrected feature compilation and original selector remain pending.",
+    "No source/ref edits or control execution by peer."
+  ]
+}

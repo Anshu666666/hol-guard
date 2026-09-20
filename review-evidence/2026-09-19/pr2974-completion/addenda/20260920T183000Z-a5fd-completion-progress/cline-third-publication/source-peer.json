@@ -1,0 +1,35 @@
+{
+  "schema": "pr2974.cline-null-context-source-peer.v1",
+  "reviewer": "partition_regression",
+  "verdict": "clear within the narrow diagnostic source correction",
+  "base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "original_failed_run": 35526812732,
+  "original_failed_packet": "bb8aab8662d64c35a4dccf999d251c34d04396e2",
+  "changed_blobs": {
+    "scripts/ci/cline_witness/run.py": "78a04df32303ee4f8baf3d6675af335a90fbc18b",
+    "scripts/ci/cline_witness/validation.py": "9da380109551df5681614e003a0e81c529a31d8b",
+    "tests/test_cline_child_witness.py": "fcb85b040cf38b7541ea963a2fd80c8c0bcbac49"
+  },
+  "independent_checks": [
+    "Read complete three-file delta against v2 and verified all eight local manifest byte counts, SHA-256 and Git blobs.",
+    "Read relevant original registered argv, CLI resolver/raw native ordering, worker/envelope and Rust receipt bodies; independently verified all seventeen source-chain Git blobs and SHA-256 against exact e440.",
+    "Registered CLI lacks --workspace. Hook resolver returns None and raw native dispatch precedes compatibility workspace inference. The envelope therefore carries cwd:null and actual Rust receipt uses source.cwd.is_some() for workspace_bound.",
+    "The new witness requires present cwd is None and actual receipt.workspace_bound is False; it does not accept an arbitrary value or treat missing cwd as null.",
+    "Seven named boolean context facts preserve harness/event/home/Guard-home/source-ref/observe checks; consumer independently requires exact keys, every value True, original raw workspace_bound False and the existing receipt/ACK/native route/semantic checks.",
+    "The real parser/resolver/encoder control proves the declared route construction. Fourteen changed/absent context controls and receipt/consumer mutations prevent a permissive null predicate.",
+    "Original native oracle, attested argv, four payloads, selected-frame profiling, deadlines and cleanup are unchanged."
+  ],
+  "owner_validation": {
+    "controls_passed": 134,
+    "types_errors": 0,
+    "types_warnings": 673,
+    "style": "owner reports Ruff/format pass; no independent execution"
+  },
+  "limits": [
+    "Source review only; no installation, native execution, test rerun or retrospective outcome promotion.",
+    "The previous failed reports retain only aggregate context false; this source evidence does not manufacture missing actual per-field values.",
+    "Process cwd is not request workspace authority. Global acknowledged snapshot identity is still joined, but request-specific workspace policy and sourceRef authority remain outside these four inline cases.",
+    "Original A5/workspace precedence and wider RSP136 requirements are not discharged by this null-context correction.",
+    "Operational driver/source ancestry and fresh actual result remain separately reviewed."
+  ]
+}

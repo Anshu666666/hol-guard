@@ -1,0 +1,91 @@
+{
+  "schema": "hol-guard.first-admission-constructor-plan-peer.v1",
+  "observed_at_utc": "2026-09-20 18:34:16 UTC",
+  "verdict": "clear_plan_only",
+  "plan": {
+    "tree": "aa37f350b8ccfe65299fff45650cdf27b34fe2c7",
+    "blob": "a929b6d6f4d06deb3ee6bd92a56e355a4e93dd27",
+    "bytes": 10978,
+    "sha256": "79f59f85d6dd3262015459c2f1ce0e675fe20bf3bf142af7b6bbe2d8b5bae165"
+  },
+  "source_bindings": {
+    "blob": "c601dc98a3276cae10f21f2f4784c9591b433c4b",
+    "bytes": 2549,
+    "sha256": "7da58e3e28fb641cc868b5d113051ec787bcaaba25c39fb1032154c148eae0fa"
+  },
+  "source": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "source_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "verification": {
+    "plan_and_bindings": "Fetched original Git tree and both blobs; remote bodies equal local bytes.",
+    "source_files": [
+      {
+        "path": "scripts/native_slo_workspace_lifecycle.py",
+        "git_blob": "2228638126776fa992a482375f472acc9e9bc927",
+        "matched_original_e440": true
+      },
+      {
+        "path": "scripts/native_slo_workspace_lifecycle_service.py",
+        "git_blob": "ccfa9bb7735a1a62cc0910e18ae6928c963092a5",
+        "matched_original_e440": true
+      },
+      {
+        "path": "scripts/native_slo_workspace_lifecycle_clocks.py",
+        "git_blob": "53e18a8fa59eb64993ebb3bf4905ef5b9f4929fd",
+        "matched_original_e440": true
+      },
+      {
+        "path": "scripts/native_slo_workspace_startup.py",
+        "git_blob": "aac818243c9d30797d8beaf99ea8305408af8774",
+        "matched_original_e440": true
+      },
+      {
+        "path": "scripts/native_slo_workspace_lifecycle_faults.py",
+        "git_blob": "ada09527e01bfbdbb71dee593675f501ea95aa1d",
+        "matched_original_e440": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/server.py",
+        "git_blob": "3b5a9a4b6400207856ec07d2ee08cbc6db3e2137",
+        "matched_original_e440": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/server_service.py",
+        "git_blob": "7e9d7a0a53f4c59edeed7eb2a6049fff21572211",
+        "matched_original_e440": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/server_http.py",
+        "git_blob": "9fcaf658c78cfbd5930bfba8bfa2084400674316",
+        "matched_original_e440": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/daemon/hook_worker.py",
+        "git_blob": "8f8fa18249101ab0edd0cb2b472b4458528967e9",
+        "matched_original_e440": true
+      },
+      {
+        "path": "src/codex_plugin_scanner/guard/native_policy_snapshot_publisher.py",
+        "git_blob": "18c384a6fa02ae908fa74e8b72d697291984bd1e",
+        "matched_original_e440": true
+      }
+    ],
+    "execution": "Read source and recomputed file hashes only. No application imports, tests, implementation or workload."
+  },
+  "findings": [
+    "server.GuardDaemonServer aliases server_service.GuardDaemonServer and server._GuardDaemonHttpServer aliases server_http._GuardDaemonHTTPServer. Wrapping the five defining methods preserves these class identities.",
+    "The original replacement creates a fresh store after old-owner containment, invokes one GuardDaemonServer inside prepare_owned_publisher, and checks the same home and actual captured publisher afterward. Tentative constructor store identity must join the actual original cold factory/store before admission; no additional home or readiness probe is needed.",
+    "The actual nested chain is service constructor -> HTTP constructor -> request-services initializer -> HookWorker constructor -> publisher wait. The worker wait is its last substantive original initialization instruction.",
+    "The four proposed adjacent exit differences cover post-wait worker return, grouped remaining request services, inherited HTTP bind/activation, and remaining service attributes. They meaningfully isolate constructor regions without identifying individual leaf costs.",
+    "Only matching successful exit pairs support those adjacent tails. Partial exception paths retain their original result and cannot invent later exits. Inclusive nested totals must not be summed.",
+    "The actual acceptance clock precedes the original cold_registrations_return marker and deadline remains acceptance plus 400 ms. The original HookWorker wait cap remains separately 2 s. Diagnostic origins may be translated only through the captured original monotonic value, never by re-invoking the source clock.",
+    "Constructor-thread context and finite strict nesting avoid attributing publisher background work to synchronous phase rows. The old private-condition/state sampler is explicitly absent; old lost predicate rows remain refused.",
+    "Exact original args, kwargs, return/exception identity, one-call census, restoration and recorder/export failure forwarding require the proposed meaningful controls before any runtime approval."
+  ],
+  "limits": [
+    "This receipt clears only the plan and source-supported boundaries. It does not clear implementation, controls, driver, compilation or an additional workload.",
+    "Entry/exit clock and recording overhead remain in the observed original deadline interval. No clean/default timing, CPU cost or underlying Rust cause can be inferred.",
+    "Original PublicationObserver ready observations are not exact internal commit times. No retries, warmup, new native/HTTP/DB/config/readiness operations or threshold changes are admitted.",
+    "Retained ad9d/be612 wheel provenance remains distinct from e440 diagnostic source and current a5fd product. The separate Mac Intel normal-SLO gap is not pooled.",
+    "Original failed cell, exit 1 and incomplete 15-cell matrix remain failed/incomplete."
+  ]
+}

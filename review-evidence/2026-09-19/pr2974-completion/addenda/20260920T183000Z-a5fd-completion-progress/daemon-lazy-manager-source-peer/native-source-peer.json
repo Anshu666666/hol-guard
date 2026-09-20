@@ -1,0 +1,69 @@
+{
+  "schema": "hol-guard.daemon-lazy-manager-exports-source-peer.v1",
+  "verdict": "clear",
+  "base": "a5fdde302aba2a06265c2e6e934b6ac9b76750df",
+  "candidate_tree": "50e5ce00f8207df8f4a6b36c875a0fabf05bbcae",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/__init__.py",
+      "bytes": 2325,
+      "sha256": "3869df21c6fcf51cba2e64f5d771ab473f341d93111526d0afc7d34a8199b328",
+      "git_blob": "85884649e5b304d5db33c8e1f925e30dc0e8ccc5"
+    },
+    {
+      "path": "tests/test_guard_daemon_lazy_exports.py",
+      "bytes": 7625,
+      "sha256": "57c3a5ac777ec4a8e14a92c4cf5b67db6bc0a5198b24e3c3b8051536a0ece791",
+      "git_blob": "68c51b7f587eb5126b20d7678a7df23c516ac706"
+    }
+  ],
+  "scope": "One product package initializer and ten fresh-process controls; no product manager implementation change.",
+  "independent_review": [
+    "Read complete original and final initializer, all new control bodies, original manager shared-state initialization and relevant repository imports.",
+    "Confirmed exactly seven formerly eager manager exports; unchanged11-name __all__ and existing runtime-repair/server/client lazy branches.",
+    "Each manager lookup imports the original module then caches its real function object without a proxy. Python import serialization retains module ownership; function/pickle identity remains ordinary manager identity.",
+    "Reload removes only the seven originally eager exports, including explicit package replacements; unrelated package attributes remain. Explicit package monkeypatches still take precedence before reload.",
+    "Final globals().pop('_name',None) merely clears the private loop variable without a possibly-unbound del; compared separately from the saved earlier broad-cohort product.",
+    "Manager creates recovery/write registries and shared locks before all13 implementation imports. Deferring package access does not reorder that original module initialization.",
+    "Unknown names still raise AttributeError; failed manager access propagates original ImportError and does not cache a value. Subsequent normal import remains possible."
+  ],
+  "validation": {
+    "owner_execution_only": true,
+    "independently_parsed_final_junit": {
+      "total": 13,
+      "new_fresh_process_controls": 10,
+      "existing_manager_dependency_controls": 3,
+      "failures": 0,
+      "skips": 0
+    },
+    "independently_parsed_final_types": {
+      "errors": 0,
+      "warnings": 5
+    },
+    "all_local_file_hashes_match_manifest": true,
+    "earlier_broad_result": {
+      "passed": 328,
+      "skips": 3,
+      "scope": "Saved before-type-fix product only; not relabeled final-byte full cohort."
+    },
+    "old_initializer": {
+      "four_controlled_import_refusals": true,
+      "scope": "Owner recorded exact old-source negative outcomes; peer did not rerun."
+    },
+    "peer_test_runs": 0,
+    "peer_timing_runs": 0
+  },
+  "intentional_changes": [
+    "Manager import/dependency failures and side effects move from package/submodule import to first manager export or explicit manager import.",
+    "Seven names are absent from vars(package) until first access; dir/public imports remain supported. Arbitrary external direct-dictionary introspection is not preserved.",
+    "The optimization is supported by an observed fresh-child import chain; neither timing savings nor a cause of same-process replacement readiness failure is inferred."
+  ],
+  "durability": {
+    "initial_source_blob_api_reads": "404 before source objects were published; no remote equality claimed for those reads",
+    "resolution": "This standalone peer includes the exact independently rehashed final source and test images, manifest and final validation bodies; its publication is separately read back."
+  },
+  "limits": [
+    "No native workload, timing experiment, platform-specific runtime validation or product integration performed by peer.",
+    "The broad earlier cohort's three Windows-only skips remain explicit and are not Windows execution credit."
+  ]
+}

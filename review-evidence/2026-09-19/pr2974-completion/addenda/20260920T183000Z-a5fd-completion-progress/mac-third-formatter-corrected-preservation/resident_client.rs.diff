@@ -1,0 +1,19 @@
+--- before
++++ after
+@@ -86,10 +86,12 @@
+     // A server-proof read happens after the client has sent its nonce.  Even
+     // an EOF that looks like a transport teardown at this phase is not safe
+     // to replay: the peer has not completed authentication.
+-    crate::observe_native_read_phase!(ServerProof, read_exact(stream, &mut server_proof)).map_err(|error| ResidentClientError {
+-        code: error.code,
+-        retryable_teardown: false,
+-    })?;
++    crate::observe_native_read_phase!(ServerProof, read_exact(stream, &mut server_proof)).map_err(
++        |error| ResidentClientError {
++            code: error.code,
++            retryable_teardown: false,
++        },
++    )?;
+     let expected = hmac_sha256(token, SERVER_PROOF_LABEL, &nonce);
+     if !constant_time_eq(&server_proof, &expected) {
+         return Err("native_client_auth_rejected".to_owned().into());

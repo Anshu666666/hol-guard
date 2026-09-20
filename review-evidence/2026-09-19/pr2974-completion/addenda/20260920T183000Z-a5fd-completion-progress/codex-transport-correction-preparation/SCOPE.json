@@ -1,0 +1,71 @@
+{
+  "schema": "pr2974-codex-transport-identity-correction.v1",
+  "base": "e44008445630aad28ccc291ec234f55a14892e6d",
+  "base_tree": "addf0c1daf8ceb6313d6805ee4d05e216d6fdac8",
+  "source_tree": "acf40ef67acb8d0d7feed04c28051147fe933a5f",
+  "source_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/codex_native_live_decision.py",
+      "bytes": 10906,
+      "sha256": "4a29d8fbaa67713a8db8491a9329f3620f3a9c920ce799b3fc2c5f62c274aeae",
+      "git_blob": "29163ff9a509c6b1e3128262b395910392c7a6aa",
+      "lines": 238
+    },
+    {
+      "path": "tests/test_native_codex_transport_identity.py",
+      "bytes": 5956,
+      "sha256": "522b6999d42306027b753e63bcd1023f579f2b14c11b20f977d7cb2b68900622",
+      "git_blob": "782ddf35a726dad6a5c32bbad15ccf5605339b1d",
+      "lines": 140
+    }
+  ],
+  "actual_diagnostic": {
+    "packet": "02ac6ecb98f80a2130e0d34bbca321beb1f75331",
+    "run": 35524735665,
+    "observed_refusal": "stored_request_digest_mismatch at return statement196; return event144 from context-manager cleanup",
+    "same_generation_policy_runtime": true,
+    "exact_changed_hosted_input_unobserved": true
+  },
+  "independent_input_source_map": "f8303d61c7fe3febc6839eefe94a5dbbd180b9d1",
+  "change": "Only resume's existing bounded JSON decode consumes root guard_remaining_seconds and guard_remaining_ms, exactly matching initial daemon ingress's prior consumption. Nested arguments, all other semantic/source/correlation fields, Rust v3 identity code, exact receipt/stored/artifact checks and existing absolute deadline enforcement remain unchanged.",
+  "before": {
+    "cases": 5,
+    "passed": 2,
+    "failed": 3,
+    "failures": [
+      "original-ms",
+      "original-seconds",
+      "both-original-hints"
+    ],
+    "source": "before/codex-transport-before-source.py",
+    "controls": "before/codex-transport-before-test.py"
+  },
+  "after": {
+    "cases": 65,
+    "passed": 65,
+    "failed": 0,
+    "scope": "9new plus56existing real-store native Codex continuation/binding/deadline/fault controls; native edge is explicitly modeled in Python coordinator controls."
+  },
+  "final_new_test_after_type_assertions": {
+    "passed": 9,
+    "failed": 0
+  },
+  "static": {
+    "ruff": "pass",
+    "format": "pass",
+    "types": {
+      "files": 2,
+      "errors": 0,
+      "warnings": 54,
+      "notes": 0
+    },
+    "diff_check": "pass"
+  },
+  "limits": [
+    "No new installed/native workload executed for corrected product bytes.",
+    "Actual hosted trace proves request digest mismatch with equal observed policy generation and identity, but did not retain raw full payloads. Source path plus deterministic actual ingress/decoder/envelope controls establish the transport-hint construction defect; it is not inferred solely from the hash mismatch.",
+    "The genuine GuardStore tests use a modeled input-bound native edge, preserve the exact signed authority path and fail when nested semantic input changes. They do not stand in for real Rust execution or installed approval consumption.",
+    "No Rust digest omission or approval matching loosened; only metadata already consumed before original native evaluation is consumed consistently on resume."
+  ],
+  "next": "Independent source peer, then root composes the selected PR source successor. No agent PR/ref mutation."
+}

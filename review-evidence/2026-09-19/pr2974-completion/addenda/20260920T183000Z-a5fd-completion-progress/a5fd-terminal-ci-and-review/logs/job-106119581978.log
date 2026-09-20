@@ -1,0 +1,1126 @@
+﻿2026-09-20T17:39:14.5019280Z Current runner version: '2.337.0'
+2026-09-20T17:39:14.5036040Z ##[group]Runner Image Provisioner
+2026-09-20T17:39:14.5036620Z Hosted Compute Agent
+2026-09-20T17:39:14.5037020Z Version: 20260828.587
+2026-09-20T17:39:14.5037450Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T17:39:14.5037950Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T17:39:14.5038410Z Worker ID: {70a74474-40b6-4a26-93db-df672714fc70}
+2026-09-20T17:39:14.5038890Z Azure Region: westus
+2026-09-20T17:39:14.5039300Z ##[endgroup]
+2026-09-20T17:39:14.5040460Z ##[group]Operating System
+2026-09-20T17:39:14.5040870Z macOS
+2026-09-20T17:39:14.5041280Z 14.8.9
+2026-09-20T17:39:14.5041640Z 23J631
+2026-09-20T17:39:14.5041970Z ##[endgroup]
+2026-09-20T17:39:14.5042340Z ##[group]Runner Image
+2026-09-20T17:39:14.5042720Z Image: macos-14-arm64
+2026-09-20T17:39:14.5043170Z Version: 20260831.0302.1
+2026-09-20T17:39:14.5044030Z Included Software: https://github.com/actions/runner-images/blob/macos-14-arm64/20260831.0302/images/macos/macos-14-arm64-Readme.md
+2026-09-20T17:39:14.5045180Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-14-arm64%2F20260831.0302
+2026-09-20T17:39:14.5045910Z ##[endgroup]
+2026-09-20T17:39:14.5046680Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T17:39:14.5047850Z Contents: read
+2026-09-20T17:39:14.5048350Z Metadata: read
+2026-09-20T17:39:14.5048710Z ##[endgroup]
+2026-09-20T17:39:14.5050130Z Secret source: Actions
+2026-09-20T17:39:14.5050730Z Cache mode: write
+2026-09-20T17:39:14.5051270Z Prepare workflow directory
+2026-09-20T17:39:14.5295130Z Prepare all required actions
+2026-09-20T17:39:14.5335900Z Getting action download info
+2026-09-20T17:39:14.8640220Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T17:39:15.2951950Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T17:39:15.4211910Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T17:39:16.3518280Z Complete job name: cross-platform (macos-14)
+2026-09-20T17:39:16.4106510Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T17:39:16.4107620Z with:
+2026-09-20T17:39:16.4108180Z   persist-credentials: false
+2026-09-20T17:39:16.4108860Z   repository: hashgraph-online/hol-guard
+2026-09-20T17:39:16.4114390Z   token: ***
+2026-09-20T17:39:16.4114930Z   ssh-strict: true
+2026-09-20T17:39:16.4115490Z   ssh-user: git
+2026-09-20T17:39:16.4116030Z   clean: true
+2026-09-20T17:39:16.4116600Z   sparse-checkout-cone-mode: true
+2026-09-20T17:39:16.4117270Z   fetch-depth: 1
+2026-09-20T17:39:16.4118180Z   fetch-tags: false
+2026-09-20T17:39:16.4118750Z   show-progress: true
+2026-09-20T17:39:16.4119340Z   lfs: false
+2026-09-20T17:39:16.4119870Z   submodules: false
+2026-09-20T17:39:16.4120430Z   set-safe-directory: true
+2026-09-20T17:39:16.4121180Z ##[endgroup]
+2026-09-20T17:39:16.8044350Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T17:39:16.8046480Z ##[group]Getting Git version info
+2026-09-20T17:39:16.8047650Z Working directory is '/Users/runner/work/hol-guard/hol-guard'
+2026-09-20T17:39:16.8049110Z [command]/opt/homebrew/bin/git version
+2026-09-20T17:39:16.8329310Z git version 2.55.0
+2026-09-20T17:39:16.8359440Z ##[endgroup]
+2026-09-20T17:39:16.8372490Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/f9615e75-2040-4483-a098-e928d294470f/.gitconfig'
+2026-09-20T17:39:16.8377740Z Temporarily overriding HOME='/Users/runner/work/_temp/f9615e75-2040-4483-a098-e928d294470f' before making global git config changes
+2026-09-20T17:39:16.8380020Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T17:39:16.8381610Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:39:16.8483110Z Deleting the contents of '/Users/runner/work/hol-guard/hol-guard'
+2026-09-20T17:39:16.8488110Z ##[group]Determining repository object format
+2026-09-20T17:39:16.8491060Z ##[endgroup]
+2026-09-20T17:39:16.8493680Z ##[group]Initializing the repository
+2026-09-20T17:39:16.8496250Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:39:16.8722840Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T17:39:16.8726390Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T17:39:16.8729830Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T17:39:16.8733050Z hint: call:
+2026-09-20T17:39:16.8733810Z hint:
+2026-09-20T17:39:16.8734550Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T17:39:16.8735390Z hint:
+2026-09-20T17:39:16.8736180Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T17:39:16.8738720Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T17:39:16.8740050Z hint:
+2026-09-20T17:39:16.8740640Z hint: 	git branch -m <name>
+2026-09-20T17:39:16.8741300Z hint:
+2026-09-20T17:39:16.8742160Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T17:39:16.8743510Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/.git/
+2026-09-20T17:39:16.8746000Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T17:39:16.8801510Z ##[endgroup]
+2026-09-20T17:39:16.8804120Z ##[group]Disabling automatic garbage collection
+2026-09-20T17:39:16.8806690Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T17:39:16.8860510Z ##[endgroup]
+2026-09-20T17:39:16.8863050Z ##[group]Setting up auth
+2026-09-20T17:39:16.8864000Z Removing SSH command configuration
+2026-09-20T17:39:16.8872350Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T17:39:16.8931200Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T17:39:16.9627470Z Removing HTTP extra header
+2026-09-20T17:39:16.9630360Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T17:39:16.9666000Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T17:39:17.0123030Z Removing includeIf entries pointing to credentials config files
+2026-09-20T17:39:17.0126060Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T17:39:17.0169300Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T17:39:17.0711720Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T17:39:17.0776550Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:17.0827180Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:17.0893090Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:17.0950300Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:17.1005570Z ##[endgroup]
+2026-09-20T17:39:17.1006590Z ##[group]Fetching the repository
+2026-09-20T17:39:17.1008660Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d7f30a0ad61d72d96d1a9e7970943404c4cc19dc:refs/remotes/pull/2974/merge
+2026-09-20T17:39:18.0849140Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T17:39:18.0849920Z  * [new ref]         d7f30a0ad61d72d96d1a9e7970943404c4cc19dc -> pull/2974/merge
+2026-09-20T17:39:18.0857270Z ##[endgroup]
+2026-09-20T17:39:18.0858240Z ##[group]Determining the checkout info
+2026-09-20T17:39:18.0859270Z ##[endgroup]
+2026-09-20T17:39:18.0861930Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T17:39:18.0940900Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T17:39:18.1003450Z ##[group]Checking out the ref
+2026-09-20T17:39:18.1004030Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T17:39:19.1409190Z Updating files:  82% (3959/4795)
+2026-09-20T17:39:19.1471540Z Updating files:  83% (3980/4795)
+2026-09-20T17:39:19.1526760Z Updating files:  84% (4028/4795)
+2026-09-20T17:39:19.1600350Z Updating files:  85% (4076/4795)
+2026-09-20T17:39:19.1660510Z Updating files:  86% (4124/4795)
+2026-09-20T17:39:19.1844570Z Updating files:  87% (4172/4795)
+2026-09-20T17:39:19.2225340Z Updating files:  88% (4220/4795)
+2026-09-20T17:39:19.2289430Z Updating files:  89% (4268/4795)
+2026-09-20T17:39:19.2351660Z Updating files:  90% (4316/4795)
+2026-09-20T17:39:19.2403980Z Updating files:  91% (4364/4795)
+2026-09-20T17:39:19.2454440Z Updating files:  92% (4412/4795)
+2026-09-20T17:39:19.2496460Z Updating files:  93% (4460/4795)
+2026-09-20T17:39:19.2543800Z Updating files:  94% (4508/4795)
+2026-09-20T17:39:19.2906450Z Updating files:  95% (4556/4795)
+2026-09-20T17:39:19.2963480Z Updating files:  96% (4604/4795)
+2026-09-20T17:39:19.3017490Z Updating files:  97% (4652/4795)
+2026-09-20T17:39:19.3060580Z Updating files:  98% (4700/4795)
+2026-09-20T17:39:19.3190410Z Updating files:  99% (4748/4795)
+2026-09-20T17:39:19.3191310Z Updating files: 100% (4795/4795)
+2026-09-20T17:39:19.3191820Z Updating files: 100% (4795/4795), done.
+2026-09-20T17:39:19.3269770Z HEAD is now at d7f30a0 Merge a5fdde302aba2a06265c2e6e934b6ac9b76750df into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T17:39:19.3286210Z ##[endgroup]
+2026-09-20T17:39:19.3384970Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T17:39:19.3437450Z d7f30a0ad61d72d96d1a9e7970943404c4cc19dc
+2026-09-20T17:39:19.3443960Z ##[group]Removing auth
+2026-09-20T17:39:19.3444410Z Removing SSH command configuration
+2026-09-20T17:39:19.3447100Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T17:39:19.3494930Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T17:39:19.4016980Z Removing HTTP extra header
+2026-09-20T17:39:19.4019370Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T17:39:19.4063330Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T17:39:19.4800110Z Removing includeIf entries pointing to credentials config files
+2026-09-20T17:39:19.4800750Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T17:39:19.4801330Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T17:39:19.4801820Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T17:39:19.4802290Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T17:39:19.4802690Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T17:39:19.4804370Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T17:39:19.4821270Z /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.4829150Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5005610Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T17:39:19.5044090Z /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5050830Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5145010Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T17:39:19.5179120Z /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5186250Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5225850Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T17:39:19.5260040Z /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5264100Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config
+2026-09-20T17:39:19.5305090Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T17:39:19.5946390Z Removing credentials config '/Users/runner/work/_temp/git-credentials-03da785c-2544-4cb2-a99d-07b4ac7af9a3.config'
+2026-09-20T17:39:19.5949890Z ##[endgroup]
+2026-09-20T17:39:19.6176670Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T17:39:19.6177030Z with:
+2026-09-20T17:39:19.6177180Z   python-version: 3.12
+2026-09-20T17:39:19.6189730Z   check-latest: false
+2026-09-20T17:39:19.6194430Z   token: ***
+2026-09-20T17:39:19.6194660Z   update-environment: true
+2026-09-20T17:39:19.6194860Z   allow-prereleases: false
+2026-09-20T17:39:19.6195030Z   freethreaded: false
+2026-09-20T17:39:19.6195200Z ##[endgroup]
+2026-09-20T17:39:19.7385970Z ##[group]Installed versions
+2026-09-20T17:39:19.7455370Z Successfully set up CPython (3.12.10)
+2026-09-20T17:39:19.7455930Z ##[endgroup]
+2026-09-20T17:39:19.7630110Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T17:39:19.7630830Z with:
+2026-09-20T17:39:19.7631050Z   version: 0.9.26
+2026-09-20T17:39:19.7631260Z   enable-cache: true
+2026-09-20T17:39:19.7631510Z   activate-environment: false
+2026-09-20T17:39:19.7631760Z   no-project: false
+2026-09-20T17:39:19.7631990Z   working-directory: /Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:39:19.7634190Z   github-token: ***
+2026-09-20T17:39:19.7634650Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T17:39:19.7635140Z   restore-cache: true
+2026-09-20T17:39:19.7635320Z   save-cache: true
+2026-09-20T17:39:19.7635470Z   prune-cache: true
+2026-09-20T17:39:19.7635640Z   cache-python: false
+2026-09-20T17:39:19.7635820Z   ignore-nothing-to-cache: false
+2026-09-20T17:39:19.7636050Z   ignore-empty-workdir: false
+2026-09-20T17:39:19.7636290Z   download-from-astral-mirror: true
+2026-09-20T17:39:19.7636510Z   add-problem-matchers: true
+2026-09-20T17:39:19.7636940Z   quiet: false
+2026-09-20T17:39:19.7637100Z   resolution-strategy: highest
+2026-09-20T17:39:19.7637270Z env:
+2026-09-20T17:39:19.7637490Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:19.7637890Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:39:19.7638290Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:19.7638650Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:19.7638990Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:19.7639270Z ##[endgroup]
+2026-09-20T17:39:19.9233240Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T17:39:20.0517240Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-aarch64-apple-darwin.tar.gz" ...
+2026-09-20T17:39:20.5448760Z [command]/usr/bin/tar xz -C /Users/runner/work/_temp/4df889f0-e22a-4f21-9e51-9fa82da8c8ec -f /Users/runner/work/_temp/b5fa8fb3-fdc8-496c-8101-d9a4cc1911ad
+2026-09-20T17:39:20.7327900Z Added /Users/runner/.local/bin to the path
+2026-09-20T17:39:20.7402790Z Added /Users/runner/hostedtoolcache/uv/0.9.26/aarch64 to the path
+2026-09-20T17:39:20.7409090Z Set UV_PYTHON_INSTALL_DIR to /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:39:20.7427710Z Added /Users/runner/work/_temp/uv-python-dir to the path
+2026-09-20T17:39:20.7446270Z Set UV_CACHE_DIR to /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:39:20.7447570Z Successfully installed uv version 0.9.26
+2026-09-20T17:39:21.0618140Z Searching files using cache dependency glob: /Users/runner/work/hol-guard/hol-guard/**/*requirements*.txt,/Users/runner/work/hol-guard/hol-guard/**/*requirements*.in,/Users/runner/work/hol-guard/hol-guard/**/*constraints*.txt,/Users/runner/work/hol-guard/hol-guard/**/*constraints*.in,/Users/runner/work/hol-guard/hol-guard/**/pyproject.toml,/Users/runner/work/hol-guard/hol-guard/**/uv.lock,/Users/runner/work/hol-guard/hol-guard/**/*.py.lock
+2026-09-20T17:39:21.0663780Z /Users/runner/work/hol-guard/hol-guard/.clusterfuzzlite/requirements-atheris.txt
+2026-09-20T17:39:21.0837050Z /Users/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.in
+2026-09-20T17:39:21.0847030Z /Users/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.txt
+2026-09-20T17:39:21.0849570Z /Users/runner/work/hol-guard/hol-guard/action/scanner-cisco-runtime-requirements.txt
+2026-09-20T17:39:21.0857050Z /Users/runner/work/hol-guard/hol-guard/action/scanner-runtime-requirements.txt
+2026-09-20T17:39:21.1425070Z /Users/runner/work/hol-guard/hol-guard/distributions/mcpb/pyproject.toml
+2026-09-20T17:39:21.1436290Z /Users/runner/work/hol-guard/hol-guard/docker-requirements.txt
+2026-09-20T17:39:21.1591500Z /Users/runner/work/hol-guard/hol-guard/pyproject.toml
+2026-09-20T17:39:21.1599450Z /Users/runner/work/hol-guard/hol-guard/requirements.txt
+2026-09-20T17:39:21.3750330Z /Users/runner/work/hol-guard/hol-guard/uv.lock
+2026-09-20T17:39:21.3816770Z Found 10 files to hash.
+2026-09-20T17:39:21.3817740Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-aarch64-apple-darwin-macos-14-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T17:39:21.5525840Z Cache hit for: setup-uv-2-aarch64-apple-darwin-macos-14-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T17:39:21.9824770Z Received 432467 of 432467 (100.0%), 1.4 MBs/sec
+2026-09-20T17:39:21.9859560Z Cache Size: ~0 MB (432467 B)
+2026-09-20T17:39:21.9864230Z [command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/4afd1569-d73a-4f96-a1ac-f8f00d6611df/cache.tzst -P -C /Users/runner/work/hol-guard/hol-guard --delay-directory-restore --use-compress-program unzstd
+2026-09-20T17:39:22.0012300Z Cache restored successfully
+2026-09-20T17:39:22.0016270Z cache restored from GitHub Actions cache with key: setup-uv-2-aarch64-apple-darwin-macos-14-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T17:39:22.1139910Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+2026-09-20T17:39:22.1140730Z [36;1mrustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy[0m
+2026-09-20T17:39:22.1141250Z [36;1mrustup default 1.88.0[0m
+2026-09-20T17:39:22.1227010Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T17:39:22.1227310Z env:
+2026-09-20T17:39:22.1227670Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:22.1228180Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:39:22.1228650Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:22.1229090Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:22.1229550Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:22.1230110Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:39:22.1230500Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:39:22.1230780Z ##[endgroup]
+2026-09-20T17:39:22.1955630Z info: syncing channel updates for 1.88.0-aarch64-apple-darwin
+2026-09-20T17:39:22.4334460Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T17:39:22.4357480Z info: downloading 5 components
+2026-09-20T17:39:29.6065500Z 
+2026-09-20T17:39:29.6440060Z   1.88.0-aarch64-apple-darwin installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T17:39:29.6440550Z 
+2026-09-20T17:39:29.6440890Z info: self-update is disabled for this build of rustup
+2026-09-20T17:39:29.6441340Z info: any updates to rustup will need to be fetched with your system package manager
+2026-09-20T17:39:29.6634010Z info: using existing install for 1.88.0-aarch64-apple-darwin
+2026-09-20T17:39:29.6681950Z info: default toolchain set to 1.88.0-aarch64-apple-darwin
+2026-09-20T17:39:29.6683050Z 
+2026-09-20T17:39:29.6777860Z   1.88.0-aarch64-apple-darwin unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T17:39:29.6778230Z 
+2026-09-20T17:39:29.6891440Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T17:39:29.6891930Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T17:39:29.6968050Z shell: /bin/bash -e {0}
+2026-09-20T17:39:29.6968520Z env:
+2026-09-20T17:39:29.6969000Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:29.6969550Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:39:29.6970270Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:29.6970750Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:29.6971130Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:29.6971550Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:39:29.6971910Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:39:29.6972190Z ##[endgroup]
+2026-09-20T17:39:29.7944250Z Using CPython 3.12.10 interpreter at: /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+2026-09-20T17:39:29.7952600Z Creating virtual environment at: .venv
+2026-09-20T17:39:29.8622150Z    Building hol-guard @ file:///Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:39:30.2850310Z Downloading pygments (1.2MiB)
+2026-09-20T17:39:30.2855750Z Downloading cryptography (3.8MiB)
+2026-09-20T17:39:30.2858410Z Downloading ruff (10.1MiB)
+2026-09-20T17:39:30.2865300Z Downloading pydantic-core (1.8MiB)
+2026-09-20T17:39:30.2877010Z Downloading nodejs-wheel-binaries (53.1MiB)
+2026-09-20T17:39:30.2883980Z Downloading basedpyright (12.6MiB)
+2026-09-20T17:39:30.2904930Z Downloading libcst (1.9MiB)
+2026-09-20T17:39:30.8618210Z  Downloaded pydantic-core
+2026-09-20T17:39:31.4246070Z  Downloaded ruff
+2026-09-20T17:39:31.7012380Z  Downloaded cryptography
+2026-09-20T17:39:32.1698340Z  Downloaded libcst
+2026-09-20T17:39:32.1845690Z  Downloaded pygments
+2026-09-20T17:39:32.7216440Z       Built hol-guard @ file:///Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:39:34.5184460Z  Downloaded basedpyright
+2026-09-20T17:39:34.5545850Z  Downloaded nodejs-wheel-binaries
+2026-09-20T17:39:34.5548140Z Prepared 67 packages in 4.71s
+2026-09-20T17:39:34.8499350Z Installed 67 packages in 294ms
+2026-09-20T17:39:34.8509060Z  + annotated-types==0.7.0
+2026-09-20T17:39:34.8510010Z  + anyio==4.14.2
+2026-09-20T17:39:34.8510390Z  + attrs==26.1.0
+2026-09-20T17:39:34.8510650Z  + basedpyright==1.39.8
+2026-09-20T17:39:34.8510840Z  + build==1.5.0
+2026-09-20T17:39:34.8511020Z  + certifi==2026.2.25
+2026-09-20T17:39:34.8511220Z  + cffi==2.0.0
+2026-09-20T17:39:34.8511440Z  + charset-normalizer==3.4.7
+2026-09-20T17:39:34.8511690Z  + click==8.4.1
+2026-09-20T17:39:34.8511880Z  + coverage==7.13.5
+2026-09-20T17:39:34.8512130Z  + cryptography==50.0.0
+2026-09-20T17:39:34.8512300Z  + h11==0.16.0
+2026-09-20T17:39:34.8512700Z  + hol-guard==3.0.1 (from file:///Users/runner/work/hol-guard/hol-guard)
+2026-09-20T17:39:34.8513010Z  + httpcore==1.0.9
+2026-09-20T17:39:34.8513300Z  + httpx==0.28.1
+2026-09-20T17:39:34.8513940Z  + httpx-sse==0.4.3
+2026-09-20T17:39:34.8514960Z  + idna==3.15
+2026-09-20T17:39:34.8515830Z  + importlib-metadata==8.9.0
+2026-09-20T17:39:34.8516580Z  + iniconfig==2.3.0
+2026-09-20T17:39:34.8516860Z  + jaraco-classes==3.4.0
+2026-09-20T17:39:34.8517190Z  + jaraco-context==6.1.2
+2026-09-20T17:39:34.8517580Z  + jaraco-functools==4.4.0
+2026-09-20T17:39:34.8517950Z  + jsonschema==4.26.0
+2026-09-20T17:39:34.8518290Z  + jsonschema-specifications==2025.9.1
+2026-09-20T17:39:34.8518640Z  + keyring==25.7.0
+2026-09-20T17:39:34.8519050Z  + libcst==1.9.0
+2026-09-20T17:39:34.8519420Z  + linkify-it-py==2.1.0
+2026-09-20T17:39:34.8519850Z  + markdown-it-py==4.0.0
+2026-09-20T17:39:34.8520220Z  + mcp==1.28.1
+2026-09-20T17:39:34.8520570Z  + mdit-py-plugins==0.5.0
+2026-09-20T17:39:34.8520920Z  + mdurl==0.1.2
+2026-09-20T17:39:34.8521270Z  + more-itertools==11.0.1
+2026-09-20T17:39:34.8521630Z  + mutmut==3.7.0
+2026-09-20T17:39:34.8522110Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T17:39:34.8523050Z  + packaging==26.0
+2026-09-20T17:39:34.8523380Z  + platformdirs==4.9.4
+2026-09-20T17:39:34.8523710Z  + pluggy==1.6.0
+2026-09-20T17:39:34.8524190Z  + psutil==7.2.2
+2026-09-20T17:39:34.8524650Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T17:39:34.8525240Z  + pycparser==3.0
+2026-09-20T17:39:34.8525690Z  + pydantic==2.12.5
+2026-09-20T17:39:34.8525890Z  + pydantic-core==2.41.5
+2026-09-20T17:39:34.8526100Z  + pydantic-settings==2.14.1
+2026-09-20T17:39:34.8526350Z  + pygments==2.20.0
+2026-09-20T17:39:34.8526650Z  + pyjwt==2.13.0
+2026-09-20T17:39:34.8526900Z  + pyproject-hooks==1.2.0
+2026-09-20T17:39:34.8527170Z  + pytest==9.0.3
+2026-09-20T17:39:34.8527470Z  + pytest-cov==7.1.0
+2026-09-20T17:39:34.8527720Z  + python-dotenv==1.2.2
+2026-09-20T17:39:34.8527920Z  + python-multipart==0.0.32
+2026-09-20T17:39:34.8528240Z  + pyyaml==6.0.3
+2026-09-20T17:39:34.8528490Z  + referencing==0.37.0
+2026-09-20T17:39:34.8528690Z  + regex==2026.4.4
+2026-09-20T17:39:34.8528930Z  + requests==2.33.1
+2026-09-20T17:39:34.8529160Z  + rich==14.2.0
+2026-09-20T17:39:34.8529360Z  + rpds-py==0.30.0
+2026-09-20T17:39:34.8529560Z  + ruff==0.15.17
+2026-09-20T17:39:34.8529860Z  + setproctitle==1.3.7
+2026-09-20T17:39:34.8530170Z  + sse-starlette==3.4.4
+2026-09-20T17:39:34.8530360Z  + starlette==1.3.1
+2026-09-20T17:39:34.8530670Z  + textual==7.5.0
+2026-09-20T17:39:34.8530950Z  + typing-extensions==4.15.0
+2026-09-20T17:39:34.8531210Z  + typing-inspection==0.4.2
+2026-09-20T17:39:34.8531470Z  + uc-micro-py==2.0.0
+2026-09-20T17:39:34.8531890Z  + urllib3==2.7.0
+2026-09-20T17:39:34.8532140Z  + uvicorn==0.40.0
+2026-09-20T17:39:34.8532430Z  + zipp==3.23.0
+2026-09-20T17:39:34.8758860Z ##[group]Run cargo fmt --manifest-path rust/Cargo.toml --all --check
+2026-09-20T17:39:34.8759300Z [36;1mcargo fmt --manifest-path rust/Cargo.toml --all --check[0m
+2026-09-20T17:39:34.8760080Z [36;1mcargo clippy --manifest-path rust/Cargo.toml --locked --workspace --all-targets -- -D warnings[0m
+2026-09-20T17:39:34.8760600Z [36;1mcargo test --manifest-path rust/Cargo.toml --locked --workspace --all-targets[0m
+2026-09-20T17:39:34.8826730Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T17:39:34.8826990Z env:
+2026-09-20T17:39:34.8827240Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:34.8827640Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:39:34.8828070Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:34.8828430Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:34.8828840Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:39:34.8829220Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:39:34.8829650Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:39:34.8829900Z ##[endgroup]
+2026-09-20T17:39:35.6080940Z     Updating crates.io index
+2026-09-20T17:39:35.9493850Z  Downloading crates ...
+2026-09-20T17:39:36.0093720Z   Downloaded cfg_aliases v0.2.2
+2026-09-20T17:39:36.0246250Z   Downloaded cc v1.4.4
+2026-09-20T17:39:36.0315920Z   Downloaded memoffset v0.9.1
+2026-09-20T17:39:36.0338660Z   Downloaded autocfg v1.5.1
+2026-09-20T17:39:36.0378210Z   Downloaded glob v0.3.4
+2026-09-20T17:39:36.0422780Z   Downloaded typenum v1.20.1
+2026-09-20T17:39:36.0521120Z   Downloaded zmij v1.0.23
+2026-09-20T17:39:36.0549440Z   Downloaded itoa v1.0.18
+2026-09-20T17:39:36.0595890Z   Downloaded serde_derive v1.0.229
+2026-09-20T17:39:36.0778770Z   Downloaded unicode-ident v1.0.24
+2026-09-20T17:39:36.0844180Z   Downloaded serde_core v1.0.229
+2026-09-20T17:39:36.0903310Z   Downloaded either v1.18.0
+2026-09-20T17:39:36.0936530Z   Downloaded serde v1.0.229
+2026-09-20T17:39:36.1004390Z   Downloaded memchr v2.8.3
+2026-09-20T17:39:36.1121270Z   Downloaded nom v7.1.3
+2026-09-20T17:39:36.1218090Z   Downloaded bindgen v0.72.1
+2026-09-20T17:39:36.1346710Z   Downloaded itertools v0.13.0
+2026-09-20T17:39:36.1480150Z   Downloaded serde_json v1.0.151
+2026-09-20T17:39:36.1619860Z   Downloaded regex v1.13.1
+2026-09-20T17:39:36.1780700Z   Downloaded sysinfo v0.37.2
+2026-09-20T17:39:36.1992350Z   Downloaded objc2-io-kit v0.3.2
+2026-09-20T17:39:36.2100690Z   Downloaded objc2-core-foundation v0.3.2
+2026-09-20T17:39:36.2238430Z   Downloaded libproc v0.14.11
+2026-09-20T17:39:36.2304340Z   Downloaded aho-corasick v1.1.5
+2026-09-20T17:39:36.2397740Z   Downloaded syn v2.0.119
+2026-09-20T17:39:36.2596260Z   Downloaded syn v3.0.3
+2026-09-20T17:39:36.2782310Z   Downloaded regex-syntax v0.8.11
+2026-09-20T17:39:36.2903240Z   Downloaded nix v0.31.3
+2026-09-20T17:39:36.3113690Z   Downloaded core-foundation-sys v0.8.7
+2026-09-20T17:39:36.3165170Z   Downloaded clang-sys v1.9.1
+2026-09-20T17:39:36.3201250Z   Downloaded cexpr v0.6.0
+2026-09-20T17:39:36.3231660Z   Downloaded sha2 v0.10.9
+2026-09-20T17:39:36.3298870Z   Downloaded minimal-lexical v0.2.1
+2026-09-20T17:39:36.3378220Z   Downloaded libloading v0.8.9
+2026-09-20T17:39:36.3413630Z   Downloaded digest v0.10.7
+2026-09-20T17:39:36.3442210Z   Downloaded core-foundation v0.10.1
+2026-09-20T17:39:36.3477810Z   Downloaded proc-macro2 v1.0.107
+2026-09-20T17:39:36.3538700Z   Downloaded getrandom v0.2.17
+2026-09-20T17:39:36.3595370Z   Downloaded regex-automata v0.4.18
+2026-09-20T17:39:36.3805590Z   Downloaded generic-array v0.14.7
+2026-09-20T17:39:36.3829870Z   Downloaded fs2 v0.4.3
+2026-09-20T17:39:36.3847380Z   Downloaded errno v0.3.14
+2026-09-20T17:39:36.3881230Z   Downloaded cpufeatures v0.2.17
+2026-09-20T17:39:36.3903150Z   Downloaded cfg-if v1.0.4
+2026-09-20T17:39:36.3921770Z   Downloaded version_check v0.9.5
+2026-09-20T17:39:36.3941560Z   Downloaded untrusted v0.9.0
+2026-09-20T17:39:36.3964700Z   Downloaded thiserror-impl v2.0.20
+2026-09-20T17:39:36.3986440Z   Downloaded thiserror v2.0.20
+2026-09-20T17:39:36.4102460Z   Downloaded shlex v2.0.1
+2026-09-20T17:39:36.4122650Z   Downloaded shlex v1.3.0
+2026-09-20T17:39:36.4141140Z   Downloaded security-framework-sys v2.17.0
+2026-09-20T17:39:36.4180240Z   Downloaded rustc-hash v2.1.3
+2026-09-20T17:39:36.4200160Z   Downloaded quote v1.0.47
+2026-09-20T17:39:36.4242960Z   Downloaded hex v0.4.3
+2026-09-20T17:39:36.4269370Z   Downloaded crypto-common v0.1.7
+2026-09-20T17:39:36.4283500Z   Downloaded security-framework v3.7.0
+2026-09-20T17:39:36.4351070Z   Downloaded getrandom v0.3.4
+2026-09-20T17:39:36.4421150Z   Downloaded bitflags v2.13.1
+2026-09-20T17:39:36.4497420Z   Downloaded find-msvc-tools v0.1.11
+2026-09-20T17:39:36.4522520Z   Downloaded block-buffer v0.10.4
+2026-09-20T17:39:36.4540180Z   Downloaded libc v0.2.189
+2026-09-20T17:39:36.5212130Z   Downloaded ring v0.17.14
+2026-09-20T17:39:36.6600450Z    Compiling libc v0.2.189
+2026-09-20T17:39:36.6600770Z    Compiling proc-macro2 v1.0.107
+2026-09-20T17:39:36.6601050Z    Compiling unicode-ident v1.0.24
+2026-09-20T17:39:37.0871380Z    Compiling quote v1.0.47
+2026-09-20T17:39:38.7739630Z    Compiling version_check v0.9.5
+2026-09-20T17:39:39.0426630Z    Compiling generic-array v0.14.7
+2026-09-20T17:39:39.1550270Z     Checking cfg-if v1.0.4
+2026-09-20T17:39:39.1769990Z     Checking typenum v1.20.1
+2026-09-20T17:39:39.4723410Z     Checking cpufeatures v0.2.17
+2026-09-20T17:39:39.4939660Z     Checking memchr v2.8.3
+2026-09-20T17:39:39.5780970Z    Compiling syn v3.0.3
+2026-09-20T17:39:39.7949730Z     Checking hex v0.4.3
+2026-09-20T17:39:39.9308790Z    Compiling serde_core v1.0.229
+2026-09-20T17:39:40.1640310Z     Checking block-buffer v0.10.4
+2026-09-20T17:39:40.2439430Z     Checking crypto-common v0.1.7
+2026-09-20T17:39:40.2922170Z     Checking digest v0.10.7
+2026-09-20T17:39:40.3926940Z     Checking sha2 v0.10.9
+2026-09-20T17:39:40.4906220Z    Compiling serde v1.0.229
+2026-09-20T17:39:40.7305690Z    Compiling zmij v1.0.23
+2026-09-20T17:39:40.9289690Z    Compiling serde_json v1.0.151
+2026-09-20T17:39:41.0605990Z     Checking bitflags v2.13.1
+2026-09-20T17:39:41.3196260Z    Compiling thiserror v2.0.20
+2026-09-20T17:39:41.5228190Z     Checking itoa v1.0.18
+2026-09-20T17:39:41.5768990Z    Compiling autocfg v1.5.1
+2026-09-20T17:39:41.8219610Z    Compiling memoffset v0.9.1
+2026-09-20T17:39:41.8924650Z    Compiling serde_derive v1.0.229
+2026-09-20T17:39:41.9548470Z    Compiling thiserror-impl v2.0.20
+2026-09-20T17:39:42.1857920Z     Checking guard-rules v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T17:39:42.2842830Z    Compiling cfg_aliases v0.2.2
+2026-09-20T17:39:42.3119720Z    Compiling nix v0.31.3
+2026-09-20T17:39:42.8897890Z     Checking aho-corasick v1.1.5
+2026-09-20T17:39:43.4190620Z     Checking regex-syntax v0.8.11
+2026-09-20T17:39:43.6387520Z     Checking guard-secure-fs v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T17:39:43.8507920Z    Compiling glob v0.3.4
+2026-09-20T17:39:44.0753420Z    Compiling clang-sys v1.9.1
+2026-09-20T17:39:44.4520780Z     Checking guard-contracts v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T17:39:44.6073490Z     Checking regex-automata v0.4.18
+2026-09-20T17:39:45.7807900Z     Checking regex v1.13.1
+2026-09-20T17:39:45.9729590Z    Compiling minimal-lexical v0.2.1
+2026-09-20T17:39:46.1843950Z    Compiling libloading v0.8.9
+2026-09-20T17:39:46.3054110Z    Compiling nom v7.1.3
+2026-09-20T17:39:46.3073520Z     Checking guard-scanner v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T17:39:47.1890510Z    Compiling bindgen v0.72.1
+2026-09-20T17:39:47.3338030Z    Compiling either v1.18.0
+2026-09-20T17:39:47.4484440Z    Compiling cexpr v0.6.0
+2026-09-20T17:39:47.4616390Z    Compiling itertools v0.13.0
+2026-09-20T17:39:48.1962930Z    Compiling syn v2.0.119
+2026-09-20T17:39:48.2620500Z    Compiling shlex v2.0.1
+2026-09-20T17:39:48.3612550Z    Compiling shlex v1.3.0
+2026-09-20T17:39:48.4631690Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T17:39:48.5873940Z    Compiling rustc-hash v2.1.3
+2026-09-20T17:39:48.7661770Z    Compiling cc v1.4.4
+2026-09-20T17:39:49.8494420Z     Checking core-foundation-sys v0.8.7
+2026-09-20T17:39:49.9594780Z    Compiling ring v0.17.14
+2026-09-20T17:39:50.2505690Z     Checking guard-hook-core v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T17:39:50.3622060Z     Checking guard-command v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T17:39:51.7519410Z     Checking objc2-core-foundation v0.3.2
+2026-09-20T17:39:52.1175530Z    Compiling getrandom v0.3.4
+2026-09-20T17:39:52.2801780Z     Checking objc2-io-kit v0.3.2
+2026-09-20T17:39:52.5571830Z     Checking security-framework-sys v2.17.0
+2026-09-20T17:39:52.6745120Z     Checking core-foundation v0.10.1
+2026-09-20T17:39:52.8343620Z     Checking errno v0.3.14
+2026-09-20T17:39:52.8841460Z     Checking getrandom v0.2.17
+2026-09-20T17:39:52.9506590Z     Checking untrusted v0.9.0
+2026-09-20T17:39:52.9976620Z     Checking security-framework v3.7.0
+2026-09-20T17:39:53.6706350Z     Checking sysinfo v0.37.2
+2026-09-20T17:39:54.1471490Z     Checking guard-policy-snapshot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T17:39:54.5551820Z     Checking guard-rule-contract v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T17:39:54.6604210Z     Checking fs2 v0.4.3
+2026-09-20T17:39:54.7121500Z     Checking guard-runtime-windows-process v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T17:39:55.3857720Z    Compiling libproc v0.14.11
+2026-09-20T17:39:57.7679810Z     Checking hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T17:39:58.3534360Z     Checking guard-offline-regex-pilot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-offline-regex-pilot)
+2026-09-20T17:40:02.1238250Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 26.59s
+2026-09-20T17:40:02.3274870Z    Compiling cfg-if v1.0.4
+2026-09-20T17:40:02.3277160Z    Compiling libc v0.2.189
+2026-09-20T17:40:02.3303720Z    Compiling typenum v1.20.1
+2026-09-20T17:40:02.3584650Z    Compiling hex v0.4.3
+2026-09-20T17:40:02.4927320Z    Compiling memchr v2.8.3
+2026-09-20T17:40:02.7579550Z    Compiling generic-array v0.14.7
+2026-09-20T17:40:02.8617570Z    Compiling serde_core v1.0.229
+2026-09-20T17:40:02.9761750Z    Compiling cpufeatures v0.2.17
+2026-09-20T17:40:03.0290120Z    Compiling bitflags v2.13.1
+2026-09-20T17:40:03.1613270Z    Compiling block-buffer v0.10.4
+2026-09-20T17:40:03.1943310Z    Compiling crypto-common v0.1.7
+2026-09-20T17:40:03.2252160Z    Compiling zmij v1.0.23
+2026-09-20T17:40:03.2347110Z    Compiling digest v0.10.7
+2026-09-20T17:40:03.3398430Z    Compiling sha2 v0.10.9
+2026-09-20T17:40:03.4930070Z    Compiling guard-rules v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T17:40:03.5123940Z    Compiling itoa v1.0.18
+2026-09-20T17:40:03.6322820Z    Compiling thiserror v2.0.20
+2026-09-20T17:40:03.6725670Z    Compiling memoffset v0.9.1
+2026-09-20T17:40:03.7052010Z    Compiling nix v0.31.3
+2026-09-20T17:40:03.7420230Z    Compiling aho-corasick v1.1.5
+2026-09-20T17:40:04.5575420Z    Compiling serde v1.0.229
+2026-09-20T17:40:04.8666170Z    Compiling serde_json v1.0.151
+2026-09-20T17:40:05.0930070Z    Compiling regex-syntax v0.8.11
+2026-09-20T17:40:05.1733560Z    Compiling guard-secure-fs v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T17:40:05.6962650Z    Compiling guard-contracts v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T17:40:05.8376430Z    Compiling libloading v0.8.9
+2026-09-20T17:40:05.9384170Z    Compiling clang-sys v1.9.1
+2026-09-20T17:40:07.4611140Z    Compiling regex-automata v0.4.18
+2026-09-20T17:40:08.2327190Z    Compiling bindgen v0.72.1
+2026-09-20T17:40:08.8079060Z    Compiling core-foundation-sys v0.8.7
+2026-09-20T17:40:08.9170470Z    Compiling guard-command v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T17:40:10.5496100Z    Compiling regex v1.13.1
+2026-09-20T17:40:10.8744970Z    Compiling guard-scanner v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T17:40:11.3213210Z    Compiling guard-hook-core v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T17:40:11.7506660Z    Compiling objc2-core-foundation v0.3.2
+2026-09-20T17:40:12.3718190Z    Compiling libproc v0.14.11
+2026-09-20T17:40:12.5869750Z    Compiling objc2-io-kit v0.3.2
+2026-09-20T17:40:12.9290760Z    Compiling core-foundation v0.10.1
+2026-09-20T17:40:13.2045190Z    Compiling security-framework-sys v2.17.0
+2026-09-20T17:40:13.3233330Z    Compiling errno v0.3.14
+2026-09-20T17:40:13.3881460Z    Compiling getrandom v0.2.17
+2026-09-20T17:40:13.4527420Z    Compiling untrusted v0.9.0
+2026-09-20T17:40:13.4986520Z    Compiling ring v0.17.14
+2026-09-20T17:40:14.6945710Z    Compiling security-framework v3.7.0
+2026-09-20T17:40:15.1093220Z    Compiling sysinfo v0.37.2
+2026-09-20T17:40:15.1418580Z    Compiling getrandom v0.3.4
+2026-09-20T17:40:15.2140930Z    Compiling guard-policy-snapshot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T17:40:16.2960880Z    Compiling guard-rule-contract v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T17:40:16.3111620Z    Compiling fs2 v0.4.3
+2026-09-20T17:40:16.3824230Z    Compiling guard-runtime-windows-process v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T17:40:16.6151700Z    Compiling hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T17:40:18.5047030Z    Compiling guard-offline-regex-pilot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-offline-regex-pilot)
+2026-09-20T17:40:27.3333540Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 25.15s
+2026-09-20T17:40:27.3479860Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_command-f5732b12bacec4dd)
+2026-09-20T17:40:27.3507670Z 
+2026-09-20T17:40:27.3508080Z running 57 tests
+2026-09-20T17:40:27.3526430Z test command_common_cli_matchers::tests::uncertain_or_oversized_commands_do_not_become_empty_match_results ... ok
+2026-09-20T17:40:27.3531100Z test command_common_cli_matchers::tests::unknown_operations_and_incompatible_configs_are_explicit_errors ... ok
+2026-09-20T17:40:27.3534440Z test command_common_cli_matchers::tests::canonical_shell_parser_feeds_typed_common_cli_matchers ... ok
+2026-09-20T17:40:27.3650820Z test command_option_parsing::tests::expired_outer_deadline_preserves_uncertainty_direction ... ok
+2026-09-20T17:40:27.3761240Z test command_option_parsing::tests::absent_requirements_are_vacuously_true_and_unknown_arity_can_consume_help ... ok
+2026-09-20T17:40:27.3882840Z test command_common_cli_matchers::tests::seven_operations_match_python_reference_vectors_in_segment_order ... ok
+2026-09-20T17:40:27.3987530Z test command_option_parsing::unicode::tests::unicode_reference_categories_are_disjoint_sorted_and_python_compatible ... ok
+2026-09-20T17:40:27.4090440Z test command_specialized_matchers::tests::canonical_parser_feeds_database_php_curl_and_expansion_matchers ... ok
+2026-09-20T17:40:27.4108000Z test command_option_parsing::tests::matches_python_option_oracles ... ok
+2026-09-20T17:40:27.4108720Z test command_specialized_matchers::tests::config_admission_rejects_unknown_or_invalid_semantics ... ok
+2026-09-20T17:40:27.4109530Z test command_specialized_matchers::tests::inherited_deadline_confidence_and_size_limits_propagate_errors ... ok
+2026-09-20T17:40:27.4111220Z test command_specialized_matchers::tests::literal_configuration_preserves_the_reviewed_ascii_grammar_and_limits ... ok
+2026-09-20T17:40:27.4119590Z test command_specialized_matchers::tests::literal_evidence_requires_parser_provenance_and_exact_semantic_shape ... ok
+2026-09-20T17:40:27.4121910Z test command_specialized_matchers::unicode_tests::ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings ... ok
+2026-09-20T17:40:27.4130380Z test command_specialized_matchers::unicode_tests::unicode_configurations_cannot_enter_the_ascii_comparison_contract ... ok
+2026-09-20T17:40:27.4132280Z test command_specialized_matchers::unicode_tests::unicode_operands_keep_python_and_php_launcher_classification_exact ... ok
+2026-09-20T17:40:27.4134140Z test command_specialized_matchers::tests::eight_operations_match_python_or_report_declared_capability_misses ... ok
+2026-09-20T17:40:27.4135860Z test command_structured_matchers::tests::expired_deadline_never_returns_empty_or_partial_evidence ... ok
+2026-09-20T17:40:27.4137440Z test command_structured_matchers::tests::opaque_unicode_operands_and_python_whitespace_are_supported ... ok
+2026-09-20T17:40:27.4139190Z test command_structured_matchers::tests::rejects_unknown_fields_and_invalid_matcher_grammars_before_admission ... ok
+2026-09-20T17:40:27.4140950Z test command_structured_matchers::tests::unsupported_unicode_case_mapping_is_error_not_a_negative_match ... ok
+2026-09-20T17:40:27.4142570Z test executable_flag_contract::tests::ambiguous_contracts_are_rejected_before_flag_interpretation ... ok
+2026-09-20T17:40:27.4144060Z test executable_flag_contract::tests::python_base_defaults_and_value_option_union ... ok
+2026-09-20T17:40:27.4146010Z test native_command_program::bench::native_command_program_component_diagnostic ... ignored, diagnostic component timing; run release mode explicitly
+2026-09-20T17:40:27.4147900Z test command_structured_matchers::tests::matches_python_specialized_oracle_for_all_eight_operations ... ok
+2026-09-20T17:40:27.4252530Z test command_option_parsing::tests::state_exhaustion_keeps_destructive_matching_and_denies_safety_proof ... ok
+2026-09-20T17:40:27.9293780Z test native_command_program::dns_control_tests::dns_projection_cross_layer_and_global_authority_floors_stay_strict ... ok
+2026-09-20T17:40:27.9695690Z test native_command_program::dns_control_tests::dns_projection_missing_provider_catalog_target_is_rejected ... ok
+2026-09-20T17:40:28.0209140Z test native_command_program::dns_control_tests::dns_projection_aggregate_matches_explicit_provider_evaluation ... ok
+2026-09-20T17:40:28.0313680Z test native_command_program::dns_control_tests::dns_projection_raw_and_derived_bounds_remain_distinct ... ok
+2026-09-20T17:40:28.0414770Z test native_command_program::dns_control_tests::dns_projection_raw_validation_precedes_admission ... ok
+2026-09-20T17:40:28.0520700Z test native_command_program::dns_control_tests::dns_projection_recognizes_only_exact_kind_and_identifiers ... ok
+2026-09-20T17:40:28.0622570Z test native_command_program::matrix::native_command_catalog_control_matrix ... ignored, component matrix; generate trusted fixtures and run release mode explicitly
+2026-09-20T17:40:28.0725560Z test native_command_program::tests::a_previously_reviewable_command_becomes_a_hard_floor_after_permission_disable ... ok
+2026-09-20T17:40:28.4222000Z test native_command_program::dns_control_tests::dns_projection_permission_enable_still_requires_configurable_program_gate ... ok
+2026-09-20T17:40:28.4465950Z test native_command_program::tests::compatibility_safe_commands_and_ruleless_permissions_obey_controls ... ok
+2026-09-20T17:40:28.5766400Z test native_command_program::dns_control_tests::dns_projection_unique_collisions_preserve_disable_dominance_and_other_providers ... ok
+2026-09-20T17:40:28.5868980Z test native_command_program::tests::controls_are_bound_to_program_and_both_independent_revisions ... ok
+2026-09-20T17:40:28.5978420Z test native_command_program::tests::disabled_permission_and_failed_authority_cannot_become_allow ... ok
+2026-09-20T17:40:28.6079920Z test native_command_program::tests::graph_depth_proof_cannot_be_bypassed_by_memoized_shared_children ... ok
+2026-09-20T17:40:28.6172700Z test native_command_program::tests::local_opt_in_selects_ollama_and_safe_evidence_stays_on_its_own_segment ... ok
+2026-09-20T17:40:28.6174250Z test native_command_program::tests::packaged_program_is_admitted_once_and_exposes_explicit_coverage ... ok
+2026-09-20T17:40:28.6175520Z test pretool::tests::allows_bounded_exact_commands ... ok
+2026-09-20T17:40:28.6176110Z test pretool::tests::blocks_destructive_and_device_commands ... ok
+2026-09-20T17:40:28.6177180Z test pretool::tests::defers_only_exact_safe_git_helper_context ... ok
+2026-09-20T17:40:28.6177840Z test pretool::tests::denies_uncertain_or_networked_commands ... ok
+2026-09-20T17:40:28.6178430Z test pretool::tests::reviews_dotenv_family_shell_reads ... ok
+2026-09-20T17:40:28.6179480Z test pretool::tests::reviews_home_relative_secret_paths ... ok
+2026-09-20T17:40:28.6180190Z test pretool::tests::reviews_only_materially_risky_variants_of_safe_commands ... ok
+2026-09-20T17:40:28.6182460Z test tests::marks_complex_shell_forms_uncertain_without_partial_segments ... ok
+2026-09-20T17:40:28.6183650Z test tests::matches_python_shlex_escape_and_whitespace_semantics ... ok
+2026-09-20T17:40:28.6184300Z test tests::parses_simple_command_without_execution ... ok
+2026-09-20T17:40:28.6185540Z test tests::preserves_quotes_environment_and_path_override ... ok
+2026-09-20T17:40:28.6186220Z test tests::rejects_oversized_commands_without_partial_exact_parse ... ok
+2026-09-20T17:40:28.6187270Z test tests::splits_pipeline_but_not_quoted_pipe ... ok
+2026-09-20T17:40:28.9628320Z test native_command_program::tests::complete_observations_match_independent_python_reference_models ... ok
+2026-09-20T17:40:29.0839650Z test native_command_program::tests::admission_rejects_tampered_unknown_and_invalid_nodes ... ok
+2026-09-20T17:40:29.0841070Z 
+2026-09-20T17:40:29.0842180Z test result: ok. 55 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.73s
+2026-09-20T17:40:29.0843290Z 
+2026-09-20T17:40:29.0848900Z      Running tests/command_compatibility.rs (rust/target/debug/deps/command_compatibility-161b0673e0d954da)
+2026-09-20T17:40:29.0937660Z 
+2026-09-20T17:40:29.0939100Z running 7 tests
+2026-09-20T17:40:29.0971310Z test budget_and_parser_failures_cannot_become_empty_success ... ok
+2026-09-20T17:40:29.0976960Z test compound_attribution_keeps_every_segment_and_deduplicates_identity ... ok
+2026-09-20T17:40:29.0978060Z test git_disabled_permission_attribution_is_not_lost_on_native_safe_commands ... ok
+2026-09-20T17:40:29.0979040Z test github_reads_have_permission_attribution_without_fabricated_rules ... ok
+2026-09-20T17:40:29.0980450Z test graphql_remains_owned_unsupported_instead_of_permissionless_allow ... ok
+2026-09-20T17:40:29.1053490Z test frozen_independent_capability_and_admission_vectors ... ok
+2026-09-20T17:40:29.1754420Z test audited_inventory_is_exactly_the_null_matcher_catalog_subset ... ok
+2026-09-20T17:40:29.1755260Z 
+2026-09-20T17:40:29.1755860Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+2026-09-20T17:40:29.1756710Z 
+2026-09-20T17:40:29.1757530Z      Running tests/pretool_generic.rs (rust/target/debug/deps/pretool_generic-b6c1db1b2028922c)
+2026-09-20T17:40:29.1814400Z 
+2026-09-20T17:40:29.1815360Z running 6 tests
+2026-09-20T17:40:29.1848280Z test bounds_reject_oversized_payload ... ok
+2026-09-20T17:40:29.1849430Z test allows_bounded_command_without_returning_raw_content ... ok
+2026-09-20T17:40:29.1857170Z test benign_command_cannot_erase_independent_sensitive_path_floor ... ok
+2026-09-20T17:40:29.1857890Z test tool_classification_uses_token_boundaries ... ok
+2026-09-20T17:40:29.1863870Z test covers_generic_action_classes_and_dangerous_process_floor ... ok
+2026-09-20T17:40:29.1889960Z test covers_prompt_harness_unknown_conflicts_and_bounds ... ok
+2026-09-20T17:40:29.1890910Z 
+2026-09-20T17:40:29.1891660Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-09-20T17:40:29.1893100Z 
+2026-09-20T17:40:29.1893670Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_contracts-0d871ec432386e17)
+2026-09-20T17:40:29.1918080Z 
+2026-09-20T17:40:29.1919700Z running 3 tests
+2026-09-20T17:40:29.1920850Z test tests::hook_envelope_v2_rejects_unknown_fields ... ok
+2026-09-20T17:40:29.1921950Z test tests::response_omits_empty_optionals ... ok
+2026-09-20T17:40:29.1923860Z test tests::generic_pre_tool_result_rejects_raw_content_and_unknown_fields ... ok
+2026-09-20T17:40:29.1924920Z 
+2026-09-20T17:40:29.1925560Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:29.1926530Z 
+2026-09-20T17:40:29.1927220Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_hook_core-374fdba3236558cb)
+2026-09-20T17:40:29.1950140Z 
+2026-09-20T17:40:29.1950840Z running 9 tests
+2026-09-20T17:40:29.1952440Z test output_reference_tests::benchmark_output_extraction ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T17:40:29.1963100Z test tests::empty_inline_output_is_allowed_with_digest ... ok
+2026-09-20T17:40:29.2304560Z test tests::clean_inline_output_is_allowed ... ok
+2026-09-20T17:40:29.2354170Z test tests::observe_inline_secret_preserves_original_with_digest ... ok
+2026-09-20T17:40:29.2354870Z test tests::secret_inline_output_is_blocked ... ok
+2026-09-20T17:40:29.2355490Z test tests::stderr_is_scanned_even_when_stdout_exists ... ok
+2026-09-20T17:40:29.2355990Z test tests::upstream_deadline_is_not_restarted_before_scanning ... ok
+2026-09-20T17:40:29.7960820Z test tests::observe_truncated_inline_secret_remains_blocked_without_digest ... ok
+2026-09-20T17:40:31.1687160Z test output_reference_tests::extraction_preserves_unicode_limits_order_and_structural_truncation ... ok
+2026-09-20T17:40:31.1692770Z 
+2026-09-20T17:40:31.1701560Z test result: ok. 8 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.97s
+2026-09-20T17:40:31.1702720Z 
+2026-09-20T17:40:31.1719950Z      Running tests/decision_io.rs (rust/target/debug/deps/decision_io-1a14a7032dd8aaf2)
+2026-09-20T17:40:31.1822010Z 
+2026-09-20T17:40:31.1824170Z running 4 tests
+2026-09-20T17:40:31.1922200Z test source_replacement_between_observations_is_not_equivalent ... ok
+2026-09-20T17:40:31.1926720Z test source_growth_after_expected_output_is_not_equivalent ... ok
+2026-09-20T17:40:31.1927320Z test invalid_utf8_source_is_fail_closed_without_materializing_bytes ... ok
+2026-09-20T17:40:31.1929070Z test symlink_source_is_fail_closed ... ok
+2026-09-20T17:40:31.1929430Z 
+2026-09-20T17:40:31.1929730Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-09-20T17:40:31.1930210Z 
+2026-09-20T17:40:31.1933620Z      Running tests/windows_source.rs (rust/target/debug/deps/windows_source-ed8519f942946f74)
+2026-09-20T17:40:31.2002790Z 
+2026-09-20T17:40:31.2004260Z running 0 tests
+2026-09-20T17:40:31.2005010Z 
+2026-09-20T17:40:31.2005880Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:31.2006920Z 
+2026-09-20T17:40:31.2008300Z      Running unittests src/main.rs (rust/target/debug/deps/guard_offline_regex_pilot-da1f6e4502c30a93)
+2026-09-20T17:40:31.2058770Z 
+2026-09-20T17:40:31.2059670Z running 4 tests
+2026-09-20T17:40:31.2071910Z test tests::eof_and_unterminated_frames_differ ... ok
+2026-09-20T17:40:31.2076350Z test tests::protocol_rejects_unknown_fields ... ok
+2026-09-20T17:40:31.2089810Z test tests::separate_documents_never_complete_split_candidates ... ok
+2026-09-20T17:40:31.5028280Z test tests::unsupported_inputs_and_candidate_overflow_are_errors ... ok
+2026-09-20T17:40:31.5028830Z 
+2026-09-20T17:40:31.5029210Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+2026-09-20T17:40:31.5029520Z 
+2026-09-20T17:40:31.5031410Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_policy_snapshot-d8c9c08e73c8aabd)
+2026-09-20T17:40:31.5060630Z 
+2026-09-20T17:40:31.5064010Z running 6 tests
+2026-09-20T17:40:31.5081280Z test tests::canonical_json_sorts_object_keys ... ok
+2026-09-20T17:40:31.5083620Z test tests::rejects_mutated_effective_policy_and_mac ... ok
+2026-09-20T17:40:31.5084810Z test tests::rejects_expired_and_replayed_generation ... ok
+2026-09-20T17:40:31.5085770Z test tests::rejects_runtime_rule_and_protocol_mismatch ... ok
+2026-09-20T17:40:31.5087520Z test tests::rejects_unknown_risk_selector_and_conflicting_harness_aliases ... ok
+2026-09-20T17:40:31.5095280Z test tests::validates_authenticated_v3_snapshot ... ok
+2026-09-20T17:40:31.5095930Z 
+2026-09-20T17:40:31.5096570Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:31.5097440Z 
+2026-09-20T17:40:31.5100810Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_rule_contract-ed4148f63077a0f4)
+2026-09-20T17:40:31.5135940Z 
+2026-09-20T17:40:31.5136680Z running 1 test
+2026-09-20T17:40:31.8353220Z test tests::contract_is_stable_and_complete ... ok
+2026-09-20T17:40:31.8354180Z 
+2026-09-20T17:40:31.8354840Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_rules-9bd9a43097a3a1c4)
+2026-09-20T17:40:31.8355520Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+2026-09-20T17:40:31.8355900Z 
+2026-09-20T17:40:31.8398900Z 
+2026-09-20T17:40:31.8399340Z running 1 test
+2026-09-20T17:40:31.8401530Z test tests::digest_is_stable_shape ... ok
+2026-09-20T17:40:31.8401940Z 
+2026-09-20T17:40:31.8402270Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:31.8402810Z 
+2026-09-20T17:40:31.8409540Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_runtime_windows_process-6189d0e34e7e864e)
+2026-09-20T17:40:31.8433240Z 
+2026-09-20T17:40:31.8433810Z running 0 tests
+2026-09-20T17:40:31.8434140Z 
+2026-09-20T17:40:31.8434530Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:31.8435500Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_scanner-ebd40a7060cf7a8c)
+2026-09-20T17:40:31.8435830Z 
+2026-09-20T17:40:31.8494570Z 
+2026-09-20T17:40:31.8497420Z running 8 tests
+2026-09-20T17:40:31.8502060Z test prefilter_bench_tests::benchmark_scanner_prefilter ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T17:40:31.8772200Z test tests::detects_split_token_across_chunks ... ok
+2026-09-20T17:40:31.8890270Z test tests::detects_github_token_without_returning_sample ... ok
+2026-09-20T17:40:31.8955220Z test tests::documentation_placeholder_is_suppressed ... ok
+2026-09-20T17:40:31.8956720Z test tests::realistic_medium_credentials_survive_local_retry ... ok
+2026-09-20T17:40:31.8958440Z test tests::inert_credential_expressions_are_suppressed_during_local_retry ... ok
+2026-09-20T17:40:32.9075760Z test prefilter_bench_tests::prefilter_retains_per_match_suppression_and_ordering ... ok
+2026-09-20T17:40:40.6785980Z test tests::unicode_overlap_and_document_boundaries_are_isolated ... ok
+2026-09-20T17:40:40.6918140Z      Running unittests examples/mcp_text_facts_pilot.rs (rust/target/debug/examples/mcp_text_facts_pilot-db848988349b8fdd)
+2026-09-20T17:40:40.6918580Z 
+2026-09-20T17:40:40.7020530Z test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 8.83s
+2026-09-20T17:40:40.7122450Z 
+2026-09-20T17:40:40.7224260Z 
+2026-09-20T17:40:40.7260530Z running 6 tests
+2026-09-20T17:40:40.7261150Z test tests::failed_output_is_not_retried_or_reported_as_a_complete_request ... ok
+2026-09-20T17:40:40.7261780Z test tests::empty_input_and_repeated_complete_frames_have_exact_responses ... ok
+2026-09-20T17:40:40.7262400Z test tests::fixed_predicates_preserve_ascii_boundaries_and_boolean_groups ... ok
+2026-09-20T17:40:40.7263100Z test tests::python_whitespace_is_explicit_and_no_text_normalization_occurs ... ok
+2026-09-20T17:40:40.7862610Z test tests::partial_invalid_and_non_increasing_frames_fail_without_a_reply ... ok
+2026-09-20T17:40:41.3012870Z      Running unittests src/lib.rs (rust/target/debug/deps/guard_secure_fs-bff405a003946214)
+2026-09-20T17:40:41.3013410Z test tests::whole_packet_byte_limit_includes_the_header ... ok
+2026-09-20T17:40:41.3119680Z 
+2026-09-20T17:40:41.3216280Z      Running tests/decision_io.rs (rust/target/debug/deps/decision_io-6795b4c84847f89a)
+2026-09-20T17:40:41.3217980Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+2026-09-20T17:40:41.3318960Z      Running unittests src/main.rs (rust/target/debug/deps/hol_guard_runtime-46ab29766581b6e0)
+2026-09-20T17:40:41.3319970Z 
+2026-09-20T17:40:41.3447900Z 
+2026-09-20T17:40:41.3553780Z running 10 tests
+2026-09-20T17:40:41.3654360Z test tests::bounded_read_rejects_file_without_read_permission_even_for_root ... ok
+2026-09-20T17:40:41.3754670Z test tests::bounded_read_hashes_regular_file ... ok
+2026-09-20T17:40:41.3854980Z test tests::bounded_read_rejects_hard_linked_source ... ok
+2026-09-20T17:40:41.3956930Z test tests::bounded_read_rejects_parent_symlink_source_replacement ... ok
+2026-09-20T17:40:41.4056580Z test tests::bounded_read_rejects_symlink_source ... ok
+2026-09-20T17:40:41.4156940Z test tests::file_identity_changes_when_source_permissions_change ... ok
+2026-09-20T17:40:41.4257520Z test tests::sensitive_paths_are_classified ... ok
+2026-09-20T17:40:41.4358560Z test tests::source_classifier_rejects_sensitive_external_filename_without_substring_false_positive ... ok
+2026-09-20T17:40:41.4458940Z test tests::source_classifier_allows_workflow_and_sibling_git_source ... ok
+2026-09-20T17:40:41.4559140Z test tests::source_classifier_rejects_hidden_sensitive_and_escape_paths ... ok
+2026-09-20T17:40:41.4659960Z 
+2026-09-20T17:40:41.4760640Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-09-20T17:40:41.4861560Z 
+2026-09-20T17:40:41.4962420Z 
+2026-09-20T17:40:41.5075590Z running 2 tests
+2026-09-20T17:40:41.5176810Z test bounded_read_rejects_truncation_limit_before_materializing_more_bytes ... ok
+2026-09-20T17:40:41.5277560Z test bounded_read_rejects_source_growth_beyond_limit ... ok
+2026-09-20T17:40:41.5377920Z 
+2026-09-20T17:40:41.5478360Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:40:41.5578800Z 
+2026-09-20T17:40:41.5687320Z 
+2026-09-20T17:40:41.5807930Z running 189 tests
+2026-09-20T17:40:41.5908620Z test approval::approval_replay_memory::tests::full_binding_mutation_is_rejected_before_state_transition ... ok
+2026-09-20T17:40:41.6010320Z test approval::approval_replay_memory::tests::expiry_and_double_consume_are_atomic ... ok
+2026-09-20T17:40:41.6111410Z test approval::approval_replay_memory::tests::transition_tests::every_transition_prunes_expired_entries ... ok
+2026-09-20T17:40:41.6214070Z test approval::approval_replay_memory::tests::restart_epoch_rejects_old_artifact_state ... ok
+2026-09-20T17:40:41.6316260Z test approval::approval_replay_memory::tests::transition_tests::failed_emit_restores_claim_for_retry ... ok
+2026-09-20T17:40:41.7518220Z test approval::approval_replay_memory::tests::capacity_is_bounded_without_eviction ... ok
+2026-09-20T17:40:41.8391850Z test approval::approval_v4::tests::assertion_mutations_fail_before_replay_claim ... ok
+2026-09-20T17:40:41.9698400Z test approval::approval_v4::tests::ed25519_assertion_validates_and_persists_counter_zero_and_one ... ok
+2026-09-20T17:40:42.2046890Z test approval::approval_v4::tests::es256_assertion_validates_and_rejects_zero_after_counter_established ... ok
+2026-09-20T17:40:42.3036190Z test approval::approval_v4::tests::negative_tests::v4_request_policy_harness_expiry_and_authority_bindings_fail_closed ... ok
+2026-09-20T17:40:42.5865040Z test approval::approval_v4::tests::negative_tests::v4_restart_and_concurrent_claims_fail_closed ... ok
+2026-09-20T17:40:42.5922870Z test approval::approval_v4_crypto::tests::base64url_rejects_noncanonical_and_round_trips ... ok
+2026-09-20T17:40:42.6024130Z test approval::approval_v4_crypto::tests::cbor_rejects_duplicate_keys_and_indefinite_maps ... ok
+2026-09-20T17:40:42.6765640Z test approval::approval_v4::tests::negative_tests::webauthn_origin_rp_flags_type_and_signature_are_verified_in_rust ... ok
+2026-09-20T17:40:42.7357410Z test approval::approval_v4::tests::webauthn_optional_cross_origin_is_treated_as_false ... ok
+2026-09-20T17:40:42.9758160Z test approval::tests::lifecycle_tests::artifact_binding_mutation_and_hard_floors_fail_before_claim ... ok
+2026-09-20T17:40:42.9860540Z test approval::tests::binding_mutations_are_rejected_even_when_resigned ... ok
+2026-09-20T17:40:43.0188520Z test approval::tests::lifecycle_tests::artifact_timing_nonce_and_integrity_are_checked ... ok
+2026-09-20T17:40:43.2307180Z test approval::tests::lifecycle_tests::binding_derivation_uses_separate_runtime_purposes ... ok
+2026-09-20T17:40:43.2469040Z test approval::tests::lifecycle_tests::consume_requires_claim_and_is_single_use ... ok
+2026-09-20T17:40:43.2974620Z test approval::tests::lifecycle_tests::malformed_oversize_and_deep_requests_fail_closed ... ok
+2026-09-20T17:40:43.5616010Z test approval::tests::lifecycle_tests::policy_material_and_public_key_replacement_cannot_authorize ... ok
+2026-09-20T17:40:43.7339260Z test approval::tests::lifecycle_tests::policy_push_after_claim_before_consume_cannot_authorize_execution ... ok
+2026-09-20T17:40:43.9148960Z test approval::tests::request_identity_is_opaque_and_rust_derived_when_missing ... ok
+2026-09-20T17:40:43.9274550Z test edge::identity::tests::borrowed_identity_binds_source_policy_and_arbitrary_json_values ... ok
+2026-09-20T17:40:43.9410790Z test edge::identity::tests::borrowed_identity_preserves_legacy_bytes_and_root_only_omissions ... ok
+2026-09-20T17:40:43.9544840Z test edge::identity::tests::malformed_payload_and_explicit_request_ids_keep_error_contract ... ok
+2026-09-20T17:40:44.0264530Z test approval::tests::lifecycle_tests::replay_and_concurrent_claim_are_single_use ... ok
+2026-09-20T17:40:44.0367470Z test edge::serialization::tests::borrowed_canonical_values_match_existing_bytes_for_every_json_kind ... ok
+2026-09-20T17:40:44.0469530Z test edge::serialization::tests::counting_rejects_overflow_and_excess_without_partial_success ... ok
+2026-09-20T17:40:44.0570960Z test edge::serialization::tests::serializer_failure_is_not_accepted_as_a_short_encoding ... ok
+2026-09-20T17:40:44.0772350Z test approval::tests::valid_artifact_allows_exact_review_and_returns_private_receipt ... ok
+2026-09-20T17:40:44.1806240Z test edge::tests::evaluates_complete_cursor_file_envelope_as_native_generic_result ... ok
+2026-09-20T17:40:44.1907110Z test edge::tests::evaluates_cursor_dotenv_read_as_sensitive_review ... ok
+2026-09-20T17:40:44.3388280Z test edge::tests::ingress_time_consumes_the_original_edge_deadline ... ok
+2026-09-20T17:40:44.4828320Z test edge::tests::normalizes_harness_event_and_extracts_pretool_command ... ok
+2026-09-20T17:40:44.6314060Z test edge::tests::rejects_conflicting_payload_event_aliases ... ok
+2026-09-20T17:40:44.7689330Z test edge::tests::rejects_declared_and_payload_event_mismatch ... ok
+2026-09-20T17:40:44.9314830Z test edge::tests::rejects_malformed_source_reference_before_review ... ok
+2026-09-20T17:40:45.0934740Z test edge::tests::rejects_unknown_harness_before_command_evaluation ... ok
+2026-09-20T17:40:45.2392230Z test edge::tests::request_digest_excludes_deadline_and_json_field_order ... ok
+2026-09-20T17:40:45.2883200Z test edge::tests::evaluates_generic_pretool_for_supported_harness_aliases ... ok
+2026-09-20T17:40:45.3889270Z test edge::tests::request_digest_excludes_root_adapter_timestamps_but_binds_nested_arguments ... ok
+2026-09-20T17:40:45.5333010Z test edge::tests::validated_identity_retains_cross_language_golden_digest ... ok
+2026-09-20T17:40:45.5445940Z test hardening::tests::client_disconnects_are_not_runtime_integrity_failures ... ok
+2026-09-20T17:40:45.5548440Z test hardening::tests::descriptor_pressure_uses_bounded_exponential_backoff ... ok
+2026-09-20T17:40:45.5650280Z test hardening::tests::interrupted_accept_is_retried_without_sleep ... ok
+2026-09-20T17:40:45.5751360Z test hardening::tests::network_change_backoff_is_bounded ... ok
+2026-09-20T17:40:45.5853570Z test hardening::tests::request_budget_expires_stale_queued_work ... ok
+2026-09-20T17:40:45.5956350Z test edge::tests::unknown_and_ambiguous_pretool_payloads_never_receive_an_allow_floor ... ok
+2026-09-20T17:40:48.1351770Z test edge::identity::tests::streamed_envelope_size_preserves_exact_limit_and_rejects_one_extra_byte ... ok
+2026-09-20T17:40:49.0371270Z test managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error ... ok
+2026-09-20T17:40:49.0383080Z test managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error ... ok
+2026-09-20T17:40:49.4506270Z test managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success ... ok
+2026-09-20T17:40:49.4723950Z test managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once ... ok
+2026-09-20T17:40:50.2838320Z test managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success ... ok
+2026-09-20T17:40:50.2850990Z test managed_resident::lease::tests::busy_lease_directory_is_retained_as_live ... ok
+2026-09-20T17:40:50.5583710Z test managed_resident::lease::tests::dropping_owned_lease_preserves_a_replacement_at_the_original_path ... ok
+2026-09-20T17:40:50.8275110Z test managed_resident::lease::tests::dropping_owned_malformed_lease_removes_the_owned_artifact ... ok
+2026-09-20T17:40:50.8410610Z test managed_resident::lease::tests::initial_lease_lock_retries_until_the_current_holder_releases ... ok
+2026-09-20T17:40:50.8648160Z test managed_resident::lease::tests::initial_lease_lock_returns_busy_at_the_retry_deadline ... ok
+2026-09-20T17:40:50.8687610Z test managed_resident::lease::tests::lease_directory_entry_overflow_is_retained_as_live ... ok
+2026-09-20T17:40:50.8697700Z test managed_resident::lease::tests::stale_malformed_lease_is_removed_by_liveness_cleanup ... ok
+2026-09-20T17:40:50.8702280Z test managed_resident::lease::tests::uninspectable_lease_path_retains_the_resident ... ok
+2026-09-20T17:40:50.8826750Z test managed_resident::restart_budget::tests::authenticated_stop_clears_restart_attempts ... ok
+2026-09-20T17:40:50.8866120Z test managed_resident::restart_budget::tests::repeated_updates_replace_budget_without_leaving_temporary_state ... ok
+2026-09-20T17:40:50.9306000Z test managed_resident::retry_tests::managed_restart_preserves_fatal_exchange_failures_after_owner_exit ... ok
+2026-09-20T17:40:50.9328470Z test managed_resident::retry_tests::managed_restart_still_allows_connection_unavailable_before_exchange ... ok
+2026-09-20T17:40:50.9329010Z test managed_resident::retry_tests::managed_retry_owner_child ... ok
+2026-09-20T17:40:50.9329370Z test managed_resident::tests::client_deadline_is_bounded ... ok
+2026-09-20T17:40:51.1549110Z test managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success ... ok
+2026-09-20T17:40:51.1550760Z test managed_resident::tests::client_stream_eof_is_clean_and_partial_headers_fail_closed ... ok
+2026-09-20T17:40:51.1561930Z test managed_resident::tests::client_stream_frames_are_bounded_and_big_endian ... ok
+2026-09-20T17:40:51.1563160Z test managed_resident::tests::generation_parser_rejects_zero_and_non_numeric ... ok
+2026-09-20T17:40:51.1674480Z test managed_resident::tests::lease_directory_overflow_fails_closed_without_unbounded_collection ... ok
+2026-09-20T17:40:51.1678380Z test managed_resident::tests::managed_owner_lock_is_exclusive_for_resident_lifetime ... ok
+2026-09-20T17:40:51.2568770Z test managed_resident::tests::managed_owner_lock_rejects_second_process ... ok
+2026-09-20T17:40:51.6060660Z test managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request ... ok
+2026-09-20T17:40:51.6615070Z test managed_resident::tests::client_leases_keep_shared_resident_alive_until_last_client_closes ... ok
+2026-09-20T17:40:51.6616900Z test managed_resident::tests::stale_process_identity_errors_are_platform_scoped ... ok
+2026-09-20T17:40:51.6617930Z test managed_resident::tests::stale_transport_retry_allowlist_preserves_auth_and_integrity_failures ... ok
+2026-09-20T17:40:51.6618900Z test native_phase_observation::macro_tests::default_macros_erase_phase_and_export_dependencies ... ok
+2026-09-20T17:40:51.6621080Z test native_phase_observation::macro_tests::observation_macro_returns_original_values_and_evaluates_once ... ok
+2026-09-20T17:40:51.6623260Z test native_phase_observation::macro_tests::propagation_remains_outside_the_observed_call ... ok
+2026-09-20T17:40:52.1232960Z test oneshot::tests::concurrent_stale_snapshot_cannot_succeed_after_newer_floor ... ok
+2026-09-20T17:40:52.5223580Z test oneshot::tests::fresh_process_state_rejects_a_snapshot_not_matching_durable_authority ... ok
+2026-09-20T17:40:52.7719820Z test managed_resident::tests::owner_liveness_expires_after_launcher_and_all_clients_disappear ... ok
+2026-09-20T17:40:52.8214160Z test managed_resident::tests::stale_lease_cleanup_requires_a_dead_process_identity ... ok
+2026-09-20T17:40:53.0819430Z test oneshot::tests::rejects_generation_reuse_for_a_different_policy ... ok
+2026-09-20T17:40:53.0823710Z test policy_enforcement::tests::action_floor_matrix_rejects_inconsistent_decision_fields ... ok
+2026-09-20T17:40:53.0826050Z test policy_enforcement::tests::conflicting_harness_aliases_fail_closed ... ok
+2026-09-20T17:40:53.0827300Z test policy_enforcement::tests::conflicting_harness_risk_aliases_fail_closed ... ok
+2026-09-20T17:40:53.0827960Z test policy_enforcement::tests::conflicting_request_selectors_fail_closed ... ok
+2026-09-20T17:40:53.0828820Z test policy_enforcement::tests::diagnostic::native_posttool_policy_component_diagnostic ... ignored, explicit local policy diagnostic; fixture path required
+2026-09-20T17:40:53.0830760Z test policy_enforcement::tests::observe_policy_block_raises_existing_review_to_non_overridable_floor ... ok
+2026-09-20T17:40:53.0831570Z test policy_enforcement::tests::observe_pre_policy_floor_is_non_blocking_but_intrinsic_block_is_hard ... ok
+2026-09-20T17:40:53.0833040Z test policy_enforcement::tests::observe_preserves_every_intrinsic_non_allow_pre_floor ... ok
+2026-09-20T17:40:53.0841740Z test policy_enforcement::tests::observe_preserves_intrinsic_block_but_does_not_enforce_policy_only_floor ... ok
+2026-09-20T17:40:53.0843900Z test policy_enforcement::tests::policy_allow_cannot_lower_intrinsic_review_or_block ... ok
+2026-09-20T17:40:53.0845610Z test policy_enforcement::tests::policy_block_raises_intrinsic_allow ... ok
+2026-09-20T17:40:53.0847190Z test policy_enforcement::tests::post_intrinsic_block_cannot_be_lowered_by_allow_policy ... ok
+2026-09-20T17:40:53.0848870Z test policy_enforcement::tests::post_policy_fields_raise_without_python_semantic_input ... ok
+2026-09-20T17:40:53.0850570Z test policy_enforcement::tests::post_warning_policy_preserves_allow_with_warning ... ok
+2026-09-20T17:40:53.0852140Z test policy_enforcement::tests::unknown_post_action_is_review_even_when_default_allows ... ok
+2026-09-20T17:40:53.0853800Z test policy_enforcement::tests::unreadable_tool_remains_unknown_under_allow_policy ... ok
+2026-09-20T17:40:53.0855870Z test policy_enforcement::tests::warning_policy_preserves_allow_with_warning ... ok
+2026-09-20T17:40:53.0857850Z test policy_store::approval_authority::tests::fresh_private_state_without_public_authority_is_unenrolled ... ok
+2026-09-20T17:40:53.0867210Z test policy_store::approval_authority::tests::test_record_contains_distinct_provenance_bindings ... ok
+2026-09-20T17:40:53.0910360Z test policy_store::approval_authority::tests::test_root_is_only_a_test_fixture ... ok
+2026-09-20T17:40:53.0911290Z test policy_store::approval_enrollment::tests::transition_lock_rejects_concurrent_owner_and_recovers_on_release ... ok
+2026-09-20T17:40:53.1526730Z test policy_store::approval_v4_authority::tests::malformed_cose_and_missing_secure_state_never_load ... ok
+2026-09-20T17:40:53.2811350Z test policy_store::approval_v4_authority::tests::rotation_is_strictly_monotonic_and_revocation_is_terminal ... ok
+2026-09-20T17:40:53.2812390Z test policy_store::approval_v4_enrollment::tests::origins_are_canonical_and_bound_to_a_valid_rp_host ... ok
+2026-09-20T17:40:53.2951180Z test policy_store::policy_store_authority::tests::watcher_samples_fingerprint_after_observed_lock ... ok
+2026-09-20T17:40:53.5422240Z test oneshot::tests::rejects_stale_generation_after_newer_snapshot ... ok
+2026-09-20T17:40:53.5829140Z test policy_store::tests::authenticated_edge_preserves_clean_default_warning ... ok
+2026-09-20T17:40:53.6803920Z test oneshot::tests::rejects_zero_generation_before_establishing_a_floor ... ok
+2026-09-20T17:40:53.8309880Z test policy_store::tests::authenticated_observe_edge_preserves_intrinsic_pretool_floor ... ok
+2026-09-20T17:40:53.9114670Z test policy_store::tests::authority_fingerprint_detects_same_size_in_place_rewrite ... ok
+2026-09-20T17:40:54.6012470Z test policy_store::tests::command_authority_tests::mutation_lock_is_nonblocking_and_shared_lease_spans_decision_lifetime ... ok
+2026-09-20T17:40:55.0433890Z test policy_store::tests::command_authority_tests::marker_mac_and_recovery_epoch_are_both_bound_to_exact_retained_floor ... ok
+2026-09-20T17:40:55.0837710Z test policy_store::tests::command_authority_tests::closed_mutation_marker_blocks_old_decisions_and_late_acknowledgements ... ok
+2026-09-20T17:40:55.3044160Z test policy_store::tests::command_authority_tests::python_signed_authority_vectors_match_native_lease_and_floor_codecs ... ok
+2026-09-20T17:40:55.4486430Z test policy_store::tests::command_floor_tests::extension_program_changes_are_bound_to_policy_integrity ... ok
+2026-09-20T17:40:56.0380270Z test policy_store::tests::command_floor_tests::degraded_and_quarantined_snapshots_retain_protected_control_floor ... ok
+2026-09-20T17:40:56.2386360Z test policy_store::tests::command_floor_tests::command_control_revisions_are_independent_and_survive_restart ... ok
+2026-09-20T17:40:56.3270100Z test policy_store::tests::command_floor_tests::floor_mac_rejects_rewritten_or_removed_independent_revisions ... ok
+2026-09-20T17:40:56.3371890Z test policy_store::tests::fixture_tests::fixture_rewrite_truncates_private_file_without_weakening_create_new ... ok
+2026-09-20T17:40:56.8045940Z test policy_store::tests::fixture_tests::noncommand_review_tests::current_signed_noncommand_reviews_have_distinct_receipt_scope ... ok
+2026-09-20T17:40:56.8468910Z test policy_store::tests::compiled_generations_share_one_immutable_snapshot_and_reject_conflicts_before_publish ... ok
+2026-09-20T17:40:57.1087910Z test policy_store::tests::fixture_tests::noncommand_review_tests::malformed_and_present_commands_without_controls_do_not_claim_noncommand_scope ... ok
+2026-09-20T17:40:57.1595620Z test policy_store::tests::fixture_tests::noncommand_review_tests::noncommand_scope_preserves_nontrivial_command_floors_and_intrinsic_blocks ... ok
+2026-09-20T17:40:57.5666870Z test policy_store::tests::generation_rollback_and_same_generation_mutation_are_rejected ... ok
+2026-09-20T17:40:57.9218210Z test policy_store::tests::migration_tests::floor_only_migration_preserves_generation_and_allows_only_newer_push ... ok
+2026-09-20T17:40:57.9952730Z test policy_store::tests::migration_tests::legacy_snapshot_and_floor_migrate_to_one_authority_record ... ok
+2026-09-20T17:40:58.1950480Z test policy_store::tests::missing_snapshot_is_not_ready_but_push_can_install_it ... ok
+2026-09-20T17:40:58.2919530Z test policy_store::tests::push_rejects_unknown_fields_without_mutating_state ... ok
+2026-09-20T17:40:58.5996270Z test policy_store::tests::fault_tests::authority_write_failures_at_each_boundary_are_retryable_without_rollback ... ok
+2026-09-20T17:40:58.6506840Z test policy_store::tests::restart_rehydrates_snapshot_and_hook_validation_uses_memory ... ok
+2026-09-20T17:40:58.6512120Z test resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection ... ok
+2026-09-20T17:40:58.7244820Z test policy_store::tests::restarted_resident_applies_installed_policy_without_request_time_io ... ok
+2026-09-20T17:40:58.8837090Z test resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read ... ok
+2026-09-20T17:40:59.1066030Z test resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget ... ok
+2026-09-20T17:40:59.1075040Z test resident_client::deadline_tests::macos_closed_peer::complete_bound_response_survives_peer_close_without_changing_socket_mode ... ok
+2026-09-20T17:40:59.1084570Z test resident_client::deadline_tests::macos_closed_peer::completed_write_can_flush_after_peer_close_without_replaying_request ... ok
+2026-09-20T17:40:59.1091930Z test resident_client::deadline_tests::macos_closed_peer::expired_deadline_leaves_buffered_response_unread ... ok
+2026-09-20T17:40:59.1095630Z test resident_client::deadline_tests::macos_closed_peer::fallback_requires_exact_setter_error_and_actual_peer_hangup ... ok
+2026-09-20T17:40:59.1105790Z test resident_client::deadline_tests::macos_closed_peer::malformed_or_partial_buffered_responses_remain_fatal ... ok
+2026-09-20T17:40:59.2879360Z test resident_client::deadline_tests::progressing_backpressured_request_write_remains_bounded_and_nonretryable ... ok
+2026-09-20T17:40:59.3291480Z test resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget ... ok
+2026-09-20T17:40:59.3393680Z test resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged ... ok
+2026-09-20T17:40:59.3426280Z test resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error ... ok
+2026-09-20T17:40:59.3427130Z test resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading ... ok
+2026-09-20T17:40:59.3427850Z test resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access ... ok
+2026-09-20T17:40:59.3428570Z test resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence ... ok
+2026-09-20T17:40:59.3429240Z test resident_client::tests::partial_or_flush_request_write_is_never_retryable ... ok
+2026-09-20T17:40:59.3429870Z test resident_client::tests::rejects_non_loopback_tcp_endpoint ... ok
+2026-09-20T17:40:59.3430400Z test resident_client::tests::rejects_response_bound_to_another_request ... ok
+2026-09-20T17:40:59.3430930Z test resident_client::tests::rejects_response_digest_mismatch ... ok
+2026-09-20T17:40:59.3431500Z test resident_client::tests::response_eof_and_reset_are_never_retryable ... ok
+2026-09-20T17:40:59.3432140Z test resident_client::tests::response_teardown_after_flushed_request_is_never_retryable ... ok
+2026-09-20T17:40:59.3432820Z test resident_client::tests::truncated_server_proof_is_never_retryable ... ok
+2026-09-20T17:40:59.3433660Z test resident_protocol::tests::approval_error_transport_is_finite ... ok
+2026-09-20T17:40:59.3434320Z test resident_protocol::tests::approval_requests_have_a_smaller_raw_payload_bound ... ok
+2026-09-20T17:40:59.3435970Z test resident_protocol::tests::command_control_error_transport_preserves_only_registered_fixed_codes ... ok
+2026-09-20T17:40:59.3436840Z test resident_protocol::tests::lifecycle_disposition_follows_strictly_validated_operation ... ok
+2026-09-20T17:40:59.3437490Z test resident_state::resident_state_files::tests::would_block_is_lock_contention ... ok
+2026-09-20T17:40:59.3438630Z test resident_state::tests::home_state_discovery_allows_nonmatching_entries_within_bound ... ok
+2026-09-20T17:40:59.3461380Z test resident_state::tests::home_state_discovery_fails_closed_on_many_state_entries ... ok
+2026-09-20T17:40:59.3567480Z test resident_state::tests::home_state_discovery_fails_closed_on_total_entry_overflow ... ok
+2026-09-20T17:40:59.3606240Z test resident_state::tests::home_state_discovery_rejects_seventeenth_matching_scope ... ok
+2026-09-20T17:40:59.3818380Z test resident_state::tests::preferred_runtime_scope_is_found_after_the_fallback_scope_bound ... ok
+2026-09-20T17:40:59.3820470Z test resident_state::tests::process_identity_rejects_a_reused_same_binary_pid_marker ... ok
+2026-09-20T17:40:59.3927830Z test resident_state::tests::publishing_fails_closed_when_scope_entry_bound_is_exceeded ... ok
+2026-09-20T17:40:59.5628890Z test resident_state::tests::publishing_generations_retires_superseded_state ... ok
+2026-09-20T17:40:59.5659740Z test resident_state::tests::stale_startup_lock_recovery_preserves_lockfile_for_reuse ... ok
+2026-09-20T17:40:59.5681660Z test resident_state::tests::startup_lock_drop_preserves_stable_private_lockfile ... ok
+2026-09-20T17:40:59.5710950Z test resident_state::tests::startup_lock_holds_advisory_lock_until_drop ... ok
+2026-09-20T17:40:59.5809590Z test resident_state::tests::startup_lock_repeated_acquisition_rewrites_without_growth ... ok
+2026-09-20T17:40:59.5811750Z test resident_state::tests::state_mac_rejects_endpoint_mutation ... ok
+2026-09-20T17:40:59.5813700Z test strict_json::tests::benchmark_timeout_projection ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T17:40:59.6252150Z test strict_json::tests::timeout_projection_obeys_the_full_strict_json_contract ... ok
+2026-09-20T17:40:59.6259000Z test tests::overload_response_is_constant_and_retryable ... ok
+2026-09-20T17:40:59.6259890Z test tests::resident_hmac_changes_with_nonce ... ok
+2026-09-20T17:40:59.6260710Z test tests::resident_hmac_matches_cross_language_vectors ... ok
+2026-09-20T17:40:59.6273130Z test tests::strict_json_rejects_deep_and_wide_values ... ok
+2026-09-20T17:40:59.6275070Z test tests::strict_json_rejects_duplicate_keys_and_trailing_values ... ok
+2026-09-20T17:40:59.7245210Z test resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads ... ok
+2026-09-20T17:41:00.7556380Z test resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline ... ok
+2026-09-20T17:41:00.7558360Z 
+2026-09-20T17:41:00.7558910Z test result: ok. 187 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 19.42s
+2026-09-20T17:41:00.7560460Z 
+2026-09-20T17:41:00.7605120Z      Running unittests examples/package_lock_pilot.rs (rust/target/debug/examples/package_lock_pilot-f0b79ea4cd864100)
+2026-09-20T17:41:00.7721400Z 
+2026-09-20T17:41:00.7722020Z running 4 tests
+2026-09-20T17:41:00.7726520Z test tests::entry_and_node_limits_discard_every_partial_projection ... ok
+2026-09-20T17:41:00.7727400Z test tests::duplicate_keys_in_unused_nested_metadata_never_publish_partial_entries ... ok
+2026-09-20T17:41:00.7727950Z test tests::unsupported_numeric_spellings_and_empty_legacy_projection_fall_back ... ok
+2026-09-20T17:41:00.7728480Z test tests::preserves_order_names_nested_paths_and_exact_versions ... ok
+2026-09-20T17:41:00.7728780Z 
+2026-09-20T17:41:00.7729040Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T17:41:00.7729320Z 
+2026-09-20T17:41:00.7976970Z ##[group]Run uv run --no-sync pytest -q tests/test_native_runtime_admission.py tests/test_daemon_bounded_http.py tests/test_rust_daemon_edge_hardening_contracts.py --tb=short
+2026-09-20T17:41:00.7978790Z [36;1muv run --no-sync pytest -q tests/test_native_runtime_admission.py tests/test_daemon_bounded_http.py tests/test_rust_daemon_edge_hardening_contracts.py --tb=short[0m
+2026-09-20T17:41:00.8340720Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T17:41:00.8340990Z env:
+2026-09-20T17:41:00.8341420Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:00.8341890Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:41:00.8342470Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:00.8342940Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:00.8343480Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:00.8343890Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:41:00.8344200Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:41:00.8344490Z ##[endgroup]
+2026-09-20T17:41:11.8610660Z ....................                                                     [100%]
+2026-09-20T17:41:11.8612190Z 20 passed in 5.32s
+2026-09-20T17:41:12.2367420Z ##[group]Run cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+2026-09-20T17:41:12.2369050Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime[0m
+2026-09-20T17:41:12.2528070Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T17:41:12.2528370Z env:
+2026-09-20T17:41:12.2528640Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:12.2541560Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:41:12.2542780Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:12.2543860Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:12.2545160Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:41:12.2546130Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:41:12.2547180Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:41:12.2547880Z ##[endgroup]
+2026-09-20T17:41:12.5452260Z    Compiling libc v0.2.189
+2026-09-20T17:41:12.5459190Z    Compiling proc-macro2 v1.0.107
+2026-09-20T17:41:12.5460030Z    Compiling unicode-ident v1.0.24
+2026-09-20T17:41:12.6356770Z    Compiling quote v1.0.47
+2026-09-20T17:41:12.9190150Z    Compiling version_check v0.9.5
+2026-09-20T17:41:13.1217910Z    Compiling generic-array v0.14.7
+2026-09-20T17:41:13.2510080Z    Compiling cfg-if v1.0.4
+2026-09-20T17:41:13.3099430Z    Compiling typenum v1.20.1
+2026-09-20T17:41:13.6431400Z    Compiling syn v3.0.3
+2026-09-20T17:41:13.8437330Z    Compiling memchr v2.8.3
+2026-09-20T17:41:14.3253040Z    Compiling crypto-common v0.1.7
+2026-09-20T17:41:14.4142820Z    Compiling block-buffer v0.10.4
+2026-09-20T17:41:14.4873360Z    Compiling digest v0.10.7
+2026-09-20T17:41:14.5514000Z    Compiling cpufeatures v0.2.17
+2026-09-20T17:41:14.6091000Z    Compiling serde_core v1.0.229
+2026-09-20T17:41:14.6174390Z    Compiling sha2 v0.10.9
+2026-09-20T17:41:14.8270740Z    Compiling hex v0.4.3
+2026-09-20T17:41:15.0209400Z    Compiling glob v0.3.4
+2026-09-20T17:41:15.2615650Z    Compiling bitflags v2.13.1
+2026-09-20T17:41:15.5660240Z    Compiling clang-sys v1.9.1
+2026-09-20T17:41:15.8060890Z    Compiling zmij v1.0.23
+2026-09-20T17:41:15.8163900Z    Compiling serde v1.0.229
+2026-09-20T17:41:16.0369520Z    Compiling autocfg v1.5.1
+2026-09-20T17:41:16.3601740Z    Compiling memoffset v0.9.1
+2026-09-20T17:41:16.3863820Z    Compiling serde_derive v1.0.229
+2026-09-20T17:41:16.4732230Z    Compiling serde_json v1.0.151
+2026-09-20T17:41:16.5753140Z    Compiling cfg_aliases v0.2.2
+2026-09-20T17:41:16.6030350Z    Compiling thiserror v2.0.20
+2026-09-20T17:41:16.8637740Z    Compiling minimal-lexical v0.2.1
+2026-09-20T17:41:17.3599440Z    Compiling regex-syntax v0.8.11
+2026-09-20T17:41:18.0082160Z    Compiling nom v7.1.3
+2026-09-20T17:41:19.1946100Z    Compiling regex-automata v0.4.18
+2026-09-20T17:41:19.5374830Z    Compiling libloading v0.8.9
+2026-09-20T17:41:19.6795030Z    Compiling nix v0.31.3
+2026-09-20T17:41:20.2514400Z    Compiling thiserror-impl v2.0.20
+2026-09-20T17:41:20.6588050Z    Compiling either v1.18.0
+2026-09-20T17:41:20.8557700Z    Compiling itoa v1.0.18
+2026-09-20T17:41:21.1586770Z    Compiling bindgen v0.72.1
+2026-09-20T17:41:21.3863050Z    Compiling itertools v0.13.0
+2026-09-20T17:41:22.1754880Z    Compiling regex v1.13.1
+2026-09-20T17:41:22.5980530Z    Compiling cexpr v0.6.0
+2026-09-20T17:41:23.1272280Z    Compiling guard-rules v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T17:41:23.2437470Z    Compiling aho-corasick v1.1.5
+2026-09-20T17:41:23.8102380Z    Compiling syn v2.0.119
+2026-09-20T17:41:24.7339080Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T17:41:28.0060310Z    Compiling shlex v2.0.1
+2026-09-20T17:41:28.2400890Z    Compiling rustc-hash v2.1.3
+2026-09-20T17:41:28.2634380Z    Compiling shlex v1.3.0
+2026-09-20T17:41:28.2889740Z    Compiling cc v1.4.4
+2026-09-20T17:41:33.0753510Z    Compiling guard-contracts v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T17:41:35.8440620Z    Compiling core-foundation-sys v0.8.7
+2026-09-20T17:41:35.9918290Z    Compiling guard-secure-fs v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T17:41:36.8939750Z    Compiling libproc v0.14.11
+2026-09-20T17:41:37.3769130Z    Compiling ring v0.17.14
+2026-09-20T17:41:37.7307540Z    Compiling objc2-core-foundation v0.3.2
+2026-09-20T17:41:38.5721600Z    Compiling getrandom v0.3.4
+2026-09-20T17:41:38.6753500Z    Compiling objc2-io-kit v0.3.2
+2026-09-20T17:41:38.9734040Z    Compiling guard-scanner v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T17:41:42.0204600Z    Compiling security-framework-sys v2.17.0
+2026-09-20T17:41:42.1403930Z    Compiling core-foundation v0.10.1
+2026-09-20T17:41:42.2165810Z    Compiling errno v0.3.14
+2026-09-20T17:41:42.2740600Z    Compiling getrandom v0.2.17
+2026-09-20T17:41:42.2820800Z    Compiling untrusted v0.9.0
+2026-09-20T17:41:42.3522740Z    Compiling security-framework v3.7.0
+2026-09-20T17:41:43.1893840Z    Compiling guard-hook-core v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T17:41:44.2950360Z    Compiling sysinfo v0.37.2
+2026-09-20T17:41:45.3503570Z    Compiling guard-command v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T17:41:45.8498540Z    Compiling guard-policy-snapshot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T17:41:46.9993070Z    Compiling guard-rule-contract v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T17:41:47.2750040Z    Compiling fs2 v0.4.3
+2026-09-20T17:41:47.3410650Z    Compiling guard-runtime-windows-process v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T17:41:54.0072140Z    Compiling hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T17:42:07.4534360Z     Finished `release` profile [optimized] target(s) in 55.09s
+2026-09-20T17:42:07.4849050Z ##[group]Run uv run --no-sync pytest -q ci/native_runtime/test_native_hook_client.py ci/native_runtime/test_native_hook_client_transport.py --tb=short
+2026-09-20T17:42:07.4850240Z [36;1muv run --no-sync pytest -q ci/native_runtime/test_native_hook_client.py ci/native_runtime/test_native_hook_client_transport.py --tb=short[0m
+2026-09-20T17:42:07.4963860Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-20T17:42:07.4964670Z env:
+2026-09-20T17:42:07.4965760Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:42:07.4966410Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T17:42:07.4966920Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:42:07.4967450Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:42:07.4967960Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T17:42:07.4968620Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:42:07.4969160Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:42:07.4969650Z   HOL_GUARD_NATIVE_BINARY: /Users/runner/work/hol-guard/hol-guard/rust/target/release/hol-guard-runtime
+2026-09-20T17:42:07.4970220Z ##[endgroup]
+2026-09-20T17:42:37.1445900Z ...............                                                          [100%]
+2026-09-20T17:42:37.1543540Z 15 passed in 28.89s
+2026-09-20T17:42:37.2885070Z Post job cleanup.
+2026-09-20T17:42:37.6417800Z UV_CACHE_DIR is already set to /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T17:42:37.6420340Z UV_PYTHON_INSTALL_DIR is already set to /Users/runner/work/_temp/uv-python-dir
+2026-09-20T17:42:37.6421550Z Cache hit occurred on key setup-uv-2-aarch64-apple-darwin-macos-14-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d, not saving cache.
+2026-09-20T17:42:37.7651520Z Post job cleanup.
+2026-09-20T17:42:37.8716090Z Post job cleanup.
+2026-09-20T17:42:37.9534390Z [command]/opt/homebrew/bin/git version
+2026-09-20T17:42:37.9722310Z git version 2.55.0
+2026-09-20T17:42:37.9744010Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/c1c87a91-4167-49da-a0de-80935e01eac6/.gitconfig'
+2026-09-20T17:42:37.9750340Z Temporarily overriding HOME='/Users/runner/work/_temp/c1c87a91-4167-49da-a0de-80935e01eac6' before making global git config changes
+2026-09-20T17:42:37.9758370Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T17:42:37.9758940Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard
+2026-09-20T17:42:37.9827920Z Removing SSH command configuration
+2026-09-20T17:42:37.9831850Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T17:42:37.9870710Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T17:42:38.0458860Z Removing HTTP extra header
+2026-09-20T17:42:38.0462930Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T17:42:38.0510730Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T17:42:38.1040380Z Removing includeIf entries pointing to credentials config files
+2026-09-20T17:42:38.1044920Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T17:42:38.1080660Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T17:42:38.1647420Z Cleaning up orphan processes

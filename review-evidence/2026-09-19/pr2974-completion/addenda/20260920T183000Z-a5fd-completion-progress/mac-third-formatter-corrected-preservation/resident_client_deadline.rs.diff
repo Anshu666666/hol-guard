@@ -1,0 +1,17 @@
+--- before
++++ after
+@@ -47,9 +47,11 @@
+         let deadline = self.read_deadline.get();
+         let result = match crate::observe_native_read_origin!(
+             TimeoutSetter,
+-            self.stream.set_resident_read_timeout(Some(
+-                crate::observe_native_read_origin!(PreReadDeadline, remaining(deadline))?
+-            ))
++            self.stream
++                .set_resident_read_timeout(Some(crate::observe_native_read_origin!(
++                    PreReadDeadline,
++                    remaining(deadline)
++                )?))
+         ) {
+             Ok(()) => crate::observe_native_read_origin!(UnderlyingRead, self.stream.read(output)),
+             Err(error) => match self

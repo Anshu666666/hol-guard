@@ -2,7 +2,7 @@ name: One original priority launcher phase diagnostic
 
 on:
   push:
-    branches: [codex/pr2974-priority-phase-installed-20260920-65956a96]
+    branches: [codex/pr2974-priority-phase-installed-v2-20260920-65956a96]
     paths: [.github/workflows/priority-launcher-phase-diagnostic.yml]
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           path: driver
-          fetch-depth: 2
+          fetch-depth: 3
           persist-credentials: false
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
@@ -64,6 +64,12 @@ jobs:
         run: |
           uv pip install --python "$GITHUB_WORKSPACE/source/.venv/bin/python" --no-index --no-deps --force-reinstall \
             "$GITHUB_WORKSPACE/retained-artifact/native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl"
+      - name: Prepare the exact owned interpreter with the existing installed integrity gate
+        shell: bash
+        run: |
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -I "$GITHUB_WORKSPACE/driver/scripts/ci/priority_launcher_phase_install/verify_inputs.py" provision \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/phase-evidence"
       - name: Execute the original 88-call producer once with bounded phase observation
         shell: bash
         run: |

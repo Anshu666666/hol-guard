@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import os
 import platform
@@ -20,6 +21,8 @@ _NEW_PATHS = {
     "scripts/ci/priority_launcher_phase_install/run-source-bindings.json",
     "scripts/ci/priority_launcher_phase_install/verify_inputs.py",
 }
+_FIRST_DRIVER = "ecdab397f256f857e6e1d1d6dba2cbfe2206ba8c"
+_CORRECTION_PATHS = _NEW_PATHS - {"scripts/ci/priority_launcher_phase_install/run-source-bindings.json"}
 
 
 def _require(value: bool, label: str) -> None:
@@ -77,10 +80,14 @@ def _verify(args: argparse.Namespace) -> dict[str, object]:
     _require(sys.version_info[:2] == (3, 12), "python_version")
     _require(_git(driver, "rev-parse", "HEAD") == os.environ["GITHUB_SHA"], "driver_commit")
     _require(
-        _git(driver, "rev-list", "--parents", "-n", "1", "HEAD").split()[1:] == [contract["observer_source"]],
+        _git(driver, "rev-list", "--parents", "-n", "1", "HEAD").split()[1:] == [_FIRST_DRIVER],
         "driver_parent",
     )
-    _require(set(_git(driver, "diff", "--name-only", "HEAD^", "HEAD").splitlines()) == _NEW_PATHS, "driver_delta")
+    _require(_git(driver, "rev-parse", "HEAD~2") == contract["observer_source"], "observer_parent")
+    _require(
+        set(_git(driver, "diff", "--name-only", "HEAD^", "HEAD").splitlines()) == _CORRECTION_PATHS, "correction_delta"
+    )
+    _require(set(_git(driver, "diff", "--name-only", "HEAD~2", "HEAD").splitlines()) == _NEW_PATHS, "driver_delta")
     _require(not _git(driver, "status", "--porcelain", "--untracked-files=no"), "driver_modified")
     _require(_git(source, "rev-parse", "HEAD") == contract["selected_build_source"], "source_commit")
     _require(_git(source, "rev-parse", "HEAD^{tree}") == contract["selected_tree"], "source_tree")
@@ -103,6 +110,12 @@ def _verify(args: argparse.Namespace) -> dict[str, object]:
         _require(actual["sha256"] == row["sha256"], "provider_bytes")
         _require(_git(source, "rev-parse", "HEAD:" + row["path"]) == row["git_blob"], "provider_blob")
         providers[row["path"]] = actual
+    preparation_helpers = {}
+    for row in contract["interpreter_preparation"]["helpers"]:
+        actual = _digest(source / row["path"], maximum=1024 * 1024)
+        _require(actual["sha256"] == row["sha256"], "interpreter_helper_bytes")
+        _require(_git(source, "rev-parse", "HEAD:" + row["path"]) == row["git_blob"], "interpreter_helper_blob")
+        preparation_helpers[row["path"]] = actual
     members = {row["name"]: row for row in contract["artifact"]["members"]}
     actual_names = {p.relative_to(artifact).as_posix() for p in artifact.rglob("*") if not p.is_dir()}
     _require(actual_names == set(members), "artifact_members")
@@ -139,6 +152,7 @@ def _verify(args: argparse.Namespace) -> dict[str, object]:
         "product_sha_with_equal_tree": contract["product_source"],
         "observer_files": observer_files,
         "providers": providers,
+        "interpreter_preparation_helpers": preparation_helpers,
         "artifact_members": records,
         "native_manifest": metadata,
         "runtime": runtime,
@@ -146,9 +160,62 @@ def _verify(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def _interpreter_metadata(python: Path) -> dict[str, object]:
+    invocation = python.lstat()
+    target = python.resolve(strict=True)
+    metadata = target.lstat()
+    return {
+        "invocation_path": str(python),
+        "invocation_symlink": stat.S_ISLNK(invocation.st_mode),
+        "target_sha256": _digest(target)["sha256"],
+        "target_mode": stat.S_IMODE(metadata.st_mode),
+        "target_owner_current": metadata.st_uid == os.getuid(),
+        "target_owner_root": metadata.st_uid == 0,
+        "target_group_current": metadata.st_gid == os.getgid(),
+        "target_group_root": metadata.st_gid == 0,
+        "target_group_writable": bool(metadata.st_mode & stat.S_IWGRP),
+        "target_world_writable": bool(metadata.st_mode & stat.S_IWOTH),
+        "python_version": platform.python_version(),
+    }
+
+
+def _provision(args: argparse.Namespace, report: dict[str, object]) -> None:
+    source = args.source.resolve(strict=True)
+    python = source / ".venv/bin/python"
+    _require(Path(sys.executable).absolute() == python, "preparation_invocation")
+    _require(Path(sys.prefix).resolve() == python.parent.parent, "preparation_venv")
+    report["interpreter_before"] = _interpreter_metadata(python)
+    sys.path.insert(0, str(source))
+    module = importlib.import_module("scripts.native_qualification_interpreter")
+    filename = module.__file__
+    _require(isinstance(filename, str), "preparation_module_file")
+    _require(
+        Path(cast(str, filename)).resolve() == source / "scripts/native_qualification_interpreter.py",
+        "preparation_import",
+    )
+    try:
+        report["preparation"] = module.provision_venv_interpreter(python)
+    except module.InterpreterProvisioningError as error:
+        report["preparation"] = error.evidence
+        raise
+    finally:
+        try:
+            report["interpreter_after"] = _interpreter_metadata(python)
+        except Exception as error:
+            report["interpreter_after_failure"] = {"kind": type(error).__name__}
+    _require("interpreter_after_failure" not in report, "preparation_after_metadata")
+    proof = cast(dict[str, Any], report["preparation"])
+    _require(proof["passed"] is True and proof["identical_bytes"] is True, "preparation_proof")
+    _require(
+        proof["original_target_preserved"] is True and proof["managed_integrity_validated"] is True,
+        "preparation_integrity",
+    )
+    _require(proof["owned"]["mode"] == 0o755 and proof["owned"]["owner_current"] is True, "preparation_owner_mode")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("before", "after"))
+    parser.add_argument("operation", choices=("before", "provision", "after"))
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--driver", type=Path, required=True)
     parser.add_argument("--artifact", type=Path, required=True)
@@ -157,6 +224,8 @@ def main() -> int:
     report: dict[str, object] = {"schema": "priority-phase-installed-input-check.v1", "passed": False}
     try:
         report["binding"] = _verify(args)
+        if args.operation == "provision":
+            _provision(args, report)
         if args.operation == "after":
             before = _json(args.output / "input-before.json")
             _require(before.get("passed") is True and before.get("binding") == report["binding"], "after_identity")

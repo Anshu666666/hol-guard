@@ -17,6 +17,19 @@ from scripts.native_slo_session import NativeStopResult, _build_stop_diagnostic
 from scripts.native_slo_workspace_poststart_evidence import RetainedLedger, encode_retained
 
 
+class ObservedWorkerProcess:
+    """A retained multiprocessing-shaped worker with no Popen.poll method."""
+
+    def __init__(self, pid: int, exitcode: int | None) -> None:
+        self.pid, self.current_exitcode = pid, exitcode
+        self.observations: list[int | None] = []
+
+    @property
+    def exitcode(self) -> int | None:
+        self.observations.append(self.current_exitcode)
+        return self.current_exitcode
+
+
 def retired_service(tmp_path, monkeypatch):
     root = tmp_path.resolve() / "owned"
     root.mkdir(mode=0o700)
@@ -77,6 +90,8 @@ def retired_service(tmp_path, monkeypatch):
 )
 def test_both_native_stop_outcomes_survive_one_service_stop(tmp_path, monkeypatch, first_contained, last_contained):
     service, calls = retired_service(tmp_path, monkeypatch)
+    process = ObservedWorkerProcess(4321, 0)
+    service.owned_processes[id(process)] = process
     originals = [
         _build_stop_diagnostic(
             "contained" if contained else "failed",
@@ -116,8 +131,12 @@ def test_both_native_stop_outcomes_survive_one_service_stop(tmp_path, monkeypatc
     originals[0]["endpoint"] = "unknown"
     assert observed["native_stop_observations"][0]["diagnostic"] == expected[0]
     assert json.loads(encode_retained(observed)) == observed
+    assert observed["retained_direct_workers"] == [{"pid": 4321, "returncode": 0, "reaped": True}]
+    assert observed["checks"]["retained_direct_workers_reaped"] is True
+    assert process.observations == [0]
     assert service.stop() == observed
     assert calls == ["native_stop", "service_stop", "native_stop"]
+    assert process.observations == [0]
 
 
 @pytest.mark.parametrize("fault", ["quarantine", "writer_alive", "runner_slot"])
@@ -139,6 +158,20 @@ def test_current_unretired_service_state_blocks_retirement(tmp_path, monkeypatch
     )
     result = service.stop()
     assert result["passed"] is False and result["checks"][field] is False
+    assert calls == ["service_stop"]
+
+    process = ObservedWorkerProcess(4322, None)
+    service.owned_processes[id(process)] = process
+    for exitcode in (None, -9):
+        process.current_exitcode = exitcode
+        snapshot = service.retirement_snapshot([], result["native_stop_observations"], [])
+        assert snapshot["passed"] is False and snapshot["checks"][field] is False
+        expected_worker = {"pid": 4322, "returncode": exitcode, "reaped": exitcode is not None}
+        assert snapshot["retained_direct_workers"] == [expected_worker]
+        assert snapshot["checks"]["retained_direct_workers_reaped"] is (exitcode is not None)
+    assert process.observations == [None, -9]
+    assert service.stop() == result
+    assert process.observations == [None, -9]
     assert calls == ["service_stop"]
 
 

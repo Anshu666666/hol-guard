@@ -335,10 +335,10 @@ class PostStartService:
                 "supervisor_alive": runner._supervisor_thread is not None and runner._supervisor_thread.is_alive(),
             }
         thread_rows = [{"owner_field": label, "alive": thread.is_alive()} for label, thread in self.threads.values()]
-        process_rows = [
-            {"pid": process.pid, "returncode": process.poll(), "reaped": process.poll() is not None}
-            for process in self.owned_processes.values()
-        ]
+        process_rows: list[dict[str, object]] = []
+        for process in self.owned_processes.values():
+            pid, returncode = process.pid, process.exitcode
+            process_rows.append({"pid": pid, "returncode": returncode, "reaped": returncode is not None})
         checks = {
             "service_finish_completed": self.daemon._finish_service_completed is True,
             "service_not_quarantined": self.daemon._is_quarantined() is False,

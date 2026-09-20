@@ -1,0 +1,92 @@
+name: One original priority launcher phase diagnostic
+
+on:
+  push:
+    branches: [codex/pr2974-priority-phase-installed-20260920-65956a96]
+    paths: [.github/workflows/priority-launcher-phase-diagnostic.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: priority-phase-installed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    runs-on: macos-15
+    timeout-minutes: 25
+    env:
+      SOURCE_SHA: 50b39d7e7a4722c2773d94da0ea4c2482f055ef5
+      SOURCE_TREE: a0c139c4e02535545c5b0e602c240a38affde5fe
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Download the exact existing normal ARM artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: hol-guard-native-wheel-aarch64-apple-darwin
+          run-id: 35505324310
+          github-token: ${{ github.token }}
+          path: retained-artifact
+      - name: Bind exact source, observer and all retained artifact members
+        shell: bash
+        run: |
+          mkdir phase-evidence
+          cp driver/scripts/ci/priority_launcher_phase_install/input-contract.json phase-evidence/
+          cp driver/scripts/ci/priority_launcher_phase_install/run-source-bindings.json phase-evidence/
+          python driver/scripts/ci/priority_launcher_phase_install/verify_inputs.py before \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/phase-evidence"
+      - name: Install frozen dependencies without a source project install
+        working-directory: source
+        run: uv sync --frozen --extra dev --no-install-project --python 3.12
+      - name: Install only the verified existing default native wheel
+        shell: bash
+        run: |
+          uv pip install --python "$GITHUB_WORKSPACE/source/.venv/bin/python" --no-index --no-deps --force-reinstall \
+            "$GITHUB_WORKSPACE/retained-artifact/native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl"
+      - name: Execute the original 88-call producer once with bounded phase observation
+        shell: bash
+        run: |
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -I "$GITHUB_WORKSPACE/driver/scripts/ci/priority_launcher_phase_diagnostic.py" \
+            --source-root "$GITHUB_WORKSPACE/source" --expected-source-sha "$SOURCE_SHA" \
+            --expected-source-tree "$SOURCE_TREE" --driver-root "$GITHUB_WORKSPACE/driver" \
+            --expected-driver-sha "$GITHUB_SHA" \
+            --bindings "$GITHUB_WORKSPACE/driver/scripts/ci/priority_launcher_phase_install/run-source-bindings.json" \
+            --wheel "$GITHUB_WORKSPACE/retained-artifact/native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl" \
+            --output "$GITHUB_WORKSPACE/phase-evidence/observation.json"
+      - name: Preserve after bindings even on original failure
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p phase-evidence
+          python driver/scripts/ci/priority_launcher_phase_install/verify_inputs.py after \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --artifact "$GITHUB_WORKSPACE/retained-artifact" --output "$GITHUB_WORKSPACE/phase-evidence"
+      - name: Preserve complete observations and original failure or cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: priority-phase-installed-${{ github.run_id }}
+          path: phase-evidence/
+          if-no-files-found: error
+          retention-days: 30

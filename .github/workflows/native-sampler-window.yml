@@ -1,0 +1,1729 @@
+name: Installed readiness sampler diagnostic
+
+on:
+  push:
+    branches: [hgp/native-sampler-window-20260920]
+    paths: [.github/workflows/native-sampler-window.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-sampler-window-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PUBLIC_SOURCE_SHA: 8440f0fcab081188bb17651e7bbbe814afbeb7b0
+  PUBLIC_SOURCE_TREE: ee78447e3422ee072f5b8f25eb9f7b54995d9fca
+
+jobs:
+  source-admission:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/native-sampler-window-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Admit only the exact original passing source validation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+          
+          PINS = json.loads(r'''{"publicSource":"39d3251194ee3fb2c4439f7c9544e60e0a913583","publicTree":"fbe11e8bf441ded29fc83e2c2f660e50b14101f6","validationHead":"5bd462045955ec6ceb495da4c463788cd191fb58","validationWorkflowBlob":"bb46ca48dcdf0d864a72735a2e536f8851e1ab89","reportBlob":"69c8caba8f35f18f9743336f2fa6a52fcca0df1c","validationRun":35514141890,"validationWorkflowId":362673563,"receipts":[{"python":"3.10","jobId":106087103100,"artifactId":10605299598,"bytes":12605,"sha256":"df7ff6aa7a059317649cc8c4a0b221210c532682e559f85ec04528886baf1e85"},{"python":"3.12","jobId":106087103186,"artifactId":10607160057,"bytes":13039,"sha256":"8f538cb8345c98144206a311ebfe7bac63d30dfc1d064e3f14e7f29b810fefa4"}],"files":[{"path":"ci/native_runtime/installed_readiness_profile.py","sha":"7871c061fa36a62873618c18abfcecd2c4b802dc","bytes":8527},{"path":"ci/native_runtime/profile_installed_readiness.py","sha":"08e889a99ce16d9b3b3c92f56dc8ad06230142d8","bytes":23980},{"path":"ci/native_runtime/test_installed_readiness_profile.py","sha":"d21ba20e3986d62ddf2ccc08b03353e705812962","bytes":34475},{"path":".github/workflows/native-wheel-ci.yml","sha":"a369152987d65a336cfdd1e18812d84d5d8a0862","bytes":27958},{"path":"scripts/ci/policy_source_contract_roots.json","sha":"97af93640fc0195a05f07e00a68e38dffc859ade","bytes":38514}]}''')
+          REPO = "hashgraph-online/hol-guard"
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 180
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+          
+          
+          class Refusal(Exception):
+              pass
+          
+          
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+          
+          
+          def tick():
+              need(time.monotonic() < DEADLINE, "admission_deadline")
+          
+          
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+          
+          
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+          
+          
+          def fail_json():
+              raise Refusal("nonfinite_json")
+          
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          
+          
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+          
+          
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-native-source-admission"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+          
+          
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+          
+          
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+          
+          
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 2 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+          
+          
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None,
+                  "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+          
+          
+          RESULTS = (
+              "ruff-format-initial", "ruff-safe-fixes", "ruff-format", "registered-lint",
+              "registered-format", "registered-types", "registered-imports", "source-04",
+              "source-06", "source-08", "source-10", "source-13",
+              "required-new-source-cases", "readiness-profile-source",
+              "required-profile-source-cases", "authority-ownership", "io-ownership",
+              "io-privacy", "native-approval", "semantic-callgraph", "native-receipt",
+              "capability-cleanup", "decision-report-write", "decision-report-check",
+              "decision-report-semantic-preservation", "changed-main-tests",
+          )
+          MEMBERS = frozenset({
+              "receipt.json", "results.json", "authority-ownership.json", "io-ownership.json",
+              "io-privacy.json", "native-receipt.json", "capability-cleanup.json", "profiler-before.json",
+          })
+          
+          
+          def validate_run():
+              run = api("/actions/runs/" + str(PINS["validationRun"]))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["private"] is False,
+                   "public_validation_repository_required")
+              need(run["id"] == PINS["validationRun"] and run["run_attempt"] == 1,
+                   "original_run_required")
+              need(run["head_sha"] == PINS["validationHead"]
+                   and run["workflow_id"] == PINS["validationWorkflowId"]
+                   and run["path"] == ".github/workflows/final-source-validation.yml"
+                   and run["head_branch"] == "hgp/final-source-validation-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "success", "validation_run_not_admitted")
+              commit = api("/git/commits/" + PINS["validationHead"])
+              need(commit["sha"] == PINS["validationHead"]
+                   and [parent["sha"] for parent in commit["parents"]] == [PINS["publicSource"]],
+                   "validation_commit")
+              tree_sha = commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  tree = api("/git/trees/" + tree_sha)
+                  need(tree.get("truncated") is False, "validation_tree_truncated")
+                  entries = [entry for entry in tree["tree"]
+                             if entry["path"] == directory and entry["type"] == "tree"]
+                  need(len(entries) == 1, "validation_workflow_directory")
+                  tree_sha = entries[0]["sha"]
+              tree = api("/git/trees/" + tree_sha)
+              need(tree.get("truncated") is False, "validation_tree_truncated")
+              entries = [entry for entry in tree["tree"]
+                         if entry["path"] == "final-source-validation.yml" and entry["type"] == "blob"]
+              need(len(entries) == 1 and entries[0]["sha"] == PINS["validationWorkflowBlob"],
+                   "validation_workflow_source")
+              workflow = api("/git/blobs/" + PINS["validationWorkflowBlob"])
+              need(workflow["sha"] == PINS["validationWorkflowBlob"] and workflow["encoding"] == "base64",
+                   "validation_workflow_blob")
+              data = base64.b64decode(workflow["content"])
+              need(len(data) <= 65536 and hashlib.sha1(
+                  b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+              ).hexdigest() == PINS["validationWorkflowBlob"], "validation_workflow_digest")
+              return run
+          
+          
+          def results_valid(rows):
+              need(isinstance(rows, list) and len(rows) == len(RESULTS), "validation_result_count")
+              need({item.get("name") for item in rows if isinstance(item, dict)} == set(RESULTS),
+                   "validation_result_names")
+              need(all(type(item.get("exit")) is int and item["exit"] == 0 for item in rows),
+                   "validation_result_failure")
+          
+          
+          def inspect_receipt(row):
+              job = api("/actions/jobs/" + str(row["jobId"]))
+              need(job["id"] == row["jobId"] and job["run_id"] == PINS["validationRun"]
+                   and job["run_attempt"] == 1 and job["head_sha"] == PINS["validationHead"]
+                   and job["name"] == "verify (" + row["python"] + ")"
+                   and job["status"] == "completed" and job["conclusion"] == "success",
+                   "validation_job_not_admitted")
+              artifact = api("/actions/artifacts/" + str(row["artifactId"]))
+              need(artifact["id"] == row["artifactId"] and artifact["expired"] is False
+                   and artifact["name"] == "public-consumer-source-" + row["python"] + "-"
+                   + str(PINS["validationRun"]) + "-1"
+                   and artifact["size_in_bytes"] == row["bytes"]
+                   and artifact["digest"] == "sha256:" + row["sha256"]
+                   and artifact["workflow_run"]["id"] == PINS["validationRun"]
+                   and artifact["workflow_run"]["head_sha"] == PINS["validationHead"],
+                   "validation_artifact_not_admitted")
+              need(timestamp(job["started_at"]) <= timestamp(artifact["created_at"])
+                   <= timestamp(job["completed_at"]), "artifact_job_time")
+              archive = io.BytesIO()
+              download(row["artifactId"], row["bytes"], row["sha256"], archive)
+              contents = {}
+              with zipfile.ZipFile(archive) as zipped:
+                  members = zipped.infolist()
+                  need(len(members) == len(MEMBERS)
+                       and {member.filename for member in members} == MEMBERS, "validation_members")
+                  total = 0
+                  for member in members:
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode)
+                           and not (member.flag_bits & 1)
+                           and member.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED},
+                           "validation_member_type")
+                      need(0 < member.file_size <= MIB, "validation_member_size")
+                      total += member.file_size
+                      need(total <= 4 * MIB, "validation_total_size")
+                      # Reading every member to EOF checks its CRC without extraction.
+                      data = zipped.read(member)
+                      need(len(data) == member.file_size, "validation_member_length")
+                      if member.filename in {"receipt.json", "results.json", "profiler-before.json"}:
+                          contents[member.filename] = parse_json(data)
+              receipt = contents["receipt.json"]
+              need(isinstance(receipt, dict) and receipt.get("kind") == "public-consumer-validation-v1"
+                   and receipt.get("sourceHead") == PINS["publicSource"]
+                   and receipt.get("sourceTree") == PINS["publicTree"]
+                   and receipt.get("python") == row["python"] and receipt.get("passed") is True
+                   and receipt.get("nativeExecuted") is False
+                   and receipt.get("expectedRegisteredRoots") == 366
+                   and receipt.get("expectedPreservedGroups") == 13
+                   and receipt.get("explicitProfileSourceCases") == 39
+                   and receipt.get("explicitStorageSourceCases") == 48
+                   and receipt.get("explicitPermissionResponseCases") == 2
+                   and receipt.get("explicitFixtureCorrectionCases") == 9
+                   and receipt.get("executedGroups") == ["source-04", "source-06", "source-08", "source-10", "source-13"],
+                   "validation_receipt_not_admitted")
+              need(receipt.get("explicitChangedMainTestFiles") == [
+                  "tests/test_cursor_frozen_hook_command.py", "tests/test_cursor_hook_rebind.py",
+                  "tests/test_cursor_hooks.py", "tests/test_cursor_watch_hook_script.py",
+                  "tests/test_guard_command_decision_diff.py", "tests/test_guard_daemon_storage_liveness.py",
+              ] and receipt.get("changedMainTestsInRegisteredTypeRoots") is False,
+                   "changed_main_source_coverage")
+              resources = receipt.get("runnerResources")
+              need(isinstance(resources, dict) and set(resources) == {
+                  "schema", "cpuCount", "affinityCount", "physicalMemoryBytes",
+                  "cgroupCpuQuotaUs", "cgroupCpuPeriodUs", "cgroupMemoryLimitBytes",
+              } and resources.get("schema") == "source-validation-runner-resources.v1",
+                   "resource_record_schema")
+              need(all(type(resources[key]) is int and resources[key] > 0
+                       for key in ("affinityCount", "physicalMemoryBytes")),
+                   "resource_record_required_values")
+              need(all(resources[key] is None or
+                       (type(resources[key]) is int and resources[key] > 0)
+                       for key in ("cpuCount", "cgroupCpuQuotaUs", "cgroupCpuPeriodUs",
+                                   "cgroupMemoryLimitBytes")),
+                   "resource_record_optional_values")
+              need(resources["cgroupCpuQuotaUs"] is None or resources["cgroupCpuPeriodUs"] is not None,
+                   "resource_record_quota")
+              need(receipt.get("sourceContractEnvironment") == {
+                  "launcher": "uv run --no-sync", "bytecodeOverridePresent": False,
+                  "pythonPathOverridePresent": False, "dontWriteBytecode": False,
+              }, "source_environment_mismatch")
+              before = contents["profiler-before.json"]
+              if row["python"] == "3.12":
+                  expected_before = {
+                      "schema": "readiness-profiler-before.v1", "required": True,
+                      "python": "3.12", "sourceHead": PINS["publicSource"],
+                      "helperBlob": "bdfc2f1047c69cb3bdbe753ef9f137d94bce8a96",
+                      "testBlob": "d21ba20e3986d62ddf2ccc08b03353e705812962",
+                      "selector": "test_default_publication_profile_is_available_while_real_start_is_still_running",
+                      "pytestExit": 1, "callCount": 1,
+                      "phases": [{"when": "setup", "outcome": "passed"},
+                                 {"when": "call", "outcome": "failed"},
+                                 {"when": "teardown", "outcome": "passed"}],
+                      "failureAtOriginalAvailabilityAssertion": True,
+                      "expectedFailureConfirmed": True, "nativeExecuted": False,
+                  }
+              else:
+                  expected_before = {
+                      "schema": "readiness-profiler-before.v1", "required": False,
+                      "python": "3.10", "sourceHead": PINS["publicSource"],
+                      "disposition": "comparison_requires_python_3_12", "nativeExecuted": False,
+                  }
+              expected_json = json.dumps(expected_before, sort_keys=True, separators=(",", ":"))
+              need(json.dumps(before, sort_keys=True, separators=(",", ":")) == expected_json
+                   and json.dumps(receipt.get("profilerBefore"), sort_keys=True, separators=(",", ":")) == expected_json,
+                   "original_before_not_preserved")
+              results_valid(receipt.get("results"))
+              need(contents["results.json"] == receipt["results"], "result_receipt_mismatch")
+              files = receipt.get("publicFiles")
+              need(isinstance(files, list) and len(files) == 1, "validated_tree_was_modified")
+              need(files[0].get("path") == "tests/fixtures/guard-command-corpus/decision-diff-report.json"
+                   and files[0].get("gitBlob") == files[0].get("originalBlob")
+                   and files[0].get("gitBlob") == PINS["reportBlob"], "generated_report_not_committed")
+              return {
+                  "python": row["python"], "jobId": row["jobId"], "artifactId": row["artifactId"],
+                  "archiveBytes": row["bytes"], "sha256": row["sha256"], "allMemberCrcVerified": True,
+                  "requiredResults": len(RESULTS), "profileSourceCases": 39,
+                  "registeredTypeRoots": 366, "storageSourceCases": 48, "permissionResponseCases": 2,
+                  "fixtureCorrectionCases": 9,
+                  "sourceEnvironmentAligned": True, "trackedSourceUnchanged": True,
+                  "beforeRecordVerified": True, "beforeComparisonRequired": row["python"] == "3.12",
+                  "changedMainFilesVerified": 6, "runnerResources": resources,
+              }
+          
+          
+          report = {
+              "schema": "guard.native-readiness-profile-source-admission.v1",
+              "sourceSha": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+              "validationRun": PINS["validationRun"], "validationAttempt": 1,
+              "nativeAcceptanceClaim": False, "passed": False, "interpreters": [],
+          }
+          try:
+              need(TOKEN and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "admission_context")
+              need([row["python"] for row in PINS["receipts"]] == ["3.10", "3.12"],
+                   "required_interpreters")
+              validate_run()
+              report["interpreters"] = [inspect_receipt(row) for row in PINS["receipts"]]
+              validate_run()
+              report["passed"] = True
+          except Refusal as error:
+              report["failure"] = str(error)
+          except BaseException:
+              report["failure"] = "admission_unavailable"
+          Path("source-admission.json").write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report["passed"] else 1)
+          
+          PY
+      - name: Preserve finite source admission
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-readiness-source-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: source-admission.json
+          if-no-files-found: error
+          retention-days: 7
+
+  extension-source-admission:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/native-sampler-window-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Admit diagnostic source qualification and exact production lineage
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+
+          PINS = json.loads(r'''{"publicSource":"de346908fd397e051acdebd812ef47c4fd05e755","publicTree":"e618214bdaae9d7993d1b5f12c2f6fc9ead3dd0d","sourceParent":"39d3251194ee3fb2c4439f7c9544e60e0a913583","parentTree":"fbe11e8bf441ded29fc83e2c2f660e50b14101f6","validationHead":"bfd2a3e8df20759becbe4530d1a05d68b39625d9","validationWorkflowBlob":"6b832c3f5c4a3a4cbc660c6fe9616d718eb3edbc","validationRun":35522132681,"validationWorkflowId":362729851,"receipts":[{"python":"3.10","jobId":106107917051,"artifactId":10609181492,"bytes":5229,"sha256":"e28d9e5f396962859d52a52a2438a4560887caff8ea6744a7660a283cd8e1d64"},{"python":"3.12","jobId":106107917153,"artifactId":10608551851,"bytes":5229,"sha256":"2bada77c9558d2bbd69226814e3181a0a077a8fdfe1d3f66db5cb9b0200ec453"}],"sourceManifestSha256":"b0c74f4ffcc7ea6d56a4f5835fac8b92e04bdd8cc7ac00e983e196ef26052120","changedFiles":[{"path":"ci/native_runtime/probe_installed_native_extensions.py","before":"9262fcceadeac60b03e3c2e1798e08ea95c07b83","after":"35f023db815142f83b5ab5506d45f5f5bd1eb52c","bytes":22354},{"path":"ci/native_runtime/test_installed_failure_diagnostics.py","before":"ec1dbb79e821cbcd45ecfef4fbe7cffa7301eaec","after":"3d4f9cd55c02740ce93d30c4d9de1a59834cadbb","bytes":16282}]}''')
+          REPO = "hashgraph-online/hol-guard"
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 180
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+
+
+          class Refusal(Exception):
+              pass
+
+
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+
+
+          def tick():
+              need(time.monotonic() < DEADLINE, "admission_deadline")
+
+
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+
+
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+
+
+          def fail_json():
+              raise Refusal("nonfinite_json")
+
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+
+
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-native-source-admission"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+
+
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+
+
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+
+
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 2 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+
+
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None,
+                  "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+          def validate_run():
+              run = api("/actions/runs/" + str(PINS["validationRun"]))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["private"] is False,
+                   "public_validation_repository_required")
+              need(run["id"] == PINS["validationRun"] and run["run_attempt"] == 1,
+                   "original_run_required")
+              need(run["head_sha"] == PINS["validationHead"]
+                   and run["workflow_id"] == PINS["validationWorkflowId"]
+                   and run["path"] == ".github/workflows/extension-diagnostic-source-validation.yml"
+                   and run["head_branch"] == "hgp/extension-diagnostic-subtest-validation-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "success", "validation_run_not_admitted")
+              commit = api("/git/commits/" + PINS["validationHead"])
+              need(commit["sha"] == PINS["validationHead"]
+                   and [parent["sha"] for parent in commit["parents"]] == [PINS["publicSource"]],
+                   "validation_commit")
+              tree_sha = commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  tree = api("/git/trees/" + tree_sha)
+                  need(tree.get("truncated") is False, "validation_tree_truncated")
+                  entries = [entry for entry in tree["tree"]
+                             if entry["path"] == directory and entry["type"] == "tree"]
+                  need(len(entries) == 1, "validation_workflow_directory")
+                  tree_sha = entries[0]["sha"]
+              tree = api("/git/trees/" + tree_sha)
+              need(tree.get("truncated") is False, "validation_tree_truncated")
+              entries = [entry for entry in tree["tree"]
+                         if entry["path"] == "extension-diagnostic-source-validation.yml" and entry["type"] == "blob"]
+              need(len(entries) == 1 and entries[0]["sha"] == PINS["validationWorkflowBlob"],
+                   "validation_workflow_source")
+              workflow = api("/git/blobs/" + PINS["validationWorkflowBlob"])
+              need(workflow["sha"] == PINS["validationWorkflowBlob"] and workflow["encoding"] == "base64",
+                   "validation_workflow_blob")
+              data = base64.b64decode(workflow["content"])
+              need(len(data) <= 65536 and hashlib.sha1(
+                  b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+              ).hexdigest() == PINS["validationWorkflowBlob"], "validation_workflow_digest")
+              return run
+
+
+          RESULTS = ("candidate-lint", "candidate-format", "registered-types", "source-07")
+          MEMBERS = frozenset({"receipt.json", "source-07.json", "source-manifest.json", "results.json"})
+
+
+          def canonical(value):
+              return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+          def results_valid(rows):
+              need(isinstance(rows, list) and len(rows) == len(RESULTS), "focused_result_count")
+              need(all(isinstance(row, dict) and set(row) == {"name", "exit"} for row in rows),
+                   "focused_result_shape")
+              need([row["name"] for row in rows] == list(RESULTS), "focused_result_names")
+              need(all(type(row["exit"]) is int and row["exit"] == 0 for row in rows), "focused_result_failure")
+
+
+          def read_archive(archive):
+              contents = {}
+              with zipfile.ZipFile(archive) as zipped:
+                  members = zipped.infolist()
+                  need(len(members) == len(MEMBERS) and {member.filename for member in members} == MEMBERS,
+                       "focused_members")
+                  total = 0
+                  for member in members:
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode) and not (member.flag_bits & 1)
+                           and member.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED},
+                           "focused_member_type")
+                      need(0 < member.file_size <= MIB, "focused_member_size")
+                      total += member.file_size
+                      need(total <= 4 * MIB, "focused_total_size")
+                      data = zipped.read(member)
+                      need(len(data) == member.file_size, "focused_member_length")
+                      contents[member.filename] = parse_json(data)
+              return contents
+
+
+          def inspect_contents(contents, python):
+              manifest = contents["source-manifest.json"]
+              need(hashlib.sha256(canonical(manifest)).hexdigest() == PINS["sourceManifestSha256"],
+                   "focused_source_manifest")
+              need(manifest["sourceHead"] == PINS["publicSource"]
+                   and manifest["sourceTree"] == PINS["publicTree"]
+                   and manifest["sourceParent"] == PINS["sourceParent"], "focused_manifest_binding")
+              receipt = contents["receipt.json"]
+              need(isinstance(receipt, dict), "focused_receipt_shape")
+              exact_receipt = {
+                  "schema": "public-extension-diagnostic-source-receipt.v1",
+                  "sourceHead": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+                  "sourceParent": PINS["sourceParent"], "validationHead": PINS["validationHead"],
+                  "runId": str(PINS["validationRun"]), "runAttempt": 1, "python": python,
+                  "formatter": "ruff 0.15.17", "typeRoots": 366, "checkedTypeRoots": 367,
+                  "additionalCandidateTypeRoots": ["ci/native_runtime/probe_installed_native_extensions.py"],
+                  "preservedSourceGroups": 13, "executedSourceGroups": ["source-07"], "sourcePins": 45,
+                  "expectedSourceCases": 539, "explicitExtensionCases": 4,
+                  "expectedDiagnosticCases": 22, "existingDiagnosticCases": 18,
+                  "expectedSubtests": 31, "expectedSubtestParents": 3,
+                  "sourceContractEnvironment": {"launcher": "uv run --no-sync", "bytecodeOverridePresent": False,
+                                                "pythonPathOverridePresent": False, "dontWriteBytecode": False},
+                  "exactChangedPaths": manifest["changedPaths"], "productionSourceUnchangedFromParent": True,
+                  "originalDiagnosticFunctionsUnchanged": True, "priorFullSourcePairReexecutedOnThisHead": False,
+                  "sourceUnchanged": True, "passed": True, "installedExecuted": False, "nativeExecuted": False,
+              }
+              need(all(key in receipt and canonical(receipt[key]) == canonical(value)
+                       for key, value in exact_receipt.items()), "focused_receipt_not_admitted")
+              results_valid(receipt.get("outcomes"))
+              need(canonical(contents["results.json"]) == canonical(receipt["outcomes"]),
+                   "focused_results_disagree")
+              group = contents["source-07.json"]
+              need(isinstance(group, dict), "focused_group_shape")
+              expected = manifest["expected"]["source-07"]
+              exact_group = {
+                  "schema": "public-extension-diagnostic-source-group.v1", "group": "source-07",
+                  "sourceHead": PINS["publicSource"], "sourceTree": PINS["publicTree"], "python": python,
+                  "pytestExit": 0, "expectedCount": 539, "collectedCount": 539,
+                  "nodeIdsSha256": expected["nodeIdsSha256"], "collectionVerified": True,
+                  "deselectedCount": 0, "deselectedSha256": expected["deselectedSha256"],
+                  "passedCalls": 539, "skippedPhases": 0, "failedPhases": 0, "xfailPhases": 0,
+                  "failedKnownNodeIds": [], "allThreePhasesPassed": True, "passed": True,
+                  "diagnosticCasesVerified": True, "diagnosticCases": 22, "existingDiagnosticCases": 18,
+                  "requiredCasesPassed": True, "installedExecuted": False, "nativeExecuted": False,
+                  "subtestCount": 31, "passedSubtests": 31, "failedSubtests": 0, "skippedSubtests": 0,
+                  "xfailSubtests": 0, "subtestCountsVerified": True, "allSubtestsPassed": True, "unknownReportTypes": 0,
+              }
+              need(all(key in group and canonical(group[key]) == canonical(value)
+                       for key, value in exact_group.items()), "focused_group_not_admitted")
+              required = [
+                  {"nodeId": item, "phases": [{"when": phase, "outcome": "passed", "xfail": False}
+                                             for phase in ("setup", "call", "teardown")]}
+                  for item in manifest["requiredNodeIds"]
+              ]
+              need(len(required) == 4 and canonical(group.get("requiredCases")) == canonical(required),
+                   "focused_required_cases")
+              subtest_parents = [{"nodeId": node, "expected": count, "observed": count, "passed": count}
+                                for node, count in sorted(expected["subtestCounts"].items())]
+              need(len(subtest_parents) == 3 and sum(row["expected"] for row in subtest_parents) == 31
+                   and canonical(group.get("subtestParents")) == canonical(subtest_parents), "focused_subtest_parents")
+              return {"python": python, "requiredOutcomes": len(RESULTS), "registeredTypeRoots": 366,
+                      "checkedTypeRoots": 367, "sourceCases": 539, "diagnosticCases": 22,
+                      "requiredExtensionCases": 4, "requiredSubtests": 31, "sourceManifestVerified": True,
+                      "allSourceCasePhasesPassed": True, "trackedSourceUnchanged": True,
+                      "priorFullSourcePairReexecutedOnThisHead": False}
+
+
+          def inspect_receipt(row):
+              job = api("/actions/jobs/" + str(row["jobId"]))
+              need(job["id"] == row["jobId"] and job["run_id"] == PINS["validationRun"]
+                   and job["run_attempt"] == 1 and job["head_sha"] == PINS["validationHead"]
+                   and job["name"] == "verify (" + row["python"] + ")"
+                   and job["status"] == "completed" and job["conclusion"] == "success",
+                   "focused_job_not_admitted")
+              artifact = api("/actions/artifacts/" + str(row["artifactId"]))
+              need(artifact["id"] == row["artifactId"] and artifact["expired"] is False
+                   and artifact["name"] == "public-extension-source-" + row["python"] + "-"
+                   + str(PINS["validationRun"]) + "-1"
+                   and artifact["size_in_bytes"] == row["bytes"] and artifact["digest"] == "sha256:" + row["sha256"]
+                   and artifact["workflow_run"]["id"] == PINS["validationRun"]
+                   and artifact["workflow_run"]["head_sha"] == PINS["validationHead"],
+                   "focused_artifact_not_admitted")
+              need(timestamp(job["started_at"]) <= timestamp(artifact["created_at"])
+                   <= timestamp(job["completed_at"]), "focused_artifact_time")
+              archive = io.BytesIO()
+              download(row["artifactId"], row["bytes"], row["sha256"], archive)
+              record = inspect_contents(read_archive(archive), row["python"])
+              record.update(jobId=row["jobId"], artifactId=row["artifactId"], archiveBytes=row["bytes"],
+                            sha256=row["sha256"], allFourMemberCrcVerified=True)
+              return record
+
+
+          def tree_entries(sha):
+              tree = api("/git/trees/" + sha)
+              need(tree.get("sha") == sha and tree.get("truncated") is False, "lineage_tree_identity")
+              rows = tree.get("tree")
+              need(isinstance(rows, list) and len(rows) <= 4096, "lineage_tree_size")
+              result = {}
+              for row in rows:
+                  need(isinstance(row, dict) and isinstance(row.get("path"), str)
+                       and row["path"] not in result, "lineage_tree_entry")
+                  result[row["path"]] = (row["mode"], row["type"], row["sha"])
+              return result
+
+
+          def verify_lineage():
+              source = api("/git/commits/" + PINS["publicSource"])
+              parent = api("/git/commits/" + PINS["sourceParent"])
+              need(source["sha"] == PINS["publicSource"] and source["tree"]["sha"] == PINS["publicTree"]
+                   and [item["sha"] for item in source["parents"]] == [PINS["sourceParent"]]
+                   and parent["sha"] == PINS["sourceParent"] and parent["tree"]["sha"] == PINS["parentTree"],
+                   "lineage_commit")
+              old_sha, new_sha = PINS["parentTree"], PINS["publicTree"]
+              for directory in ("ci", "native_runtime"):
+                  old, new = tree_entries(old_sha), tree_entries(new_sha)
+                  need(set(old) == set(new) and directory in old, "lineage_directory_members")
+                  need(all(old[name] == new[name] for name in old if name != directory),
+                       "lineage_unrelated_directory_changed")
+                  need(old[directory][:2] == new[directory][:2] == ("040000", "tree"), "lineage_directory_type")
+                  old_sha, new_sha = old[directory][2], new[directory][2]
+              old, new = tree_entries(old_sha), tree_entries(new_sha)
+              changes = {row["path"].rsplit("/", 1)[1]: row for row in PINS["changedFiles"]}
+              need(set(old) == set(new) and set(changes) < set(old), "lineage_file_members")
+              for name in old:
+                  if name in changes:
+                      row = changes[name]
+                      need(old[name] == ("100644", "blob", row["before"])
+                           and new[name] == ("100644", "blob", row["after"]), "lineage_candidate_file")
+                  else:
+                      need(old[name] == new[name], "lineage_unrelated_file_changed")
+              return {"parentSource": PINS["sourceParent"], "parentTree": PINS["parentTree"],
+                      "sourceSha": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+                      "exactChangedFiles": 2, "everyOtherTreeEntryUnchanged": True,
+                      "productionSourceUnchangedFromQualifiedParent": True,
+                      "priorFullSourcePairReexecutedOnThisHead": False}
+
+
+          report = {
+              "schema": "guard.native-extension-diagnostic-source-admission.v1",
+              "sourceSha": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+              "validationRun": PINS["validationRun"], "validationAttempt": 1,
+              "nativeAcceptanceClaim": False, "passed": False, "interpreters": [], "lineage": None,
+          }
+          try:
+              need(TOKEN and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "admission_context")
+              need([row["python"] for row in PINS["receipts"]] == ["3.10", "3.12"], "required_interpreters")
+              need(type(PINS["validationRun"]) is int and PINS["validationRun"] > 0
+                   and type(PINS["validationWorkflowId"]) is int and PINS["validationWorkflowId"] > 0
+                   and isinstance(PINS["validationHead"], str)
+                   and re.fullmatch(r"[0-9a-f]{40}", PINS["validationHead"]) is not None,
+                   "focused_validation_pins")
+              validate_run()
+              report["lineage"] = verify_lineage()
+              report["interpreters"] = [inspect_receipt(row) for row in PINS["receipts"]]
+              validate_run()
+              report["passed"] = True
+          except Refusal as error:
+              report["failure"] = str(error)
+          except BaseException:
+              report["failure"] = "admission_unavailable"
+          Path("extension-source-admission.json").write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report["passed"] else 1)
+          PY
+      - name: Preserve finite diagnostic qualification admission
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-extension-source-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: extension-source-admission.json
+          if-no-files-found: error
+          retention-days: 7
+
+  runtime-source-admission:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/native-sampler-window-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Materialize bounded runtime admission transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/runtime-source-admission.py" <<'PY'
+          import base64
+          import datetime
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import stat
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+
+          PINS = json.loads(r'''{"publicSource":"a3d3467e9cf511cafef49f5bae174bb91b599d53","publicTree":"ab29a21a085557ef47bd2c1752c14a79f598d36d","sourceParent":"de346908fd397e051acdebd812ef47c4fd05e755","parentTree":"e618214bdaae9d7993d1b5f12c2f6fc9ead3dd0d","diagnosticSource":"8440f0fcab081188bb17651e7bbbe814afbeb7b0","diagnosticTree":"ee78447e3422ee072f5b8f25eb9f7b54995d9fca","validationHead":"2c6e6e5fb42bc47055a586204391840fe9150b43","validationWorkflowBlob":"90b5c3d954f45f59f2581d2e3e50c58284e369bd","validationRun":35525406421,"validationWorkflowId":362783574,"receipts":[{"python":"3.10","jobId":106116572902,"artifactId":10610535011,"bytes":3317,"sha256":"52e1e2a417608e178a212211fb371a9c07b4e2adf1365402ae700c9b2089f38b"},{"python":"3.12","jobId":106116572767,"artifactId":10610102554,"bytes":3317,"sha256":"892cbadecb4b8cdda000e24545b531cd110cdbecc7f3b063611851e524d18fe0"}],"groups":{"source-06":{"count":168,"nodeIdsSha256":"4ad5046fcae3a69384c95072fe4b875c935e530d062fadef8fa1c1e286a0bdcb","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","allowedSetupSkips":["tests/test_native_policy_snapshot_v3_publisher.py::test_windows_scope_aliases_share_one_digest_identity"],"requiredFiles":{"tests/test_headless_readiness_handoff.py":11}},"source-09":{"count":874,"nodeIdsSha256":"c496e4a6c774dbf05262fab878f5bce96c3570df1eda7acde60c6000fb2cda77","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"tests/test_guard_codex_live_action_boundary.py":6,"tests/test_guard_live_hook_binding.py":15}},"focused-recovery":{"count":284,"nodeIdsSha256":"3ea63657355b8cd0abef9ad70161b80d8c4d8862e2a83501fcce76cb85fa355f","deselectedCount":1,"deselectedSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278"},"slow-vector-commitment":{"count":1,"nodeIdsSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}},"runtimeChangedFiles":[{"path":"scripts/ci/policy_source_contract_roots.json","before":"97af93640fc0195a05f07e00a68e38dffc859ade","after":"8049c637091d42fb95e4341132d6d1ef5eb8d2d4","bytes":40038},{"path":"src/codex_plugin_scanner/guard/approvals.py","before":"2ccc6f7d8545d10a675a0d57e6553743e2a24aff","after":"6f232b0384abf519eaa1dcb28f1772d9ef869e82","bytes":100893},{"path":"src/codex_plugin_scanner/guard/cli/commands_hook_generic.py","before":"2b55f7fc683c94885bd06f88e067b6f2d22831d3","after":"86ade27b84c0d4190613632b7f9ca7f5687837ad","bytes":55819},{"path":"src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py","before":"29afb3708981b4c12abfe210d6fd7ed96697801e","after":"962a6f0b991eaf5717b84fd49386eecf9d3a5304","bytes":16699},{"path":"src/codex_plugin_scanner/guard/daemon/server.py","before":"9017a7a6308ad39d471b66460dcb9794c1c67552","after":"b33035e955ff687ce62c6c570e496c2ea5df76ee","bytes":390730},{"path":"src/codex_plugin_scanner/guard/store_approval_facade.py","before":"4fd68a4a8715855e9ee311bac3dab576a256ea3b","after":"96f4e16af58fb85bad97beb3d684d78000d98993","bytes":17984},{"path":"src/codex_plugin_scanner/guard/store_live_hook_binding.py","before":null,"after":"5e8b0da3f3755088d904817a1ae5a02602677ccc","bytes":7450},{"path":"tests/test_daemon_dormant_cloud_sync.py","before":"581c90e1608949a8d71bc2a2e438fe820d9551b5","after":"3f83f434c5f52a0e0458b4353c99984ad8a28379","bytes":10753},{"path":"tests/test_guard_auto_first_sync.py","before":"b782f52d00bf3fdc233509d18b49adeaeaed4cf0","after":"4a07d1f8055bafd4202a9fbec426f98276d23f1c","bytes":27957},{"path":"tests/test_guard_codex_live_action_boundary.py","before":null,"after":"26624293a2095e4f700971a64b2d2a5e8f4380b4","bytes":14499},{"path":"tests/test_guard_live_hook_binding.py","before":null,"after":"3f8dfc71e8edfdaf762423d971ca2a1495d6b33a","bytes":11821},{"path":"tests/test_headless_readiness_handoff.py","before":null,"after":"3b8286a2b4d6384c11c8d712dbe16dff61ac4fa7","bytes":12753}],"samplerChangedFiles":[{"path":"ci/native_runtime/profile_installed_readiness.py","before":"08e889a99ce16d9b3b3c92f56dc8ad06230142d8","after":"97f31f6d7441ade6f45e633f7edc2d6e4c269ff7","bytes":25298},{"path":"ci/native_runtime/test_installed_readiness_profile.py","before":"d21ba20e3986d62ddf2ccc08b03353e705812962","after":"b1dd461c5396ff9f5eb459b2c5a1de702135cb23","bytes":37891}]}''')
+          REPO = "hashgraph-online/hol-guard"
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 180
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+
+
+          class Refusal(Exception):
+              pass
+
+
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+
+
+          def tick():
+              need(time.monotonic() < DEADLINE, "admission_deadline")
+
+
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+
+
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+
+
+          def fail_json():
+              raise Refusal("nonfinite_json")
+
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+
+
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-native-source-admission"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+
+
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+
+
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+
+
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 2 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+
+
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None,
+                  "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+          def validate_run():
+              run = api("/actions/runs/" + str(PINS["validationRun"]))
+              need(run["repository"]["full_name"] == REPO and run["repository"]["private"] is False,
+                   "public_validation_repository_required")
+              need(run["id"] == PINS["validationRun"] and run["run_attempt"] == 1,
+                   "original_run_required")
+              need(run["head_sha"] == PINS["validationHead"]
+                   and run["workflow_id"] == PINS["validationWorkflowId"]
+                   and run["path"] == ".github/workflows/runtime-continuation-source-validation.yml"
+                   and run["head_branch"] == "hgp/runtime-continuation-source-validation-20260920"
+                   and run["event"] == "push" and run["status"] == "completed"
+                   and run["conclusion"] == "success", "validation_run_not_admitted")
+              commit = api("/git/commits/" + PINS["validationHead"])
+              need(commit["sha"] == PINS["validationHead"]
+                   and [parent["sha"] for parent in commit["parents"]] == [PINS["publicSource"]],
+                   "validation_commit")
+              tree_sha = commit["tree"]["sha"]
+              for directory in (".github", "workflows"):
+                  tree = api("/git/trees/" + tree_sha)
+                  need(tree.get("truncated") is False, "validation_tree_truncated")
+                  entries = [entry for entry in tree["tree"]
+                             if entry["path"] == directory and entry["type"] == "tree"]
+                  need(len(entries) == 1, "validation_workflow_directory")
+                  tree_sha = entries[0]["sha"]
+              tree = api("/git/trees/" + tree_sha)
+              need(tree.get("truncated") is False, "validation_tree_truncated")
+              entries = [entry for entry in tree["tree"]
+                         if entry["path"] == "runtime-continuation-source-validation.yml" and entry["type"] == "blob"]
+              need(len(entries) == 1 and entries[0]["sha"] == PINS["validationWorkflowBlob"],
+                   "validation_workflow_source")
+              workflow = api("/git/blobs/" + PINS["validationWorkflowBlob"])
+              need(workflow["sha"] == PINS["validationWorkflowBlob"] and workflow["encoding"] == "base64",
+                   "validation_workflow_blob")
+              data = base64.b64decode(workflow["content"])
+              need(len(data) <= 65536 and hashlib.sha1(
+                  b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+              ).hexdigest() == PINS["validationWorkflowBlob"], "validation_workflow_digest")
+              return run
+          PY
+      - name: Materialize exact runtime and diagnostic lineage admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> "$RUNNER_TEMP/runtime-source-admission.py" <<'PY'
+          RESULTS = ("changed-ruff-check", "changed-ruff-format", "registered-types", "source-06",
+                     "source-09", "focused-recovery", "slow-vector-commitment")
+          MEMBERS = frozenset({"receipt.json", "source-06.json", "source-09.json",
+                               "focused-recovery.json", "slow-vector-commitment.json"})
+
+
+          def canonical(value):
+              return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+          def require_exact(value, expected, code):
+              need(canonical(value) == canonical(expected), code)
+
+
+          def inspect_contents(contents, python):
+              need(set(contents) == MEMBERS, "runtime_members")
+              outcomes = [{"name": name, "exit": 0} for name in RESULTS]
+              receipt = contents["receipt.json"]
+              expected_receipt = {
+                  "schema": "public-runtime-union-receipt.v1", "sourceHead": PINS["publicSource"],
+                  "sourceTree": PINS["publicTree"], "validationHead": PINS["validationHead"],
+                  "runId": str(PINS["validationRun"]), "runAttempt": 1, "python": python,
+                  "typeRoots": 374, "checkedTypeRoots": 375,
+                  "additionalTypeRoots": ["tests/test_guard_auto_first_sync.py"],
+                  "preservedSourceGroups": 13, "executedSourceGroups": ["source-06", "source-09"],
+                  "focusedFiles": 39, "sourcePins": 106,
+                  "expectedSourceCases": {"source-06": 168, "source-09": 874},
+                  "originalPlatformSkips": 1, "newReadinessCases": 11, "newContinuationCases": 21,
+                  "expectedFocusedCases": 284, "existingSlowDeselected": 1,
+                  "separateSlowCommitmentCases": 1,
+                  "vectorCounts": {"ordinary": 133, "mixed": 188, "generic": 260},
+                  "outcomes": outcomes, "sourceUnchanged": True, "passed": True,
+                  "installedExecuted": False, "compiledNativeCommitmentPassed": True,
+              }
+              require_exact(receipt, expected_receipt, "runtime_receipt_not_admitted")
+              groups = []
+              for name, expected in PINS["groups"].items():
+                  skips = expected.get("allowedSetupSkips", [])
+                  expected_group = {
+                      "schema": "public-runtime-union-source-group.v1", "group": name,
+                      "sourceHead": PINS["publicSource"], "sourceTree": PINS["publicTree"],
+                      "python": python, "pytestExit": 0,
+                      "expectedCount": expected["count"], "collectedCount": expected["count"],
+                      "nodeIdsSha256": expected["nodeIdsSha256"], "collectionVerified": True,
+                      "deselectedCount": expected["deselectedCount"],
+                      "deselectedSha256": expected["deselectedSha256"],
+                      "passedCalls": expected["count"] - len(skips), "skippedPhases": len(skips),
+                      "failedPhases": 0, "xfailPhases": 0, "allowedSetupSkips": skips,
+                      "expectedSubtests": 0, "observedSubtests": 0, "unknownReports": 0,
+                      "requiredFilePasses": expected.get("requiredFiles", {}), "failedKnownNodeIds": [],
+                      "allExpectedPhasesPassed": True, "passed": True, "installedExecuted": False,
+                      "compiledNativeCommitmentExecuted": name == "slow-vector-commitment",
+                  }
+                  require_exact(contents[name + ".json"], expected_group, "runtime_group_not_admitted")
+                  groups.append({"group": name, "passedCalls": expected_group["passedCalls"],
+                                 "originalSetupSkips": len(skips), "nodeIdsSha256": expected["nodeIdsSha256"]})
+              return {"python": python, "qualifiedSource": PINS["publicSource"],
+                      "checkedTypeRoots": 375, "outcomes": len(RESULTS), "groups": groups,
+                      "newReadinessCases": 11, "newContinuationCases": 21,
+                      "sourceUnchanged": True, "installedAcceptanceClaim": False}
+
+
+          def read_archive(archive):
+              contents = {}
+              with zipfile.ZipFile(archive) as zipped:
+                  members = zipped.infolist()
+                  need(len(members) == len(MEMBERS) and {member.filename for member in members} == MEMBERS,
+                       "runtime_members")
+                  total = 0
+                  for member in members:
+                      mode = member.external_attr >> 16
+                      need(not member.is_dir() and not stat.S_ISLNK(mode) and not (member.flag_bits & 1)
+                           and member.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED},
+                           "runtime_member_type")
+                      need(0 < member.file_size <= MIB, "runtime_member_size")
+                      total += member.file_size
+                      need(total <= 5 * MIB, "runtime_total_size")
+                      data = zipped.read(member)
+                      need(len(data) == member.file_size, "runtime_member_length")
+                      contents[member.filename] = parse_json(data)
+              return contents
+
+
+          def inspect_receipt(row):
+              need(type(row["jobId"]) is int and row["jobId"] > 0
+                   and type(row["artifactId"]) is int and row["artifactId"] > 0
+                   and type(row["bytes"]) is int and 0 < row["bytes"] <= 2 * MIB
+                   and isinstance(row["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]),
+                   "runtime_receipt_pins")
+              job = api("/actions/jobs/" + str(row["jobId"]))
+              need(job["id"] == row["jobId"] and job["run_id"] == PINS["validationRun"]
+                   and job["run_attempt"] == 1 and job["head_sha"] == PINS["validationHead"]
+                   and job["name"] == "verify (" + row["python"] + ")"
+                   and job["status"] == "completed" and job["conclusion"] == "success",
+                   "runtime_job_not_admitted")
+              artifact = api("/actions/artifacts/" + str(row["artifactId"]))
+              need(artifact["id"] == row["artifactId"] and artifact["expired"] is False
+                   and artifact["name"] == "public-runtime-union-" + row["python"]
+                   and artifact["size_in_bytes"] == row["bytes"] and artifact["digest"] == "sha256:" + row["sha256"]
+                   and artifact["workflow_run"]["id"] == PINS["validationRun"]
+                   and artifact["workflow_run"]["head_sha"] == PINS["validationHead"],
+                   "runtime_artifact_not_admitted")
+              need(timestamp(job["started_at"]) <= timestamp(artifact["created_at"])
+                   <= timestamp(job["completed_at"]), "runtime_artifact_time")
+              archive = io.BytesIO()
+              download(row["artifactId"], row["bytes"], row["sha256"], archive)
+              record = inspect_contents(read_archive(archive), row["python"])
+              record.update(jobId=row["jobId"], artifactId=row["artifactId"], archiveBytes=row["bytes"],
+                            sha256=row["sha256"], allFiveMemberCrcVerified=True)
+              return record
+
+
+          TREE_CACHE = {}
+
+
+          def tree_entries(sha):
+              if sha in TREE_CACHE:
+                  return TREE_CACHE[sha]
+              need(len(TREE_CACHE) < 96, "lineage_tree_limit")
+              tree = api("/git/trees/" + sha)
+              need(tree.get("sha") == sha and tree.get("truncated") is False, "lineage_tree_identity")
+              rows = tree.get("tree")
+              need(isinstance(rows, list) and len(rows) <= 4096, "lineage_tree_size")
+              result = {}
+              for row in rows:
+                  need(isinstance(row, dict) and isinstance(row.get("path"), str)
+                       and row["path"] not in result and "/" not in row["path"], "lineage_tree_entry")
+                  result[row["path"]] = (row["mode"], row["type"], row["sha"])
+              TREE_CACHE[sha] = result
+              return result
+
+
+          def exact_tree_delta(old_tree, new_tree, expected_rows):
+              expected = {row["path"]: row for row in expected_rows}
+              need(len(expected) == len(expected_rows), "lineage_expected_duplicate")
+              observed = set()
+
+              def walk(old_sha, new_sha, prefix, depth):
+                  need(depth <= 8, "lineage_depth")
+                  old, new = tree_entries(old_sha), tree_entries(new_sha)
+                  for name in sorted(set(old) | set(new)):
+                      before, after = old.get(name), new.get(name)
+                      if before == after:
+                          continue
+                      path = prefix + name
+                      if before is not None and after is not None and before[:2] == after[:2] == ("040000", "tree"):
+                          need(any(item.startswith(path + "/") for item in expected), "lineage_unrelated_directory")
+                          walk(before[2], after[2], path + "/", depth + 1)
+                      else:
+                          need(path in expected, "lineage_unrelated_file")
+                          row = expected[path]
+                          want_before = None if row["before"] is None else ("100644", "blob", row["before"])
+                          need(before == want_before and after == ("100644", "blob", row["after"]),
+                               "lineage_candidate_file")
+                          observed.add(path)
+
+              walk(old_tree, new_tree, "", 0)
+              need(observed == set(expected), "lineage_missing_change")
+              return len(observed)
+
+
+          def verify_lineage():
+              runtime = api("/git/commits/" + PINS["publicSource"])
+              parent = api("/git/commits/" + PINS["sourceParent"])
+              child = api("/git/commits/" + PINS["diagnosticSource"])
+              need(runtime["sha"] == PINS["publicSource"] and runtime["tree"]["sha"] == PINS["publicTree"]
+                   and [row["sha"] for row in runtime["parents"]] == [PINS["sourceParent"]]
+                   and parent["sha"] == PINS["sourceParent"] and parent["tree"]["sha"] == PINS["parentTree"],
+                   "runtime_lineage_commit")
+              need(child["sha"] == PINS["diagnosticSource"] and child["tree"]["sha"] == PINS["diagnosticTree"]
+                   and [row["sha"] for row in child["parents"]] == [PINS["publicSource"]], "sampler_lineage_commit")
+              runtime_count = exact_tree_delta(PINS["parentTree"], PINS["publicTree"], PINS["runtimeChangedFiles"])
+              sampler_count = exact_tree_delta(PINS["publicTree"], PINS["diagnosticTree"], PINS["samplerChangedFiles"])
+              need(runtime_count == 12 and sampler_count == 2, "lineage_change_count")
+              return {"previousSource": PINS["sourceParent"], "qualifiedRuntimeSource": PINS["publicSource"],
+                      "diagnosticSource": PINS["diagnosticSource"], "diagnosticTree": PINS["diagnosticTree"],
+                      "qualifiedRuntimeChangedFiles": runtime_count, "diagnosticOnlyChangedFiles": sampler_count,
+                      "allOtherProductionEntriesUnchangedFromQualifiedRuntime": True,
+                      "historicalSourceFamiliesReexecutedOnDiagnosticChild": False}
+
+
+          report = {
+              "schema": "guard.native-runtime-source-admission.v1", "passed": False,
+              "qualifiedRuntimeSource": PINS["publicSource"], "diagnosticSource": PINS["diagnosticSource"],
+              "validationRun": PINS["validationRun"], "validationAttempt": 1,
+              "nativeAcceptanceClaim": False, "interpreters": [], "lineage": None,
+          }
+          try:
+              need(TOKEN and os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "admission_context")
+              need([row["python"] for row in PINS["receipts"]] == ["3.10", "3.12"], "required_interpreters")
+              need(type(PINS["validationRun"]) is int and PINS["validationRun"] > 0
+                   and type(PINS["validationWorkflowId"]) is int and PINS["validationWorkflowId"] > 0
+                   and isinstance(PINS["validationHead"], str)
+                   and re.fullmatch(r"[0-9a-f]{40}", PINS["validationHead"]) is not None,
+                   "runtime_validation_pins")
+              validate_run()
+              report["lineage"] = verify_lineage()
+              report["interpreters"] = [inspect_receipt(row) for row in PINS["receipts"]]
+              validate_run()
+              report["passed"] = True
+          except Refusal as error:
+              report["failure"] = str(error)
+          except BaseException:
+              report["failure"] = "admission_unavailable"
+          Path("runtime-source-admission.json").write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report["passed"] else 1)
+          PY
+      - name: Admit original runtime source archives and exact diagnostic child
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -I "$RUNNER_TEMP/runtime-source-admission.py"
+      - name: Preserve finite runtime source admission
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-runtime-source-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: runtime-source-admission.json
+          if-no-files-found: error
+          retention-days: 7
+
+  sampler-source:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/native-sampler-window-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      PYTHON_VERSION: ${{ matrix.python }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: public-source
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: public-source
+          persist-credentials: false
+          fetch-depth: 3
+      - name: Bind the exact source and two-file diagnostic lineage
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-list --parents -n 1 HEAD)" = "$GITHUB_SHA $PUBLIC_SOURCE_SHA"
+          test "$(git diff --name-only "$PUBLIC_SOURCE_SHA" HEAD)" = ".github/workflows/native-sampler-window.yml"
+          test "$(git rev-list --parents -n 1 "$PUBLIC_SOURCE_SHA")" = "$PUBLIC_SOURCE_SHA a3d3467e9cf511cafef49f5bae174bb91b599d53"
+          git checkout --detach "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          python -I - <<'PY'
+          import hashlib, subprocess
+          from pathlib import Path
+          assert subprocess.check_output(["git", "diff", "--name-only", "HEAD^", "HEAD"], text=True).splitlines() == ['ci/native_runtime/profile_installed_readiness.py', 'ci/native_runtime/test_installed_readiness_profile.py']
+          old = subprocess.check_output(["git", "show", "HEAD^:ci/native_runtime/test_installed_readiness_profile.py"])
+          assert len(old) == 34475 and hashlib.sha1(b"blob 34475\0" + old).hexdigest() == "d21ba20e3986d62ddf2ccc08b03353e705812962"
+          assert Path("ci/native_runtime/test_installed_readiness_profile.py").read_bytes().startswith(old)
+          PY
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare pinned source dependencies
+        run: |
+          set -euo pipefail
+          python -I scripts/ci/policy_contract_interpreter.py prepare
+          uv sync --frozen --extra dev --python "$PYTHON_VERSION"
+          python -I scripts/ci/policy_contract_interpreter.py verify
+      - name: Materialize exact sampler selection
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/public-sampler-source-$PYTHON_VERSION"
+          mkdir -p "$target"
+          cat > "$target/source-manifest.json" <<'JSON'
+          {"sourceHead":"8440f0fcab081188bb17651e7bbbe814afbeb7b0","sourceTree":"ee78447e3422ee072f5b8f25eb9f7b54995d9fca","sourceParent":"a3d3467e9cf511cafef49f5bae174bb91b599d53","parentTree":"ab29a21a085557ef47bd2c1752c14a79f598d36d","changedPython":["ci/native_runtime/profile_installed_readiness.py","ci/native_runtime/test_installed_readiness_profile.py"],"files":[{"path":"ci/native_runtime/profile_installed_readiness.py","gitBlob":"97f31f6d7441ade6f45e633f7edc2d6e4c269ff7","bytes":25298},{"path":"ci/native_runtime/test_installed_readiness_profile.py","gitBlob":"b1dd461c5396ff9f5eb459b2c5a1de702135cb23","bytes":37891}],"selectors":{"sampler-cases":["ci/native_runtime/test_installed_readiness_profile.py"]},"expected":{"sampler-cases":{"count":47,"nodeIdsSha256":"07b05a7e3219aacb26e9a6a77be27d15bb9ac900611a17f4fc40d3408720e175","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","requiredFiles":{"ci/native_runtime/test_installed_readiness_profile.py":47}}},"extraArgs":{}}
+          JSON
+          cat > "$target/group.py" <<'PY'
+          """Finite exact source-case admission; safe to import in spawned test workers."""
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          import pytest
+          from _pytest.reports import TestReport
+          from _pytest.subtests import SubtestReport
+
+
+          def digest(ids):
+              return hashlib.sha256(json.dumps(sorted(ids), separators=(",", ":")).encode()).hexdigest()
+
+
+          class Evidence:
+              def __init__(self, expected):
+                  self.expected = expected
+                  self.items = []
+                  self.deselected = []
+                  self.collection_verified = False
+                  self.reports = []
+                  self.subtests = []
+                  self.unknown_reports = 0
+                  self.collect_errors = 0
+
+              def pytest_deselected(self, items):
+                  self.deselected.extend(item.nodeid for item in items)
+
+              def pytest_collectreport(self, report):
+                  if report.failed:
+                      self.collect_errors += 1
+
+              def pytest_collection_finish(self, session):
+                  self.items = [item.nodeid for item in session.items]
+                  e = self.expected
+                  self.collection_verified = (
+                      len(self.items) == e["count"] and len(set(self.items)) == len(self.items)
+                      and digest(self.items) == e["nodeIdsSha256"]
+                      and len(self.deselected) == e["deselectedCount"]
+                      and digest(self.deselected) == e["deselectedSha256"] and self.collect_errors == 0
+                  )
+                  if not self.collection_verified:
+                      raise pytest.UsageError("runtime_union_collection_mismatch")
+
+              def pytest_runtest_logreport(self, report):
+                  if type(report) is SubtestReport:
+                      self.subtests.append((report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")))
+                  elif type(report) is TestReport and report.when in {"setup", "call", "teardown"}:
+                      self.reports.append((report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")))
+                  else:
+                      self.unknown_reports += 1
+
+
+          def project(probe, code, name, manifest):
+              expected = manifest["expected"][name]
+              skips = expected.get("allowedSetupSkips", [])
+              normal = [("setup", "passed", False), ("call", "passed", False), ("teardown", "passed", False)]
+              skipped = [("setup", "skipped", False), ("teardown", "passed", False)]
+              phase_ok = all(
+                  [(phase, outcome, xfail) for node, phase, outcome, xfail in probe.reports if node == item]
+                  == (skipped if item in skips else normal)
+                  for item in probe.items
+              )
+              required = expected.get("requiredFiles", {})
+              required_counts = {path: sum(node.split("::", 1)[0] == path and phase == "call" and outcome == "passed" and not xfail
+                                           for node, phase, outcome, xfail in probe.reports) for path in required}
+              passed = (code == 0 and probe.collection_verified and phase_ok
+                        and len(probe.reports) == 3 * expected["count"] - len(skips)
+                        and set(skips).issubset(probe.items) and len(skips) == len(set(skips))
+                        and not probe.subtests and probe.unknown_reports == 0 and required_counts == required)
+              failures = {node for node, _, outcome, xfail in probe.reports if outcome == "failed" or xfail}
+              return {
+                  "schema": "public-runtime-union-source-group.v1", "group": name,
+                  "sourceHead": os.environ["PUBLIC_SOURCE_SHA"], "sourceTree": os.environ["PUBLIC_SOURCE_TREE"],
+                  "python": os.environ["PYTHON_VERSION"], "pytestExit": code,
+                  "expectedCount": expected["count"], "collectedCount": len(probe.items),
+                  "nodeIdsSha256": digest(probe.items), "collectionVerified": probe.collection_verified,
+                  "deselectedCount": len(probe.deselected), "deselectedSha256": digest(probe.deselected),
+                  "passedCalls": sum(phase == "call" and outcome == "passed" and not xfail for _, phase, outcome, xfail in probe.reports),
+                  "skippedPhases": sum(outcome == "skipped" for _, _, outcome, _ in probe.reports),
+                  "failedPhases": sum(outcome == "failed" for _, _, outcome, _ in probe.reports),
+                  "xfailPhases": sum(xfail for _, _, _, xfail in probe.reports),
+                  "allowedSetupSkips": skips, "expectedSubtests": 0, "observedSubtests": len(probe.subtests),
+                  "unknownReports": probe.unknown_reports, "requiredFilePasses": required_counts,
+                  "failedKnownNodeIds": sorted(failures & set(probe.items))[:expected["count"]] if probe.collection_verified else [],
+                  "allExpectedPhasesPassed": phase_ok, "passed": passed, "installedExecuted": False,
+                  "compiledNativeCommitmentExecuted": name == "slow-vector-commitment" and passed,
+              }
+
+
+          def main():
+              root = Path.cwd().resolve()
+              sys.path.insert(0, str(root))
+              name, manifest_path, report_path = sys.argv[1:]
+              manifest = json.loads(Path(manifest_path).read_text())
+              probe = Evidence(manifest["expected"][name])
+              code = int(pytest.main(["-q", *manifest["selectors"][name], *manifest["extraArgs"].get(name, []), "--tb=short"], plugins=[probe]))
+              record = project(probe, code, name, manifest)
+              Path(report_path).write_text(json.dumps(record, sort_keys=True) + "\n")
+              print(json.dumps(record, sort_keys=True), flush=True)
+              return 0 if record["passed"] else (code or 1)
+
+
+          if __name__ == "__main__":
+              raise SystemExit(main())
+          PY
+      - name: Execute exact sampler style, types and cases
+        run: |
+          set -euo pipefail
+          uv run --no-sync python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import signal
+          import subprocess
+          import sys
+          import time
+
+          root = Path.cwd().resolve()
+          source = os.environ["PUBLIC_SOURCE_SHA"]
+          source_tree = os.environ["PUBLIC_SOURCE_TREE"]
+          output = Path(os.environ["RUNNER_TEMP"]) / ("public-sampler-source-" + os.environ["PYTHON_VERSION"])
+          manifest_path = output / "source-manifest.json"
+          manifest = json.loads(manifest_path.read_text())
+          assert "PYTHONDONTWRITEBYTECODE" not in os.environ and "PYTHONPATH" not in os.environ
+          assert sys.dont_write_bytecode is False
+          assert list(sys.version_info[:2]) == [int(value) for value in os.environ["PYTHON_VERSION"].split(".")]
+          assert source == manifest["sourceHead"] and source_tree == manifest["sourceTree"]
+          checked_roots = manifest["changedPython"]
+          assert checked_roots == ["ci/native_runtime/profile_installed_readiness.py",
+                                   "ci/native_runtime/test_installed_readiness_profile.py"]
+
+
+          def source_unchanged():
+              if (subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() != source
+                      or subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip() != source_tree
+                      or subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True)):
+                  return False
+              for row in manifest["files"]:
+                  path = root / row["path"]
+                  if not path.is_file() or path.is_symlink():
+                      return False
+                  data = path.read_bytes()
+                  if len(data) != row["bytes"] or hashlib.sha1(
+                      b"blob " + str(len(data)).encode() + b"\0" + data
+                  ).hexdigest() != row["gitBlob"]:
+                      return False
+              return True
+
+
+          assert source_unchanged()
+          assert len(manifest["files"]) == len(checked_roots) == 2
+          assert {row["path"] for row in manifest["files"]} == set(checked_roots)
+          results = []
+
+          def wait_owned_leader(process, timeout):
+              deadline = time.monotonic() + timeout
+              while True:
+                  event = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                  if event is not None:
+                      return event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      raise subprocess.TimeoutExpired(process.args, timeout)
+                  time.sleep(min(0.05, remaining))
+
+          def close_owned_group(process):
+              deadline = time.monotonic() + 5.0
+              # Verify it remains our waitable child before signaling its owned group.
+              try:
+                  os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+              except OSError:
+                  return False
+              # The leader is still live or unreaped, so its PID cannot be reused here.
+              try:
+                  os.killpg(process.pid, signal.SIGKILL)
+              except ProcessLookupError:
+                  pass
+              except OSError:
+                  return False
+              while True:
+                  process.poll()
+                  try:
+                      os.killpg(process.pid, 0)
+                  except ProcessLookupError:
+                      return process.returncode is not None
+                  except OSError:
+                      return False
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      return False
+                  time.sleep(min(0.05, remaining))
+
+          def run(name, argv, timeout=600, record=True):
+              print(json.dumps({"publicValidation": name, "started": True, "sourceHead": source}), flush=True)
+              process = None
+              contained = True
+              try:
+                  process = subprocess.Popen(argv, cwd=root, start_new_session=True)
+                  try:
+                      code = wait_owned_leader(process, timeout)
+                  except subprocess.TimeoutExpired:
+                      code = 124
+              except OSError:
+                  code = 126
+              finally:
+                  if process is not None:
+                      contained = close_owned_group(process)
+              command_code = code
+              if not contained:
+                  code = 125
+              if record:
+                  results.append({"name": name, "exit": code})
+              print(json.dumps({"publicValidation": name, "exit": code, "commandExit": command_code, "sourceHead": source, "ownedProcessGroupAbsent": contained}), flush=True)
+              (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+              if not contained:
+                  raise SystemExit(125)
+              return code
+
+          passed = False
+          try:
+              run("sampler-lint", ["uv", "run", "--no-sync", "ruff", "check", *checked_roots], timeout=120)
+              run("sampler-format", ["uv", "run", "--no-sync", "ruff", "format", "--check", *checked_roots], timeout=120)
+              run("sampler-types", ["uv", "run", "--no-sync", "basedpyright", "--level", "error",
+                                     "--pythonpath", str(root / ".venv/bin/python"),
+                                     "--pythonversion", os.environ["PYTHON_VERSION"], *checked_roots], timeout=900)
+              run("sampler-cases", [sys.executable, str(output / "group.py"), "sampler-cases",
+                                     str(manifest_path), str(output / "sampler-cases.json")], timeout=900)
+              passed = len(results) == 4 and all(row["exit"] == 0 for row in results)
+          finally:
+              unchanged = source_unchanged()
+              record = {
+                  "schema": "public-sampler-window-source-receipt.v1", "sourceHead": source,
+                  "sourceTree": source_tree, "qualifiedRuntimeParent": manifest["sourceParent"],
+                  "validationHead": os.environ["GITHUB_SHA"], "runId": os.environ["GITHUB_RUN_ID"],
+                  "runAttempt": int(os.environ["GITHUB_RUN_ATTEMPT"]), "python": os.environ["PYTHON_VERSION"],
+                  "checkedTypeRoots": len(checked_roots), "checkedFiles": checked_roots,
+                  "expectedCases": 47, "preservedOriginalCases": 39, "newSamplerWindowCases": 8,
+                  "outcomes": results, "sourceUnchanged": unchanged, "passed": passed and unchanged,
+                  "installedExecuted": False, "nativeAcceptanceClaim": False,
+                  "readinessBudgetMs": 400, "parentTrialCapSeconds": 30, "sampleTargetSeconds": 25,
+              }
+              (output / "receipt.json").write_text(json.dumps(record, sort_keys=True) + "\n")
+              print(json.dumps(record, sort_keys=True), flush=True)
+          raise SystemExit(0 if passed and unchanged else 1)
+          PY
+      - name: Preserve the tracked source fence
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Preserve finite sampler qualification
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: public-sampler-source-${{ matrix.python }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/public-sampler-source-${{ matrix.python }}/receipt.json
+            ${{ runner.temp }}/public-sampler-source-${{ matrix.python }}/sampler-cases.json
+            ${{ runner.temp }}/public-sampler-source-${{ matrix.python }}/source-manifest.json
+            ${{ runner.temp }}/public-sampler-source-${{ matrix.python }}/results.json
+          if-no-files-found: error
+          retention-days: 7
+
+  macos:
+    needs: [source-admission, extension-source-admission, runtime-source-admission, sampler-source]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            platform_tag: macosx_13_0_x86_64
+            target: x86_64-apple-darwin
+            deployment_target: "13.0"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+          repository: hashgraph-online/hol-guard
+          ref: ${{ env.PUBLIC_SOURCE_SHA }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - name: Verify the exact validated source before any build
+        shell: bash
+        run: |
+          python -I - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['PUBLIC_SOURCE_SHA']
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip() == os.environ['PUBLIC_SOURCE_TREE']
+          files = json.loads(r'''[{"path":"ci/native_runtime/installed_readiness_profile.py","sha":"7871c061fa36a62873618c18abfcecd2c4b802dc","bytes":8527},{"path":"ci/native_runtime/profile_installed_readiness.py","sha":"97f31f6d7441ade6f45e633f7edc2d6e4c269ff7","bytes":25298},{"path":"ci/native_runtime/test_installed_readiness_profile.py","sha":"b1dd461c5396ff9f5eb459b2c5a1de702135cb23","bytes":37891},{"path":".github/workflows/native-wheel-ci.yml","sha":"a369152987d65a336cfdd1e18812d84d5d8a0862","bytes":27958},{"path":"scripts/ci/policy_source_contract_roots.json","sha":"8049c637091d42fb95e4341132d6d1ef5eb8d2d4","bytes":40038},{"path":"ci/native_runtime/probe_installed_native_extensions.py","sha":"35f023db815142f83b5ab5506d45f5f5bd1eb52c","bytes":22354},{"path":"ci/native_runtime/test_installed_failure_diagnostics.py","sha":"3d4f9cd55c02740ce93d30c4d9de1a59834cadbb","bytes":16282}]''')
+          for file in files:
+              path = Path(file['path'])
+              assert path.is_file() and not path.is_symlink()
+              data = path.read_bytes()
+              assert len(data) == file['bytes']
+              assert hashlib.sha1(b'blob ' + str(len(data)).encode('ascii') + b'\0' + data).hexdigest() == file['sha']
+          PY
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify native command program is current
+        run: uv run --no-sync python scripts/build_native_command_program.py --check
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Cache native Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: rust
+          shared-key: native-wheel
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Build pure Python wheel
+        run: uv run --no-sync python -m build --wheel --outdir pure-dist
+      - name: Build native runtime
+        env:
+          HOL_GUARD_BUILD_SHA: ${{ env.PUBLIC_SOURCE_SHA }}
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+        run: |
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          export HOL_GUARD_PACKAGE_VERSION="$VERSION"
+          cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime
+          rust/target/release/hol-guard-runtime self-test --json
+      - name: Assemble and install native wheel
+        id: installed_contracts
+        env:
+          SOURCE_SHA: ${{ env.PUBLIC_SOURCE_SHA }}
+          PLATFORM_TAG: ${{ matrix.platform_tag }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          runtime="rust/target/release/hol-guard-runtime"
+          RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+          uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
+            --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \
+            --runtime "$runtime" \
+            --output-dir native-dist \
+            --version "$VERSION" \
+            --platform-tag "$PLATFORM_TAG" \
+            --target "$TARGET" \
+            --source-sha "$SOURCE_SHA" \
+            --rule-digest "$RULE_DIGEST"
+          uv pip uninstall --python .venv/bin/python hol-guard
+          uv pip install --python .venv/bin/python --no-deps --force-reinstall native-dist/*.whl
+          unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+          unset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC
+          unset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY
+          unset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE
+          unset HOL_GUARD_PYTHON_ORACLE
+          unset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON
+          unset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST
+          unset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC
+          unset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY
+          unset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE
+          unset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT
+          unset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+          .venv/bin/python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json
+          .venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json
+          .venv/bin/python -I ci/native_runtime/probe_installed_native_extensions.py --json installed-native-extensions.json
+          HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT=1 .venv/bin/python -I ci/native_runtime/probe_installed_scoped_policy.py --json installed-scoped-policy.json --expected-source-sha "$SOURCE_SHA"
+          GUARD_EXTENSION_CATALOG_SYNC_V1=true GUARD_POLICY_EXTENSION_TARGETS_V1=true \
+            GUARD_MANAGED_EXTENSION_CONTROLS_V1=true GUARD_MANAGED_CONTROLS_ATOMIC_APPLY_V1=true \
+            HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT=1 .venv/bin/python -I ci/native_runtime/probe_installed_managed_floors.py --json installed-managed-floors.json --expected-source-sha "$SOURCE_SHA"
+      - name: Profile the original readiness failure
+        if: ${{ failure() && steps.installed_contracts.outcome == 'failure' && matrix.target == 'x86_64-apple-darwin' }}
+        timeout-minutes: 2
+        env:
+          SOURCE_SHA: ${{ env.PUBLIC_SOURCE_SHA }}
+          HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT: "1"
+        run: |
+          .venv/bin/python -I ci/native_runtime/profile_installed_readiness.py --original-report installed-scoped-policy.json --json installed-readiness-profile.json --expected-source-sha "$SOURCE_SHA"
+      - name: Measure installed adapter-to-decision SLOs
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+          PLATFORM_TAG: ${{ matrix.platform_tag }}
+          NATIVE_STOP_DIAGNOSTIC_PATH: native-stop-diagnostic.json
+        run: |
+          unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+          unset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC
+          unset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY
+          unset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE
+          unset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON
+          unset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST
+          unset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC
+          unset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY
+          unset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE
+          unset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT
+          unset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+          runtime=$(.venv/bin/python -c 'from codex_plugin_scanner.guard.native_runtime import native_runtime_status; status = native_runtime_status(); assert status.identity is not None; print(status.identity.path)')
+          .venv/bin/python scripts/bench_guard_native_installed_slo.py \
+            --runtime "$runtime" \
+            --warm-iterations 2 \
+            --cold-iterations 2 \
+            --recovery-iterations 2 \
+            --readiness-samples 2 \
+            --json native-installed-slo.json \
+            --enforce
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          cp "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" native-dist/
+          SOURCE_SHA="${PUBLIC_SOURCE_SHA:?missing validated public source SHA}"
+          runtime="rust/target/release/hol-guard-runtime"
+          RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+          uv run --no-sync python scripts/ci/validate_release_artifacts.py \
+            --dist-dir native-dist \
+            --version "$VERSION" \
+            --source-sha "$SOURCE_SHA" \
+            --rule-digest "$RULE_DIGEST" \
+            --platform "$PLATFORM_TAG" \
+            --windows-waiver "validated by the platform matrix" \
+            --output native-artifact-evidence.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: hol-guard-native-wheel-${{ matrix.target }}
+          path: |
+            native-dist/*.whl
+            native-default-auto.json
+            installed-pi-output.json
+            installed-native-extensions.json
+            installed-scoped-policy.json
+            installed-readiness-profile.json
+            installed-managed-floors.json
+            native-installed-slo.json
+            native-artifact-evidence.json
+            native-stop-diagnostic.json
+          if-no-files-found: warn

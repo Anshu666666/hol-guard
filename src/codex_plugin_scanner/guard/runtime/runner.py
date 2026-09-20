@@ -51,6 +51,8 @@ from ..mdm.network import managed_urlopen
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
 from ..native_policy_authority_command_source import has_canonical_command_expressions
 from ..native_policy_bundle_sync import publish_received_canonical_policy
+from ..native_policy_runtime_reports import capture_native_runtime_reports
+from ..native_policy_snapshot import find_native_policy_snapshot_publisher
 from ..oauth_connection_authority import OAuthConnectionSnapshot
 from ..oauth_token_claims import decode_oauth_access_token_claims as _decode_oauth_access_token_claims
 from ..oauth_token_claims import oauth_binding_from_credentials, oauth_binding_metadata, oauth_refresh_binding
@@ -169,6 +171,7 @@ from .policy_bundle_selection import (
     policy_shadow_mismatch_reason_codes,
     select_canonical_policy_candidate,
 )
+from .policy_report_revisions import finish_runtime_reports, prepare_runtime_reports
 from .policy_runtime_posture import cloud_policy_runtime_posture, local_policy_runtime_posture
 from .policy_sync_acknowledgement import validated_upload_policy_acknowledgement
 from .prompt_injection import detect_prompt_injection_requests
@@ -3929,6 +3932,13 @@ def sync_runtime_session(
         _validate_guard_sync_url(_auth_context_sync_url(resolved_auth_context))
     )
     session_payload = _cloud_runtime_session_payload(store, session)
+    observations = capture_native_runtime_reports(
+        find_native_policy_snapshot_publisher(store), auth_connection, device_id=session_payload["deviceId"]
+    )
+    report_fields, report_write = prepare_runtime_reports(
+        store, auth_connection, session_payload, observations, now=_now()
+    )
+    session_payload.update(report_fields)
     body = json.dumps({"session": session_payload}).encode("utf-8")
     request = _guard_sync_request(
         resolved_auth_context,
@@ -3937,6 +3947,7 @@ def sync_runtime_session(
         data=body,
         extra_headers=None,
     )
+    payload: object = None
     try:
         payload = _urlopen_json_with_timeout_retry(
             request=request,
@@ -3990,6 +4001,8 @@ def sync_runtime_session(
         raise RuntimeError(_sync_http_error_message(error)) from error
     except OSError as error:
         raise RuntimeError(_sync_url_error_message(error)) from error
+    finally:
+        finish_runtime_reports(store, auth_connection, report_write, payload, now=_now())
     if not isinstance(payload, dict):
         raise RuntimeError("Invalid sync response")
     validate_connection()

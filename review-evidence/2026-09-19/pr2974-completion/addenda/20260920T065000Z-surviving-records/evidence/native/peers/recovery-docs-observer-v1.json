@@ -1,0 +1,50 @@
+{
+  "schema": "hol-guard.current-recovery-docs-observer-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "scope": "Observer, resource, workspace clock and acceptance-gate prose in CURRENT-RESULTS.md and TAKEAWAY.md, plus TODO entries RSP-121 through RSP-132.",
+  "document_root": "/home/user/pr2974-recovery/root/packet",
+  "documents": [
+    {
+      "path": "CURRENT-RESULTS.md",
+      "bytes": 16844,
+      "sha256": "0b5ec58f31aeeaa0dffa87fe23a1d200560db18bea373acd4894e81644ded396"
+    },
+    {
+      "path": "TAKEAWAY.md",
+      "bytes": 7230,
+      "sha256": "649b401657b766cc5383c5639eece191948969d900cfe4e45f9da914e065eb5b"
+    },
+    {
+      "path": "TODO.md",
+      "bytes": 86284,
+      "sha256": "1cdf4114e4865e64d4a6ee3dd0196b3efa3327435e0e411f8c9b9ea1442f3487"
+    }
+  ],
+  "evidence": {
+    "source_sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+    "driver_sha": "3ffa573bd4b91fc0d5c44511f19f2dfbd6cfcb22",
+    "observer_run": 35491537211,
+    "observer_job": 106027206739,
+    "selection_sha256": "fc54e934ef913be1a8b94518c225f198aa63165d1c8a82047cfaf19e4f62a85e",
+    "analysis_sha256": "a6308da6f66eb97589bbaa6f02e4ad21ae997ed37b9c9d778499d5c41a1d1f73"
+  },
+  "findings": [
+    "The documents correctly distinguish terminal results and retained observations on exact 8f from qualification of the later 4d head, and distinguish this new recovery packet from the unavailable closed 017f packet.",
+    "The attached observer population is correctly stated as 1053 Python passes with two skips and 309 default Rust workspace passes with six ignored; overlapping runtime, C/SQLite, receipt and lifecycle invocations remain separately scoped.",
+    "All 603 observed native receipts were admitted and committed, but only 598 of 600 completed hooks have matching native receipts. The two unmatched hook IDs and one aggregate receiptless normal native-review return do not prove SQLite loss or a shared causal path.",
+    "Resource evidence retains 233 returned samples, three unavailable descendant RSS observations and incomplete short-lived CPU coverage. The 15.3487 percent RSS increase fails the unchanged 12 percent gate. Missing process identities and poll clocks do not permit an expected-clean-exit classification.",
+    "The 15-cell workspace matrix has 12 passes, including the four previous small-scope clock-origin cases. First admission, service restart and key rotation still fail at 100 workspaces; valid native ACK, ready barrier, constructor return and await completion remain distinct.",
+    "The first-admission early ACK and barrier do not excuse constructor/await observations after the original absolute 400 ms deadline. Service-restart ready authority at 419.290 ms is an actual deadline miss. Key-rotation evidence does not identify the precise failing currentness predicate.",
+    "The phase text now correctly records a count of 154 accepted datagrams, one ordinal gap and 14 separate semantic journal rows, without claiming individually retained native frame bodies or complete final-tail delivery.",
+    "The original latency, sample, current-authority, baseline, stopped-campaign and activation gates remain explicit. No observer result promotes task acceptance or full qualification."
+  ],
+  "limits": [
+    "This peer does not independently re-audit the entire 144-task preservation catalog, every other platform or the live 4d review state.",
+    "The source-specific numerical conclusions use the frozen recovered observer archive, reconstructed ledgers, identities and complete job log; no workload was rerun.",
+    "Any later document edit requires a new additive binding; these hashes refer only to the reviewed bytes."
+  ],
+  "blocking_findings": [],
+  "qualification_complete": false,
+  "source_edits": false,
+  "runtime_execution_repeated": false
+}

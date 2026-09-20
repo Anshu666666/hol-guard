@@ -1,0 +1,109 @@
+{
+  "conclusion": "No production cause is established by the retained evidence; no rerun or production change was performed.",
+  "job": 106030357811,
+  "log_sha256": "8d484d5615b6b6d15090de22f11f6f6793b01e28df9aa7160fe3c5032a8986c3",
+  "observed": [
+    "The retained job has two transport tests failing in the initial signed policy push; the intentional spoof/partial-frame/slow-client and overload activity has not started.",
+    "The only retained native leaf is the already collapsed native_resident_live_request_failed string. The job reports two failures and thirteen passes in this Python invocation.",
+    "No per-call elapsed native phase, OS error, complete stderr or runtime-state artifact is retained for these two failures."
+  ],
+  "parent": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "production_changes": false,
+  "proposed_diagnostic_boundary": {
+    "boundary": "Capture the borrowed detailed ResidentClientError at its existing final conversion in try_home_states, together with fixed client phase and original monotonic deadline/outcome under an explicitly enabled owned diagnostic scope.",
+    "preservation": [
+      "No additional request, policy push, retry, replay, timeout extension or process-state mutation.",
+      "Retain the original fatal/unavailable Result and original public error.",
+      "Export closed operation/error codes and bounded counts/times; omit payloads, tokens, endpoint paths and private identifiers.",
+      "If a client authentication failure is actually observed, consider a separately reviewed server readiness/phase seam afterward; do not infer it in advance."
+    ],
+    "status": "proposal_only_no_execution"
+  },
+  "qualification_complete": false,
+  "reviewer": "native_runtime_audit",
+  "run": 35492742596,
+  "schema": "hol-guard.external-4d-linux-startup-native-source-peer.v1",
+  "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "source_bindings": [
+    {
+      "bytes": 14561,
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "sha256": "afccf880148468ae69681bddbd07677d0a1832a3ed6c0915d0f976890426b0e8",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 17792,
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "sha256": "6e39fdf10e0158f4f6283079915752a9be5932b45df83c4615055b37ecfe9cf4",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 14333,
+      "path": "rust/crates/guard-runtime/src/managed_resident_containment.rs",
+      "sha256": "0e08f2f7f65a1725d1977d7d4bc622f22474fbc1bf409461dd090331caa2dc30",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 6660,
+      "path": "rust/crates/guard-runtime/src/managed_resident_transport.rs",
+      "sha256": "e8e44d78fdcc2e8d608703eb88e0705de24dea29f6e591aa68c9bfc9c1cd1c7c",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 15999,
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "sha256": "fbf2e0146a59bcbdf5d481901028ad4afda3dd3e451a2903f582be4f3dfb13a2",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 14851,
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "sha256": "8c973912b4c7b5be58d129f90b50c7242a2ab9709a013f7c1a22bf81588fb19b",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 3964,
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "sha256": "8f32fd1f476ab50d0398041176780f1b74ee7ffdc1aee6a4635ca4dd1946bd6d",
+      "unchanged_from_8f": true
+    },
+    {
+      "bytes": 2583,
+      "path": "rust/crates/guard-runtime/src/managed_resident_client_stream.rs",
+      "sha256": "0362df2cf65b6aa11338ff5dedd03a9b3129c154c5a953b9e9604225926839c3",
+      "unchanged_from_8f": true
+    }
+  ],
+  "source_findings": [
+    {
+      "finding": "The error follows discovery and a call to send_request_for_digest_detailed. Any error outside the explicit retryable allowlist is converted to the same live_request_failed public code.",
+      "location": "managed_resident.rs:120-168"
+    },
+    {
+      "finding": "Connect failure, timeout-setter setup, stale process identity and narrowly classified auth-nonce teardown may remain unavailable. Authentication proof failure and ambiguous response failure remain fatal; a later owner exit does not make them replay-safe.",
+      "location": "managed_resident_containment.rs:412-419"
+    },
+    {
+      "finding": "The public error cannot distinguish peer binding, authentication proof read or rejection, complete request write/flush, committed response read, response binding/digest or overall deadline failure. It does not prove that the server evaluated the policy.",
+      "location": "resident_client.rs:65-97,252-383"
+    },
+    {
+      "finding": "The client retains a 250 ms authentication phase even when the policy push carries a 2000 ms overall budget. Authentication, request/header/payload and response budgets have different boundaries.",
+      "location": "main.rs:57-65; resident_client.rs:69-75"
+    },
+    {
+      "finding": "The server publishes discoverable state before constructing/spawning the authentication and evaluation pools. The socket can be discovered before a worker is ready to authenticate. This is a source-supported possible delay boundary, not a demonstrated cause.",
+      "location": "managed_resident_transport.rs:49-58,87-107; resident_transport.rs:374-427"
+    },
+    {
+      "finding": "The special closed-peer read/flush timeout behavior is cfg(target_os=macos); it is not active on Linux.",
+      "location": "resident_transport.rs:79-136"
+    },
+    {
+      "finding": "Managed server stderr is suppressed and abort preserves the original public error. The current job cannot reconstruct the discarded inner server or transport error from the final token.",
+      "location": "managed_resident_containment.rs:88-90,372-401"
+    }
+  ],
+  "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+  "tests_or_workloads_repeated": false
+}

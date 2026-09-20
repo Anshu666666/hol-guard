@@ -1,0 +1,414 @@
+{
+  "schema": "pr2974-native-installed-provenance-replacement-proposal-v2",
+  "status": "FROZEN_SOURCE_INDEPENDENT_HARNESS_PROPOSAL_UNEXECUTED_PENDING_PEER",
+  "basis_harness": "79dafa07d098b143e892c5b1b55cfef6ca7c9937",
+  "basis_source": "d1ba4265ab15c23db37655999b44d58a0b2d1c74",
+  "basis_source_tree": "20652d3f1f300309c0ec95f4a56a69a3225689e3",
+  "intended_next_source": "4d10758e2cb44e5afa72a08aa631a02541dad534 / fbc00caa3788eb422158a2263a578e83ac626183; separate reviewed source metadata rebind remains required",
+  "actual_original_failure": {
+    "git_blob": "5724a9b5d6a3ed21d039b7f5112222550a3ba9a1",
+    "bytes": 278787,
+    "sha256": "671dbf288e09d097f4a0835c3a9c8a3cc38a8c58a0499287addb3e0e8e9ef6fa"
+  },
+  "exact_uv_source_audit": {
+    "git_blob": "371c2937ade4b76b7f8c63810ee5b840f0e278ed",
+    "bytes": 158962,
+    "sha256": "c6ff8bf6eb73c53d4ebb0e80eb88c49fb332046e1993f344428c7c4c0754198f"
+  },
+  "actual_original_install_wheel": {
+    "path": "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch/installed-artifacts/native-wheel/hol_guard-3.0.1-py3-none-linux_x86_64.whl",
+    "bytes": 8834133,
+    "sha256": "c15e2517ec59623c000f778587b0e5c3fdfe1be4357343eb5b4bd8e9293e1f51"
+  },
+  "actual_original_direct_url": "{\"url\":\"file:///home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch/installed-artifacts/native-wheel/hol_guard-3.0.1-py3-none-linux_x86_64.whl\",\"archive_info\":{}}",
+  "causal_scope": [
+    "Both original installed-environment-before and installed-environment-after commands failed at the old installed_environment.py PEP 610 hash assertion with archive_info exactly {}.",
+    "The pinned uv 0.9.26 primary source writes both ArchiveInfo hash variants as None for local wheels; a URL fragment or require-hashes option cannot alone populate that metadata.",
+    "The replacement admits exactly empty optional archive metadata only after an exact mandatory SHA256 requirement is used by the original installer command and the original wheel, command receipt, source, installed members and RECORDs are independently bound.",
+    "Any supplied hash field must be well formed and match the one expected SHA256; conflicting legacy/current fields cannot mask each other."
+  ],
+  "complete_two_file_deltas": [
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/native_package.py",
+      "before": {
+        "path": "ci/pr2974_rsp129_poststart_validation/native_package.py",
+        "mode": "100644",
+        "type": "blob",
+        "content": "\"\"\"Build one default runtime and install one verified native wheel after finite gates.\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom pathlib import Path\nimport re\nimport shutil\n\nfrom common import CONFIG, HERE, REPORT, SCRATCH, SOURCE, Run, sha256, write_json\nfrom environment_setup import secure_launchers\nfrom rust_environment import file_record\nfrom rust_validation import artifact\nfrom wheel_inputs import verify_native, verify_pure\n\nARTIFACTS = SCRATCH / \"installed-artifacts\"\n\n\ndef checked(run: Run, name: str, args: list[str], env: dict[str, str], *, timeout: int = 300,\n            cwd: Path = SCRATCH) -> None:\n    run.require(run.command(name, args, cwd=cwd, timeout=timeout, env=env), name + \" failed\")\n\n\ndef build_runtime(run: Run, env: dict[str, str], programs: dict[str, str]) -> tuple[dict, dict]:\n    ARTIFACTS.mkdir(mode=0o700, exist_ok=False)\n    target = SCRATCH / \"rust-target-poststart-default\"\n    target.mkdir(mode=0o700, exist_ok=False)\n    checked(run, \"poststart-default-release\", [\n        programs[\"cargo\"], \"build\", \"--locked\", \"--release\", \"-p\", \"hol-guard-runtime\",\n        \"--bin\", \"hol-guard-runtime\", \"--target-dir\", str(target), \"--message-format=json\",\n    ], env, timeout=600, cwd=SOURCE / \"rust\")\n    binary = artifact(\"poststart-default-release\", \"default\", target, test=False)\n    retained = ARTIFACTS / \"hol-guard-runtime\"\n    shutil.copyfile(binary[\"path\"], retained)\n    retained.chmod(0o755)\n    assert file_record(retained)[\"sha256\"] == binary[\"sha256\"]\n    binary[\"retained_artifact_path\"] = str(retained)\n    write_json(REPORT / \"native-binaries.json\", {\"default\": binary})\n    checked(run, \"poststart-runtime-capabilities\", [str(retained), \"capabilities\", \"--json\"], env, timeout=30)\n    raw = (REPORT / \"poststart-runtime-capabilities.log\").read_bytes()\n    assert 0 < len(raw) <= 65536\n    capabilities = json.loads(raw)\n    assert capabilities[\"protocol_version\"] == 1\n    assert capabilities[\"runtime_version\"] == CONFIG[\"project_version\"]\n    assert capabilities[\"build_sha\"] == CONFIG[\"source_sha\"]\n    assert capabilities[\"target\"] == CONFIG[\"runtime_capability_target\"]\n    assert isinstance(capabilities[\"rule_digest\"], str) and re.fullmatch(\"[0-9a-f]{64}\", capabilities[\"rule_digest\"])\n    assert isinstance(capabilities[\"features\"], list)\n    assert \"resident-protocol-v2\" in capabilities[\"features\"]\n    checked(run, \"poststart-runtime-self-test\", [str(retained), \"self-test\"], env, timeout=30)\n    self_test_raw = (REPORT / \"poststart-runtime-self-test.log\").read_bytes()\n    assert 0 < len(self_test_raw) <= 65536\n    assert json.loads(self_test_raw) == {\"ok\": True, \"capabilities\": capabilities}\n    assert file_record(retained)[\"sha256\"] == binary[\"sha256\"]\n    write_json(REPORT / \"runtime-build-admission.json\", {\n        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],\n        \"binary\": binary, \"capabilities\": capabilities, \"passed\": True,\n        \"default_features_unchanged\": True, \"initial_compilation_measured\": False,\n        \"qualification_complete\": False,\n    })\n    return binary, capabilities\n\n\ndef backend_lock(run: Run, env: dict[str, str], backend: Path) -> dict:\n    uv = os.environ[\"VALIDATION_UV\"]\n    requirements = REPORT / \"backend-requirements.in\"\n    lock = REPORT / \"backend-requirements.lock\"\n    assert not requirements.exists() and not lock.exists()\n    requirements.write_text(\"\\n\".join(CONFIG[\"backend_requirements\"]) + \"\\n\")\n    checked(run, \"backend-resolve-once\", [\n        uv, \"--no-config\", \"pip\", \"compile\", \"--python\", str(backend),\n        \"--generate-hashes\", \"--only-binary\", \":all:\", \"--output-file\", str(lock), str(requirements),\n    ], env, timeout=180)\n    raw = lock.read_bytes()\n    assert 0 < len(raw) <= 1024 * 1024\n    versions = {}\n    entries = []\n    current = None\n    for line in raw.decode(\"utf-8\").splitlines():\n        stripped = line.strip()\n        if not stripped or stripped.startswith(\"#\"):\n            continue\n        requirement = re.fullmatch(r\"([A-Za-z0-9][A-Za-z0-9_.-]*)==([A-Za-z0-9_.+!-]+)\\s*\\\\?\", stripped)\n        hashed = re.fullmatch(r\"--hash=sha256:([0-9a-f]{64})\\s*\\\\?\", stripped)\n        if requirement:\n            if current is not None:\n                assert current[\"hashes\"], \"Backend requirement lacks wheel hashes\"\n            name = re.sub(r\"[-_.]+\", \"-\", requirement[1]).lower()\n            assert name not in versions\n            versions[name] = requirement[2]\n            current = {\"name\": name, \"version\": requirement[2], \"hashes\": []}\n            entries.append(current)\n        else:\n            assert hashed and current is not None, \"Unexpected backend lock syntax\"\n            current[\"hashes\"].append(hashed[1])\n    assert current is not None and current[\"hashes\"] and 1 <= len(versions) <= 64\n    assert versions[\"build\"] == \"1.5.0\" and \"hatchling\" in versions\n    result = {\n        \"source_sha\": CONFIG[\"source_sha\"], \"requirements\": CONFIG[\"backend_requirements\"],\n        \"lock_path\": str(lock), \"lock_sha256\": sha256(raw), \"lock_bytes\": len(raw),\n        \"versions\": versions, \"requirements_with_hashes\": entries, \"passed\": True,\n        \"resolution_count\": 1, \"runtime_resolved_backend_not_a_preclaimed_uv_lock_member\": True,\n        \"qualification_complete\": False,\n    }\n    write_json(REPORT / \"backend-lock-admission.json\", result)\n    checked(run, \"backend-install-hash-locked\", [\n        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(backend), \"--no-deps\",\n        \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(lock),\n    ], env, timeout=180)\n    assert lock.read_bytes() == raw\n    return result\n\n\ndef environment_check(run: Run, name: str, python: Path, env: dict[str, str], *,\n                      kind: str, archive: bool, prior: str | None = None) -> None:\n    args = [\n        str(python), \"-I\", \"-B\", str(HERE / \"installed_environment.py\"),\n        \"--prefix\", str(python.parent.parent), \"--kind\", kind,\n        \"--output\", str(REPORT / (name + \".json\")),\n    ]\n    if archive:\n        args += [\"--archive\", str(ARTIFACTS / (kind + \"-original-files.tar.gz\"))]\n    if prior is not None:\n        args += [\"--prior\", str(REPORT / (prior + \".json\"))]\n    checked(run, name, args, env, timeout=300)\n\n\ndef package_and_install(run: Run, env: dict[str, str], create_venv, binary: dict,\n                        capabilities: dict) -> tuple[Path, Path, dict[str, str]]:\n    backend_venv = create_venv(\"poststart-build-environment\")\n    backend = backend_venv / \"bin/python\"\n    backend_lock(run, env, backend)\n    secure_launchers(backend_venv)\n    environment_check(run, \"backend-environment-before\", backend, env, kind=\"backend\", archive=True)\n    pure_dir = ARTIFACTS / \"pure-wheel\"\n    native_dir = ARTIFACTS / \"native-wheel\"\n    pure_dir.mkdir(mode=0o700)\n    native_dir.mkdir(mode=0o700)\n    checked(run, \"build-pure-wheel\", [\n        str(backend), \"-I\", \"-B\", \"-m\", \"build\", \"--wheel\", \"--no-isolation\",\n        \"--outdir\", str(pure_dir), str(SOURCE),\n    ], env, timeout=300)\n    wheels = list(pure_dir.iterdir())\n    assert len(wheels) == 1 and wheels[0].suffix == \".whl\"\n    pure = wheels[0]\n    verify_pure(pure)\n    checked(run, \"package-native-wheel\", [\n        str(backend), \"-I\", \"-B\", str(SOURCE / \"scripts/build_native_hol_guard_wheel.py\"),\n        \"--wheel\", str(pure), \"--runtime\", binary[\"retained_artifact_path\"],\n        \"--output-dir\", str(native_dir), \"--version\", CONFIG[\"project_version\"],\n        \"--platform-tag\", CONFIG[\"installed_platform_tag\"], \"--target\", CONFIG[\"rust_host\"],\n        \"--source-sha\", CONFIG[\"source_sha\"], \"--rule-digest\", capabilities[\"rule_digest\"],\n    ], env, timeout=120)\n    wheels = list(native_dir.iterdir())\n    assert len(wheels) == 1 and wheels[0].suffix == \".whl\"\n    native = wheels[0]\n    verify_native(native, pure, binary, capabilities)\n    environment_check(run, \"backend-environment-after\", backend, env,\n                      kind=\"backend\", archive=False, prior=\"backend-environment-before\")\n    installed_venv = create_venv(\"poststart-installed-environment\")\n    python = installed_venv / \"bin/python\"\n    installed_env = dict(env)\n    installed_env.update(UV_PROJECT_ENVIRONMENT=str(installed_venv), VALIDATION_INSTALLED_VENV=str(installed_venv))\n    uv = os.environ[\"VALIDATION_UV\"]\n    checked(run, \"installed-frozen-dependencies\", [\n        uv, \"--no-config\", \"sync\", \"--frozen\", \"--extra\", \"dev\", \"--no-install-project\",\n        \"--python\", str(python),\n    ], installed_env, timeout=420, cwd=SOURCE)\n    checked(run, \"installed-native-wheel\", [\n        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(python), \"--no-deps\", str(native),\n    ], installed_env, timeout=180)\n    secure_launchers(installed_venv)\n    checked(run, \"installed-dependency-compatibility\", [\n        uv, \"--no-config\", \"pip\", \"check\", \"--python\", str(python),\n    ], installed_env, timeout=120)\n    environment_check(run, \"installed-environment-before\", python, installed_env, kind=\"installed\", archive=True)\n    return python, backend, installed_env\n",
+        "git_blob": "ffc9067387051664495b59b40d261649f575025d",
+        "bytes": 9056,
+        "sha256": "5c4818e13c8d8afb245b45898a49ad3f61f9b9ceb388aa0cf1e8e9faea2e7b3e",
+        "lines": 178
+      },
+      "after": {
+        "path": "ci/pr2974_rsp129_poststart_validation/native_package.py",
+        "mode": "100644",
+        "type": "blob",
+        "content": "\"\"\"Build one default runtime and install one verified native wheel after finite gates.\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom pathlib import Path\nimport re\nimport shutil\n\nfrom common import CONFIG, HERE, REPORT, SCRATCH, SOURCE, Run, sha256, write_json\nfrom environment_setup import secure_launchers\nfrom installed_environment import file_bytes, wheel_requirement_bytes\nfrom rust_environment import file_record\nfrom rust_validation import artifact\nfrom wheel_inputs import verify_native, verify_pure\n\nARTIFACTS = SCRATCH / \"installed-artifacts\"\n\n\ndef checked(run: Run, name: str, args: list[str], env: dict[str, str], *, timeout: int = 300,\n            cwd: Path = SCRATCH) -> None:\n    run.require(run.command(name, args, cwd=cwd, timeout=timeout, env=env), name + \" failed\")\n\n\ndef build_runtime(run: Run, env: dict[str, str], programs: dict[str, str]) -> tuple[dict, dict]:\n    ARTIFACTS.mkdir(mode=0o700, exist_ok=False)\n    target = SCRATCH / \"rust-target-poststart-default\"\n    target.mkdir(mode=0o700, exist_ok=False)\n    checked(run, \"poststart-default-release\", [\n        programs[\"cargo\"], \"build\", \"--locked\", \"--release\", \"-p\", \"hol-guard-runtime\",\n        \"--bin\", \"hol-guard-runtime\", \"--target-dir\", str(target), \"--message-format=json\",\n    ], env, timeout=600, cwd=SOURCE / \"rust\")\n    binary = artifact(\"poststart-default-release\", \"default\", target, test=False)\n    retained = ARTIFACTS / \"hol-guard-runtime\"\n    shutil.copyfile(binary[\"path\"], retained)\n    retained.chmod(0o755)\n    assert file_record(retained)[\"sha256\"] == binary[\"sha256\"]\n    binary[\"retained_artifact_path\"] = str(retained)\n    write_json(REPORT / \"native-binaries.json\", {\"default\": binary})\n    checked(run, \"poststart-runtime-capabilities\", [str(retained), \"capabilities\", \"--json\"], env, timeout=30)\n    raw = (REPORT / \"poststart-runtime-capabilities.log\").read_bytes()\n    assert 0 < len(raw) <= 65536\n    capabilities = json.loads(raw)\n    assert capabilities[\"protocol_version\"] == 1\n    assert capabilities[\"runtime_version\"] == CONFIG[\"project_version\"]\n    assert capabilities[\"build_sha\"] == CONFIG[\"source_sha\"]\n    assert capabilities[\"target\"] == CONFIG[\"runtime_capability_target\"]\n    assert isinstance(capabilities[\"rule_digest\"], str) and re.fullmatch(\"[0-9a-f]{64}\", capabilities[\"rule_digest\"])\n    assert isinstance(capabilities[\"features\"], list)\n    assert \"resident-protocol-v2\" in capabilities[\"features\"]\n    checked(run, \"poststart-runtime-self-test\", [str(retained), \"self-test\"], env, timeout=30)\n    self_test_raw = (REPORT / \"poststart-runtime-self-test.log\").read_bytes()\n    assert 0 < len(self_test_raw) <= 65536\n    assert json.loads(self_test_raw) == {\"ok\": True, \"capabilities\": capabilities}\n    assert file_record(retained)[\"sha256\"] == binary[\"sha256\"]\n    write_json(REPORT / \"runtime-build-admission.json\", {\n        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],\n        \"binary\": binary, \"capabilities\": capabilities, \"passed\": True,\n        \"default_features_unchanged\": True, \"initial_compilation_measured\": False,\n        \"qualification_complete\": False,\n    })\n    return binary, capabilities\n\n\ndef backend_lock(run: Run, env: dict[str, str], backend: Path) -> dict:\n    uv = os.environ[\"VALIDATION_UV\"]\n    requirements = REPORT / \"backend-requirements.in\"\n    lock = REPORT / \"backend-requirements.lock\"\n    assert not requirements.exists() and not lock.exists()\n    requirements.write_text(\"\\n\".join(CONFIG[\"backend_requirements\"]) + \"\\n\")\n    checked(run, \"backend-resolve-once\", [\n        uv, \"--no-config\", \"pip\", \"compile\", \"--python\", str(backend),\n        \"--generate-hashes\", \"--only-binary\", \":all:\", \"--output-file\", str(lock), str(requirements),\n    ], env, timeout=180)\n    raw = lock.read_bytes()\n    assert 0 < len(raw) <= 1024 * 1024\n    versions = {}\n    entries = []\n    current = None\n    for line in raw.decode(\"utf-8\").splitlines():\n        stripped = line.strip()\n        if not stripped or stripped.startswith(\"#\"):\n            continue\n        requirement = re.fullmatch(r\"([A-Za-z0-9][A-Za-z0-9_.-]*)==([A-Za-z0-9_.+!-]+)\\s*\\\\?\", stripped)\n        hashed = re.fullmatch(r\"--hash=sha256:([0-9a-f]{64})\\s*\\\\?\", stripped)\n        if requirement:\n            if current is not None:\n                assert current[\"hashes\"], \"Backend requirement lacks wheel hashes\"\n            name = re.sub(r\"[-_.]+\", \"-\", requirement[1]).lower()\n            assert name not in versions\n            versions[name] = requirement[2]\n            current = {\"name\": name, \"version\": requirement[2], \"hashes\": []}\n            entries.append(current)\n        else:\n            assert hashed and current is not None, \"Unexpected backend lock syntax\"\n            current[\"hashes\"].append(hashed[1])\n    assert current is not None and current[\"hashes\"] and 1 <= len(versions) <= 64\n    assert versions[\"build\"] == \"1.5.0\" and \"hatchling\" in versions\n    result = {\n        \"source_sha\": CONFIG[\"source_sha\"], \"requirements\": CONFIG[\"backend_requirements\"],\n        \"lock_path\": str(lock), \"lock_sha256\": sha256(raw), \"lock_bytes\": len(raw),\n        \"versions\": versions, \"requirements_with_hashes\": entries, \"passed\": True,\n        \"resolution_count\": 1, \"runtime_resolved_backend_not_a_preclaimed_uv_lock_member\": True,\n        \"qualification_complete\": False,\n    }\n    write_json(REPORT / \"backend-lock-admission.json\", result)\n    checked(run, \"backend-install-hash-locked\", [\n        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(backend), \"--no-deps\",\n        \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(lock),\n    ], env, timeout=180)\n    assert lock.read_bytes() == raw\n    return result\n\n\ndef environment_check(run: Run, name: str, python: Path, env: dict[str, str], *,\n                      kind: str, archive: bool, prior: str | None = None) -> None:\n    args = [\n        str(python), \"-I\", \"-B\", str(HERE / \"installed_environment.py\"),\n        \"--prefix\", str(python.parent.parent), \"--kind\", kind,\n        \"--output\", str(REPORT / (name + \".json\")),\n    ]\n    if archive:\n        args += [\"--archive\", str(ARTIFACTS / (kind + \"-original-files.tar.gz\"))]\n    if prior is not None:\n        args += [\"--prior\", str(REPORT / (prior + \".json\"))]\n    checked(run, name, args, env, timeout=300)\n\n\ndef package_and_install(run: Run, env: dict[str, str], create_venv, binary: dict,\n                        capabilities: dict) -> tuple[Path, Path, dict[str, str]]:\n    backend_venv = create_venv(\"poststart-build-environment\")\n    backend = backend_venv / \"bin/python\"\n    backend_lock(run, env, backend)\n    secure_launchers(backend_venv)\n    environment_check(run, \"backend-environment-before\", backend, env, kind=\"backend\", archive=True)\n    pure_dir = ARTIFACTS / \"pure-wheel\"\n    native_dir = ARTIFACTS / \"native-wheel\"\n    pure_dir.mkdir(mode=0o700)\n    native_dir.mkdir(mode=0o700)\n    checked(run, \"build-pure-wheel\", [\n        str(backend), \"-I\", \"-B\", \"-m\", \"build\", \"--wheel\", \"--no-isolation\",\n        \"--outdir\", str(pure_dir), str(SOURCE),\n    ], env, timeout=300)\n    wheels = list(pure_dir.iterdir())\n    assert len(wheels) == 1 and wheels[0].suffix == \".whl\"\n    pure = wheels[0]\n    verify_pure(pure)\n    checked(run, \"package-native-wheel\", [\n        str(backend), \"-I\", \"-B\", str(SOURCE / \"scripts/build_native_hol_guard_wheel.py\"),\n        \"--wheel\", str(pure), \"--runtime\", binary[\"retained_artifact_path\"],\n        \"--output-dir\", str(native_dir), \"--version\", CONFIG[\"project_version\"],\n        \"--platform-tag\", CONFIG[\"installed_platform_tag\"], \"--target\", CONFIG[\"rust_host\"],\n        \"--source-sha\", CONFIG[\"source_sha\"], \"--rule-digest\", capabilities[\"rule_digest\"],\n    ], env, timeout=120)\n    wheels = list(native_dir.iterdir())\n    assert len(wheels) == 1 and wheels[0].suffix == \".whl\"\n    native = wheels[0]\n    native_proof = verify_native(native, pure, binary, capabilities)\n    environment_check(run, \"backend-environment-after\", backend, env,\n                      kind=\"backend\", archive=False, prior=\"backend-environment-before\")\n    installed_venv = create_venv(\"poststart-installed-environment\")\n    python = installed_venv / \"bin/python\"\n    installed_env = dict(env)\n    installed_env.update(UV_PROJECT_ENVIRONMENT=str(installed_venv), VALIDATION_INSTALLED_VENV=str(installed_venv))\n    uv = os.environ[\"VALIDATION_UV\"]\n    checked(run, \"installed-frozen-dependencies\", [\n        uv, \"--no-config\", \"sync\", \"--frozen\", \"--extra\", \"dev\", \"--no-install-project\",\n        \"--python\", str(python),\n    ], installed_env, timeout=420, cwd=SOURCE)\n    requirements = REPORT / \"native-wheel-install-requirements.lock\"\n    requirement_bytes = wheel_requirement_bytes(native_proof)\n    with requirements.open(\"xb\") as stream:\n        stream.write(requirement_bytes)\n    requirement_record, original_requirement = file_bytes(requirements, REPORT)\n    assert original_requirement == requirement_bytes\n    wheel_before, _wheel_bytes = file_bytes(native, native_dir)\n    assert wheel_before[\"sha256\"] == native_proof[\"wheel_sha256\"]\n    assert wheel_before[\"bytes\"] == native_proof[\"wheel_bytes\"]\n    binding = {\n        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],\n        \"requirements\": requirement_record, \"wheel_before\": wheel_before,\n        \"passed\": False, \"qualification_complete\": False,\n    }\n    write_json(REPORT / \"native-wheel-install-binding.json\", binding)\n    checked(run, \"installed-native-wheel\", [\n        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(python), \"--no-deps\",\n        \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(requirements),\n    ], installed_env, timeout=180)\n    wheel_after, _wheel_bytes = file_bytes(native, native_dir)\n    assert wheel_after == wheel_before\n    after_requirement_record, after_requirement = file_bytes(requirements, REPORT)\n    assert after_requirement_record == requirement_record and after_requirement == requirement_bytes\n    binding.update(wheel_after=wheel_after, command=run.steps[-1], passed=True)\n    write_json(REPORT / \"native-wheel-install-binding.json\", binding)\n    secure_launchers(installed_venv)\n    checked(run, \"installed-dependency-compatibility\", [\n        uv, \"--no-config\", \"pip\", \"check\", \"--python\", str(python),\n    ], installed_env, timeout=120)\n    environment_check(run, \"installed-environment-before\", python, installed_env, kind=\"installed\", archive=True)\n    return python, backend, installed_env\n",
+        "git_blob": "42aed4ba2c8c43aef7237e70381d3767fbf862f4",
+        "bytes": 10503,
+        "sha256": "870dcbc3576c7951e1951b618bdd821559504248f745f2da9cf5863951718ce3",
+        "lines": 201
+      },
+      "edits": [
+        {
+          "before_start": 12,
+          "after_start": 12,
+          "before": [],
+          "after": [
+            "from installed_environment import file_bytes, wheel_requirement_bytes"
+          ]
+        },
+        {
+          "before_start": 157,
+          "after_start": 158,
+          "before": [
+            "    verify_native(native, pure, binary, capabilities)"
+          ],
+          "after": [
+            "    native_proof = verify_native(native, pure, binary, capabilities)"
+          ]
+        },
+        {
+          "before_start": 169,
+          "after_start": 170,
+          "before": [],
+          "after": [
+            "    requirements = REPORT / \"native-wheel-install-requirements.lock\"",
+            "    requirement_bytes = wheel_requirement_bytes(native_proof)",
+            "    with requirements.open(\"xb\") as stream:",
+            "        stream.write(requirement_bytes)",
+            "    requirement_record, original_requirement = file_bytes(requirements, REPORT)",
+            "    assert original_requirement == requirement_bytes",
+            "    wheel_before, _wheel_bytes = file_bytes(native, native_dir)",
+            "    assert wheel_before[\"sha256\"] == native_proof[\"wheel_sha256\"]",
+            "    assert wheel_before[\"bytes\"] == native_proof[\"wheel_bytes\"]",
+            "    binding = {",
+            "        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],",
+            "        \"requirements\": requirement_record, \"wheel_before\": wheel_before,",
+            "        \"passed\": False, \"qualification_complete\": False,",
+            "    }",
+            "    write_json(REPORT / \"native-wheel-install-binding.json\", binding)"
+          ]
+        },
+        {
+          "before_start": 170,
+          "after_start": 186,
+          "before": [
+            "        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(python), \"--no-deps\", str(native),"
+          ],
+          "after": [
+            "        uv, \"--no-config\", \"pip\", \"install\", \"--python\", str(python), \"--no-deps\",",
+            "        \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(requirements),"
+          ]
+        },
+        {
+          "before_start": 172,
+          "after_start": 189,
+          "before": [],
+          "after": [
+            "    wheel_after, _wheel_bytes = file_bytes(native, native_dir)",
+            "    assert wheel_after == wheel_before",
+            "    after_requirement_record, after_requirement = file_bytes(requirements, REPORT)",
+            "    assert after_requirement_record == requirement_record and after_requirement == requirement_bytes",
+            "    binding.update(wheel_after=wheel_after, command=run.steps[-1], passed=True)",
+            "    write_json(REPORT / \"native-wheel-install-binding.json\", binding)"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/installed_environment.py",
+      "before": {
+        "path": "ci/pr2974_rsp129_poststart_validation/installed_environment.py",
+        "mode": "100644",
+        "type": "blob",
+        "content": "\"\"\"Inventory the actual noneditable or build environment before any admission.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport base64\nimport csv\nimport hashlib\nimport importlib.metadata\nimport io\nimport json\nimport os\nfrom pathlib import Path\nimport re\nimport stat\nimport sys\nimport tarfile\nimport tomllib\nimport traceback\n\nsys.dont_write_bytecode = True\nsys.path.insert(0, str(Path(__file__).resolve().parent))\n\nfrom common import CONFIG, REPORT, SOURCE, sha256, write_json\n\nMAX_FILES = 100000\nMAX_FILE = 256 * 1024 * 1024\nMAX_TOTAL = 1024 * 1024 * 1024\nMAX_REPORT = 32 * 1024 * 1024\n\n\ndef normal(name: str) -> str:\n    return re.sub(r\"[-_.]+\", \"-\", name).lower()\n\n\ndef file_bytes(path: Path, prefix: Path) -> tuple[dict, bytes]:\n    lexical = path.absolute()\n    info = lexical.lstat()\n    assert stat.S_ISREG(info.st_mode) and not lexical.is_symlink(), str(path)\n    assert info.st_uid == os.getuid() and 0 <= info.st_size <= MAX_FILE, str(path)\n    assert lexical.resolve(strict=True).is_relative_to(prefix), str(path)\n    fd = os.open(lexical, os.O_RDONLY | os.O_NOFOLLOW)\n    with os.fdopen(fd, \"rb\") as stream:\n        opened = os.fstat(stream.fileno())\n        assert (opened.st_dev, opened.st_ino, opened.st_size) == (info.st_dev, info.st_ino, info.st_size)\n        raw = stream.read(MAX_FILE + 1)\n        after = os.fstat(stream.fileno())\n    assert len(raw) == info.st_size <= MAX_FILE\n    assert (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) == (\n        info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns\n    )\n    return {\n        \"relative_path\": lexical.resolve(strict=True).relative_to(prefix).as_posix(),\n        \"sha256\": sha256(raw), \"bytes\": len(raw), \"uid\": info.st_uid,\n        \"mode\": oct(stat.S_IMODE(info.st_mode)),\n    }, raw\n\n\ndef save(path: Path, state: dict) -> None:\n    raw = (json.dumps(state, sort_keys=True, indent=2) + \"\\n\").encode(\"utf-8\")\n    assert len(raw) <= MAX_REPORT, \"Environment inventory report exceeds the declared bound\"\n    write_json(path, state)\n\n\ndef archive_files(path: Path, prefix: Path, files: dict) -> dict:\n    assert not path.exists() and len(files) <= MAX_FILES\n    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)\n    with tarfile.open(path, \"x:gz\", format=tarfile.PAX_FORMAT) as archive:\n        for relative, expected in sorted(files.items()):\n            observed, raw = file_bytes(prefix / relative, prefix)\n            assert observed == expected, relative\n            info = tarfile.TarInfo(relative)\n            info.size = len(raw)\n            info.mode = int(expected[\"mode\"], 8)\n            info.uid = os.getuid()\n            info.gid = os.getgid()\n            info.mtime = 0\n            archive.addfile(info, io.BytesIO(raw))\n    assert path.stat().st_size <= MAX_TOTAL + 64 * 1024 * 1024\n    actual = []\n    with tarfile.open(path, \"r:gz\") as archive:\n        for member in archive:\n            assert member.isfile() and member.name in files\n            stream = archive.extractfile(member)\n            assert stream is not None\n            raw = stream.read(MAX_FILE + 1)\n            expected = files[member.name]\n            assert len(raw) == member.size == expected[\"bytes\"]\n            assert sha256(raw) == expected[\"sha256\"] and member.mode == int(expected[\"mode\"], 8)\n            actual.append(member.name)\n    assert actual == sorted(files)\n    hasher = hashlib.sha256()\n    with path.open(\"rb\") as stream:\n        for raw in iter(lambda: stream.read(1024 * 1024), b\"\"):\n            hasher.update(raw)\n    return {\n        \"path\": str(path), \"bytes\": path.stat().st_size, \"sha256\": hasher.hexdigest(),\n        \"files\": len(files), \"exact_member_order_and_bytes_read_back\": True,\n        \"scope\": \"All RECORD-listed files plus the owned launchers and pyvenv.cfg; not a host inventory\",\n    }\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--prefix\", type=Path, required=True)\n    parser.add_argument(\"--output\", type=Path, required=True)\n    parser.add_argument(\"--kind\", choices=(\"backend\", \"installed\"), required=True)\n    parser.add_argument(\"--archive\", type=Path)\n    parser.add_argument(\"--prior\", type=Path)\n    args = parser.parse_args()\n    prefix = args.prefix.resolve(strict=True)\n    state = {\n        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],\n        \"kind\": args.kind, \"python_version\": sys.version, \"prefix\": sys.prefix,\n        \"base_prefix\": sys.base_prefix, \"executable\": sys.executable,\n        \"platform\": sys.platform, \"raw_distributions\": [], \"files\": {},\n        \"complete\": False, \"passed\": False, \"qualification_complete\": False,\n    }\n    save(args.output, state)\n    try:\n        distributions = list(importlib.metadata.distributions())\n        for dist in distributions:\n            state[\"raw_distributions\"].append({\n                \"name\": dist.metadata.get(\"Name\"), \"version\": dist.version,\n                \"metadata\": dist.read_text(\"METADATA\"), \"record\": dist.read_text(\"RECORD\"),\n                \"direct_url\": dist.read_text(\"direct_url.json\"),\n            })\n        save(args.output, state)\n        assert __debug__ and sys.flags.isolated and sys.dont_write_bytecode\n        assert sys.version.split()[0] == CONFIG[\"python_version\"]\n        assert sys.platform == \"linux\" and os.uname().machine == \"x86_64\"\n        assert Path(sys.prefix).resolve() == prefix and prefix != Path(sys.base_prefix).resolve()\n        assert not prefix.is_relative_to(SOURCE)\n        cfg, cfg_bytes = file_bytes(prefix / \"pyvenv.cfg\", prefix)\n        assert \"include-system-site-packages = false\" in cfg_bytes.decode().lower()\n        files = {cfg[\"relative_path\"]: cfg}\n        launchers = {}\n        for name in (\"python\", \"python3\", \"python3.12\"):\n            row, _raw = file_bytes(prefix / \"bin\" / name, prefix)\n            assert row[\"mode\"] == \"0o755\"\n            files[row[\"relative_path\"]] = row\n            launchers[name] = row\n        assert len({row[\"sha256\"] for row in launchers.values()}) == 1\n        versions = {}\n        owners = {}\n        total = sum(row[\"bytes\"] for row in files.values())\n        for dist, raw_dist in zip(distributions, state[\"raw_distributions\"], strict=True):\n            name = normal(raw_dist[\"name\"])\n            assert name not in versions and raw_dist[\"record\"] is not None, name\n            versions[name] = dist.version\n            entries = list(dist.files or ())\n            record_rows = list(csv.reader(io.StringIO(raw_dist[\"record\"], newline=\"\")))\n            assert record_rows and all(len(row) == 3 for row in record_rows)\n            assert [str(row) for row in entries] == [row[0] for row in record_rows]\n            assert len(entries) == len({str(entry) for entry in entries}), name\n            for entry in entries:\n                row, raw = file_bytes(Path(dist.locate_file(entry)), prefix)\n                relative = row[\"relative_path\"]\n                if entry.hash is not None:\n                    actual = base64.urlsafe_b64encode(hashlib.new(entry.hash.mode, raw).digest()).decode().rstrip(\"=\")\n                    assert entry.hash.value == actual, (name, str(entry), \"RECORD hash mismatch\")\n                if entry.size is not None:\n                    assert entry.size == len(raw), (name, str(entry), \"RECORD size mismatch\")\n                if relative in files:\n                    assert files[relative] == row\n                else:\n                    assert len(files) < MAX_FILES and total + len(raw) <= MAX_TOTAL\n                    files[relative] = row\n                    total += len(raw)\n                owners.setdefault(relative, []).append(name)\n            state[\"files\"] = files\n            state[\"inventory_bytes\"] = total\n            save(args.output, state)\n        state.update(installed_versions=versions, launchers=launchers, file_owners=owners)\n        if args.kind == \"backend\":\n            closure = json.loads((REPORT / \"backend-lock-admission.json\").read_bytes())\n            assert closure[\"passed\"] is True and versions == closure[\"versions\"]\n            state[\"resolved_backend_lock_sha256\"] = closure[\"lock_sha256\"]\n        else:\n            assert versions == CONFIG[\"installed_versions\"], versions\n            lock = tomllib.loads((SOURCE / \"uv.lock\").read_text())\n            pinned = {}\n            for package in lock[\"package\"]:\n                pinned.setdefault(normal(package[\"name\"]), set()).add(package[\"version\"])\n            assert all(version in pinned.get(name, set()) for name, version in versions.items())\n            expected = json.loads((REPORT / \"native-wheel-verification.json\").read_bytes())\n            project = importlib.metadata.distribution(\"hol-guard\")\n            direct = json.loads(project.read_text(\"direct_url.json\") or \"{}\")\n            assert not direct.get(\"dir_info\", {}).get(\"editable\", False)\n            assert direct[\"url\"] == Path(expected[\"wheel_path\"]).as_uri()\n            archive = direct[\"archive_info\"]\n            assert archive.get(\"hashes\", {}).get(\"sha256\") == expected[\"wheel_sha256\"] or (\n                archive.get(\"hash\") == \"sha256=\" + expected[\"wheel_sha256\"]\n            )\n            mapped = {}\n            generated = {expected[\"record_name\"]}\n            for name, member in expected[\"members\"].items():\n                row, _raw = file_bytes(Path(project.locate_file(name)), prefix)\n                mapped[name] = row\n                if name not in generated:\n                    assert row[\"sha256\"] == member[\"sha256\"] and row[\"bytes\"] == member[\"bytes\"], name\n            assert mapped[expected[\"runtime_member\"]][\"mode\"] == \"0o755\"\n            state.update(\n                installed_wheel_members=mapped, installed_project_direct_url=direct,\n                original_wheel_record_retained_and_installed_record_separately_verified=True,\n                frozen_lock_versions_exact=True, default_runtime_member=expected[\"runtime_member\"],\n            )\n        state.update(complete=True, file_count=len(files), inventory_bytes=total)\n        if args.archive is not None:\n            state[\"original_files_archive\"] = archive_files(args.archive, prefix, files)\n        if args.prior is not None:\n            prior = json.loads(args.prior.read_bytes())\n            assert prior[\"complete\"] is True and prior[\"passed\"] is True\n            for key in (\n                \"raw_distributions\", \"files\", \"file_owners\", \"installed_versions\",\n                \"launchers\", \"prefix\", \"base_prefix\", \"executable\", \"python_version\",\n            ):\n                assert state[key] == prior[key], (\"Environment changed\", key)\n            state[\"exact_original_environment_unchanged\"] = True\n        state[\"passed\"] = True\n    except BaseException:\n        state[\"error\"] = traceback.format_exc()\n    finally:\n        save(args.output, state)\n    return 0 if state[\"passed\"] else 1\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "8802bcc1c5124859ea4842b243976611a3726697",
+        "bytes": 10914,
+        "sha256": "7c01ef196f6ca9a0d8c0a5dcf44dde822407cb1f886eb5e25773fd9720e666c7",
+        "lines": 229
+      },
+      "after": {
+        "path": "ci/pr2974_rsp129_poststart_validation/installed_environment.py",
+        "mode": "100644",
+        "type": "blob",
+        "content": "\"\"\"Inventory the actual noneditable or build environment before any admission.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport base64\nimport csv\nimport hashlib\nimport importlib.metadata\nimport io\nimport json\nimport os\nfrom pathlib import Path\nimport re\nimport stat\nimport sys\nimport tarfile\nimport tomllib\nimport traceback\n\nsys.dont_write_bytecode = True\nsys.path.insert(0, str(Path(__file__).resolve().parent))\n\nfrom common import CONFIG, REPORT, SCRATCH, SOURCE, sha256, write_json\n\nMAX_FILES = 100000\nMAX_FILE = 256 * 1024 * 1024\nMAX_TOTAL = 1024 * 1024 * 1024\nMAX_REPORT = 32 * 1024 * 1024\n\n\ndef normal(name: str) -> str:\n    return re.sub(r\"[-_.]+\", \"-\", name).lower()\n\n\ndef file_bytes(path: Path, prefix: Path) -> tuple[dict, bytes]:\n    lexical = path.absolute()\n    info = lexical.lstat()\n    assert stat.S_ISREG(info.st_mode) and not lexical.is_symlink(), str(path)\n    assert info.st_uid == os.getuid() and 0 <= info.st_size <= MAX_FILE, str(path)\n    assert lexical.resolve(strict=True).is_relative_to(prefix), str(path)\n    fd = os.open(lexical, os.O_RDONLY | os.O_NOFOLLOW)\n    with os.fdopen(fd, \"rb\") as stream:\n        opened = os.fstat(stream.fileno())\n        assert (opened.st_dev, opened.st_ino, opened.st_size) == (info.st_dev, info.st_ino, info.st_size)\n        raw = stream.read(MAX_FILE + 1)\n        after = os.fstat(stream.fileno())\n    assert len(raw) == info.st_size <= MAX_FILE\n    assert (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) == (\n        info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns\n    )\n    return {\n        \"relative_path\": lexical.resolve(strict=True).relative_to(prefix).as_posix(),\n        \"sha256\": sha256(raw), \"bytes\": len(raw), \"uid\": info.st_uid,\n        \"mode\": oct(stat.S_IMODE(info.st_mode)),\n    }, raw\n\n\ndef save(path: Path, state: dict) -> None:\n    raw = (json.dumps(state, sort_keys=True, indent=2) + \"\\n\").encode(\"utf-8\")\n    assert len(raw) <= MAX_REPORT, \"Environment inventory report exceeds the declared bound\"\n    write_json(path, state)\n\n\ndef archive_files(path: Path, prefix: Path, files: dict) -> dict:\n    assert not path.exists() and len(files) <= MAX_FILES\n    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)\n    with tarfile.open(path, \"x:gz\", format=tarfile.PAX_FORMAT) as archive:\n        for relative, expected in sorted(files.items()):\n            observed, raw = file_bytes(prefix / relative, prefix)\n            assert observed == expected, relative\n            info = tarfile.TarInfo(relative)\n            info.size = len(raw)\n            info.mode = int(expected[\"mode\"], 8)\n            info.uid = os.getuid()\n            info.gid = os.getgid()\n            info.mtime = 0\n            archive.addfile(info, io.BytesIO(raw))\n    assert path.stat().st_size <= MAX_TOTAL + 64 * 1024 * 1024\n    actual = []\n    with tarfile.open(path, \"r:gz\") as archive:\n        for member in archive:\n            assert member.isfile() and member.name in files\n            stream = archive.extractfile(member)\n            assert stream is not None\n            raw = stream.read(MAX_FILE + 1)\n            expected = files[member.name]\n            assert len(raw) == member.size == expected[\"bytes\"]\n            assert sha256(raw) == expected[\"sha256\"] and member.mode == int(expected[\"mode\"], 8)\n            actual.append(member.name)\n    assert actual == sorted(files)\n    hasher = hashlib.sha256()\n    with path.open(\"rb\") as stream:\n        for raw in iter(lambda: stream.read(1024 * 1024), b\"\"):\n            hasher.update(raw)\n    return {\n        \"path\": str(path), \"bytes\": path.stat().st_size, \"sha256\": hasher.hexdigest(),\n        \"files\": len(files), \"exact_member_order_and_bytes_read_back\": True,\n        \"scope\": \"All RECORD-listed files plus the owned launchers and pyvenv.cfg; not a host inventory\",\n    }\n\n\ndef wheel_requirement_bytes(expected: dict) -> bytes:\n    assert CONFIG[\"uv_version\"] == \"0.9.26\"\n    assert expected[\"source_sha\"] == CONFIG[\"source_sha\"] and expected[\"source_tree\"] == CONFIG[\"source_tree\"]\n    wheel = Path(expected[\"wheel_path\"])\n    assert wheel.is_absolute() and wheel.parent == SCRATCH / \"installed-artifacts\" / \"native-wheel\"\n    assert wheel.suffix == \".whl\" and 0 < expected[\"wheel_bytes\"] <= MAX_FILE\n    digest = expected[\"wheel_sha256\"]\n    assert isinstance(digest, str) and re.fullmatch(\"[0-9a-f]{64}\", digest)\n    raw = f\"hol-guard @ {wheel.as_uri()} --hash=sha256:{digest}\\n\".encode(\"utf-8\")\n    assert len(raw) <= 8192\n    return raw\n\n\ndef check_archive_hashes(archive: object, digest: str) -> None:\n    assert type(archive) is dict and set(archive) <= {\"hash\", \"hashes\"}\n    if \"hash\" in archive:\n        assert archive[\"hash\"] == \"sha256=\" + digest\n    if \"hashes\" in archive:\n        assert type(archive[\"hashes\"]) is dict and archive[\"hashes\"] == {\"sha256\": digest}\n\n\ndef archive_hash_controls(digest: str) -> list[dict]:\n    wrong = (\"0\" if digest[0] != \"0\" else \"1\") + digest[1:]\n    cases = [\n        (\"empty_metadata\", {}, True),\n        (\"sha256\", {\"hashes\": {\"sha256\": digest}}, True),\n        (\"hash_field\", {\"hash\": \"sha256=\" + digest}, True),\n        (\"both\", {\"hash\": \"sha256=\" + digest, \"hashes\": {\"sha256\": digest}}, True),\n        (\"not_object\", None, False),\n        (\"wrong_sha256\", {\"hashes\": {\"sha256\": wrong}}, False),\n        (\"wrong_hash_field\", {\"hash\": \"sha256=\" + wrong}, False),\n        (\"conflicting_hash_field\", {\"hash\": \"sha256=\" + wrong, \"hashes\": {\"sha256\": digest}}, False),\n        (\"conflicting_sha256\", {\"hash\": \"sha256=\" + digest, \"hashes\": {\"sha256\": wrong}}, False),\n        (\"unknown_field\", {\"digest\": digest}, False),\n        (\"missing_sha256\", {\"hashes\": {}}, False),\n        (\"extra_algorithm\", {\"hashes\": {\"sha256\": digest, \"md5\": \"a\" * 32}}, False),\n        (\"wrong_hashes_type\", {\"hashes\": digest}, False),\n    ]\n    outcomes = []\n    for name, candidate, accepted in cases:\n        try:\n            check_archive_hashes(candidate, digest)\n        except AssertionError:\n            assert not accepted, name\n        else:\n            assert accepted, name\n        outcomes.append({\"name\": name, \"expected_accept\": accepted, \"passed\": True})\n    return outcomes\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--prefix\", type=Path, required=True)\n    parser.add_argument(\"--output\", type=Path, required=True)\n    parser.add_argument(\"--kind\", choices=(\"backend\", \"installed\"), required=True)\n    parser.add_argument(\"--archive\", type=Path)\n    parser.add_argument(\"--prior\", type=Path)\n    args = parser.parse_args()\n    prefix = args.prefix.resolve(strict=True)\n    state = {\n        \"source_sha\": CONFIG[\"source_sha\"], \"source_tree\": CONFIG[\"source_tree\"],\n        \"kind\": args.kind, \"python_version\": sys.version, \"prefix\": sys.prefix,\n        \"base_prefix\": sys.base_prefix, \"executable\": sys.executable,\n        \"platform\": sys.platform, \"raw_distributions\": [], \"files\": {},\n        \"complete\": False, \"passed\": False, \"qualification_complete\": False,\n    }\n    save(args.output, state)\n    try:\n        distributions = list(importlib.metadata.distributions())\n        for dist in distributions:\n            state[\"raw_distributions\"].append({\n                \"name\": dist.metadata.get(\"Name\"), \"version\": dist.version,\n                \"metadata\": dist.read_text(\"METADATA\"), \"record\": dist.read_text(\"RECORD\"),\n                \"direct_url\": dist.read_text(\"direct_url.json\"),\n            })\n        save(args.output, state)\n        assert __debug__ and sys.flags.isolated and sys.dont_write_bytecode\n        assert sys.version.split()[0] == CONFIG[\"python_version\"]\n        assert sys.platform == \"linux\" and os.uname().machine == \"x86_64\"\n        assert Path(sys.prefix).resolve() == prefix and prefix != Path(sys.base_prefix).resolve()\n        assert not prefix.is_relative_to(SOURCE)\n        cfg, cfg_bytes = file_bytes(prefix / \"pyvenv.cfg\", prefix)\n        assert \"include-system-site-packages = false\" in cfg_bytes.decode().lower()\n        files = {cfg[\"relative_path\"]: cfg}\n        launchers = {}\n        for name in (\"python\", \"python3\", \"python3.12\"):\n            row, _raw = file_bytes(prefix / \"bin\" / name, prefix)\n            assert row[\"mode\"] == \"0o755\"\n            files[row[\"relative_path\"]] = row\n            launchers[name] = row\n        assert len({row[\"sha256\"] for row in launchers.values()}) == 1\n        versions = {}\n        owners = {}\n        total = sum(row[\"bytes\"] for row in files.values())\n        for dist, raw_dist in zip(distributions, state[\"raw_distributions\"], strict=True):\n            name = normal(raw_dist[\"name\"])\n            assert name not in versions and raw_dist[\"record\"] is not None, name\n            versions[name] = dist.version\n            entries = list(dist.files or ())\n            record_rows = list(csv.reader(io.StringIO(raw_dist[\"record\"], newline=\"\")))\n            assert record_rows and all(len(row) == 3 for row in record_rows)\n            assert [str(row) for row in entries] == [row[0] for row in record_rows]\n            assert len(entries) == len({str(entry) for entry in entries}), name\n            for entry in entries:\n                row, raw = file_bytes(Path(dist.locate_file(entry)), prefix)\n                relative = row[\"relative_path\"]\n                if entry.hash is not None:\n                    actual = base64.urlsafe_b64encode(hashlib.new(entry.hash.mode, raw).digest()).decode().rstrip(\"=\")\n                    assert entry.hash.value == actual, (name, str(entry), \"RECORD hash mismatch\")\n                if entry.size is not None:\n                    assert entry.size == len(raw), (name, str(entry), \"RECORD size mismatch\")\n                if relative in files:\n                    assert files[relative] == row\n                else:\n                    assert len(files) < MAX_FILES and total + len(raw) <= MAX_TOTAL\n                    files[relative] = row\n                    total += len(raw)\n                owners.setdefault(relative, []).append(name)\n            state[\"files\"] = files\n            state[\"inventory_bytes\"] = total\n            save(args.output, state)\n        state.update(installed_versions=versions, launchers=launchers, file_owners=owners)\n        if args.kind == \"backend\":\n            closure = json.loads((REPORT / \"backend-lock-admission.json\").read_bytes())\n            assert closure[\"passed\"] is True and versions == closure[\"versions\"]\n            state[\"resolved_backend_lock_sha256\"] = closure[\"lock_sha256\"]\n        else:\n            assert versions == CONFIG[\"installed_versions\"], versions\n            lock = tomllib.loads((SOURCE / \"uv.lock\").read_text())\n            pinned = {}\n            for package in lock[\"package\"]:\n                pinned.setdefault(normal(package[\"name\"]), set()).add(package[\"version\"])\n            assert all(version in pinned.get(name, set()) for name, version in versions.items())\n            expected = json.loads((REPORT / \"native-wheel-verification.json\").read_bytes())\n            project = importlib.metadata.distribution(\"hol-guard\")\n            direct = json.loads(project.read_text(\"direct_url.json\") or \"{}\")\n            assert not direct.get(\"dir_info\", {}).get(\"editable\", False)\n            assert direct[\"url\"] == Path(expected[\"wheel_path\"]).as_uri()\n            archive = direct[\"archive_info\"]\n            controls = archive_hash_controls(expected[\"wheel_sha256\"])\n            check_archive_hashes(archive, expected[\"wheel_sha256\"])\n            requirements = REPORT / \"native-wheel-install-requirements.lock\"\n            required = wheel_requirement_bytes(expected)\n            requirement_record, requirement_raw = file_bytes(requirements, REPORT)\n            assert requirement_raw == required\n            binding_path = REPORT / \"native-wheel-install-binding.json\"\n            _binding_record, binding_raw = file_bytes(binding_path, REPORT)\n            assert len(binding_raw) <= 65536\n            binding = json.loads(binding_raw)\n            assert binding[\"passed\"] is True and binding[\"source_sha\"] == CONFIG[\"source_sha\"]\n            assert binding[\"source_tree\"] == CONFIG[\"source_tree\"]\n            assert binding[\"requirements\"] == requirement_record\n            wheel_record, _wheel_raw = file_bytes(\n                Path(expected[\"wheel_path\"]), SCRATCH / \"installed-artifacts\" / \"native-wheel\"\n            )\n            assert wheel_record[\"sha256\"] == expected[\"wheel_sha256\"]\n            assert wheel_record[\"bytes\"] == expected[\"wheel_bytes\"]\n            assert binding[\"wheel_before\"] == binding[\"wheel_after\"] == wheel_record\n            uv = json.loads((REPORT / \"uv-binary.json\").read_bytes())\n            assert uv[\"version_output\"] == \"uv \" + CONFIG[\"uv_version\"]\n            expected_command = [\n                uv[\"path\"], \"--no-config\", \"pip\", \"install\", \"--python\", str(prefix / \"bin/python\"),\n                \"--no-deps\", \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(requirements),\n            ]\n            command = binding[\"command\"]\n            assert command[\"command\"] == expected_command and command[\"name\"] == \"installed-native-wheel\"\n            assert command[\"passed\"] is True and command[\"returncode\"] == 0 and command[\"timed_out\"] is False\n            assert command[\"timeout_seconds\"] == 180 and command[\"group_cleanup\"][\"passed\"] is True\n            original_commands = json.loads((REPORT / \"commands.json\").read_bytes())\n            assert [item for item in original_commands if item[\"name\"] == \"installed-native-wheel\"] == [command]\n            state.update(\n                native_wheel_install_binding=binding, native_wheel_requirement=requirement_record,\n                original_native_wheel=wheel_record, archive_hash_controls=controls,\n                installer_archive_hash_metadata_present=bool(archive),\n                archive_hash_metadata_is_optional_for_exact_uv_0_9_26=True,\n            )\n            mapped = {}\n            generated = {expected[\"record_name\"]}\n            for name, member in expected[\"members\"].items():\n                row, _raw = file_bytes(Path(project.locate_file(name)), prefix)\n                mapped[name] = row\n                if name not in generated:\n                    assert row[\"sha256\"] == member[\"sha256\"] and row[\"bytes\"] == member[\"bytes\"], name\n            assert mapped[expected[\"runtime_member\"]][\"mode\"] == \"0o755\"\n            state.update(\n                installed_wheel_members=mapped, installed_project_direct_url=direct,\n                original_wheel_record_retained_and_installed_record_separately_verified=True,\n                frozen_lock_versions_exact=True, default_runtime_member=expected[\"runtime_member\"],\n                mandatory_hash_enforced_install_and_member_binding=True,\n            )\n        state.update(complete=True, file_count=len(files), inventory_bytes=total)\n        if args.archive is not None:\n            state[\"original_files_archive\"] = archive_files(args.archive, prefix, files)\n        if args.prior is not None:\n            prior = json.loads(args.prior.read_bytes())\n            assert prior[\"complete\"] is True and prior[\"passed\"] is True\n            for key in (\n                \"raw_distributions\", \"files\", \"file_owners\", \"installed_versions\",\n                \"launchers\", \"prefix\", \"base_prefix\", \"executable\", \"python_version\",\n            ):\n                assert state[key] == prior[key], (\"Environment changed\", key)\n            state[\"exact_original_environment_unchanged\"] = True\n        state[\"passed\"] = True\n    except BaseException:\n        state[\"error\"] = traceback.format_exc()\n    finally:\n        save(args.output, state)\n    return 0 if state[\"passed\"] else 1\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+        "git_blob": "26a7d3b950d52025cc1baacdfe2b0e097fb12fac",
+        "bytes": 15738,
+        "sha256": "ad3acc2ec1896924870ae705440708e69bf0065e36e73c24f5836f232d8e9612",
+        "lines": 314
+      },
+      "edits": [
+        {
+          "before_start": 23,
+          "after_start": 23,
+          "before": [
+            "from common import CONFIG, REPORT, SOURCE, sha256, write_json"
+          ],
+          "after": [
+            "from common import CONFIG, REPORT, SCRATCH, SOURCE, sha256, write_json"
+          ]
+        },
+        {
+          "before_start": 102,
+          "after_start": 102,
+          "before": [],
+          "after": [
+            "def wheel_requirement_bytes(expected: dict) -> bytes:",
+            "    assert CONFIG[\"uv_version\"] == \"0.9.26\"",
+            "    assert expected[\"source_sha\"] == CONFIG[\"source_sha\"] and expected[\"source_tree\"] == CONFIG[\"source_tree\"]",
+            "    wheel = Path(expected[\"wheel_path\"])",
+            "    assert wheel.is_absolute() and wheel.parent == SCRATCH / \"installed-artifacts\" / \"native-wheel\"",
+            "    assert wheel.suffix == \".whl\" and 0 < expected[\"wheel_bytes\"] <= MAX_FILE",
+            "    digest = expected[\"wheel_sha256\"]",
+            "    assert isinstance(digest, str) and re.fullmatch(\"[0-9a-f]{64}\", digest)",
+            "    raw = f\"hol-guard @ {wheel.as_uri()} --hash=sha256:{digest}\\n\".encode(\"utf-8\")",
+            "    assert len(raw) <= 8192",
+            "    return raw",
+            "",
+            "",
+            "def check_archive_hashes(archive: object, digest: str) -> None:",
+            "    assert type(archive) is dict and set(archive) <= {\"hash\", \"hashes\"}",
+            "    if \"hash\" in archive:",
+            "        assert archive[\"hash\"] == \"sha256=\" + digest",
+            "    if \"hashes\" in archive:",
+            "        assert type(archive[\"hashes\"]) is dict and archive[\"hashes\"] == {\"sha256\": digest}",
+            "",
+            "",
+            "def archive_hash_controls(digest: str) -> list[dict]:",
+            "    wrong = (\"0\" if digest[0] != \"0\" else \"1\") + digest[1:]",
+            "    cases = [",
+            "        (\"empty_metadata\", {}, True),",
+            "        (\"sha256\", {\"hashes\": {\"sha256\": digest}}, True),",
+            "        (\"hash_field\", {\"hash\": \"sha256=\" + digest}, True),",
+            "        (\"both\", {\"hash\": \"sha256=\" + digest, \"hashes\": {\"sha256\": digest}}, True),",
+            "        (\"not_object\", None, False),",
+            "        (\"wrong_sha256\", {\"hashes\": {\"sha256\": wrong}}, False),",
+            "        (\"wrong_hash_field\", {\"hash\": \"sha256=\" + wrong}, False),",
+            "        (\"conflicting_hash_field\", {\"hash\": \"sha256=\" + wrong, \"hashes\": {\"sha256\": digest}}, False),",
+            "        (\"conflicting_sha256\", {\"hash\": \"sha256=\" + digest, \"hashes\": {\"sha256\": wrong}}, False),",
+            "        (\"unknown_field\", {\"digest\": digest}, False),",
+            "        (\"missing_sha256\", {\"hashes\": {}}, False),",
+            "        (\"extra_algorithm\", {\"hashes\": {\"sha256\": digest, \"md5\": \"a\" * 32}}, False),",
+            "        (\"wrong_hashes_type\", {\"hashes\": digest}, False),",
+            "    ]",
+            "    outcomes = []",
+            "    for name, candidate, accepted in cases:",
+            "        try:",
+            "            check_archive_hashes(candidate, digest)",
+            "        except AssertionError:",
+            "            assert not accepted, name",
+            "        else:",
+            "            assert accepted, name",
+            "        outcomes.append({\"name\": name, \"expected_accept\": accepted, \"passed\": True})",
+            "    return outcomes",
+            "",
+            ""
+          ]
+        },
+        {
+          "before_start": 191,
+          "after_start": 241,
+          "before": [
+            "            assert archive.get(\"hashes\", {}).get(\"sha256\") == expected[\"wheel_sha256\"] or (",
+            "                archive.get(\"hash\") == \"sha256=\" + expected[\"wheel_sha256\"]"
+          ],
+          "after": [
+            "            controls = archive_hash_controls(expected[\"wheel_sha256\"])",
+            "            check_archive_hashes(archive, expected[\"wheel_sha256\"])",
+            "            requirements = REPORT / \"native-wheel-install-requirements.lock\"",
+            "            required = wheel_requirement_bytes(expected)",
+            "            requirement_record, requirement_raw = file_bytes(requirements, REPORT)",
+            "            assert requirement_raw == required",
+            "            binding_path = REPORT / \"native-wheel-install-binding.json\"",
+            "            _binding_record, binding_raw = file_bytes(binding_path, REPORT)",
+            "            assert len(binding_raw) <= 65536",
+            "            binding = json.loads(binding_raw)",
+            "            assert binding[\"passed\"] is True and binding[\"source_sha\"] == CONFIG[\"source_sha\"]",
+            "            assert binding[\"source_tree\"] == CONFIG[\"source_tree\"]",
+            "            assert binding[\"requirements\"] == requirement_record",
+            "            wheel_record, _wheel_raw = file_bytes(",
+            "                Path(expected[\"wheel_path\"]), SCRATCH / \"installed-artifacts\" / \"native-wheel\"",
+            "            )",
+            "            assert wheel_record[\"sha256\"] == expected[\"wheel_sha256\"]",
+            "            assert wheel_record[\"bytes\"] == expected[\"wheel_bytes\"]",
+            "            assert binding[\"wheel_before\"] == binding[\"wheel_after\"] == wheel_record",
+            "            uv = json.loads((REPORT / \"uv-binary.json\").read_bytes())",
+            "            assert uv[\"version_output\"] == \"uv \" + CONFIG[\"uv_version\"]",
+            "            expected_command = [",
+            "                uv[\"path\"], \"--no-config\", \"pip\", \"install\", \"--python\", str(prefix / \"bin/python\"),",
+            "                \"--no-deps\", \"--require-hashes\", \"--only-binary\", \":all:\", \"--requirements\", str(requirements),",
+            "            ]",
+            "            command = binding[\"command\"]",
+            "            assert command[\"command\"] == expected_command and command[\"name\"] == \"installed-native-wheel\"",
+            "            assert command[\"passed\"] is True and command[\"returncode\"] == 0 and command[\"timed_out\"] is False",
+            "            assert command[\"timeout_seconds\"] == 180 and command[\"group_cleanup\"][\"passed\"] is True",
+            "            original_commands = json.loads((REPORT / \"commands.json\").read_bytes())",
+            "            assert [item for item in original_commands if item[\"name\"] == \"installed-native-wheel\"] == [command]",
+            "            state.update(",
+            "                native_wheel_install_binding=binding, native_wheel_requirement=requirement_record,",
+            "                original_native_wheel=wheel_record, archive_hash_controls=controls,",
+            "                installer_archive_hash_metadata_present=bool(archive),",
+            "                archive_hash_metadata_is_optional_for_exact_uv_0_9_26=True,"
+          ]
+        },
+        {
+          "before_start": 206,
+          "after_start": 290,
+          "before": [],
+          "after": [
+            "                mandatory_hash_enforced_install_and_member_binding=True,"
+          ]
+        }
+      ]
+    }
+  ],
+  "exact_git_readbacks": [
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/native_package.py",
+      "git_blob": "ffc9067387051664495b59b40d261649f575025d",
+      "bytes": 9056,
+      "exact": true
+    },
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/native_package.py",
+      "git_blob": "42aed4ba2c8c43aef7237e70381d3767fbf862f4",
+      "bytes": 10503,
+      "exact": true
+    },
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/installed_environment.py",
+      "git_blob": "8802bcc1c5124859ea4842b243976611a3726697",
+      "bytes": 10914,
+      "exact": true
+    },
+    {
+      "path": "ci/pr2974_rsp129_poststart_validation/installed_environment.py",
+      "git_blob": "26a7d3b950d52025cc1baacdfe2b0e097fb12fac",
+      "bytes": 15738,
+      "exact": true
+    }
+  ],
+  "proposal_counts": {
+    "altered_python_helpers": 2,
+    "unchanged_other_python_helpers": 21,
+    "whole_file_forward_and_inverse_verifications": 2,
+    "line_hunks": 9,
+    "metadata_predicate_controls": 13,
+    "accepted_forms": 4,
+    "refused_forms": 9,
+    "controls_are_inside_existing_before_and_after_inventory_commands": true,
+    "controls_are_not_pytest_cases_native_units_or_receipt_consumer_denominators": true,
+    "actual_controls_executed": 0
+  },
+  "replacement_proofs": [
+    "The retained native-wheel-verification source SHA/tree, wheel path, bytes and SHA256 must match CONFIG and the exact owned native-wheel directory.",
+    "One exclusive requirements file encodes the exact local wheel URI and one SHA256; its complete bytes, owner, mode and no-follow descriptor binding are retained and equal before and after installation.",
+    "The original wheel is read through the existing no-follow descriptor helper before and after installation and again at each environment admission; bytes, SHA256, owner, mode and relative path must be equal.",
+    "The one original installed-native-wheel command keeps its original 180-second deadline, same target Python, no-deps and no-config, adds --require-hashes --only-binary :all: and the exact retained requirement file.",
+    "Each admission verifies the exact pinned uv version receipt, complete installer argv, original successful command receipt, return code, timeout flag and owned-group cleanup; commands.json must contain that exact installer row once.",
+    "The actual direct_url remains noneditable and its file URI must equal the original wheel URI. Empty archive_info is explicit optional metadata for this fixed installer; provided hash/hash-map fields must all match.",
+    "All existing installed member byte/hash mappings, native executable mode, installed RECORD checks, frozen dependency version checks, before/after environment equality and original-file archive remain unchanged.",
+    "The completed mandatory install-and-member binding flag is set only after all existing wheel member checks succeed; failures preserve overall passed/complete false and error details."
+  ],
+  "preserved_limits": {
+    "installer_command_seconds": 180,
+    "environment_inventory_command_seconds": 300,
+    "installed_workspace_matrix_seconds": 300,
+    "outer_job_minutes": 75,
+    "source_poststart_cases": 29,
+    "source_poststart_phases": 87,
+    "native_units": 24,
+    "native_actual_receipt_consumer_records": 3,
+    "additional_producer_commands": 1,
+    "fixture_python_cases": 6,
+    "fixture_python_phases": 18,
+    "original_process_group_cleanup_seconds": 10,
+    "file_count_cap": 100000,
+    "file_bytes_cap": 268435456,
+    "inventory_unique_bytes_cap": 1073741824,
+    "inventory_report_bytes_cap": 33554432,
+    "newly_bounded_requirement_file_bytes": 8192,
+    "new_binding_admission_bytes": 65536,
+    "retries_added": 0,
+    "new_parent_commands": 0,
+    "new_processes": 0,
+    "qualification_complete": false,
+    "headline_timing_eligible": false
+  },
+  "explicit_limitations": [
+    "This is an immutable two-helper proposal, not a source or harness commit and not a launched run.",
+    "All replacement metadata controls, mandatory-hash install and installed member admissions remain unexecuted.",
+    "The thirteen new controls directly exercise only optional PEP 610 metadata acceptance/refusal; they do not claim a separate uv wrong-requirement subprocess test.",
+    "No installer output metadata is synthesized or edited; no pip fallback, installer version change, wheel rebuild retry, timeout increase or installed matrix retry is introduced.",
+    "Original run 35490641762 remains failed; its installed member admission and installed 1/10/100 matrix remain unrun.",
+    "The functional passes of the d1ba source do not transfer to the incoming 8f15 source."
+  ],
+  "refs_changed": false,
+  "workflow_launched": false,
+  "qualification_complete": false,
+  "reviewed_predecessor": {
+    "git_blob": "b1530c34f475f92a98095adc8965538d69faea02",
+    "bytes": 67831,
+    "sha256": "fa1ea8753ce84264e59e2d64eb8fc26f67babd50b7007f8d1224f811242edf80"
+  },
+  "reviewed_predecessor_peer": {
+    "git_blob": "bcbd0169b3367ad26dff8853549f62a4ce0f34e3",
+    "bytes": 31282,
+    "sha256": "2815d72349a0321111d3189985daefce52928d139dbe0ce6aa48b601380ce75f"
+  },
+  "root_requested_display_name_delta": {
+    "before": {
+      "git_blob": "c79fe2e0ffba74f547c98d22912c782c562c787a",
+      "bytes": 15726,
+      "sha256": "91a491a8794b0decca4b9ded144b74848b74b033ed97e8ad5dafb7fb1684cf06"
+    },
+    "after": {
+      "git_blob": "26a7d3b950d52025cc1baacdfe2b0e097fb12fac",
+      "bytes": 15738,
+      "sha256": "ad3acc2ec1896924870ae705440708e69bf0065e36e73c24f5836f232d8e9612"
+    },
+    "edits": [
+      {
+        "before_start": 128,
+        "after_start": 128,
+        "before": [
+          "        (\"legacy\", {\"hash\": \"sha256=\" + digest}, True),"
+        ],
+        "after": [
+          "        (\"hash_field\", {\"hash\": \"sha256=\" + digest}, True),"
+        ]
+      },
+      {
+        "before_start": 132,
+        "after_start": 132,
+        "before": [
+          "        (\"wrong_legacy\", {\"hash\": \"sha256=\" + wrong}, False),",
+          "        (\"conflicting_legacy\", {\"hash\": \"sha256=\" + wrong, \"hashes\": {\"sha256\": digest}}, False),"
+        ],
+        "after": [
+          "        (\"wrong_hash_field\", {\"hash\": \"sha256=\" + wrong}, False),",
+          "        (\"conflicting_hash_field\", {\"hash\": \"sha256=\" + wrong, \"hashes\": {\"sha256\": digest}}, False),"
+        ]
+      }
+    ],
+    "full_forward_and_inverse_verified": true,
+    "labels": [
+      [
+        "legacy",
+        "hash_field"
+      ],
+      [
+        "wrong_legacy",
+        "wrong_hash_field"
+      ],
+      [
+        "conflicting_legacy",
+        "conflicting_hash_field"
+      ]
+    ],
+    "semantics": "Only three diagnostic case label strings change. All thirteen cases, dictionaries, digests, predicates, call ordering and expected outcomes remain byte-for-byte unchanged outside these labels.",
+    "runtime_executed": false
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "hol-guard.pr2974.concurrent-checkpoint-requirements-review.v1",
+  "observed_at": "2026-09-20T06:33:07.165275+00:00",
+  "source_sha": "13a1520b056a6946d84cd18957bc2d075c67c695",
+  "source_tree": "a4923a6c1e36be2f8a7b277cb4cdf82a2d84bdbf",
+  "parent_sha": "3d9ff3ba27939b4a3e227208c8ce0f8ab8e49e15",
+  "files": [
+    {
+      "path": "PRD-checkpoint.md",
+      "bytes": 16824,
+      "sha256": "50f559b2a36bd642cde11569b0131fdea4aaba431e136cc3bf91b0e0029edb5a"
+    },
+    {
+      "path": "TODO-current.md",
+      "bytes": 42722,
+      "sha256": "7c24c21f9bfd2174d0d8c160376d9202c8c127a1d446319f80999d63b993a83c"
+    },
+    {
+      "path": "TAKEAWAY.md",
+      "bytes": 21749,
+      "sha256": "d94516d408e9b6be2d9793d19cf0554df26874d620d9420f8ebdc304e37b5fd6"
+    },
+    {
+      "path": "preservation.json",
+      "bytes": 161472,
+      "sha256": "53340e8d31d4d4ec8a209868947f182dfdffa72b66594b966efde3bc31f9cac8"
+    },
+    {
+      "path": "task-status-overlay.json",
+      "bytes": 120446,
+      "sha256": "49e35afcaf637f5e537c935a767984d9ae0f4de4e40ed4f5dc1759aa0f3e6f5b"
+    }
+  ],
+  "originals": [
+    {
+      "path": "review-evidence/2026-09-19/pr2974-completion/originals/PRD.md",
+      "git_blob": "39d27bfa693117f8df3816d44b106921ca8efc94",
+      "bytes": 58812,
+      "sha256": "c241cb4c64f202b826a28f8db018868683c2b122f8f17b256f798a032f272858"
+    },
+    {
+      "path": "review-evidence/2026-09-19/pr2974-completion/originals/TODO.md",
+      "git_blob": "6f464adb27477ebaaceaf7ecb25083d6cfe37d06",
+      "bytes": 50183,
+      "sha256": "40f3a842df246a1657a4140e0a64dae7da32a8244d14feceecabcfa29f70c722"
+    },
+    {
+      "path": "review-evidence/2026-09-19/pr2974-completion/originals/TAKEAWAY.md",
+      "git_blob": "1a63ab2e59007094c1f9a1adf8382159ec8314c4",
+      "bytes": 67629,
+      "sha256": "bdfc27c792634a612cbdb46de4c1df77280b5de8dceeff977ed4756f397caf74"
+    },
+    {
+      "path": "review-evidence/2026-09-19/pr2974-completion/originals/execution-ledger.json",
+      "git_blob": "9defde72df836d6c74224a0fc8b955c776484904",
+      "bytes": 424367,
+      "sha256": "3e3427480f9d490c0e938ad2a043b4715a36070892ac62cb135538d6a6cb6697"
+    }
+  ],
+  "checks": {
+    "complete_144_original_task_fingerprints": true,
+    "complete_119_catalog_fingerprints": true,
+    "all_144_acceptances_dependencies_titles_statuses_match_recovery_overlay": true,
+    "promotions": [],
+    "qualification_complete": false,
+    "status_counts": {
+      "DONE": 74,
+      "OPEN": 31,
+      "BLOCKED": 29,
+      "DEFERRED": 10
+    },
+    "original_requirements_or_dependency_changes": 0,
+    "new_acceptance_gate_found": false
+  },
+  "interpretation": [
+    "The concurrent checkpoint is a distinct published addendum and retained parent, not the unavailable seven-document primary packet.",
+    "Task fingerprint serialization differs from the recovery overlay: the concurrent record preserves parsed key order, while recovery uses sorted keys. Both independently match the same complete original objects.",
+    "Thirteen nondefault scope notes retain original requirements; RSP-100 explicitly requires once-only risk computation for unchanged exact inputs under RSP-099, with recomputation on authority/catalog/input changes.",
+    "The recovery CURRENT/TAKEAWAY now explicitly retain the 349/276/593/native cohort prefixes and install/collector proposals as separate source-bound work; no unexecuted body or failed install admission receives acceptance credit.",
+    "The final TODO/current-action clarification is being prepared by the publication owner; this record does not bind mutable recovery document bytes."
+  ],
+  "scope": "Read-only Git/source/document comparison. No tests, workloads, publication or production mutation."
+}

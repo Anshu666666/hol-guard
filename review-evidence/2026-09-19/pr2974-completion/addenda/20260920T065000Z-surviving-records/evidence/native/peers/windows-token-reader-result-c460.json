@@ -1,0 +1,31 @@
+{
+  "schema": "hol-guard.windows-token-reader-result-native-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "source": "c460271fb977a2c52cc0ce985a73e431672e1e02",
+  "driver": "ed1330a0e84b01ae0612beca52f929701a2a442f",
+  "run": 35493953456,
+  "job": 106033540943,
+  "artifact_id": 10599398431,
+  "archive_bytes": 3345,
+  "archive_sha256": "9a376253179395a2ec00bcfecbc92fbfc714f3dbd61b1a1e53f4c79ea698f3a6",
+  "token_result_sha256": "72b460320a3ff17e9b34b08ac9f0b5aa4e4c0e4dac6440b6b6b86f0b722d954c",
+  "method": [
+    "Independently rehashed the ZIP against GitHub artifact metadata and compared all five member bodies against the extracted files and archive manifest.",
+    "Parsed all six controls.log lines and checked exact equality with the six token-result cases.",
+    "Verified the before/after source and driver bindings, source hashes including the Git LF versus Windows checkout CRLF distinction, original one-attempt counts and all cleanup fields.",
+    "Recomputed the four complete and two incomplete controls and checked the original child return code 1 with no timeout or stderr."
+  ],
+  "findings": [
+    "Both no-reader cases and both separately released-reader cases replace successfully. Both held-reader cases fail the original replacement while the real reader handle is still open.",
+    "Each of the six fresh cases makes one writer call and one replace call under the original lock; all reader/writer threads, handles, temporary siblings and fixture directories are cleaned up.",
+    "The two held-reader failures are PermissionError errno 13, WinError 5. Their old contents remain readable, and the original exception is retained by the fixture.",
+    "The original strict WinError 32 expectation is not met: both held-reader controls and the combined report remain incomplete, and the declared control step fails.",
+    "The symmetric result demonstrates a reader/replacement compatibility gap for the exact controlled overlap. It does not reproduce or attribute the normal 8f failed-job WinError 32 handle, and it does not resolve the separate command-mutation private-open error.",
+    "The retained job metadata was still in post-job cleanup at the time of this peer; the completed control step, child exit and artifacts are independently verified without promoting the entire run to terminal success."
+  ],
+  "blocking_findings": [],
+  "runtime_execution_repeated": false,
+  "product_fix_proven": false,
+  "original_failed_job_handle_attributed": false,
+  "qualification_complete": false
+}

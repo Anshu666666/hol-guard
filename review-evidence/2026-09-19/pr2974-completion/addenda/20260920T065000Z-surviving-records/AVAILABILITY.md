@@ -1,0 +1,3 @@
+# Publication after workspace loss
+
+This is a new Git publication assembled from surviving tool-state records and immutable published originals. The exact private “Resume Rust PRD” chat could not be retrieved. The primary workspace disconnected, and the later Composio tfbs sandbox was replaced by asnf after a 1 GB memory OOM during a Rust test build and concurrent artifact processing. Both staged packets became unavailable before publication. This publication does not claim to restore either packet. Each evidence group lists the bytes actually preserved and the verified-but-now-missing records. Original GitHub runs and artifacts remain independently addressable. No failed test was rerun or reclassified because of either environment loss.

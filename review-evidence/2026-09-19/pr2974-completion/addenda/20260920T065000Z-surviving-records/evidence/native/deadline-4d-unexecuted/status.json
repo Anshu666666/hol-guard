@@ -1,0 +1,57 @@
+{
+  "schema": "pr2974.absolute-deadline-preparation-interrupted.v1",
+  "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+  "status": "before_repair_test_preparation_compile_killed_no_controls_executed",
+  "independently_confirmed_source_defect": "try_home_states samples the remaining duration before process identity and token validation, then send_request_for_digest_detailed reconstructs a new absolute deadline after that work. The validation interval can therefore extend the client's internal deadline. Successful immediate and outer-lease returns also need to remain within the original caller deadline.",
+  "relationship_to_failed_linux_startup": "Separate source-level finding; the two retained fail-closed Linux startup errors do not establish this defect as their cause.",
+  "intended_repair_not_applied": [
+    "Pass the original Instant through discovered-state identity/token validation and the client exchange.",
+    "Preserve the existing 250 ms authentication phase, protocol/authentication/binding validation and fatal versus unavailable result.",
+    "Fence only otherwise successful completions against the same original absolute deadline, including after ordinary one-shot lease cleanup.",
+    "Never reclassify a committed ambiguous exchange as replay-safe; preserve original errors verbatim."
+  ],
+  "preparation_only": [
+    "A test-only barrier was added after real discovered-state identity and token validation in the temporary checkout.",
+    "Two small helper/test files were prepared while retaining the original stale-duration behavior so a before-repair run could demonstrate the defect.",
+    "The included test body is the exact pre-rustfmt version. The formatted body and instrumented managed_resident.rs are unavailable; their recorded hashes are listed in available-missing-byte-inventory.json.",
+    "The helper and test are incomplete patch fragments, not an applied or buildable production repair."
+  ],
+  "planned_real_socket_controls": [
+    "Hold the real discovered-state path after identity/token validation until its original deadline; require no connection or request.",
+    "Release the same barrier while the original deadline remains live; require one complete authenticated, request-bound exchange.",
+    "Hold after a real authenticated response on the leased path; reject a success returned after the original deadline without replay.",
+    "Hold the one-shot path before its ordinary lease cleanup; reject a late success under the original deadline.",
+    "Preserve the original fatal authentication error even when cleanup crosses the deadline."
+  ],
+  "attempted_command": "cargo test --locked --offline -p hol-guard-runtime managed_resident::deadline_tests -- --test-threads=1 --nocapture",
+  "compiler": "Rust 1.88.0",
+  "resource_settings": {
+    "CARGO_BUILD_JOBS": 1,
+    "CARGO_PROFILE_DEV_DEBUG": 0,
+    "CARGO_PROFILE_TEST_DEBUG": 0,
+    "CARGO_INCREMENTAL": 0
+  },
+  "result": {
+    "cargo_exit": 101,
+    "compiler_signal": "SIGKILL",
+    "kernel_oom_victim": "rustc",
+    "test_controls_executed": 0
+  },
+  "evidence_limit": "The retained output is a tool-returned compile excerpt and kernel/memory tail, not a byte-verified full original before.log or complete kernel log.",
+  "environment": {
+    "before_suffix": "tfbs",
+    "after_suffix": "asnf",
+    "same_session_name": "wife",
+    "new_uptime_seconds": 63.22,
+    "old_root_directory_exists": false,
+    "old_before_log_exists": false,
+    "old_observer_selection_exists": false,
+    "old_tmp_clone_exists": false
+  },
+  "causal_limit": "The workspace reset followed the kernel OOM event. The provider's reason for replacing the sandbox is not established by these records.",
+  "production_repair_applied": false,
+  "product_commit_created": false,
+  "tests_or_benchmarks_repeated_after_reset": false,
+  "qualification_complete": false
+}

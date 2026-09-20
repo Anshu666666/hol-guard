@@ -1,0 +1,75 @@
+name: PR2974 Windows auth-token replacement role diagnostics
+
+on:
+  push:
+    branches: [codex/pr2974-windows-auth-token-roles-8f15b37]
+    paths:
+      - .github/workflows/pr2974-windows-auth-token-read-diagnostic.yml
+      - ci/native_runtime/windows_auth_token_read_diagnostic.py
+      - ci/native_runtime/test_windows_auth_token_held_reader_diagnostic.py
+      - ci/native_runtime/test_windows_auth_token_replace_roles_diagnostic.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-auth-token-roles-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-replacement-role-contracts:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Preserve exact committed line endings
+        shell: pwsh
+        run: git config --global core.autocrlf false
+      - name: Check out immutable diagnostic harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: validation-src
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Check out unchanged production source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 8f15b37b4a1bd054ef486148610e518b1be05cfc
+          path: source-src
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - name: Install the unchanged frozen source environment
+        working-directory: source-src
+        shell: pwsh
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Run two distinct bounded Windows role hypotheses
+        timeout-minutes: 3
+        shell: pwsh
+        env:
+          DIAGNOSTIC_HARNESS_SHA: ${{ github.sha }}
+        run: |
+          & "$env:GITHUB_WORKSPACE/source-src/.venv/Scripts/python.exe" -I `
+            "$env:GITHUB_WORKSPACE/validation-src/ci/native_runtime/windows_auth_token_read_diagnostic.py" `
+            --source-root "$env:GITHUB_WORKSPACE/source-src" `
+            --harness-root "$env:GITHUB_WORKSPACE/validation-src" `
+            --harness-sha "$env:DIAGNOSTIC_HARNESS_SHA" `
+            --output "$env:GITHUB_WORKSPACE/windows-auth-token-roles-evidence"
+          exit $LASTEXITCODE
+      - name: Retain original results and source bindings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-auth-token-roles-8f15b37-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            windows-auth-token-roles-evidence/*.json
+            windows-auth-token-roles-evidence/*.xml
+            windows-auth-token-roles-evidence/*.log
+          if-no-files-found: warn
+          retention-days: 30

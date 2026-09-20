@@ -1,0 +1,41 @@
+{
+  "schema": "hol-guard.windows-token-reader-source-native-peer.v1",
+  "reviewer": "native_runtime_audit",
+  "source": "c460271fb977a2c52cc0ce985a73e431672e1e02",
+  "source_tree": "024c20eeaa3b9ee7e58e97b419d1110e1fbbc491",
+  "source_parent": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "driver": "ed1330a0e84b01ae0612beca52f929701a2a442f",
+  "driver_tree": "88028512aadc3b36027341a7508bc200f2a97b5f",
+  "manifest_sha256": "bf76aeb08942fdea214bd00a8df1eb1af8681455327fde943c3e28ddef5b32b2",
+  "source_files": [
+    {
+      "path": "ci/native_runtime/windows_token_reader_control.py",
+      "sha256": "0174eec6bc17686a5e9196692035ef7c8e4f1dc31c84fa111b3cdb471e873e18"
+    },
+    {
+      "path": "tests/test_windows_token_reader_control.py",
+      "sha256": "b8a4bfe616a63a00db6b2b50ebc5e3a992cc1b7f70dceb5120c00f62cccbb43e"
+    }
+  ],
+  "workflow_template_sha256": "b77431e5cfa1665912f18320bb322d51288b62a877537abd5ef190d82e55d979",
+  "bound_workflow_sha256": "ac16c0c4deb729a72cd1d507974e5a1a3a23fac0aee6eaea050e43c4a1f95a65",
+  "method": [
+    "Read all 371 driver lines, 89 test lines and 175 template lines, plus the original reader, writer and writer-lock implementations.",
+    "Rehashed all eight unchanged original source/control bindings at exact 8f.",
+    "Independently fetched both published source files, both Git commit metadata records and the bound workflow; source bytes match the manifest and the published source delta contains only the two added test files.",
+    "Reversing the three declared source SHA/tree/branch substitutions restores the exact template bytes."
+  ],
+  "findings": [
+    "The manager route pauses the original bounded reader at os.read after its existing descriptor and metadata checks. The Codex route pauses the actual Path.read_text read through its owned Path.open handle.",
+    "All other original read/open/close calls are forwarded. Scoped patches restore through ExitStack, and each declared case has a fresh temporary fixture.",
+    "The writer uses the original writer lock and private atomic replacement exactly once. Released-reader controls are separate fresh cases, not retries of failed writes.",
+    "The report preserves the original replacement exception by identity in the fixture and exports only closed error kinds and integer codes, fixed value classes and cleanup flags.",
+    "The workflow binds pinned source/imports before and after, runs one six-case child, retains partial reports and original failure exit, and does not run a performance workload.",
+    "The strict held-reader expectation requires original PermissionError WinError 32; another code remains a failed control and is not silently accepted.",
+    "The prepublication manifest's statement that publication/execution had not occurred is historical; this peer separately binds the subsequently published source and driver."
+  ],
+  "blocking_findings": [],
+  "production_changes": false,
+  "tests_repeated_by_reviewer": false,
+  "installed_artifact_qualification": false
+}

@@ -1,0 +1,21 @@
+from pathlib import Path
+import json,hashlib,re
+p=Path('/home/user/pr2974-recovery/native'); H=lambda b:hashlib.sha256(b).hexdigest()
+a=json.loads((p/'archive-verification.json').read_text())
+raw=[]
+for row in a['members']:
+ if row['utf8']:
+  q=p/'extracted'/row['path'];bb=q.read_bytes()
+  assert H(bb)==row['sha256'] and len(bb)==row['bytes']
+  raw.append({'path':q.relative_to(p).as_posix(),'bytes':len(bb),'sha256':H(bb),'category':'unchanged_archive_text_member'})
+privacy={'schema':'pr2974.observer-publication-privacy.v1','source':'8f15b37b4a1bd054ef486148610e518b1be05cfc','artifact_id':10599581007,'archive_sha256':a['sha256'],'scope':'all49 retained UTF8 archive members, full GitHub job log, complete15 workspace reconstructions and derived analysis','raw_members':raw,'review_result':'suitable_for_public_review_evidence','source_scope':'owned synthetic CI fixtures and public exact8f repository source; no private user workload or source introduced','raw_payload_scope':'Rust producer controls retain their deliberate synthetic network/file/MCP/Ollama payloads and generated test-authority values, not real user inputs','paths':'owned /home/runner/work and /tmp test workspaces, standard public system/compiler paths, public API route paths','diagnostic_identifiers':'ephemeral test authority, request/decision digests, inode/device/mapping metadata and actual runtime/extension identities retained as evidence','credential_pattern_scan':{'private_key_blocks':0,'github_tokens':0,'aws_access_keys':0,'signed_download_urls':0,'openai_keys':0},'scan_limit':'pattern scan supplements explicit owned-fixture/source-schema review; it is not proof of arbitrary secret detection','native_frame_limit':'154 native datagrams were accepted but raw frame bodies were not individually retained;14-row semantic journal remains a distinct artifact','exclusions':['all ZIP archives','three wheels','native runtime binary bytes','C extension and fixture binary bytes','temporary signed download URLs','remote recovery log fragments','unavailable historical packets'],'binary_identity_retention':'archive-verification.json and wheel-runtime-verification.json preserve original sizes and SHA256 hashes; original archive remains separately retained','original_files_modified':False}
+(p/'privacy-review.json').write_text(json.dumps(privacy,indent=2)+'\n')
+extra=['README.md','observer-analysis.json','archive-verification.json','github-artifacts.json','jobs-final.json','job-106027206739.log','wheel-runtime-verification.json','default-runtime-manifest.json','diagnostic-runtime-manifest.json','source-8f-bindings-v3.json','workspace-reconstructed.json','workspace-timelines.json','workspace-timelines-with-boundaries.json','analysis-setup-attempts.json','reconstruct-workspace.py','analyze-observer.py','privacy-review.json']
+extra += [q.relative_to(p).as_posix() for q in sorted((p/'reconstruction').glob('*.json'))]
+files=raw[:]
+for name in extra:
+ q=p/name;b=q.read_bytes();files.append({'path':name,'bytes':len(b),'sha256':H(b),'category':'derived_analysis_or_provenance'})
+assert len({r['path'] for r in files})==len(files)
+selection={'schema':'pr2974.observer-publication-selection.v1','source':'8f15b37b4a1bd054ef486148610e518b1be05cfc','tree':'c10faac2d156cac06f9f803d63f50d15e3ca82bf','driver':'3ffa573bd4b91fc0d5c44511f19f2dfbd6cfcb22','driver_tree':'b3052c1ac2558d8b276b337db5272e935b9219ba','run':35491537211,'job':106027206739,'artifact_id':10599581007,'archive_sha256':a['sha256'],'file_count':len(files),'total_bytes':sum(r['bytes'] for r in files),'all49text_members_selected_unchanged':True,'all15workspace_envelopes_selected':True,'original154native_frames_not_individually_retained':True,'binary_files_selected':0,'selection_scope':'additive current8f terminal run; does not recreate unavailable017f packets or change earlier evidence','files':files}
+(p/'publication-selection.json').write_text(json.dumps(selection,indent=2)+'\n')
+print(json.dumps({'manifest_path':str(p/'publication-selection.json'),'manifest_sha256':H((p/'publication-selection.json').read_bytes()),'file_count':len(files),'total_bytes':selection['total_bytes'],'descriptors':[{k:r[k] for k in ('path','bytes','sha256')} for r in files if '/' not in r['path']]},indent=2))

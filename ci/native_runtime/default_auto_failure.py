@@ -103,7 +103,12 @@ _RECEIPTS = frozenset(
 
 
 def _code(value: object) -> str | None:
-    return value if type(value) is str and value in _CODES else None if value is None else "other"
+    if type(value) is str and value in _CODES:
+        return value
+    elif value is None:
+        return None
+    else:
+        return "other"
 
 
 def _integer(value: object) -> int | None:
@@ -125,13 +130,9 @@ def _counts(value: object, fields: frozenset[str]) -> dict[str, int]:
 
 
 def _evidence_failure_snapshot(value: object) -> dict[str, int] | None:
-    """Reuse the installed writer's closed schema; older packages stay unavailable."""
-    try:
-        from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
-    except ModuleNotFoundError as error:
-        if error.name != "codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics":
-            raise
-        return None
+    """Require the installed writer's current closed counter schema."""
+    from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
+
     return evidence_failure_snapshot(value)
 
 

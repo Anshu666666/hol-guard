@@ -448,3 +448,38 @@ def test_missing_and_malformed_failure_maps_remain_unavailable_without_private_v
         "native_receipts": expected,
     }
     assert "PRIVATE" not in json.dumps(report)
+
+
+def test_current_counter_contract_failure_keeps_original_probe_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from codex_plugin_scanner.guard.daemon import runtime_hook_evidence_diagnostics as writer_diagnostics
+
+    original = RuntimeError("PRIVATE_ORIGINAL")
+    failure_map = {"receipt_persistence/sqlite_busy": 1}
+    observed: list[object] = []
+
+    def fail_snapshot(value: object) -> dict[str, int] | None:
+        observed.append(value)
+        raise RuntimeError("PRIVATE_COUNTER_FAILURE")
+
+    monkeypatch.setattr(writer_diagnostics, "evidence_failure_snapshot", fail_snapshot)
+    with pytest.raises(RuntimeError) as caught, evidence.DefaultAutoFailureCapture(tmp_path / "probe.json") as capture:
+        daemon = _daemon(_publisher())
+        evidence.bind_corpus(daemon)
+        evidence.end_corpus(
+            daemon,
+            {"routes": {"native_resident": 19}},
+            {"receipt_accepted": 19, "receipt_failures": 1, "failure_diagnostics": failure_map},
+        )
+        raise original
+    assert caught.value is original
+    assert len(observed) == 1 and observed[0] is failure_map
+    report = _read(tmp_path)
+    assert report["detail_incomplete"] is True
+    assert report["passed"] is report["qualification"] is False
+    assert report["corpus"]["receipt_counts"] == {"receipt_accepted": 19, "receipt_failures": 1}
+    assert "evidence_failure_diagnostics" not in report["corpus"]
+    assert "PRIVATE" not in json.dumps(report)
+    assert evidence._ACTIVE.get() is None
+    assert capture._publisher is None and capture._corpus_active is False

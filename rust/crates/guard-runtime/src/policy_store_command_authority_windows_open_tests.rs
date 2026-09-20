@@ -94,7 +94,7 @@ fn python_existing_handle(root: &Path) -> PythonExistingHandle {
         crate::resident_state::bind_windows_existing_directory(root, root),
         "python_equivalent_ancestry_binding",
     );
-    let file = require_io(
+    let mut file = require_io(
         OpenOptions::new()
             .read(true)
             .write(true)
@@ -132,7 +132,7 @@ fn python_existing_handle(root: &Path) -> PythonExistingHandle {
     );
     require_private(
         SetSecurityInfo(
-            &file,
+            &mut file,
             SeObjectType::SE_FILE_OBJECT,
             SecurityInformation::Dacl | SecurityInformation::ProtectedDacl,
             None,

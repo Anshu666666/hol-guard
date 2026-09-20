@@ -9,6 +9,7 @@ kernel or physical SQLite I/O coverage.
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import threading
 import time
@@ -75,6 +76,7 @@ class ReceiptWitness:
         receipt_profile: str = "candidate",
         queue_observation: EvidenceQueueObservation | None = None,
         sqlite_observer: SQLiteVFSObservation | None = None,
+        monotonic_origin: float | None = None,
     ) -> None:
         if not 1 <= maximum <= MAX_ATTEMPTS + MAX_CONTROL_ACTIONS:
             raise ValueError("mixed receipt bound invalid")
@@ -83,6 +85,14 @@ class ReceiptWitness:
         self.sqlite_observer = sqlite_observer
         self.reader = InstalledReceiptReader(session.store, profile=receipt_profile)
         self.started = time.monotonic()
+        if monotonic_origin is not None:
+            if (
+                type(monotonic_origin) not in (int, float)
+                or not 0 <= monotonic_origin <= self.started
+                or not math.isfinite(monotonic_origin)
+            ):
+                raise ValueError("mixed receipt clock origin invalid")
+            self.started = monotonic_origin
         self._stack = ExitStack()
         self._lock = threading.Lock()
         self._rows: dict[str, dict[str, Any]] = {}

@@ -305,6 +305,7 @@ def _run_case(
             observed_route=route,
             routes_before=before,
             routes_after=after,
+            delivery_result=result,
             evidence=evidence,
         )
         if enriched is error:

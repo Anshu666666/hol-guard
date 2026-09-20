@@ -112,7 +112,12 @@ class PostStartObservation:
             raise ValueError("poststart phase order invalid")
         observer = self.publisher_observer
         observer.phase(index)
-        declared = 0 if name == "poststart_registration" else 1 if name == "public_policy" else 2
+        if name == "poststart_registration":
+            declared = 0
+        elif name == "public_policy":
+            declared = 1
+        else:
+            declared = 2
         action = "allow" if name == "poststart_registration" else "block"
         strict = self.instance == 1
         result: dict[str, Any] = {

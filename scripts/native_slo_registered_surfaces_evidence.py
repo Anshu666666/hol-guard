@@ -9,7 +9,10 @@ import stat
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import BinaryIO
+from typing import TYPE_CHECKING, BinaryIO
+
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
 
 MAX_EVIDENCE_BYTES = 1024 * 1024
 MAX_EVIDENCE_RECORDS = 4096
@@ -27,6 +30,9 @@ class SurfaceAttempt:
     stage: str = "setup"
     attempted_exit: int | None = None
     route: str | None = None
+    # Private, already bounded process result; the JSONL ledger never copies it.
+    delivery_result: BoundedHookProcessResult | None = None
+    delivery_validated: bool = False
 
 
 class SurfaceEvidence:

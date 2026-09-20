@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from scripts import qualify_guard_native
+from scripts.native_slo_corpus_identity import corpus_identity
 
 
 def test_paired_driver_preserves_alternating_environments_and_rejects_unqualified_samples(
@@ -19,6 +20,22 @@ def test_paired_driver_preserves_alternating_environments_and_rejects_unqualifie
     baseline.symlink_to(sys.executable)
     candidate.symlink_to(sys.executable)
     calls: list[str] = []
+    # Declare the synthetic block through the current producer; this fixture
+    # observes no native execution or source-reference qualification.
+    identity = corpus_identity(
+        {
+            "matrix": {
+                "required_platforms": ["linux-x64"],
+                "observed_platform": "linux-x64",
+                "required_sizes": ["1k"],
+                "required_cases": ["benign"],
+                "concurrency": [1],
+                "daemon_routes": ["claude-code.PostToolUse"],
+                "launcher_routes": [],
+                "reference_review_supported": True,
+            }
+        }
+    )
 
     def run(argv: tuple[str, ...], **_kwargs: object) -> SimpleNamespace:
         arm = "baseline" if argv[0] == str(baseline) else "candidate"
@@ -29,10 +46,7 @@ def test_paired_driver_preserves_alternating_environments_and_rejects_unqualifie
         report = {
             "schema": "hol-guard.native-qualification-block.v1",
             "runtime": {"runtime_sha256": arm, "package_record_sha256": arm, "python_version": "3.12.14"},
-            "corpus_digest": "a" * 64,
-            "corpus_definition_scope": "fixed_requests_and_oracle_implementation_v2",
-            "contract_evidence_digest": "b" * 64,
-            "reference_oracle_profile": "unix_source_v1",
+            **identity,
             "contract_corpus": {"platform_scope": {"reference_review_qualified": False}},
             "hardware": {"platform": "linux-x64", "cpu_model": "same-cpu"},
             "resources": {"sample_minimum_met": False},
@@ -67,6 +81,8 @@ def test_paired_driver_preserves_alternating_environments_and_rejects_unqualifie
     assert calls == ["baseline", "candidate", "candidate", "baseline", "baseline", "candidate"]
     assert result["qualification_complete"] is False
     assert result["sampling_passed"] is False
+    assert result["corpus_digest"] == identity["corpus_digest"]
+    assert result["reference_oracle_profiles"] == {"baseline": "unix_source_v1", "candidate": "unix_source_v1"}
     assert (args.output_dir / "aggregate" / "comparison.json").is_file()
     assert len(list((args.output_dir / "private_samples").iterdir())) == 6
 

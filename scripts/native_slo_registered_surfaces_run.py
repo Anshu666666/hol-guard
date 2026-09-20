@@ -167,6 +167,8 @@ def observe_registered_surface(
         raise RuntimeError("registered_surface_stdout_not_object")
     validate_surface_delivery(case, response, completed.returncode, completed.stderr)
     if attempt is not None:
+        attempt.delivery_result = completed
+        attempt.delivery_validated = True
         attempt.stage = "readback_after"
     if surface not in read_registered_surfaces(_context(session), surface.harness):
         raise RuntimeError("registered_surface_registration_changed")
@@ -291,6 +293,8 @@ def _run_registered_surface_corpus(
                             routes_before=before,
                             routes_after=after,
                             surface_scope=surface.scope,
+                            delivery_result=attempt.delivery_result,
+                            delivery_validated=attempt.delivery_validated,
                             evidence=evidence,
                             read_evidence=(lambda: session.control("case_result"))
                             if attempt.stage == "route"

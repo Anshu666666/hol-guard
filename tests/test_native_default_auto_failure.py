@@ -388,3 +388,63 @@ def test_failure_before_verified_identity_never_invents_runtime_binding(tmp_path
     assert report["expected_build_sha"] is None
     assert report["installed_identity"] == {}
     assert "PRIVATE" not in json.dumps(report)
+
+
+def test_receipt_failure_maps_keep_failed_attempts_and_snapshot_existing_stats(tmp_path) -> None:
+    original = RuntimeError("PRIVATE_ORIGINAL")
+    all_failures = {"receipt_persistence/sqlite_busy": 1, "journal_checkpoint/os_permission": 2}
+    receipt_failures = {"receipt_persistence/sqlite_busy": 1}
+    stats = {
+        "receipt_accepted": 19,
+        "receipt_processed": 19,
+        "receipt_failures": 1,
+        "failure_diagnostics": all_failures,
+        "receipt_failure_diagnostics": receipt_failures,
+    }
+    with pytest.raises(RuntimeError) as caught, evidence.DefaultAutoFailureCapture(tmp_path / "probe.json"):
+        daemon = _daemon(_publisher())
+        evidence.bind_corpus(daemon)
+        evidence.end_corpus(daemon, {"routes": {"native_resident": 19}}, stats)
+        all_failures.clear()
+        receipt_failures.clear()
+        raise original
+    assert caught.value is original
+    report = _read(tmp_path)
+    assert report["corpus"]["evidence_failure_diagnostics"] == {
+        "all_evidence": {"receipt_persistence/sqlite_busy": 1, "journal_checkpoint/os_permission": 2},
+        "native_receipts": {"receipt_persistence/sqlite_busy": 1},
+    }
+    assert report["corpus"]["receipt_counts"] == {
+        "receipt_accepted": 19,
+        "receipt_processed": 19,
+        "receipt_failures": 1,
+    }
+    assert report["passed"] is report["qualification"] is False
+    assert "PRIVATE" not in json.dumps(report)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, None),
+        ({}, {}),
+        ({"PRIVATE_PATH/PRIVATE_MESSAGE": 1}, None),
+        ({"receipt_persistence/os_timeout": True}, None),
+        ({"receipt_persistence/os_timeout": -1}, None),
+    ],
+    ids=["unavailable", "known-empty", "unknown-key", "boolean-count", "negative-count"],
+)
+def test_missing_and_malformed_failure_maps_remain_unavailable_without_private_values(
+    tmp_path, value, expected
+) -> None:
+    with pytest.raises(RuntimeError), evidence.DefaultAutoFailureCapture(tmp_path / "probe.json"):
+        daemon = _daemon(_publisher())
+        evidence.bind_corpus(daemon)
+        evidence.end_corpus(daemon, {}, {"failure_diagnostics": value, "receipt_failure_diagnostics": value})
+        raise RuntimeError("PRIVATE_ORIGINAL")
+    report = _read(tmp_path)
+    assert report["corpus"]["evidence_failure_diagnostics"] == {
+        "all_evidence": expected,
+        "native_receipts": expected,
+    }
+    assert "PRIVATE" not in json.dumps(report)

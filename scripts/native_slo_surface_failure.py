@@ -10,7 +10,9 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Mapping
 
+from codex_plugin_scanner.guard.codex_hook_launch_runtime import BoundedHookProcessResult
 from scripts.native_slo_contract import SAFE_ROUTE_NAMES
+from scripts.native_slo_delivery_evidence import delivery_evidence
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_observation_failure import contextual_failure, verdict_evidence
 
@@ -42,6 +44,8 @@ def enrich_surface_failure(
     routes_before: Mapping[str, int],
     routes_after: Mapping[str, int],
     surface_scope: str | None = None,
+    delivery_result: BoundedHookProcessResult | None = None,
+    delivery_validated: bool = False,
     evidence: Mapping[str, object] | None = None,
     read_evidence: Callable[[], Mapping[str, object]] | None = None,
 ) -> Exception:
@@ -74,6 +78,18 @@ def enrich_surface_failure(
         if isinstance(evidence, Mapping):
             detail["observed_semantics"] = verdict_evidence(native=evidence.get("native_result"))
             detail.update((name, evidence.get(name)) for name in _WITNESS_FIELDS)
+        if delivery_result is not None:
+            detail.update(route_witness_scope="fixture_daemon_only", child_route="unknown")
+            try:
+                process, delivered = delivery_evidence(delivery_result, validated=delivery_validated)
+                semantics = detail.setdefault("observed_semantics", verdict_evidence())
+                if isinstance(semantics, dict):
+                    semantics["delivered"] = delivered
+                detail["delivery_capture"] = process
+            except Exception:
+                # Keep the original failure and any native witness even when
+                # finite delivery projection fails. Never rerun the launcher.
+                detail["delivery_capture"] = {"available": False, "capture_failed": True}
         return contextual_failure(error, **detail)
     except Exception:
         # Diagnostics must never mask the original verdict or assertion, even

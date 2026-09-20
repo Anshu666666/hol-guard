@@ -124,6 +124,17 @@ def _counts(value: object, fields: frozenset[str]) -> dict[str, int]:
     return {field: count for field in fields if (count := _integer(value.get(field))) is not None}
 
 
+def _evidence_failure_snapshot(value: object) -> dict[str, int] | None:
+    """Reuse the installed writer's closed schema; older packages stay unavailable."""
+    try:
+        from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics import evidence_failure_snapshot
+    except ModuleNotFoundError as error:
+        if error.name != "codex_plugin_scanner.guard.daemon.runtime_hook_evidence_diagnostics":
+            raise
+        return None
+    return evidence_failure_snapshot(value)
+
+
 def _publisher(daemon: object) -> object:
     return getattr(getattr(getattr(daemon, "_server", None), "hook_worker", None), "policy_snapshot_publisher", None)
 
@@ -248,6 +259,11 @@ class DefaultAutoFailureCapture:
             self.observe_corpus(daemon, worker_stats)
             self._corpus["capture_boundary"] = "early_exit_before_daemon_cleanup"
         self._corpus["receipt_counts"] = _counts(evidence_stats, _RECEIPTS)
+        stats = evidence_stats if isinstance(evidence_stats, Mapping) else {}
+        self._corpus["evidence_failure_diagnostics"] = {
+            "all_evidence": _evidence_failure_snapshot(stats.get("failure_diagnostics")),
+            "native_receipts": _evidence_failure_snapshot(stats.get("receipt_failure_diagnostics")),
+        }
         self._corpus_active = False
         self._publisher = None
 

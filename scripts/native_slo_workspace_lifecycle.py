@@ -213,7 +213,12 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             publisher = replace_expired_publisher(session, workspaces)
         if observer is None:
             observer = lifetime.enter_context(PublicationObserver(publisher, workspaces))
-        witness = lifetime.enter_context(closing(ReceiptWitness(session, maximum=1).__enter__()))
+        # Cold registration acceptance precedes replacement construction. Keep
+        # receipt and request offsets on that captured origin, without moving
+        # acceptance or the publication observer's independent phase origin.
+        witness = lifetime.enter_context(
+            closing(ReceiptWitness(session, maximum=1, monotonic_origin=accepted).__enter__())
+        )
         requests = lifetime.enter_context(WorkspaceRequestObserver(session, witness, workspaces, maximum=1))
         if scenario == "lost_metadata_hint":
             fault = lifetime.enter_context(LostMetadataHints(publisher))

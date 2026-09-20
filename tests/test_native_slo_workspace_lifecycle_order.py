@@ -119,6 +119,11 @@ def controlled_cell(tmp_path, monkeypatch):
         def report(self):
             return {"native_receipts": 0, "committed": 0}
 
+    def witness_factory(*_args, **kwargs):
+        state.witness_origin = kwargs.get("monotonic_origin")
+        state.witness_constructed = now[0]
+        return Witness()
+
     class Requests(Observer):
         def probe(self, *_args):
             calls.append(("probe", now[0]))
@@ -136,7 +141,7 @@ def controlled_cell(tmp_path, monkeypatch):
     monkeypatch.setattr(lifecycle, "replace_service", replace)
     monkeypatch.setattr(lifecycle, "register_scopes", lambda *_: None)
     monkeypatch.setattr(lifecycle, "PublicationObserver", lambda *_: Observer())
-    monkeypatch.setattr(lifecycle, "ReceiptWitness", lambda *_args, **_kwargs: Witness())
+    monkeypatch.setattr(lifecycle, "ReceiptWitness", witness_factory)
     monkeypatch.setattr(lifecycle, "WorkspaceRequestObserver", lambda *_args, **_kwargs: Requests())
     monkeypatch.setattr(lifecycle, "phase_chain", lambda *_args, **_kwargs: {"matched": True})
     monkeypatch.setattr(lifecycle, "_scope_checks", lambda *_: {"controlled_scope": True})
@@ -145,7 +150,7 @@ def controlled_cell(tmp_path, monkeypatch):
 
 
 def test_cold_ack_is_observed_before_unrelated_full_start_without_resetting_deadline(controlled_cell):
-    session, workspace, _state, calls = controlled_cell
+    session, workspace, state, calls = controlled_cell
     result = cast(dict[str, Any], lifecycle.run_lifecycle_cell(session, (workspace,), "service_restart"))
     assert result["passed"] is True, result.get("failure")
     clocks = result["lifecycle_clocks"]["boundaries_ms"]
@@ -158,6 +163,8 @@ def test_cold_ack_is_observed_before_unrelated_full_start_without_resetting_dead
     assert result["requests"]["accepted_to_offer_ms"] == pytest.approx(2050)
     assert [call[0] for call in calls] == ["prepare", "prepare", "start", "started", "probe"]
     assert calls[1][2] == pytest.approx(10.4)
+    assert state.witness_origin == 10.0
+    assert state.witness_constructed == pytest.approx(10.05)
 
 
 @pytest.mark.parametrize("invalidated", ["withdrawn", "changed"])

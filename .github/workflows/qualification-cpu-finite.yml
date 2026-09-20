@@ -1,0 +1,54 @@
+name: Finite protected CPU accounting controls
+
+on:
+  push:
+    branches: ["codex/pr2974-finite-kernel-cpu-v2-20260920-1c265e90"]
+
+permissions:
+  contents: read
+
+jobs:
+  finite-linux-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          fetch-depth: 3
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "1c265e9025a4c9ef042fc930a865fd7bef718a2a"
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Frozen finite-control dependencies without project installation
+        working-directory: source
+        run: uv sync --frozen --extra dev --no-install-project --python 3.12
+      - name: Driver contracts
+        working-directory: driver
+        run: |
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -m ruff check --config "$GITHUB_WORKSPACE/source/pyproject.toml" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -m ruff format --check --config "$GITHUB_WORKSPACE/source/pyproject.toml" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -m basedpyright --project "$GITHUB_WORKSPACE/source/pyproject.toml" --pythonpath "$GITHUB_WORKSPACE/source/.venv/bin/python" scripts/ci/verify_kernel_cpu_controls.py tests/test_verify_kernel_cpu_controls.py
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" -m pytest tests/test_verify_kernel_cpu_controls.py -q --junitxml="$GITHUB_WORKSPACE/driver-controls.xml"
+      - name: Admit exact sources and execute finite protected-boundary controls once
+        run: |
+          source/.venv/bin/python -I driver/scripts/ci/verify_kernel_cpu_controls.py \
+            --source source --driver driver --source-sha "1c265e9025a4c9ef042fc930a865fd7bef718a2a" \
+            --output kernel-cpu-evidence
+      - name: Preserve original finite results and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: finite-kernel-cpu-controls
+          path: |
+            kernel-cpu-evidence/
+            driver-controls.xml
+          if-no-files-found: error
+          retention-days: 14

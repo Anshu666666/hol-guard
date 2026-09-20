@@ -1,0 +1,33 @@
+skill: hol-guard
+version: "1.0.0"
+runners:
+  status:
+    default: true
+    type: graph
+    graph:
+      name: hol-guard-status
+      result_from: [execute]
+      steps:
+        - id: plan
+          tool: command.plan
+          inputs:
+            output_mode: json
+            repo_root: .
+            command: hol-guard
+            args: [status, --json]
+            cwd: .
+            env: {}
+            timeout_ms: 30000
+        - id: execute
+          tool: command.execute
+          scopes: [process.exec]
+          inputs:
+            output_mode: json
+            repo_root: .
+            command: hol-guard
+            args: [status, --json]
+            cwd: .
+            env: {}
+            timeout_ms: 30000
+          context:
+            expected_command_digest: plan.command_plan.data.command_digest

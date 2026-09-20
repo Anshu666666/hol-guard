@@ -183,11 +183,45 @@ def test_other_live_process_cannot_take_existing_waiter(tmp_path: Path) -> None:
 def test_verified_native_queue_records_actual_waiter_without_changing_deny(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    import json
+    import time
+
+    from codex_plugin_scanner.guard import native_approval_bridge
+    from codex_plugin_scanner.guard.native_approval_bridge import NativeApprovalBridge
+    from tests.test_native_approval_v4_transport import _challenge, _status
     from tests.test_native_review_approval_coordination import _edge, _worker
 
     # The existing test edge supplies a synthetic receipt. Actual HookWorker
     # receipt validation and native-review queue run; this is not a Rust run.
     worker, store = _worker(tmp_path, monkeypatch, _edge("codex"))
+    snapshot = {"generation": 7, "policy_digest": "c" * 64, "runtime_identity": "a" * 64}
+    monkeypatch.setattr(worker, "prepare_workspace_policy", lambda *_args, **_kwargs: snapshot)
+    challenge = _challenge()
+    calls: list[str] = []
+
+    def client(**kwargs: Any) -> bytes:
+        wire = json.loads(kwargs["payload"])
+        calls.append(wire["operation"])
+        assert wire["operation"] == "approval_challenge_v4"
+        observed = datetime.now(timezone.utc)
+        challenge.update(
+            request_id=wire["request"]["envelope"]["request_id"],
+            harness="codex",
+            issued_at_ms=int(observed.timestamp() * 1000),
+            expires_at_ms=int((observed + timedelta(seconds=30)).timestamp() * 1000),
+        )
+        return json.dumps(challenge).encode()
+
+    monkeypatch.setattr(
+        native_approval_bridge,
+        "_DEFAULT_BRIDGE",
+        NativeApprovalBridge(
+            client_request=client,
+            status_provider=lambda: _status(tmp_path),
+            environment_provider=lambda: {},
+            clock=time.monotonic,
+        ),
+    )
     identity = current_process_identity()
     assert identity is not None
     workspace = tmp_path / "workspace"
@@ -218,6 +252,9 @@ def test_verified_native_queue_records_actual_waiter_without_changing_deny(
         assert isinstance(metadata, dict)
         assert metadata["codex_browser_wait_process"] == identity
         assert pending[0]["policy_action"] == "review"
+        assert calls == ["approval_challenge_v4"]
+        envelope = pending[0]["action_envelope_json"]
+        assert isinstance(envelope, dict) and envelope["nativeApprovalChallenge"] == challenge
     finally:
         worker.close()
 

@@ -18,7 +18,14 @@ def execute_exact_cloud_review_operation(
     store: GuardStore,
     generated_at: str,
     resume_after_approval: ResumeAfterApproval,
+    job: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
+    if "nativeApprovalProof" in payload or "nativeApprovalContext" in payload:
+        if job is None:
+            raise ValueError("native_live_job_missing")
+        from .native_cloud_review_executor import execute_native_cloud_review
+
+        return execute_native_cloud_review(store, job, now=generated_at)
     signed_decision = _mapping(payload.get("remoteApproval"))
     if not signed_decision:
         raise ValueError("remote_exact_approval_missing")

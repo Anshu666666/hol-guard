@@ -685,6 +685,9 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
 
         try:
             self.hook_worker = HookWorker(store=self.store, activity_writer=self.runtime_hook_evidence_writer)
+            from ..native_live_approval_completion import NativeLiveCompletion
+
+            self.native_live_completion = NativeLiveCompletion()
             self.extension_control_runtime = ExtensionControlRuntime(
                 read_observed_extension_control_authority(self.store, BUILT_IN_COMMAND_EXTENSION_REGISTRY)
             )
@@ -2440,6 +2443,10 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                     status=404,
                 )
                 return
+            from ..native_live_approval_state import native_proof_ready
+
+            if native_proof_ready(store, approval):
+                approval = {**approval, "native_approval_proof_pending": True}
             self._write_json(approval)
             return
         if parsed.path == "/v1/receipts":
@@ -5549,6 +5556,33 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
 
     def _handle_codex_live_decision(self, request_id: str, payload: Mapping[str, object]) -> None:
         request = self.server.store.get_approval_request(request_id)  # type: ignore[attr-defined]
+        from ..native_live_approval_state import challenge_for_request
+
+        try:
+            native_challenge = challenge_for_request(request) if isinstance(request, Mapping) else None
+        except (ValueError, TypeError):
+            self._write_json({"completed": False, "error": "native_live_challenge_invalid"}, status=409)
+            return
+        if (
+            isinstance(request, Mapping)
+            and request.get("resolution_action") != "block"
+            and native_challenge is not None
+        ):
+            daemon_server = self._daemon_server()
+            workspace_value = request.get("workspace")
+            snapshot = daemon_server.hook_worker.prepare_workspace_policy(
+                Path(workspace_value) if isinstance(workspace_value, str) else None,
+                deadline=time.monotonic() + _RUNTIME_HOOK_PROCESS_TIMEOUT_SECONDS,
+            )
+            result = daemon_server.native_live_completion.complete(
+                daemon_server.store,
+                request_id,
+                payload,
+                home_dir=daemon_server.home_dir,
+                policy_snapshot=snapshot,
+            )
+            self._write_json(result, status=200 if result.get("completed") is True else 409)
+            return
         previous = self.server.store.get_request_resume(request_id)  # type: ignore[attr-defined]
         claimed_hash, claimed_request_id = _codex_live_replay_authority(request, previous)
         if isinstance(request, Mapping) and request.get("resolution_action") == "allow":

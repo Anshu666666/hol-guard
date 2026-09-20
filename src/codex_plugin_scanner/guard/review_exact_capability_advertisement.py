@@ -47,8 +47,17 @@ def exact_review_capability_advertisement(
         capability = _verified_capability(store, revoke_binding_drift=False)
     except (AttributeError, ExactCloudReviewError):
         return None
+    challenge = claim.get("nativeApprovalChallenge")
+    action_digest = claim["actionEnvelopeHash"]
+    if challenge is not None:
+        from .native_approval_protocol import decode_native_approval_v4_challenge
+
+        parsed = decode_native_approval_v4_challenge(challenge) if isinstance(challenge, dict) else None
+        if parsed is None or parsed["request_id"] != claim["localRequestId"] or parsed["harness"] != claim["harnessId"]:
+            return None
+        action_digest = parsed["action_digest"]
     return {
-        "actionDigest": claim["actionEnvelopeHash"],
+        "actionDigest": action_digest,
         "capabilityId": _capability_digest(capability),
         "deviceId": oauth.device_id,
         "expiresAt": capability["expiresAt"],

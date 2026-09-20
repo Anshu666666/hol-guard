@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import socket
 import ssl
+import threading
 import urllib.error
 import urllib.request
 from collections.abc import Iterator
@@ -48,6 +50,55 @@ def request(fixture: SignedPolicyFixture, *, token: str | None = None) -> urllib
         headers={"Authorization": f"Bearer {fixture.token if token is None else token}"},
         method="POST",
     )
+
+
+def test_numeric_loopback_fixture_does_not_wait_for_reverse_dns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    boundary = threading.Event()
+    release_lookup = threading.Event()
+    lookup_hosts: list[str] = []
+    created: list[SignedPolicyFixture] = []
+    failures: list[BaseException] = []
+
+    def held_lookup(host: str) -> tuple[str, list[str], list[str]]:
+        lookup_hosts.append(host)
+        boundary.set()
+        assert release_lookup.wait(5), "controlled_lookup_not_released"
+        return "synthetic.loopback", [], ["127.0.0.1"]
+
+    def construct() -> None:
+        try:
+            created.append(SignedPolicyFixture(tmp_path))
+        except BaseException as error:
+            failures.append(error)
+        finally:
+            boundary.set()
+
+    monkeypatch.setattr(socket, "gethostbyaddr", held_lookup)
+    builder = threading.Thread(target=construct)
+    builder.start()
+    try:
+        assert boundary.wait(5), "fixture_did_not_reach_controlled_boundary"
+        assert not lookup_hosts, "fixture_waited_for_reverse_dns"
+        builder.join(timeout=5)
+        assert not builder.is_alive() and not failures and len(created) == 1
+        fixture = created[0]
+        assert fixture.server.server_address == ("127.0.0.1", fixture.server.server_port)
+        assert fixture.server.server_port > 0
+        fixture.bundle = fixture.signed_bundle(1)
+        context = ssl.create_default_context(cafile=str(fixture.ca_file))
+        with urllib.request.urlopen(request(fixture), context=context, timeout=2) as response:
+            received = json.load(response)
+        assert received["policyBundle"] == fixture.bundle
+        assert fixture.requests == 1
+        assert not lookup_hosts
+    finally:
+        release_lookup.set()
+        builder.join(timeout=5)
+        assert not builder.is_alive(), "fixture_constructor_cleanup_failed"
+        for fixture in created:
+            fixture.close()
 
 
 def test_actual_signed_delivery_does_not_preinstall_policy_authority(fixture: SignedPolicyFixture) -> None:

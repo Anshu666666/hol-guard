@@ -19,8 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
-from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY
+from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY, process_identity_matches
 from ..models import GuardApprovalRequest, format_local_http_origin
+from ..native_approval_bridge import create_native_approval_v4_challenge
 from .hook_native_review_binding import native_review_policy_binding
 from .hook_request_parsing import pre_tool_command
 from .hook_worker_responses import (
@@ -91,6 +92,9 @@ def pause_native_pre_tool_for_approval(
     native_receipt: Mapping[str, object] | None,
     workspace: Path | None,
     guard_home: Path,
+    home_dir: Path | None = None,
+    policy_snapshot: Mapping[str, object] | None = None,
+    deadline: float | None = None,
 ) -> dict[str, object]:
     """Pause a native review result and attach any queued approval metadata."""
 
@@ -115,7 +119,8 @@ def pause_native_pre_tool_for_approval(
         native_receipt,
         workspace,
     )
-    if _native_review_matching_allow(
+    live_native = harness == "codex" and CODEX_BROWSER_WAIT_PROCESS_KEY in payload and home_dir is not None
+    if not live_native and _native_review_matching_allow(
         store,
         harness=harness,
         tool_name=tool_name,
@@ -138,6 +143,9 @@ def pause_native_pre_tool_for_approval(
         native_receipt=native_receipt,
         workspace=workspace,
         guard_home=guard_home,
+        home_dir=home_dir,
+        policy_snapshot=policy_snapshot,
+        deadline=deadline,
     )
     if queued is None:
         failed = dict(native_result)
@@ -167,6 +175,9 @@ def queue_native_pre_tool_review(
     native_receipt: Mapping[str, object] | None,
     workspace: Path | None,
     guard_home: Path,
+    home_dir: Path | None = None,
+    policy_snapshot: Mapping[str, object] | None = None,
+    deadline: float | None = None,
 ) -> dict[str, object] | None:
     """Persist one native review as an approval-center request."""
 
@@ -182,6 +193,51 @@ def queue_native_pre_tool_review(
     tool_name = _native_review_tool_name(payload)
     command = pre_tool_command(payload)
     request_id = uuid.uuid4().hex
+    challenge: dict[str, object] | None = None
+    if harness == "codex" and CODEX_BROWSER_WAIT_PROCESS_KEY in payload and home_dir is not None:
+        from ..native_live_approval_state import canonical_digest, existing_native_waiter
+        from ..store import GuardStore
+
+        if policy_snapshot is None or not process_identity_matches(payload.get(CODEX_BROWSER_WAIT_PROCESS_KEY)):
+            return None
+        if not isinstance(store, GuardStore):
+            return None
+        # The bridge owns one process for one action. A lost response must refer
+        # to that same observation, rather than minting another nonce/deadline.
+        request_id = "native-live-" + canonical_digest(
+            {
+                "payload": dict(payload),
+                "workspace": str(workspace) if workspace else None,
+                "policy": {
+                    key: policy_snapshot.get(key)
+                    for key in ("generation", "policy_digest", "runtime_identity", "source_input_digest")
+                },
+            }
+        )
+        existing_id = payload.get("request_id")
+        if existing_id is not None:
+            if not isinstance(existing_id, str):
+                return None
+            request_id = existing_id
+        try:
+            previous = existing_native_waiter(store, request_id, payload, policy_snapshot)
+        except (ValueError, TypeError, OSError, sqlite3.Error):
+            return None
+        if previous is not None:
+            return previous
+        session = create_native_approval_v4_challenge(
+            payload=dict(payload),
+            harness=harness,
+            guard_home=guard_home,
+            home_dir=home_dir,
+            cwd=workspace,
+            policy_snapshot=policy_snapshot,
+            deadline=deadline,
+            request_id=request_id,
+        )
+        if session is None or session.request_id != request_id or session.harness != harness:
+            return None
+        challenge = session.challenge
     artifact_id = _native_review_artifact_id(harness, tool_name)
     approval_center_url = _native_review_approval_center_url(store)
     approval_url = f"{approval_center_url}/requests/{request_id}"
@@ -204,14 +260,17 @@ def queue_native_pre_tool_review(
         artifact_type="tool_call",
         launch_target=launch_target,
         risk_summary=reason,
-        action_envelope_json=_native_review_action_envelope(
-            request_id=request_id,
-            harness=harness,
-            tool_name=tool_name,
-            command=command,
-            launch_target=launch_target,
-            workspace=workspace,
-        ),
+        action_envelope_json={
+            **_native_review_action_envelope(
+                request_id=request_id,
+                harness=harness,
+                tool_name=tool_name,
+                command=command,
+                launch_target=launch_target,
+                workspace=workspace,
+            ),
+            **({"nativeApprovalChallenge": challenge} if challenge is not None else {}),
+        },
     )
     try:
         now = datetime.now(tz=timezone.utc).isoformat()

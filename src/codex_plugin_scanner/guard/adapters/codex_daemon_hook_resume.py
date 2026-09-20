@@ -168,7 +168,14 @@ def _open_pending_approval(approval_url: str | None, *, state_path: str | Path) 
 
 
 def _resolution_action(payload: Mapping[str, object] | None) -> str | None:
-    if not isinstance(payload, Mapping) or payload.get("status") != "resolved":
+    if not isinstance(payload, Mapping):
+        return None
+    # A returned native proof only wakes the original hook's authenticated
+    # completion call. The response cannot allow execution until Rust consumes
+    # that proof and the daemon commits the live-owner completion.
+    if payload.get("status") == "pending" and payload.get("native_approval_proof_pending") is True:
+        return "allow"
+    if payload.get("status") != "resolved":
         return None
     action = payload.get("resolution_action")
     if action in {"block", "deny", "denied", "blocked"}:

@@ -108,6 +108,7 @@ def execute_guard_command_job(
                 store=store,
                 generated_at=generated_at,
                 resume_after_approval=_resume_after_remote_approval,
+                job=job,
             )
         if operation in POLICY_MEMORY_OPERATIONS:
             return _result(

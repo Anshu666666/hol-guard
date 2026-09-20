@@ -39,11 +39,17 @@ def exact_result(job: dict[str, object], execution: dict[str, object]) -> dict[s
         _mapping(job.get("serverResolvedBinding")).get("localRequestId"),
         "exact_result_local_request_binding_missing",
     )
-    decision_request_id = _required_text(
-        signed_decision.get("localRequestId"),
-        "exact_result_local_request_missing",
-    )
-    receipt_id = _required_text(signed_decision.get("receiptId"), "exact_result_receipt_missing")
+    job_payload = _mapping(job.get("payload"))
+    if "nativeApprovalProof" in job_payload or "nativeApprovalContext" in job_payload:
+        from ..native_live_approval_state import parse_native_job
+
+        decision_request_id, receipt_id, _ = parse_native_job(job_payload)
+    else:
+        decision_request_id = _required_text(
+            signed_decision.get("localRequestId"),
+            "exact_result_local_request_missing",
+        )
+        receipt_id = _required_text(signed_decision.get("receiptId"), "exact_result_receipt_missing")
     if bound_request_id != decision_request_id:
         raise ValueError("exact_result_local_request_binding_mismatch")
     data = _mapping(execution.get("data"))

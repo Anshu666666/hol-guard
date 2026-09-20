@@ -69,6 +69,14 @@ class StoreApprovalsMixin:
                 oauth_source=self._guard_source,
             )
             if live_binding is not None:
+                # Bind the initial observation before the live snapshot update
+                # emits another outbox event. A later event cannot adopt an
+                # originally unbound request's authenticated subject.
+                bind_review_events_for_request(
+                    connection,
+                    request_id=request_id,
+                    oauth_source=self._guard_source,
+                )
                 persist_live_hook_binding(
                     connection,
                     request_id=request_id,

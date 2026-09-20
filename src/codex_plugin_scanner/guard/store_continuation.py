@@ -316,11 +316,34 @@ class StoreContinuationMixin:
         events: list[tuple[str, dict[str, object]]],
         now: str,
         approval_decision: Mapping[str, object] | None = None,
+        native_approval: object = None,
     ) -> bool:
         """Finalize continuation evidence and optionally consume exact allow authority atomically."""
 
         with self._connect() as connection:
             connection.execute("begin immediate")
+            if action == "allow_once":
+                from .native_live_approval_state import challenge_for_request
+                from .store_approvals import get_approval_request
+
+                current_request = get_approval_request(connection, request_id)
+                if (
+                    current_request is not None
+                    and challenge_for_request(current_request) is not None
+                    and native_approval is None
+                ):
+                    connection.rollback()
+                    return False
+            if native_approval is not None:
+                from .native_live_approval_completion import finalize_native_live_authority
+
+                if (
+                    approval_decision is not None
+                    or action != "allow_once"
+                    or not finalize_native_live_authority(connection, request_id, native_approval, now)
+                ):
+                    connection.rollback()
+                    return False
             if approval_decision is not None and not self._claim_continuation_approval_authority(
                 connection,
                 approval_decision=approval_decision,
@@ -357,4 +380,18 @@ class StoreContinuationMixin:
                 events=events,
                 now=now,
             )
+            if native_approval is not None:
+                from .native_live_approval_completion import native_live_receipt_evidence
+
+                receipt = native_live_receipt_evidence(native_approval)
+                if receipt is None:
+                    connection.rollback()
+                    return False
+                # Evidence is recorded in the same transaction as the effect.
+                # No authorization path reconstructs provenance from this JSON.
+                connection.execute(
+                    "update guard_operations set metadata_json = json_set(metadata_json, "
+                    "'$.native_approval_consumed_receipt', json(?)) where operation_id = ?",
+                    (json.dumps(receipt, allow_nan=False), "codex-live-" + request_id),
+                )
         return True

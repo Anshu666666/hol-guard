@@ -20,6 +20,7 @@ from .approval_scope_support import (
 )
 from .continuation_snapshot import canonical_continuation_correlation_id
 from .models import DECISION_SCOPE_VALUES
+from .native_review_challenge_projection import project_native_review_challenge
 from .policy_bundle_trusted_keys import (
     PolicyBundleVerificationKey,
     merge_policy_bundle_trusted_keys,
@@ -329,6 +330,14 @@ def build_local_review_request_claim(
     policy_source = verified_request_policy_memory_source(store, request_row)
     if policy_source is not None:
         claim["policyMemorySource"] = policy_source
+    try:
+        challenge = project_native_review_challenge(request_row)
+    except ValueError as error:
+        raise GuardReviewContractError("native_review_challenge_invalid") from error
+    if challenge is not None:
+        if challenge["request_id"] != local_request_id or challenge["harness"] != harness_id:
+            raise GuardReviewContractError("native_review_challenge_invalid")
+        claim["nativeApprovalChallenge"] = challenge
     claim["claimHash"] = compute_local_review_request_claim_hash(claim)
     return attach_exact_review_capability(claim, oauth, store)
 

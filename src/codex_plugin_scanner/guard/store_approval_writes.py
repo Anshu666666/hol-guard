@@ -120,11 +120,30 @@ def _update_request(
     now: str,
 ) -> None:
     existing = connection.execute(
-        "select continuation_snapshot_json from approval_requests where request_id = ? and oauth_source = ?",
+        "select continuation_snapshot_json, action_envelope_json, request_id, harness "
+        "from approval_requests where request_id = ? and oauth_source = ?",
         (request_id, oauth_source),
     ).fetchone()
+    from .native_review_challenge_projection import project_native_review_challenge
+
+    # The first resident challenge is immutable for this pending request. This
+    # runs under the existing immediate transaction, including concurrent
+    # producers that both observed no request before issuing their challenges.
+    # It also prevents a legacy observation from downgrading native authority.
+    if existing is not None:
+        original = project_native_review_challenge(dict(existing))
+        if original != project_native_review_challenge(request.to_dict()):
+            raise ValueError("native_live_original_challenge_changed")
+        if original is not None:
+            # An identical presentation is the original observation, not a
+            # new last-seen time, event version, or challenge lease.
+            return
     try:
-        frozen = validated_continuation_snapshot(json.loads(existing[0])) if existing and existing[0] else None
+        frozen = (
+            validated_continuation_snapshot(json.loads(existing["continuation_snapshot_json"]))
+            if existing and existing["continuation_snapshot_json"]
+            else None
+        )
     except (TypeError, ValueError):
         frozen = None
     correlation_id = canonical_continuation_correlation_id(

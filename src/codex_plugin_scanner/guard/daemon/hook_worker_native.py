@@ -485,6 +485,9 @@ class HookWorkerNativeMixin:
                     native_receipt=accepted_receipt,
                     workspace=workspace,
                     guard_home=guard_home,
+                    home_dir=home_dir,
+                    policy_snapshot=policy_snapshot,
+                    deadline=deadline,
                 )
                 return (_record_native_pre_activity(self, native_harness, payload, response, accepted_receipt), True)
             return (

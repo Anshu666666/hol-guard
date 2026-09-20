@@ -90,6 +90,13 @@ def persist_live_hook_binding(
     request_was_inserted: bool,
 ) -> None:
     """Run inside the same immediate transaction as approval/outbox insertion."""
+    envelope = request.action_envelope_json
+    if isinstance(envelope, dict) and "nativeApprovalChallenge" in envelope:
+        from .native_live_approval_state import challenge_for_request
+
+        challenge = challenge_for_request(request.to_dict())
+        if challenge is None or challenge["request_id"] != request_id:
+            raise ValueError("native_live_request_binding_changed")
     identity = metadata["codex_browser_wait_process"]
     if not process_identity_matches(identity):
         raise ValueError("codex_live_hook_process_unavailable")
@@ -139,10 +146,12 @@ def persist_live_hook_binding(
         raise ValueError("codex_live_hook_request_unavailable")
     snapshot = json.loads(request_row["continuation_snapshot_json"])
     snapshot["waitDeadline"] = deadline.isoformat()
-    connection.execute(
-        "update approval_requests set continuation_snapshot_json = ? where request_id = ? and oauth_source = ?",
-        (json.dumps(snapshot), request_id, oauth_source),
-    )
+    encoded_snapshot = json.dumps(snapshot)
+    if encoded_snapshot != request_row["continuation_snapshot_json"]:
+        connection.execute(
+            "update approval_requests set continuation_snapshot_json = ? where request_id = ? and oauth_source = ?",
+            (encoded_snapshot, request_id, oauth_source),
+        )
     if row is not None:
         return
     session_id = "codex-live-" + uuid.uuid4().hex

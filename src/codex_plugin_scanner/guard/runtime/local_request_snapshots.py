@@ -8,11 +8,13 @@ import re
 import shlex
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from ..action_lattice import is_action_bearing_key, normalize_guard_action_result
 from ..config import VALID_RECEIPT_REDACTION_LEVELS, load_guard_config
+from ..native_review_challenge_projection import project_native_review_challenge
 from ..redaction import redact_sensitive_text, redact_text
 from ..review_contracts import (
     GuardReviewContractError,
@@ -154,7 +156,12 @@ def _local_request_snapshot_byte_capped_items(
 
 
 def _compact_local_request_snapshot_item(item: dict[str, object]) -> dict[str, object]:
-    compact = {key: _compact_local_request_snapshot_value(value) for key, value in item.items()}
+    compact = {
+        key: deepcopy(value)
+        if key in {"claim", "reviewClaim"} and isinstance(value, dict) and "nativeApprovalChallenge" in value
+        else _compact_local_request_snapshot_value(value)
+        for key, value in item.items()
+    }
     compact_bytes = len(json.dumps(compact, separators=(",", ":"), sort_keys=True).encode("utf-8"))
     if compact_bytes <= LOCAL_REQUEST_SNAPSHOT_MAX_BYTES:
         return compact
@@ -188,6 +195,10 @@ def _compact_local_request_snapshot_item(item: dict[str, object]) -> dict[str, o
         "redaction_enabled",
     )
     reduced = {key: compact[key] for key in safe_keys if key in compact}
+    for key in ("claim", "reviewClaim"):
+        native_claim = compact.get(key)
+        if isinstance(native_claim, dict) and "nativeApprovalChallenge" in native_claim:
+            reduced[key] = native_claim
     if reduced:
         return reduced
     return compact
@@ -201,7 +212,15 @@ def _compact_local_request_snapshot_value(value: object) -> object:
     if isinstance(value, list):
         return [_compact_local_request_snapshot_value(item) for item in value[:LOCAL_REQUEST_SNAPSHOT_MAX_LIST_ITEMS]]
     if isinstance(value, dict):
-        return {str(key): _compact_local_request_snapshot_value(item) for key, item in value.items()}
+        # A native challenge and its claim commitment must survive together.
+        # If the whole item exceeds the byte budget, the caller omits the item.
+        return {
+            str(key): deepcopy(item)
+            if key == "nativeApprovalChallenge"
+            or (key in {"claim", "reviewClaim"} and isinstance(item, dict) and "nativeApprovalChallenge" in item)
+            else _compact_local_request_snapshot_value(item)
+            for key, item in value.items()
+        }
     return value
 
 
@@ -1106,6 +1125,9 @@ def _cloud_safe_local_request_payload(
     routing_metadata: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {}
+    challenge = project_native_review_challenge(item)
+    if challenge is not None:
+        payload["nativeApprovalChallenge"] = challenge
     for key in (
         "request_id",
         "status",

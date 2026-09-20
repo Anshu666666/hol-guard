@@ -36,6 +36,7 @@ class NativeApprovalBridge(_v3.NativeApprovalBridge):
         cwd: Path | None,
         policy_snapshot: Mapping[str, object],
         deadline: float | None = None,
+        request_id: str | None = None,
     ) -> NativeApprovalSession | None:
         """Create one resident-issued V4 challenge."""
 
@@ -50,6 +51,7 @@ class NativeApprovalBridge(_v3.NativeApprovalBridge):
             cwd=cwd,
             policy_snapshot=policy_snapshot,
             deadline=deadline,
+            request_id=request_id,
         )
 
     def validate_and_consume_v4(
@@ -164,6 +166,7 @@ def create_native_approval_v4_challenge(
     cwd: Path | None,
     policy_snapshot: Mapping[str, object],
     deadline: float | None = None,
+    request_id: str | None = None,
 ) -> NativeApprovalSession | None:
     """Create one V4 WebAuthn challenge through the default bridge."""
 
@@ -175,6 +178,7 @@ def create_native_approval_v4_challenge(
         cwd=cwd,
         policy_snapshot=policy_snapshot,
         deadline=deadline,
+        request_id=request_id,
     )
 
 
@@ -248,3 +252,32 @@ __all__ = [
     "validate_and_consume_native_approval",
     "validate_and_consume_native_approval_v4",
 ]
+
+
+def consume_presented_native_approval_v4(
+    *,
+    challenge: Mapping[str, object],
+    artifact: Mapping[str, object] | bytes,
+    payload: dict[str, object],
+    harness: str,
+    guard_home: Path,
+    home_dir: Path,
+    cwd: Path | None,
+    policy_snapshot: Mapping[str, object],
+    deadline: float,
+) -> tuple[NativeApprovalSession, NativeConsumedReceipt] | None:
+    """Forward an untrusted persisted challenge to the live resident gate."""
+    _DEFAULT_BRIDGE._last_error_code = None
+    _ = _v3._LAST_FAILURE_CODE.set(None)
+    return _v4_bridge.consume_presented_v4(
+        _DEFAULT_BRIDGE,
+        challenge=challenge,
+        artifact=artifact,
+        payload=payload,
+        harness=harness,
+        guard_home=guard_home,
+        home_dir=home_dir,
+        cwd=cwd,
+        policy_snapshot=policy_snapshot,
+        deadline=deadline,
+    )

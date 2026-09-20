@@ -21,6 +21,20 @@ FROZEN_ENTRYPOINT = ROOT / "scripts" / "mdm" / "hol-guard-entry.py"
 
 
 def _daemon_command(executable: Path, guard_home: Path, home: Path, *, port: int = 4781) -> str:
+    if os.name == "nt":
+        return subprocess.list2cmdline(
+            [
+                str(executable),
+                "daemon",
+                "--serve",
+                "--guard-home",
+                str(guard_home),
+                "--home",
+                str(home),
+                "--port",
+                str(port),
+            ]
+        )
     return f"{executable} daemon --serve --guard-home {guard_home} --home {home} --port {port}"
 
 

@@ -52,6 +52,7 @@ def create_v4_challenge(
     cwd: Path | None,
     policy_snapshot: Mapping[str, object],
     deadline: float | None = None,
+    request_id: str | None = None,
 ) -> NativeApprovalSession | None:
     """Create one resident-issued V4 challenge without local authority."""
 
@@ -68,6 +69,7 @@ def create_v4_challenge(
         cwd=cwd,
         policy_snapshot=policy_snapshot,
         deadline_budget_ms=budget_ms,
+        request_id=request_id,
     )
     if envelope_data is None:
         bridge._fail("native_approval_request_invalid")
@@ -221,3 +223,46 @@ def validate_and_consume_v4(
     )
     receipt = _phase_receipt(bridge, consumed_response, phase="consumed", session=session)
     return _new_consumed_receipt(receipt, session) if receipt is not None else None
+
+
+def consume_presented_v4(
+    bridge: _BridgeRuntime,
+    *,
+    challenge: Mapping[str, object],
+    artifact: Mapping[str, object] | bytes,
+    payload: dict[str, object],
+    harness: str,
+    guard_home: Path,
+    home_dir: Path,
+    cwd: Path | None,
+    policy_snapshot: Mapping[str, object],
+    deadline: float,
+) -> tuple[NativeApprovalSession, NativeConsumedReceipt] | None:
+    """Rebuild presentation context; only the live resident can grant authority.
+
+    Hook workers are not sticky. A persisted challenge is therefore untrusted
+    transport, not a restored authorization. Rust must find the original live
+    challenge/epoch and validate the current request, policy, authority and
+    external assertion before it can return the one-time consumed receipt.
+    """
+    decoded = _protocol.decode_native_approval_v4_challenge(dict(challenge))
+    deadline_data = bridge._deadline(deadline)
+    if decoded is None or deadline_data is None or decoded.get("harness") != harness:
+        bridge._fail("native_approval_request_invalid")
+        return None
+    envelope_data = _build_envelope(
+        payload=payload,
+        harness=harness,
+        guard_home=guard_home,
+        home_dir=home_dir,
+        cwd=cwd,
+        policy_snapshot=policy_snapshot,
+        deadline_budget_ms=deadline_data[1],
+        request_id=cast(str, decoded["request_id"]),
+    )
+    if envelope_data is None:
+        bridge._fail("native_approval_request_invalid")
+        return None
+    session = _new_session(decoded, envelope_data[1])
+    receipt = validate_and_consume_v4(bridge, session, artifact, deadline=deadline)
+    return (session, receipt) if receipt is not None else None

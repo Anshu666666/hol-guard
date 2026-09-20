@@ -248,6 +248,7 @@ def record_live_hook_completion(
     action: str,
     now: str,
     approval_decision: Mapping[str, object] | None = None,
+    native_approval: object = None,
 ) -> dict[str, object] | None:
     """Record proof that the original browser-waiting Codex hook consumed a decision."""
 
@@ -279,6 +280,7 @@ def record_live_hook_completion(
         result=result,
         now=now,
         approval_decision=approval_decision,
+        native_approval=native_approval,
     )
     if not persisted:
         return None
@@ -296,6 +298,7 @@ def _finalize_persist_attempt(
     now: str,
     claim_id: str | None = None,
     approval_decision: Mapping[str, object] | None = None,
+    native_approval: object = None,
 ) -> bool:
     operation = store.get_guard_operation_for_approval_request(request_id)
     operation_id = _text(operation.get("operation_id")) if isinstance(operation, Mapping) else None
@@ -361,6 +364,7 @@ def _finalize_persist_attempt(
         events=events,
         now=now,
         approval_decision=approval_decision,
+        native_approval=native_approval,
     )
 
 

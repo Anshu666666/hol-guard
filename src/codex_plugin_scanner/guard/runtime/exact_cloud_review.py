@@ -384,6 +384,18 @@ def authorize_exact_cloud_review_job(
             raise ExactCloudReviewError("remote_exact_job_expiry_too_distant")
         payload = job.get("payload")
         remote_approval = payload.get("remoteApproval") if isinstance(payload, Mapping) else None
+        if isinstance(payload, Mapping) and ("nativeApprovalProof" in payload or "nativeApprovalContext" in payload):
+            from ..native_live_approval_state import validate_native_job
+
+            try:
+                validate_native_job(store, job, now=_now(now).isoformat())
+            except ValueError as error:
+                raise ExactCloudReviewError(str(error)) from error
+            if _command_job_seen(store, identity, now=now):
+                raise ExactCloudReviewError("remote_exact_job_replayed")
+            return AuthorizedCommandJob(
+                identity=identity, operation=EXACT_CLOUD_REVIEW_OPERATION, requires_local_approval=False
+            )
         if not isinstance(remote_approval, Mapping):
             raise ExactCloudReviewError("remote_exact_job_invalid")
         approval = {str(key): value for key, value in remote_approval.items() if isinstance(key, str)}

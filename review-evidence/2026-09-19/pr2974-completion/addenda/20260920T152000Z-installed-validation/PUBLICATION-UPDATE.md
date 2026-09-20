@@ -1,0 +1,7 @@
+# Source publication after the 15:20 evidence snapshot
+
+At 15:29:11 UTC on 20 September 2026, the PR advanced non-forced to `e44008445630aad28ccc291ec234f55a14892e6d`, tree `addf0c1daf8ceb6313d6805ee4d05e216d6fdac8`, with sole parent `f8f190a286159b46bf14a624a62ba52b5d2371a3`. Exactly one existing file changes: `.gitleaksignore` gains the independently verified public-source-digest fingerprint and explanation. All other 4,787 Git leaves, including every product, test and workflow file, are unchanged. The commit, parent, tree, full leaf comparison, PR and branch ref were read back. [The publication receipt](gitleaks-publication-receipt.json) records these checks.
+
+Before publication, a fresh API read confirmed normal native run 35517566371 was completed successfully at f8, last updated 15:21:48 UTC. This publication therefore did not cancel that soak or its strict artifact collector. All four native platform jobs and the aggregate succeeded; their original reports still need the stated binary/count admission before assigning complete release qualification. The newly triggered current-head CI remains a separate run.
+
+The PRD, TODO and Takeaway in this directory deliberately retain their earlier 15:20 observation cutoff. Their conditional head hold has now ended for f8. Read fresh refs and current runs before subsequent changes. The source transition does not erase the original Gitleaks failure, the cancelled parent soak, failing installed lifecycle cells, missed performance ceilings or remaining full qualification/review work.

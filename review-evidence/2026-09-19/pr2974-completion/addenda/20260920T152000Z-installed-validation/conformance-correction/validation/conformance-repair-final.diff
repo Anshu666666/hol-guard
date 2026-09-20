@@ -1,0 +1,177 @@
+diff --git a/tests/claude_launcher_conformance.py b/tests/claude_launcher_conformance.py
+index a38b5b07..37a54fd7 100644
+--- a/tests/claude_launcher_conformance.py
++++ b/tests/claude_launcher_conformance.py
+@@ -12,9 +12,9 @@ from typing import Any
+ ROOT = Path(__file__).resolve().parents[1]
+ HISTORICAL_FIXTURE = "tests/fixtures/claude-launcher-pilot-auth.json"
+ HISTORICAL_GENERATOR = "scripts/generate_claude_launcher_auth_vectors.py"
+-CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance.json"
+-CURRENT_REVISION = "1cd7842c1da4f327b568065dd159c67e7bd0c92b"
+-CURRENT_TREE = "5250218ff36acbb35a2fba0fde483db02a724f63"
++CURRENT_FIXTURE = "tests/fixtures/claude-launcher-current-conformance-v2.json"
++CURRENT_REVISION = "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d"
++CURRENT_TREE = "19977465d6e419f1276d75fb6bd1b3477f5c9720"
+ CURRENT_MARKER_SHA256 = "a452508d7650662709fba99632befdea0a019b66957dc1ffdf67e24c6d4c2f61"
+ HISTORICAL_FIXTURE_SHA256 = "ebf41a37cfe9e6e05bcd9f5161874a3e1329015bb990f779e238d3c8f4b3571a"
+ HISTORICAL_GENERATOR_SHA256 = "03fa95cd2b9366c8913ac5b703f153c64f2b917e1d1ba953825486ca0debeeb5"
+@@ -31,6 +31,16 @@ MODULES = frozenset(
+ OLD_IMPORT = b"from .claude_code import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
+ NEW_IMPORT = b"from .claude_hook_config import CLAUDE_GUARD_DAEMON_HOOK_MARKER\n"
+ IMPORT_ANCHOR = b"from .claude_daemon_hook_transport import authenticated_claude_hook_response\n"
++AUTH = "adapters/codex_daemon_hook_auth.py"
++READER_PROVIDERS = {
++    "windows_replaceable_file.py": "ccc6b88c70dac5bc80c340b0bc4712e0ae588a123623b4bc3e34616d9b684fb9",
++    "windows_paths.py": "b93ca4e5361c9dbda0ea273be903b4ed7225dc21ec5bfaf3a7da5ddb892cf79d",
++}
++READER_ADDITION = (
++    b'        if os.name == "nt":\n'
++    b"            from ..windows_replaceable_file import read_replaceable_text\n\n"
++    b"            return read_replaceable_text(path).strip()\n"
++)
+ 
+ 
+ def _require(condition: object, reason: str) -> None:
+@@ -68,11 +78,12 @@ def validate_current_conformance(
+             "bridge_modules",
+             "marker_source",
+             "reviewed_import_delta",
++            "reviewed_windows_reader_delta",
+         },
+         "current_conformance_shape_invalid",
+     )
+     _require(
+-        binding["schema"] == "guard-claude-current-source-conformance.v1"
++        binding["schema"] == "guard-claude-current-source-conformance.v2"
+         and binding["python_execution"] == "current_adapter_registered_python_argv"
+         and binding["installed_artifact"] is False
+         and binding["qualification_complete"] is False,
+@@ -115,16 +126,41 @@ def validate_current_conformance(
+     modules = _object(binding["bridge_modules"], MODULES, "current_module_set_invalid")
+     old_modules = _object(historical.get("bridge_modules"), MODULES, "historical_module_set_invalid")
+     marker = _object(binding["marker_source"], {"module", "sha256"}, "marker_source_shape_invalid")
+-    _require(marker["module"] == MARKER and set(sources) == MODULES | {MARKER}, "current_module_set_invalid")
++    _require(
++        marker["module"] == MARKER and set(sources) == MODULES | {MARKER} | READER_PROVIDERS.keys(),
++        "current_module_set_invalid",
++    )
+     _require(marker["sha256"] == CURRENT_MARKER_SHA256, "current_marker_binding_changed")
+     for name, expected in {**modules, MARKER: marker["sha256"]}.items():
+         _require(isinstance(expected, str) and re.fullmatch(r"[0-9a-f]{64}", expected), "current_module_digest_invalid")
+         _require(_digest(sources[name]) == expected, "current_module_source_drift")
+     _require(
+-        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE}), "historical_transport_source_drift"
++        all(modules[name] == old_modules[name] for name in MODULES - {BRIDGE, AUTH}),
++        "historical_transport_source_drift",
++    )
++    _require(history["module_sha256"] == old_modules[AUTH], "historical_auth_module_changed")
++    reader = _object(
++        binding["reviewed_windows_reader_delta"],
++        {"module", "historical_sha256", "current_sha256", "added", "providers", "scope"},
++        "reviewed_windows_reader_delta_invalid",
++    )
++    _require(
++        reader["module"] == AUTH
++        and reader["historical_sha256"] == old_modules[AUTH]
++        and reader["current_sha256"] == modules[AUTH]
++        and reader["added"] == READER_ADDITION.decode(),
++        "reviewed_windows_reader_delta_invalid",
+     )
++    providers = _object(reader["providers"], set(READER_PROVIDERS), "current_reader_provider_set_invalid")
++    _require(providers == READER_PROVIDERS, "current_reader_provider_binding_changed")
++    for name, expected in providers.items():
++        _require(_digest(sources[name]) == expected, "current_reader_provider_source_drift")
++    auth = sources[AUTH]
+     _require(
+-        history["module_sha256"] == modules["adapters/codex_daemon_hook_auth.py"], "historical_auth_module_changed"
++        auth.count(READER_ADDITION) == 1
++        and auth.count(READER_ADDITION + b'        return path.read_text(encoding="utf-8").strip()\n') == 1
++        and _digest(auth.replace(READER_ADDITION, b"", 1)) == old_modules[AUTH],
++        "reviewed_windows_reader_delta_mismatch",
+     )
+     delta = _object(
+         binding["reviewed_import_delta"],
+@@ -154,5 +190,5 @@ def verify_current_conformance(guard: Path) -> dict[str, Any]:
+         json.loads((ROOT / CURRENT_FIXTURE).read_bytes()),
+         historical_vectors=(ROOT / HISTORICAL_FIXTURE).read_bytes(),
+         historical_generator=(ROOT / HISTORICAL_GENERATOR).read_bytes(),
+-        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER}},
++        sources={name: (guard / name).read_bytes() for name in MODULES | {MARKER} | READER_PROVIDERS.keys()},
+     )
+diff --git a/tests/test_claude_launcher_conformance_binding.py b/tests/test_claude_launcher_conformance_binding.py
+index 9f675b57..5a1bf032 100644
+--- a/tests/test_claude_launcher_conformance_binding.py
++++ b/tests/test_claude_launcher_conformance_binding.py
+@@ -22,7 +22,7 @@ def evidence() -> Evidence:
+         "historical_generator": (root / conformance.HISTORICAL_GENERATOR).read_bytes(),
+         "sources": {
+             name: (root / "src/codex_plugin_scanner/guard" / name).read_bytes()
+-            for name in conformance.MODULES | {conformance.MARKER}
++            for name in conformance.MODULES | {conformance.MARKER} | conformance.READER_PROVIDERS.keys()
+         },
+     }
+     return binding, inputs
+@@ -36,6 +36,9 @@ def test_current_bridge_binding_preserves_historical_auth_authority(evidence: Ev
+     assert result["bridge_modules"][conformance.BRIDGE] != history["bridge_modules"][conformance.BRIDGE]
+     assert result["historical_auth_provenance"]["historical_bridge_executed"] is False
+     assert result["installed_artifact"] is result["qualification_complete"] is False
++    assert result["bridge_modules"][conformance.AUTH] != history["bridge_modules"][conformance.AUTH]
++    assert result["historical_auth_provenance"]["module_sha256"] == history["bridge_modules"][conformance.AUTH]
++    assert result["reviewed_windows_reader_delta"]["providers"] == conformance.READER_PROVIDERS
+ 
+ 
+ @pytest.mark.parametrize(
+@@ -123,3 +126,53 @@ def test_repinning_marker_source_cannot_retain_the_original_current_source_ident
+     binding["marker_source"]["sha256"] = hashlib.sha256(inputs["sources"][name]).hexdigest()
+     with pytest.raises(ValueError, match="current_marker_binding_changed"):
+         conformance.validate_current_conformance(binding, **inputs)
++
++
++@pytest.mark.parametrize("name", sorted(conformance.READER_PROVIDERS))
++@pytest.mark.parametrize("repin", [False, True])
++def test_windows_reader_provider_drift_cannot_be_relabelled(evidence: Evidence, name: str, repin: bool) -> None:
++    binding, inputs = evidence
++    inputs["sources"][name] += b"\n# unreviewed reader edit\n"
++    if repin:
++        binding["reviewed_windows_reader_delta"]["providers"][name] = hashlib.sha256(
++            inputs["sources"][name]
++        ).hexdigest()
++    reason = "current_reader_provider_binding_changed" if repin else "current_reader_provider_source_drift"
++    with pytest.raises(ValueError, match=reason):
++        conformance.validate_current_conformance(binding, **inputs)
++
++
++@pytest.mark.parametrize(
++    "case", ["missing", "unexpected", "wrong_insertion", "extra_auth_edit", "changed_branch", "relocated_branch"]
++)
++def test_reader_delta_admits_only_the_reviewed_insertion(evidence: Evidence, case: str) -> None:
++    binding, inputs = evidence
++    reader = binding["reviewed_windows_reader_delta"]
++    if case == "missing":
++        del reader["providers"]["windows_paths.py"]
++        reason = "current_reader_provider_set_invalid"
++    elif case == "unexpected":
++        reader["providers"]["unreviewed.py"] = "0" * 64
++        reason = "current_reader_provider_set_invalid"
++    elif case == "wrong_insertion":
++        reader["added"] += "# extra edit\n"
++        reason = "reviewed_windows_reader_delta_invalid"
++    else:
++        auth = inputs["sources"][conformance.AUTH]
++        if case == "extra_auth_edit":
++            auth = auth.replace(b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 5", b"_DISCOVERY_CHALLENGE_TTL_SECONDS = 6")
++        elif case == "relocated_branch":
++            anchor = b'        return path.read_text(encoding="utf-8").strip()\n'
++            auth = auth.replace(conformance.READER_ADDITION + anchor, anchor + conformance.READER_ADDITION)
++            assert (
++                hashlib.sha256(auth.replace(conformance.READER_ADDITION, b"", 1)).hexdigest()
++                == reader["historical_sha256"]
++            )
++        else:
++            auth = auth.replace(b'if os.name == "nt":', b'if os.name != "nt":')
++        assert auth != inputs["sources"][conformance.AUTH]
++        inputs["sources"][conformance.AUTH] = auth
++        reader["current_sha256"] = binding["bridge_modules"][conformance.AUTH] = hashlib.sha256(auth).hexdigest()
++        reason = "reviewed_windows_reader_delta_mismatch"
++    with pytest.raises(ValueError, match=reason):
++        conformance.validate_current_conformance(binding, **inputs)

@@ -1,0 +1,51 @@
+{
+  "schema": "pr2974.ad9d-conformance-drift-audit.v1",
+  "head": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+  "main_ci_run": 35516487884,
+  "jobs": [
+    {
+      "id": 106093330744,
+      "failed": 4,
+      "errors": 0
+    },
+    {
+      "id": 106093330698,
+      "failed": 0,
+      "errors": 25
+    },
+    {
+      "id": 106093329326,
+      "failed": 0,
+      "errors": 4
+    },
+    {
+      "id": 106093329258,
+      "failed": 0,
+      "errors": 8
+    }
+  ],
+  "cause": "Exact current conformance pins still require historical auth bytes; ad9d introduces a separately reviewed four-line Windows reader branch. A blind digest repin would violate original historical equality gates.",
+  "repair": "Explicit v2 current source at ad9d; historical current v1/vector/generator kept immutable; current auth insertion requires exact unique original-return adjacency and inverse hash equality to historical auth. Current reader and Windows structure provider separately pinned.",
+  "peer": {
+    "tree": "85ec091c17d631acc50218e5869e5c96678ae881",
+    "blob": "4e0b0a6d1551c355be15b546fc932605fc3ed677"
+  },
+  "result": {
+    "pass": 74,
+    "skip": 29,
+    "binding_controls": 29,
+    "type_errors": 0,
+    "type_warnings": 87,
+    "product_changes": 0,
+    "native_workload_executed": false,
+    "qualification_complete": false
+  },
+  "prototype_failure": "Independent peer identified relocation of unchanged inserted branch could retain inverse hash while making it unreachable. New adjacency regression proves prototype acceptance and final rejection.",
+  "limits": [
+    "Decoded GitHub logs retained as returned; no raw ZIP-log archive identity claim",
+    "Native process cohorts requiring explicit binary skip locally; no native runtime rebuilt or timing repeated",
+    "Final source is prepared, not published to the PR by this agent",
+    "Old failed jobs, original auth vectors and stopped benchmark plans remain unchanged"
+  ]
+}

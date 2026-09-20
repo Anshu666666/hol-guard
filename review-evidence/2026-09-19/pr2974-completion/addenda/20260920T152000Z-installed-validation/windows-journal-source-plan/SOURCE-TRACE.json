@@ -1,0 +1,240 @@
+{
+  "schema": "pr2974.windows-journal-checkpoint-source-trace.v1",
+  "source_sha": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "source_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+  "normal_evidence_tree": "444eb1438badf4cbdcfcf60f3e470c9ba16aaa66",
+  "observed": {
+    "run": 35516487925,
+    "job": 106093201568,
+    "artifact": 10606624387,
+    "receipt_processed": 21,
+    "receipt_failures": 0,
+    "native_receipt_diagnostics": {},
+    "all_evidence": {
+      "journal_checkpoint/os_permission": 1
+    }
+  },
+  "source_guards": [
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer.py",
+      "git_blob": "ae31c08a395b083e992fc1c06a0badc0f972f243",
+      "bytes": 18858,
+      "sha256": "3d60fe7c6df6722da46f4d366a8bb35c701acca632f2e083da2d461cdce8db7a"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_writer_journal.py",
+      "git_blob": "3066367b806d148e2fe94678a673262c08261d08",
+      "bytes": 6299,
+      "sha256": "2d4f0d8d0d135c8a761322ec5d505a688087a58ca9000f8ba5ba7ed636624761"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_journal.py",
+      "git_blob": "76940e6f527b3199942d87d2edc8b551c2f48a76",
+      "bytes": 20638,
+      "sha256": "ae6482f105278138f419ae2b33771cc3a91a8bcd8b3552a0bc082b5e9e424988"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/runtime_hook_evidence_diagnostics.py",
+      "git_blob": "0385f2e5b2fd52856fb91acd330258b68e22d537",
+      "bytes": 4238,
+      "sha256": "76328d2c2bde87ce341d0a4d7462fdd1e246202a6fd041bda3a8f47fb6c2122e"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/durable_io.py",
+      "git_blob": "b552228dda403f4a6bed9ec32d30a2855bc39fb2",
+      "bytes": 1552,
+      "sha256": "ba68c5475a1c15412a8e9492d685fcde92aa7ca4ee6fdd18a47564fef470641f"
+    },
+    {
+      "path": "ci/native_runtime/probe_native_default_auto.py",
+      "git_blob": "9d4e11d4f5b4affcfc4e07289d5b8f03a2bcabd9",
+      "bytes": 20221,
+      "sha256": "552db3dc5699068cd849d4ba9201cc7f5d293ffc6d57ae576d55364f3907e316"
+    },
+    {
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "git_blob": "cca0f1d5563b66682fc09e6110f40b67b44c800d",
+      "bytes": 13530,
+      "sha256": "fb810dfa664b801305b0989195e55e2f8f615ac3f8813a81ed45066e2358f227"
+    },
+    {
+      "path": "scripts/native_probe_receipts.py",
+      "git_blob": "3040416b65c1f319f44fc113bbba8c658ac632da",
+      "bytes": 3350,
+      "sha256": "deef72aee9b5171d9898d04fc6a8ed393a142464b1a333383511e4c0c4169562"
+    }
+  ],
+  "real_filesystem_operation_sites": [
+    {
+      "function": "_read_journal_records_locked",
+      "line": 226,
+      "call": "os.fstat"
+    },
+    {
+      "function": "_read_journal_records_locked",
+      "line": 231,
+      "call": "os.close"
+    },
+    {
+      "function": "_read_journal_records_locked",
+      "line": 229,
+      "call": "os.read"
+    },
+    {
+      "function": "_read_preview_sidecar",
+      "line": 279,
+      "call": "os.close"
+    },
+    {
+      "function": "_read_preview_sidecar",
+      "line": 275,
+      "call": "os.fstat"
+    },
+    {
+      "function": "_read_preview_sidecar",
+      "line": 277,
+      "call": "os.read"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 350,
+      "call": "os.open"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 345,
+      "call": "sidecar.unlink"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 366,
+      "call": "os.replace"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 368,
+      "call": "temporary.unlink"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 363,
+      "call": "os.fsync"
+    },
+    {
+      "function": "_rewrite_preview_sidecar",
+      "line": 365,
+      "call": "os.close"
+    },
+    {
+      "function": "checkpoint_journal",
+      "line": 450,
+      "call": "os.open"
+    },
+    {
+      "function": "checkpoint_journal",
+      "line": 458,
+      "call": "os.replace"
+    },
+    {
+      "function": "checkpoint_journal",
+      "line": 462,
+      "call": "temporary.unlink"
+    },
+    {
+      "function": "checkpoint_journal",
+      "line": 455,
+      "call": "os.fsync"
+    },
+    {
+      "function": "checkpoint_journal",
+      "line": 457,
+      "call": "os.close"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 470,
+      "call": "path.parent.mkdir"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 474,
+      "call": "os.open"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 477,
+      "call": "os.fstat"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 498,
+      "call": "os.close"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 485,
+      "call": "os.ftruncate"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 486,
+      "call": "os.lseek"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 487,
+      "call": "msvcrt.locking"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 496,
+      "call": "os.lseek"
+    },
+    {
+      "function": "_journal_lock",
+      "line": 497,
+      "call": "msvcrt.locking"
+    },
+    {
+      "function": "_open_journal",
+      "line": 503,
+      "call": "os.open"
+    },
+    {
+      "function": "_open_journal",
+      "line": 504,
+      "call": "os.fstat"
+    },
+    {
+      "function": "_open_journal",
+      "line": 506,
+      "call": "os.close"
+    },
+    {
+      "function": "_write_all",
+      "line": 514,
+      "call": "os.write"
+    }
+  ],
+  "classification_limits": [
+    "Only exact built-in OSError types with errno EACCES or EPERM become os_permission. The report omits WinError, operation, traceback and error context.",
+    "The counter is one failed checkpoint attempt, not one failed native receipt. It is never cleared by a later successful checkpoint.",
+    "Checkpoint errors retain pending committed identities for a later checkpoint; native receipt DB persistence is not replayed by this path.",
+    "Zero receipt_durable_pending does not by itself establish zero command-activity checkpoint backlog or clear sticky degraded state.",
+    "The recorded stats are captured before daemon.stop; a later shutdown failure cannot have caused this already captured event.",
+    "The broad catch covers lock acquisition and release, aggregate and preview I/O, replacement and cleanup. A cleanup exception can mask an earlier operation in existing finally blocks; terminal errno alone does not exclude that chain."
+  ],
+  "source_exclusions": [
+    "Windows fsync_directory returns without opening a directory.",
+    "Checkpoint closes its aggregate read descriptor and temporary write descriptor before os.replace. Preview reader likewise closes before sidecar mutation.",
+    "The new private-state windows_atomic_replace helper is not called by these journal functions.",
+    "All exposed normal journal read/append/rewrite paths use the same lock; a legitimate second participating reader should not hold the aggregate file while checkpoint replaces it after admission."
+  ],
+  "unproved_hypotheses": [
+    "The Windows lock path calls os.ftruncate(fd,1) before acquiring its byte-zero lock; another holder may make this a concrete contention boundary, but current artifact does not identify it.",
+    "An unexpected outside holder or filesystem policy may affect aggregate/sidecar replace or cleanup; no actual holder has been attributed."
+  ],
+  "next_evidence": "A failure-only fixed code-identity/line operation capture around the existing writer classifier can locate the terminal OS failure without touching successful checkpoint operations. Retain bounded exception context so cleanup masking remains explicit.",
+  "product_change_proposed": false,
+  "new_workload_execution": false
+}

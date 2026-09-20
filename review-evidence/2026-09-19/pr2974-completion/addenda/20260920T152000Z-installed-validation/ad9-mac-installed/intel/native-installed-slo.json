@@ -1,0 +1,68 @@
+{
+  "evidence_class": "smoke",
+  "failure": {
+    "allowed": true,
+    "category": "RuntimeError",
+    "completed_phases": [
+      "runtime_identity",
+      "installed_corpus",
+      "cold",
+      "cold_session",
+      "warm",
+      "sizes"
+    ],
+    "completed_sample_counts": {
+      "cold": 2,
+      "recovery": 1,
+      "sizes": 24,
+      "warm": 42
+    },
+    "diagnostic_digest": "70f79e9fd0d41226a0dd72a51d0d405f88bfa0ba3ad5c08464648e694683baac",
+    "event": "PostToolUse",
+    "failed_phase": "recovery",
+    "harness": "claude-code",
+    "line": 29,
+    "observed_semantics": {
+      "delivered": {
+        "available": true,
+        "policy_action": "allow",
+        "reason_code_digest": "dc2fcb527b32d42531558b46d919452608cb85e4b0c3247d2a8751d73edab63d"
+      },
+      "native": {
+        "available": false
+      }
+    },
+    "origin": "bench_guard_native_installed_slo_runtime._require",
+    "overloaded": false,
+    "reason": "qualification_fixture.native_installed_slo_failed:_recovery_sample_1_failed",
+    "recovery_stop": {
+      "acknowledged": "verified",
+      "authenticated": "verified",
+      "available": true,
+      "capture_boundary": "recovery_phase_exception_before_session_cleanup",
+      "generation_present": "verified",
+      "marker_lock": "verified",
+      "operation": "resident-stop",
+      "owner_lock": "verified",
+      "serving_shutdown": "verified",
+      "status": "contained"
+    },
+    "resident_stop_contained": true,
+    "route": "native_fail_safe",
+    "routes_after": {
+      "native_fail_safe": 1,
+      "native_resident": 90
+    },
+    "routes_before": {
+      "native_resident": 90
+    },
+    "sample_index": 1,
+    "sample_phase": "resident_recovery",
+    "schema": "hol-guard.native-qualification-failure.v1",
+    "size_class": "1k"
+  },
+  "passed": false,
+  "qualification_complete": false,
+  "schema": "hol-guard.native-installed-slo-failure.v1",
+  "scope": "daemon_ingress_and_registered_launcher"
+}

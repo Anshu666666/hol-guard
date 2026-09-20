@@ -1,0 +1,37 @@
+# Bound the recurring Windows journal permission event
+
+The normal integrated `ad9d9238` wheel run completed all 21 native receipts, but its pre-shutdown evidence snapshot retains one `journal_checkpoint/os_permission` event. This event remains a persistence qualification gap. It is not explained by the private token reader/writer repair. The original archive and full log are retained in tree `444eb1438badf4cbdcfcf60f3e470c9ba16aaa66`.
+
+`SOURCE-TRACE.json` binds the eight relevant exact source files and thirty real filesystem call sites. The existing catch reduces EACCES and EPERM to one label across the complete checkpoint, including lock admission and release, aggregate read/write/replace, preview read/replace/unlink, and cleanup. It does not retain WinError or an operation. The installed artifact therefore cannot identify the failing primitive or holder.
+
+The Windows lock implementation truncates the lock file to one byte before acquiring its byte-zero lock. That is a concrete operation worth distinguishing from rename; it is an unproved hypothesis. The journal's own aggregate and preview readers close before their replacements, and participating journal operations share the same exclusive lock. Windows directory fsync returns early. The event was captured before `daemon.stop`, so a later shutdown failure cannot be its cause. Existing `finally` cleanup can mask an earlier exception, which a diagnostic must preserve explicitly.
+
+## Proposed first diagnostic
+
+Use the retained unchanged Windows wheel from artifact `10606624387` (8,255,943-byte archive, SHA-256 `62e2fd5230a00341a49827106b8e0f0ca074745f245fe4e242e85cb8ca57bc60`). Its wheel SHA-256 is `c13b25af40d3ca5d0594c9486c3b4123d85c56c828bef50a1f5d1b5bfdf8a048`; actual runtime SHA-256 is `09142ea9fa88542db7bca04dd6cb568f4b389fea2c5b4ed2709de905931b3e7c`. Build commit `be612a3e562a2041b3732a33c158eeae4f1dad40` is distinct from product `ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d`, with the same tree `19977465d6e419f1276d75fb6bd1b3477f5c9720`.
+
+Prepare an isolated driver and capture module, with no product afterimage. Verify the artifact, installed package paths, runtime/manifest, and the eight source guards before and after. Install the original wheel without a later dependency resync. Preserve the original supported interpreter, unchanged probe arguments and environment validation. Invoke the original `probe_native_default_auto.main(json_path=...)` exactly once, under its original cleanup and return/exception handling; retain its complete original receipt/failure reports and job exit result. This is an instrumented cause diagnostic, not a replacement timing or qualification run.
+
+Capture only at the already executed `runtime_hook_evidence_writer.evidence_failure_code(error)` boundary. Call the original classifier exactly once and return its exact value or exception. Inspect only failures whose traceback includes the registered `_checkpoint_completed_records` code identity; do not wrap individual OS operations or alter a successful checkpoint. The original writer still catches and counts the original exception, retains pending committed records and uses its existing retry behavior.
+
+Register exact installed code objects and the bound call-site lines as a closed mapping to fixed operation labels. The `_journal_lock` generator uses its original `__wrapped__.__code__`. A registered outer caller distinguishes aggregate reads from preview reads where `_open_journal` is shared. Unknown/unmatched sites remain unknown and make attribution incomplete. The terminal exception's traceback is authoritative for the observed operation; do not infer CreateFile or filesystem policy beneath a Python call.
+
+Bound collection to sixteen checkpoint failures, thirty-two traceback frames per exception, and four chained built-in exceptions. Record only fixed exception-kind labels, native numeric errno/WinError where available, fixed operation/role labels, and overflow/loss/unknown flags. Do not inspect or retain exception text, args, filenames, frame locals, source lines, payloads, journal record IDs, paths, tokens or SIDs. Numeric values must be exact built-in integers within their native signed/unsigned ranges; unavailable values remain null. Preserve terminal error versus chained context/cause; successful recovered internal attempts are not terminal causes. Cycles, unsupported exception subclasses and truncation remain explicit.
+
+Use a nonblocking diagnostic buffer lock; contention and recording failures mark the diagnostic incomplete. Keep no traceback or exception reference after projection. Restore the original callback in all exit paths. Export only after the original probe completes or fails, preserving the first probe exception/exit code if diagnostic export also fails. Mark the existing `end_corpus` boundary using its already supplied stats without an extra stats read, so post-snapshot cleanup observations cannot be falsely joined to the original pre-shutdown counter. A wrapper at that boundary forwards the original call/objects once before publishing its fixed snapshot marker.
+
+## Required controls before any hosted invocation
+
+1. Exact classifier call count and return-object identity; exact original exception identity when the classifier raises; callback restoration after setup/body/report failures.
+2. Real raised built-in OS exceptions through fixed registered functions: aggregate replace, preview deletion, lock truncate, lock acquire/release, and cleanup masking. Retain the terminal and chained operation distinction.
+3. Duplicate operation sites and wrong source bytes cannot be relabelled; unmatched frames, unsupported exception subclasses, oversized chains and cycles are incomplete. Exception objects with dangerous custom attribute/string hooks are never invoked.
+4. Record/frame/chain bounds, nonblocking lock contention, injected collector failure, and output failure cannot replace or retry the original operation. No raw sentinel message/path/payload appears in serialized output.
+5. Existing end-corpus call arguments, returned object/raised object, counter snapshot and original cleanup remain intact. A later failure is labelled after the captured corpus snapshot.
+
+Independent source/driver review must bind the final finite labels, source guard bytes, control results and exact one-run invocation before launch. This record is a concrete preparation plan, not an implemented collector or a dispatched run. Root retains product integration; this plan proposes no source permission, deadline, retry, wait, acceptance or runtime change.
+
+## Follow the actual leaf
+
+If the one observed failure is at lock-file truncation or locking, prepare a separate bounded real-Windows two-process control using the original `_journal_lock` and original checkpoint, with actual holder release and child retirement. If it is at replacement or preview cleanup, bind the observed file role and error before choosing a real-handle control. Preserve any earlier successful aggregate replacement separately from a later sidecar or cleanup failure. A controlled overlap can establish an API contract, not identify the historical job's unobserved holder.
+
+Do not rerun the full corpus merely to obtain a passing result. A non-reproduction remains a non-reproduction; a reproduced unclassified or lost event remains incomplete. Native receipt success and the journal event must continue to be reported separately.

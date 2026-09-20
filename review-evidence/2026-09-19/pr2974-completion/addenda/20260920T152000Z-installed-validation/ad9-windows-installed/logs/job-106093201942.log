@@ -1,0 +1,1225 @@
+﻿2026-09-20T14:26:33.3300643Z Current runner version: '2.337.0'
+2026-09-20T14:26:33.3320991Z ##[group]Runner Image Provisioner
+2026-09-20T14:26:33.3321586Z Hosted Compute Agent
+2026-09-20T14:26:33.3321954Z Version: 20260828.587
+2026-09-20T14:26:33.3322318Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T14:26:33.3322815Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T14:26:33.3323338Z Worker ID: {505d7004-d096-4730-8f04-94b117f38e7d}
+2026-09-20T14:26:33.3323752Z Azure Region: westus2
+2026-09-20T14:26:33.3324072Z ##[endgroup]
+2026-09-20T14:26:33.3324921Z ##[group]Operating System
+2026-09-20T14:26:33.3325276Z Microsoft Windows Server 2025
+2026-09-20T14:26:33.3325640Z 10.0.26100
+2026-09-20T14:26:33.3325996Z Datacenter
+2026-09-20T14:26:33.3326318Z ##[endgroup]
+2026-09-20T14:26:33.3326642Z ##[group]Runner Image
+2026-09-20T14:26:33.3327011Z Image: windows-2025-vs2026
+2026-09-20T14:26:33.3327379Z Version: 20260907.229.1
+2026-09-20T14:26:33.3328343Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+2026-09-20T14:26:33.3329255Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+2026-09-20T14:26:33.3329825Z ##[endgroup]
+2026-09-20T14:26:33.3330468Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T14:26:33.3331748Z Contents: read
+2026-09-20T14:26:33.3332068Z Metadata: read
+2026-09-20T14:26:33.3332383Z ##[endgroup]
+2026-09-20T14:26:33.3333789Z Secret source: Actions
+2026-09-20T14:26:33.3334301Z Cache mode: write
+2026-09-20T14:26:33.3334708Z Prepare workflow directory
+2026-09-20T14:26:33.3563114Z Prepare all required actions
+2026-09-20T14:26:33.3597599Z Getting action download info
+2026-09-20T14:26:33.6810095Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T14:26:33.7793277Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T14:26:33.8792459Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T14:26:34.2295501Z Complete job name: windows-resident
+2026-09-20T14:26:34.3401932Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T14:26:34.3403015Z with:
+2026-09-20T14:26:34.3403236Z   persist-credentials: false
+2026-09-20T14:26:34.3403502Z   repository: hashgraph-online/hol-guard
+2026-09-20T14:26:34.3405546Z   token: ***
+2026-09-20T14:26:34.3405750Z   ssh-strict: true
+2026-09-20T14:26:34.3405962Z   ssh-user: git
+2026-09-20T14:26:34.3406168Z   clean: true
+2026-09-20T14:26:34.3406389Z   sparse-checkout-cone-mode: true
+2026-09-20T14:26:34.3406649Z   fetch-depth: 1
+2026-09-20T14:26:34.3406865Z   fetch-tags: false
+2026-09-20T14:26:34.3407081Z   show-progress: true
+2026-09-20T14:26:34.3407301Z   lfs: false
+2026-09-20T14:26:34.3407499Z   submodules: false
+2026-09-20T14:26:34.3407741Z   set-safe-directory: true
+2026-09-20T14:26:34.3408069Z ##[endgroup]
+2026-09-20T14:26:34.4654295Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T14:26:34.4655315Z ##[group]Getting Git version info
+2026-09-20T14:26:34.4655686Z Working directory is 'D:\a\hol-guard\hol-guard'
+2026-09-20T14:26:34.5075745Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T14:26:34.9381641Z git version 2.55.0.windows.5
+2026-09-20T14:26:34.9422375Z ##[endgroup]
+2026-09-20T14:26:34.9441985Z Temporarily overriding HOME='D:\a\_temp\2cf4c081-baae-4c16-b3df-442dab08bad0' before making global git config changes
+2026-09-20T14:26:34.9443232Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:26:34.9446239Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard
+2026-09-20T14:26:34.9998161Z Deleting the contents of 'D:\a\hol-guard\hol-guard'
+2026-09-20T14:26:35.0002905Z ##[group]Determining repository object format
+2026-09-20T14:26:35.0005122Z ##[endgroup]
+2026-09-20T14:26:35.0005597Z ##[group]Initializing the repository
+2026-09-20T14:26:35.0011580Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard
+2026-09-20T14:26:35.0872686Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/.git/
+2026-09-20T14:26:35.0911952Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:35.1438833Z ##[endgroup]
+2026-09-20T14:26:35.1439933Z ##[group]Disabling automatic garbage collection
+2026-09-20T14:26:35.1445586Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T14:26:35.1669066Z ##[endgroup]
+2026-09-20T14:26:35.1670103Z ##[group]Setting up auth
+2026-09-20T14:26:35.1670901Z Removing SSH command configuration
+2026-09-20T14:26:35.1678485Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:35.1978715Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:26:37.4813696Z Removing HTTP extra header
+2026-09-20T14:26:37.4822640Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:37.5059425Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:26:37.9187259Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:37.9195914Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:37.9429909Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:26:38.3325844Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T14:26:38.3583008Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:38.3836084Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:38.4132689Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:38.4377209Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:38.4616572Z ##[endgroup]
+2026-09-20T14:26:38.4617220Z ##[group]Fetching the repository
+2026-09-20T14:26:38.4630121Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +be612a3e562a2041b3732a33c158eeae4f1dad40:refs/remotes/pull/2974/merge
+2026-09-20T14:26:41.7852777Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:41.7853353Z  * [new ref]         be612a3e562a2041b3732a33c158eeae4f1dad40 -> pull/2974/merge
+2026-09-20T14:26:41.7898989Z ##[endgroup]
+2026-09-20T14:26:41.7899439Z ##[group]Determining the checkout info
+2026-09-20T14:26:41.7899823Z ##[endgroup]
+2026-09-20T14:26:41.7915343Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T14:26:41.8303623Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T14:26:41.8535108Z ##[group]Checking out the ref
+2026-09-20T14:26:41.8542630Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T14:26:42.6595779Z Note: switching to 'refs/remotes/pull/2974/merge'.
+2026-09-20T14:26:42.6596077Z 
+2026-09-20T14:26:42.6596260Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T14:26:42.6596722Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T14:26:42.6597116Z state without impacting any branches by switching back to a branch.
+2026-09-20T14:26:42.6597346Z 
+2026-09-20T14:26:42.6597516Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T14:26:42.6597877Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T14:26:42.6598073Z 
+2026-09-20T14:26:42.6598202Z   git switch -c <new-branch-name>
+2026-09-20T14:26:42.6598340Z 
+2026-09-20T14:26:42.6598437Z Or undo this operation with:
+2026-09-20T14:26:42.6598565Z 
+2026-09-20T14:26:42.6598627Z   git switch -
+2026-09-20T14:26:42.6598750Z 
+2026-09-20T14:26:42.6598916Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T14:26:42.6599190Z 
+2026-09-20T14:26:42.6603108Z HEAD is now at be612a3 Merge ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T14:26:42.6795438Z ##[endgroup]
+2026-09-20T14:26:42.7094475Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T14:26:42.7293724Z be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:26:42.7328885Z ##[group]Removing auth
+2026-09-20T14:26:42.7329092Z Removing SSH command configuration
+2026-09-20T14:26:42.7335228Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:42.7554990Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:26:43.1470503Z Removing HTTP extra header
+2026-09-20T14:26:43.1479130Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:43.1725551Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:26:43.6460221Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:43.6466443Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:43.6659215Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:43.6659616Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:43.6659950Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:43.6660452Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:43.6697814Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:43.6882579Z D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.6917749Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.7132931Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:43.7312730Z D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.7344580Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.7558213Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:43.7735612Z /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.7777278Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.7993735Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:43.8170563Z /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.8203543Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:26:43.8415702Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:26:44.2257147Z Removing credentials config 'D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config'
+2026-09-20T14:26:44.2265888Z ##[endgroup]
+2026-09-20T14:26:44.2571222Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T14:26:44.2571491Z with:
+2026-09-20T14:26:44.2571603Z   python-version: 3.12
+2026-09-20T14:26:44.2571723Z   check-latest: false
+2026-09-20T14:26:44.2573067Z   token: ***
+2026-09-20T14:26:44.2573183Z   update-environment: true
+2026-09-20T14:26:44.2573316Z   allow-prereleases: false
+2026-09-20T14:26:44.2573434Z   freethreaded: false
+2026-09-20T14:26:44.2573547Z ##[endgroup]
+2026-09-20T14:26:44.3633918Z ##[group]Installed versions
+2026-09-20T14:26:44.3867043Z Successfully set up CPython (3.12.10)
+2026-09-20T14:26:44.3867486Z ##[endgroup]
+2026-09-20T14:26:44.4131058Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T14:26:44.4131311Z with:
+2026-09-20T14:26:44.4131417Z   version: 0.9.26
+2026-09-20T14:26:44.4131526Z   enable-cache: true
+2026-09-20T14:26:44.4131649Z   activate-environment: false
+2026-09-20T14:26:44.4131780Z   no-project: false
+2026-09-20T14:26:44.4131911Z   working-directory: D:\a\hol-guard\hol-guard
+2026-09-20T14:26:44.4133286Z   github-token: ***
+2026-09-20T14:26:44.4133593Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T14:26:44.4133919Z   restore-cache: true
+2026-09-20T14:26:44.4134030Z   save-cache: true
+2026-09-20T14:26:44.4134139Z   prune-cache: true
+2026-09-20T14:26:44.4134243Z   cache-python: false
+2026-09-20T14:26:44.4134362Z   ignore-nothing-to-cache: false
+2026-09-20T14:26:44.4134501Z   ignore-empty-workdir: false
+2026-09-20T14:26:44.4134670Z   download-from-astral-mirror: true
+2026-09-20T14:26:44.4134817Z   add-problem-matchers: true
+2026-09-20T14:26:44.4134939Z   quiet: false
+2026-09-20T14:26:44.4135048Z   resolution-strategy: highest
+2026-09-20T14:26:44.4135272Z env:
+2026-09-20T14:26:44.4135455Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:44.4135722Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:26:44.4135971Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:44.4136189Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:44.4136405Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:44.4136576Z ##[endgroup]
+2026-09-20T14:26:44.5440782Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T14:26:44.6151572Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-pc-windows-msvc.zip" ...
+2026-09-20T14:26:45.0962385Z [command]C:\Windows\system32\tar.exe x -C D:\a\_temp\4ae4ae95-e70a-403a-8265-411a71d4f074 -f D:\a\_temp\ce185c07-4a7c-4cc7-82b6-9bdce3c87ba0
+2026-09-20T14:26:45.2870909Z Set UV_TOOL_BIN_DIR to D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:26:45.2873174Z Added D:\a\_temp\uv-tool-bin-dir to the path
+2026-09-20T14:26:45.2879895Z Added C:\hostedtoolcache\windows\uv\0.9.26\x86_64 to the path
+2026-09-20T14:26:45.2881532Z Set UV_TOOL_DIR to D:\a\_temp\uv-tool-dir
+2026-09-20T14:26:45.2883252Z Set UV_PYTHON_INSTALL_DIR to D:\a\_temp\uv-python-dir
+2026-09-20T14:26:45.2885145Z Added D:\a\_temp\uv-python-dir to the path
+2026-09-20T14:26:45.2897523Z Set UV_CACHE_DIR to D:\a\_temp\setup-uv-cache
+2026-09-20T14:26:45.2897713Z Successfully installed uv version 0.9.26
+2026-09-20T14:26:47.0139463Z Searching files using cache dependency glob: D:\a\hol-guard\hol-guard\**\*requirements*.txt,D:\a\hol-guard\hol-guard\**\*requirements*.in,D:\a\hol-guard\hol-guard\**\*constraints*.txt,D:\a\hol-guard\hol-guard\**\*constraints*.in,D:\a\hol-guard\hol-guard\**\pyproject.toml,D:\a\hol-guard\hol-guard\**\uv.lock,D:\a\hol-guard\hol-guard\**\*.py.lock
+2026-09-20T14:26:47.0189027Z D:\a\hol-guard\hol-guard\.clusterfuzzlite\requirements-atheris.txt
+2026-09-20T14:26:47.0360897Z D:\a\hol-guard\hol-guard\action\pypi-attestations-requirements.in
+2026-09-20T14:26:47.0369163Z D:\a\hol-guard\hol-guard\action\pypi-attestations-requirements.txt
+2026-09-20T14:26:47.0376551Z D:\a\hol-guard\hol-guard\action\scanner-cisco-runtime-requirements.txt
+2026-09-20T14:26:47.0384173Z D:\a\hol-guard\hol-guard\action\scanner-runtime-requirements.txt
+2026-09-20T14:26:47.0984978Z D:\a\hol-guard\hol-guard\distributions\mcpb\pyproject.toml
+2026-09-20T14:26:47.0994708Z D:\a\hol-guard\hol-guard\docker-requirements.txt
+2026-09-20T14:26:47.1201879Z D:\a\hol-guard\hol-guard\pyproject.toml
+2026-09-20T14:26:47.1215572Z D:\a\hol-guard\hol-guard\requirements.txt
+2026-09-20T14:26:47.4259859Z D:\a\hol-guard\hol-guard\uv.lock
+2026-09-20T14:26:47.4285461Z Found 10 files to hash.
+2026-09-20T14:26:47.4291584Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:47.7646743Z Cache hit for: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:48.6109735Z Received 432235 of 432235 (100.0%), 0.8 MBs/sec
+2026-09-20T14:26:48.6111063Z Cache Size: ~0 MB (432235 B)
+2026-09-20T14:26:48.6195606Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/a47e0c4b-5314-4072-94d2-8b987077c6d7/cache.tzst -P -C D:/a/hol-guard/hol-guard --force-local --use-compress-program "zstd -d"
+2026-09-20T14:26:48.8506116Z Cache restored successfully
+2026-09-20T14:26:48.8514020Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:48.9808745Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T14:26:48.9809031Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T14:26:49.0381915Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:26:49.0382145Z env:
+2026-09-20T14:26:49.0382333Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:49.0382590Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:26:49.0382842Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:49.0383072Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:49.0383291Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:49.0383484Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:26:49.0383643Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:26:49.0384964Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:26:49.0385196Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:26:49.0385456Z ##[endgroup]
+2026-09-20T14:26:49.3037488Z Using CPython 3.12.10 interpreter at: C:\hostedtoolcache\windows\Python\3.12.10\x64\python3.exe
+2026-09-20T14:26:49.3038206Z Creating virtual environment at: .venv
+2026-09-20T14:26:49.5347257Z    Building hol-guard @ file:///D:/a/hol-guard/hol-guard
+2026-09-20T14:26:49.5978786Z Downloading ruff (11.5MiB)
+2026-09-20T14:26:49.5982288Z Downloading pygments (1.2MiB)
+2026-09-20T14:26:49.6001895Z Downloading nodejs-wheel-binaries (40.1MiB)
+2026-09-20T14:26:49.6025375Z Downloading pywin32 (9.1MiB)
+2026-09-20T14:26:49.6033793Z Downloading libcst (2.0MiB)
+2026-09-20T14:26:49.6038500Z Downloading pydantic-core (1.9MiB)
+2026-09-20T14:26:49.6042302Z Downloading cryptography (3.7MiB)
+2026-09-20T14:26:49.6062400Z Downloading basedpyright (12.6MiB)
+2026-09-20T14:26:49.8670720Z  Downloaded pydantic-core
+2026-09-20T14:26:50.0586602Z  Downloaded cryptography
+2026-09-20T14:26:50.1315614Z  Downloaded pygments
+2026-09-20T14:26:50.1397908Z  Downloaded libcst
+2026-09-20T14:26:50.2282402Z  Downloaded ruff
+2026-09-20T14:26:50.2415961Z  Downloaded pywin32
+2026-09-20T14:26:50.8740993Z  Downloaded nodejs-wheel-binaries
+2026-09-20T14:26:51.3585846Z  Downloaded basedpyright
+2026-09-20T14:26:51.8224560Z       Built hol-guard @ file:///D:/a/hol-guard/hol-guard
+2026-09-20T14:26:51.8275274Z Prepared 70 packages in 2.30s
+2026-09-20T14:26:52.5376967Z Installed 70 packages in 709ms
+2026-09-20T14:26:52.5378804Z  + annotated-types==0.7.0
+2026-09-20T14:26:52.5379610Z  + anyio==4.14.2
+2026-09-20T14:26:52.5380515Z  + attrs==26.1.0
+2026-09-20T14:26:52.5381212Z  + basedpyright==1.39.8
+2026-09-20T14:26:52.5382014Z  + build==1.5.0
+2026-09-20T14:26:52.5382854Z  + certifi==2026.2.25
+2026-09-20T14:26:52.5383652Z  + cffi==2.0.0
+2026-09-20T14:26:52.5384584Z  + charset-normalizer==3.4.7
+2026-09-20T14:26:52.5385424Z  + click==8.4.1
+2026-09-20T14:26:52.5386392Z  + colorama==0.4.6
+2026-09-20T14:26:52.5386940Z  + coverage==7.13.5
+2026-09-20T14:26:52.5387119Z  + cryptography==50.0.0
+2026-09-20T14:26:52.5388119Z  + h11==0.16.0
+2026-09-20T14:26:52.5389514Z  + hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard)
+2026-09-20T14:26:52.5390447Z  + httpcore==1.0.9
+2026-09-20T14:26:52.5391193Z  + httpx==0.28.1
+2026-09-20T14:26:52.5391972Z  + httpx-sse==0.4.3
+2026-09-20T14:26:52.5392604Z  + idna==3.15
+2026-09-20T14:26:52.5393273Z  + importlib-metadata==8.9.0
+2026-09-20T14:26:52.5393958Z  + iniconfig==2.3.0
+2026-09-20T14:26:52.5394555Z  + jaraco-classes==3.4.0
+2026-09-20T14:26:52.5394763Z  + jaraco-context==6.1.2
+2026-09-20T14:26:52.5395761Z  + jaraco-functools==4.4.0
+2026-09-20T14:26:52.5396364Z  + jsonschema==4.26.0
+2026-09-20T14:26:52.5397120Z  + jsonschema-specifications==2025.9.1
+2026-09-20T14:26:52.5397732Z  + keyring==25.7.0
+2026-09-20T14:26:52.5398383Z  + libcst==1.9.0
+2026-09-20T14:26:52.5399101Z  + linkify-it-py==2.1.0
+2026-09-20T14:26:52.5399833Z  + markdown-it-py==4.0.0
+2026-09-20T14:26:52.5402114Z  + mcp==1.28.1
+2026-09-20T14:26:52.5402356Z  + mdit-py-plugins==0.5.0
+2026-09-20T14:26:52.5402555Z  + mdurl==0.1.2
+2026-09-20T14:26:52.5402726Z  + more-itertools==11.0.1
+2026-09-20T14:26:52.5403320Z  + mutmut==3.7.0
+2026-09-20T14:26:52.5403519Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T14:26:52.5404340Z  + packaging==26.0
+2026-09-20T14:26:52.5405102Z  + platformdirs==4.9.4
+2026-09-20T14:26:52.5405739Z  + pluggy==1.6.0
+2026-09-20T14:26:52.5406226Z  + psutil==7.2.2
+2026-09-20T14:26:52.5407402Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T14:26:52.5407636Z  + pycparser==3.0
+2026-09-20T14:26:52.5408714Z  + pydantic==2.12.5
+2026-09-20T14:26:52.5409236Z  + pydantic-core==2.41.5
+2026-09-20T14:26:52.5409946Z  + pydantic-settings==2.14.1
+2026-09-20T14:26:52.5410600Z  + pygments==2.20.0
+2026-09-20T14:26:52.5411552Z  + pyjwt==2.13.0
+2026-09-20T14:26:52.5412366Z  + pyproject-hooks==1.2.0
+2026-09-20T14:26:52.5413044Z  + pytest==9.0.3
+2026-09-20T14:26:52.5413542Z  + pytest-cov==7.1.0
+2026-09-20T14:26:52.5414642Z  + python-dotenv==1.2.2
+2026-09-20T14:26:52.5414815Z  + python-multipart==0.0.32
+2026-09-20T14:26:52.5415272Z  + pywin32==311
+2026-09-20T14:26:52.5416071Z  + pywin32-ctypes==0.2.3
+2026-09-20T14:26:52.5416722Z  + pyyaml==6.0.3
+2026-09-20T14:26:52.5417244Z  + referencing==0.37.0
+2026-09-20T14:26:52.5417922Z  + regex==2026.4.4
+2026-09-20T14:26:52.5418558Z  + requests==2.33.1
+2026-09-20T14:26:52.5419180Z  + rich==14.2.0
+2026-09-20T14:26:52.5419797Z  + rpds-py==0.30.0
+2026-09-20T14:26:52.5420459Z  + ruff==0.15.17
+2026-09-20T14:26:52.5421087Z  + setproctitle==1.3.7
+2026-09-20T14:26:52.5421734Z  + sse-starlette==3.4.4
+2026-09-20T14:26:52.5422282Z  + starlette==1.3.1
+2026-09-20T14:26:52.5423015Z  + textual==7.5.0
+2026-09-20T14:26:52.5423629Z  + typing-extensions==4.15.0
+2026-09-20T14:26:52.5424383Z  + typing-inspection==0.4.2
+2026-09-20T14:26:52.5424980Z  + uc-micro-py==2.0.0
+2026-09-20T14:26:52.5425679Z  + urllib3==2.7.0
+2026-09-20T14:26:52.5426282Z  + uvicorn==0.40.0
+2026-09-20T14:26:52.5427000Z  + zipp==3.23.0
+2026-09-20T14:26:52.6635491Z ##[group]Run uv run --no-sync pytest tests/test_guard_config_source_io.py tests/test_daemon_config_read_scope.py tests/test_native_slo_failure.py tests/test_native_policy_snapshot_write_safety.py tests/test_windows_config_directory_access.py --tb=short
+2026-09-20T14:26:52.6636649Z [36;1muv run --no-sync pytest tests/test_guard_config_source_io.py tests/test_daemon_config_read_scope.py tests/test_native_slo_failure.py tests/test_native_policy_snapshot_write_safety.py tests/test_windows_config_directory_access.py --tb=short[0m
+2026-09-20T14:26:52.6682766Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:26:52.6682965Z env:
+2026-09-20T14:26:52.6683128Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:52.6683388Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:26:52.6683671Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:52.6683936Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:52.6684162Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:52.6684358Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:26:52.6684520Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:26:52.6684689Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:26:52.6684860Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:26:52.6685005Z ##[endgroup]
+2026-09-20T14:27:00.0741437Z ============================= test session starts =============================
+2026-09-20T14:27:00.0741770Z platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:27:00.0741987Z rootdir: D:\a\hol-guard\hol-guard
+2026-09-20T14:27:00.0742148Z configfile: pyproject.toml
+2026-09-20T14:27:00.0742299Z plugins: anyio-4.14.2, cov-7.1.0
+2026-09-20T14:27:00.0742434Z collected 88 items
+2026-09-20T14:27:00.0742540Z 
+2026-09-20T14:27:00.2871533Z tests\test_guard_config_source_io.py ............s......sssssssssssss.   [ 37%]
+2026-09-20T14:27:04.1194034Z tests\test_daemon_config_read_scope.py .......s......                    [ 53%]
+2026-09-20T14:27:04.2015070Z tests\test_native_slo_failure.py ....s.......                            [ 67%]
+2026-09-20T14:27:04.2799133Z tests\test_native_policy_snapshot_write_safety.py sssss............      [ 86%]
+2026-09-20T14:27:05.2297807Z tests\test_windows_config_directory_access.py ............               [100%]
+2026-09-20T14:27:05.2298036Z 
+2026-09-20T14:27:05.2298244Z ======================= 67 passed, 21 skipped in 6.17s ========================
+2026-09-20T14:27:05.4928320Z ##[group]Run uv run --no-sync pytest tests/test_installed_transition_windows_owner.py tests/test_installed_transition_windows_files.py --tb=short
+2026-09-20T14:27:05.4928891Z [36;1muv run --no-sync pytest tests/test_installed_transition_windows_owner.py tests/test_installed_transition_windows_files.py --tb=short[0m
+2026-09-20T14:27:05.4974397Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:05.4974592Z env:
+2026-09-20T14:27:05.4974747Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:05.4974996Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:05.4975236Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:05.4975458Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:05.4975675Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:05.4975888Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:05.4976048Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:05.4976203Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:05.4976369Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:05.4976511Z ##[endgroup]
+2026-09-20T14:27:07.5463226Z ============================= test session starts =============================
+2026-09-20T14:27:07.5463519Z platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:27:07.5463718Z rootdir: D:\a\hol-guard\hol-guard
+2026-09-20T14:27:07.5463871Z configfile: pyproject.toml
+2026-09-20T14:27:07.5464001Z plugins: anyio-4.14.2, cov-7.1.0
+2026-09-20T14:27:07.5464128Z collected 23 items
+2026-09-20T14:27:07.5464200Z 
+2026-09-20T14:27:10.0161083Z tests\test_installed_transition_windows_owner.py ..........              [ 43%]
+2026-09-20T14:27:10.5924748Z tests\test_installed_transition_windows_files.py .............           [100%]
+2026-09-20T14:27:10.5924966Z 
+2026-09-20T14:27:10.5925090Z ============================= 23 passed in 3.20s ==============================
+2026-09-20T14:27:10.8804057Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+2026-09-20T14:27:10.8804509Z [36;1mrustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy[0m
+2026-09-20T14:27:10.8804767Z [36;1mrustup default 1.88.0[0m
+2026-09-20T14:27:10.8852548Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:10.8852743Z env:
+2026-09-20T14:27:10.8852900Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:10.8853151Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:10.8853399Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:10.8853617Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:10.8853836Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:10.8854029Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:10.8854224Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:10.8854385Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:10.8854547Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:10.8854699Z ##[endgroup]
+2026-09-20T14:27:12.2158647Z info: syncing channel updates for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:27:12.9749399Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:27:13.0139612Z info: downloading 5 components
+2026-09-20T14:27:23.4914560Z 
+2026-09-20T14:27:23.5169444Z   1.88.0-x86_64-pc-windows-msvc installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:27:23.5169669Z 
+2026-09-20T14:27:23.5366493Z info: using existing install for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:27:23.5402351Z info: default toolchain set to 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:27:23.5406033Z 
+2026-09-20T14:27:23.5567153Z   1.88.0-x86_64-pc-windows-msvc unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:27:23.5567416Z 
+2026-09-20T14:27:23.6363311Z ##[group]Run cargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1 --no-deps | Out-Null
+2026-09-20T14:27:23.6364046Z [36;1mcargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1 --no-deps | Out-Null[0m
+2026-09-20T14:27:23.6364779Z [36;1mrustfmt --edition 2021 --check rust/crates/guard-runtime/src/main.rs[0m
+2026-09-20T14:27:23.6365311Z [36;1mcargo clippy --manifest-path rust/Cargo.toml --locked --workspace --all-targets -- -D warnings[0m
+2026-09-20T14:27:23.6365815Z [36;1mcargo test --manifest-path rust/Cargo.toml --locked --workspace --all-targets[0m
+2026-09-20T14:27:23.6432840Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:23.6433026Z env:
+2026-09-20T14:27:23.6433174Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:23.6433413Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:23.6433686Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:23.6433891Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:23.6434092Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:23.6434278Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:23.6434423Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:23.6434566Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:23.6434718Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:23.6434851Z ##[endgroup]
+2026-09-20T14:27:25.9463573Z     Updating crates.io index
+2026-09-20T14:27:26.3430670Z  Downloading crates ...
+2026-09-20T14:27:26.4886234Z   Downloaded bitflags v1.3.2
+2026-09-20T14:27:26.5210278Z   Downloaded windows-link v0.1.3
+2026-09-20T14:27:26.5262620Z   Downloaded windows-result v0.3.4
+2026-09-20T14:27:26.5515995Z   Downloaded zmij v1.0.23
+2026-09-20T14:27:26.5713897Z   Downloaded windows-permissions v0.2.4
+2026-09-20T14:27:26.6799145Z   Downloaded unicode-ident v1.0.24
+2026-09-20T14:27:26.7018281Z   Downloaded serde_derive v1.0.229
+2026-09-20T14:27:26.7220659Z   Downloaded typenum v1.20.1
+2026-09-20T14:27:26.7347576Z   Downloaded memchr v2.8.3
+2026-09-20T14:27:26.7826819Z   Downloaded ntapi v0.4.3
+2026-09-20T14:27:26.8014824Z   Downloaded serde v1.0.229
+2026-09-20T14:27:26.8221643Z   Downloaded serde_json v1.0.151
+2026-09-20T14:27:26.9064184Z   Downloaded aho-corasick v1.1.5
+2026-09-20T14:27:26.9339265Z   Downloaded regex v1.13.1
+2026-09-20T14:27:26.9672971Z   Downloaded getrandom v0.3.4
+2026-09-20T14:27:27.0059976Z   Downloaded sysinfo v0.37.2
+2026-09-20T14:27:27.0851787Z   Downloaded serde_core v1.0.229
+2026-09-20T14:27:27.1007146Z   Downloaded getrandom v0.2.17
+2026-09-20T14:27:27.1210134Z   Downloaded syn v3.0.3
+2026-09-20T14:27:27.2102398Z   Downloaded syn v2.0.119
+2026-09-20T14:27:27.3543721Z   Downloaded windows-future v0.2.1
+2026-09-20T14:27:27.3627650Z   Downloaded regex-syntax v0.8.11
+2026-09-20T14:27:27.4037557Z   Downloaded windows-core v0.61.2
+2026-09-20T14:27:27.4279788Z   Downloaded thiserror v2.0.20
+2026-09-20T14:27:27.5038707Z   Downloaded quote v1.0.47
+2026-09-20T14:27:27.5239420Z   Downloaded digest v0.10.7
+2026-09-20T14:27:27.5362265Z   Downloaded crypto-common v0.1.7
+2026-09-20T14:27:27.5440088Z   Downloaded windows-threading v0.1.0
+2026-09-20T14:27:27.5545710Z   Downloaded windows-strings v0.4.2
+2026-09-20T14:27:27.5655520Z   Downloaded windows-numerics v0.2.0
+2026-09-20T14:27:27.5869890Z   Downloaded windows-collections v0.2.0
+2026-09-20T14:27:27.6058500Z   Downloaded untrusted v0.9.0
+2026-09-20T14:27:27.6160602Z   Downloaded thiserror-impl v2.0.20
+2026-09-20T14:27:27.6287880Z   Downloaded shlex v2.0.1
+2026-09-20T14:27:27.6358097Z   Downloaded regex-automata v0.4.18
+2026-09-20T14:27:27.7248203Z   Downloaded sha2 v0.10.9
+2026-09-20T14:27:27.8152256Z   Downloaded find-msvc-tools v0.1.11
+2026-09-20T14:27:27.9036548Z   Downloaded cpufeatures v0.2.17
+2026-09-20T14:27:27.9544234Z   Downloaded windows-interface v0.59.3
+2026-09-20T14:27:27.9814239Z   Downloaded windows-implement v0.60.2
+2026-09-20T14:27:28.8491678Z   Downloaded version_check v0.9.5
+2026-09-20T14:27:29.0066527Z   Downloaded hex v0.4.3
+2026-09-20T14:27:29.0875115Z   Downloaded generic-array v0.14.7
+2026-09-20T14:27:29.1500208Z   Downloaded fs2 v0.4.3
+2026-09-20T14:27:29.2283175Z   Downloaded cfg-if v1.0.4
+2026-09-20T14:27:29.2941280Z   Downloaded cc v1.4.4
+2026-09-20T14:27:29.4435545Z   Downloaded proc-macro2 v1.0.107
+2026-09-20T14:27:29.7988709Z   Downloaded itoa v1.0.18
+2026-09-20T14:27:29.8315672Z   Downloaded block-buffer v0.10.4
+2026-09-20T14:27:29.8755592Z   Downloaded libc v0.2.189
+2026-09-20T14:27:32.2474088Z   Downloaded winapi v0.3.9
+2026-09-20T14:27:33.0729493Z   Downloaded ring v0.17.14
+2026-09-20T14:27:33.5251778Z   Downloaded windows v0.61.3
+2026-09-20T14:27:37.2050480Z    Compiling proc-macro2 v1.0.107
+2026-09-20T14:27:37.2050818Z    Compiling quote v1.0.47
+2026-09-20T14:27:37.2051563Z    Compiling unicode-ident v1.0.24
+2026-09-20T14:27:37.2051795Z    Compiling version_check v0.9.5
+2026-09-20T14:27:37.2882721Z     Checking typenum v1.20.1
+2026-09-20T14:27:37.4094040Z    Compiling generic-array v0.14.7
+2026-09-20T14:27:37.7649347Z     Checking cfg-if v1.0.4
+2026-09-20T14:27:37.7913845Z     Checking cpufeatures v0.2.17
+2026-09-20T14:27:37.8185186Z     Checking memchr v2.8.3
+2026-09-20T14:27:38.0579604Z     Checking hex v0.4.3
+2026-09-20T14:27:38.1661685Z    Compiling serde_core v1.0.229
+2026-09-20T14:27:40.3147731Z    Compiling winapi v0.3.9
+2026-09-20T14:27:40.7687911Z     Checking crypto-common v0.1.7
+2026-09-20T14:27:40.8679387Z     Checking block-buffer v0.10.4
+2026-09-20T14:27:40.9581965Z     Checking digest v0.10.7
+2026-09-20T14:27:41.0436811Z    Compiling syn v3.0.3
+2026-09-20T14:27:41.0847896Z     Checking sha2 v0.10.9
+2026-09-20T14:27:41.1142455Z    Compiling serde v1.0.229
+2026-09-20T14:27:41.5368658Z    Compiling zmij v1.0.23
+2026-09-20T14:27:41.9626185Z    Compiling serde_json v1.0.151
+2026-09-20T14:27:42.2224655Z     Checking itoa v1.0.18
+2026-09-20T14:27:42.3018000Z    Compiling thiserror v2.0.20
+2026-09-20T14:27:42.8190755Z     Checking guard-rules v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rules)
+2026-09-20T14:27:42.8985840Z     Checking bitflags v1.3.2
+2026-09-20T14:27:42.9079879Z    Compiling libc v0.2.189
+2026-09-20T14:27:42.9395928Z     Checking aho-corasick v1.1.5
+2026-09-20T14:27:43.1201661Z     Checking windows-permissions v0.2.4
+2026-09-20T14:27:43.3023451Z    Compiling serde_derive v1.0.229
+2026-09-20T14:27:43.3023868Z    Compiling thiserror-impl v2.0.20
+2026-09-20T14:27:43.5336223Z     Checking guard-runtime-windows-process v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime-windows-process)
+2026-09-20T14:27:43.6278255Z     Checking regex-syntax v0.8.11
+2026-09-20T14:27:43.9001212Z     Checking windows-link v0.1.3
+2026-09-20T14:27:43.9533389Z    Compiling syn v2.0.119
+2026-09-20T14:27:44.6976396Z     Checking guard-secure-fs v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-secure-fs)
+2026-09-20T14:27:44.8841727Z     Checking windows-strings v0.4.2
+2026-09-20T14:27:45.0157130Z     Checking windows-result v0.3.4
+2026-09-20T14:27:45.1217081Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T14:27:45.1673401Z     Checking regex-automata v0.4.18
+2026-09-20T14:27:45.8682631Z    Compiling shlex v2.0.1
+2026-09-20T14:27:46.0178712Z    Compiling cc v1.4.4
+2026-09-20T14:27:46.6753831Z     Checking regex v1.13.1
+2026-09-20T14:27:46.7336760Z     Checking guard-contracts v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-contracts)
+2026-09-20T14:27:46.9069395Z     Checking guard-scanner v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-scanner)
+2026-09-20T14:27:47.0399708Z     Checking windows-threading v0.1.0
+2026-09-20T14:27:47.1270437Z    Compiling ntapi v0.4.3
+2026-09-20T14:27:47.2708236Z    Compiling ring v0.17.14
+2026-09-20T14:27:47.3474845Z    Compiling getrandom v0.3.4
+2026-09-20T14:27:47.4028151Z    Compiling windows-interface v0.59.3
+2026-09-20T14:27:47.6627781Z    Compiling windows-implement v0.60.2
+2026-09-20T14:27:48.2556273Z     Checking windows-core v0.61.2
+2026-09-20T14:27:48.4846264Z     Checking windows-numerics v0.2.0
+2026-09-20T14:27:48.5690911Z     Checking windows-future v0.2.1
+2026-09-20T14:27:48.7404425Z     Checking windows-collections v0.2.0
+2026-09-20T14:27:48.8766490Z     Checking windows v0.61.3
+2026-09-20T14:27:49.1303413Z     Checking guard-hook-core v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-hook-core)
+2026-09-20T14:27:49.1500673Z     Checking guard-command v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-command)
+2026-09-20T14:27:49.2787322Z     Checking getrandom v0.2.17
+2026-09-20T14:27:49.3418990Z     Checking untrusted v0.9.0
+2026-09-20T14:27:49.3925170Z     Checking guard-policy-snapshot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-policy-snapshot)
+2026-09-20T14:27:49.8006356Z     Checking guard-rule-contract v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rule-contract)
+2026-09-20T14:27:49.9157537Z     Checking fs2 v0.4.3
+2026-09-20T14:27:51.7769325Z     Checking guard-offline-regex-pilot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-offline-regex-pilot)
+2026-09-20T14:28:10.0466370Z     Checking sysinfo v0.37.2
+2026-09-20T14:28:10.4866965Z     Checking hol-guard-runtime v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime)
+2026-09-20T14:28:13.6794152Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 47.78s
+2026-09-20T14:28:13.8546841Z    Compiling typenum v1.20.1
+2026-09-20T14:28:13.8547999Z    Compiling cfg-if v1.0.4
+2026-09-20T14:28:13.8548446Z    Compiling cpufeatures v0.2.17
+2026-09-20T14:28:13.8554782Z    Compiling hex v0.4.3
+2026-09-20T14:28:13.8953796Z    Compiling memchr v2.8.3
+2026-09-20T14:28:13.9010829Z    Compiling serde_core v1.0.229
+2026-09-20T14:28:14.0756007Z    Compiling winapi v0.3.9
+2026-09-20T14:28:14.6717188Z    Compiling generic-array v0.14.7
+2026-09-20T14:28:14.6943233Z    Compiling zmij v1.0.23
+2026-09-20T14:28:15.0059627Z    Compiling bitflags v1.3.2
+2026-09-20T14:28:15.0665503Z    Compiling itoa v1.0.18
+2026-09-20T14:28:15.1692275Z    Compiling block-buffer v0.10.4
+2026-09-20T14:28:15.2243323Z    Compiling crypto-common v0.1.7
+2026-09-20T14:28:15.2728764Z    Compiling thiserror v2.0.20
+2026-09-20T14:28:15.3042123Z    Compiling digest v0.10.7
+2026-09-20T14:28:15.3404626Z    Compiling libc v0.2.189
+2026-09-20T14:28:15.4639867Z    Compiling sha2 v0.10.9
+2026-09-20T14:28:15.4687105Z    Compiling aho-corasick v1.1.5
+2026-09-20T14:28:15.8692154Z    Compiling serde v1.0.229
+2026-09-20T14:28:16.0088318Z    Compiling guard-rules v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rules)
+2026-09-20T14:28:16.1066962Z    Compiling windows-permissions v0.2.4
+2026-09-20T14:28:16.4067490Z    Compiling serde_json v1.0.151
+2026-09-20T14:28:16.4257456Z    Compiling regex-syntax v0.8.11
+2026-09-20T14:28:16.8051643Z    Compiling guard-runtime-windows-process v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime-windows-process)
+2026-09-20T14:28:17.7858532Z    Compiling guard-contracts v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-contracts)
+2026-09-20T14:28:18.1077277Z    Compiling guard-secure-fs v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-secure-fs)
+2026-09-20T14:28:18.1802359Z    Compiling regex-automata v0.4.18
+2026-09-20T14:28:18.9289277Z    Compiling windows-link v0.1.3
+2026-09-20T14:28:18.9859735Z    Compiling windows-result v0.3.4
+2026-09-20T14:28:19.2440581Z    Compiling windows-strings v0.4.2
+2026-09-20T14:28:19.6131396Z    Compiling windows-core v0.61.2
+2026-09-20T14:28:19.9847499Z    Compiling windows-threading v0.1.0
+2026-09-20T14:28:20.0869706Z    Compiling windows-future v0.2.1
+2026-09-20T14:28:20.1300739Z    Compiling regex v1.13.1
+2026-09-20T14:28:20.4932597Z    Compiling guard-scanner v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-scanner)
+2026-09-20T14:28:20.5811774Z    Compiling guard-command v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-command)
+2026-09-20T14:28:21.1487472Z    Compiling guard-hook-core v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-hook-core)
+2026-09-20T14:28:21.4467948Z    Compiling windows-numerics v0.2.0
+2026-09-20T14:28:21.7873216Z    Compiling windows-collections v0.2.0
+2026-09-20T14:28:21.8190220Z    Compiling ntapi v0.4.3
+2026-09-20T14:28:21.9813004Z    Compiling windows v0.61.3
+2026-09-20T14:28:22.9514793Z    Compiling getrandom v0.2.17
+2026-09-20T14:28:23.0530210Z    Compiling untrusted v0.9.0
+2026-09-20T14:28:23.1355855Z    Compiling ring v0.17.14
+2026-09-20T14:28:23.1583241Z    Compiling getrandom v0.3.4
+2026-09-20T14:28:23.2703439Z    Compiling guard-policy-snapshot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-policy-snapshot)
+2026-09-20T14:28:24.7621490Z    Compiling guard-rule-contract v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rule-contract)
+2026-09-20T14:28:25.2088145Z    Compiling fs2 v0.4.3
+2026-09-20T14:28:25.3705884Z    Compiling guard-offline-regex-pilot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-offline-regex-pilot)
+2026-09-20T14:28:48.4885625Z    Compiling sysinfo v0.37.2
+2026-09-20T14:28:54.5751716Z    Compiling hol-guard-runtime v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime)
+2026-09-20T14:29:01.3113938Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 47.56s
+2026-09-20T14:29:01.3190091Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_command-b4b4f74efe380151.exe)
+2026-09-20T14:29:01.3268768Z 
+2026-09-20T14:29:01.3268998Z running 57 tests
+2026-09-20T14:29:01.3278028Z test command_common_cli_matchers::tests::unknown_operations_and_incompatible_configs_are_explicit_errors ... ok
+2026-09-20T14:29:01.3279350Z test command_common_cli_matchers::tests::uncertain_or_oversized_commands_do_not_become_empty_match_results ... ok
+2026-09-20T14:29:01.3280181Z test command_common_cli_matchers::tests::canonical_shell_parser_feeds_typed_common_cli_matchers ... ok
+2026-09-20T14:29:01.3282643Z test command_option_parsing::tests::expired_outer_deadline_preserves_uncertainty_direction ... ok
+2026-09-20T14:29:01.3284575Z test command_option_parsing::tests::absent_requirements_are_vacuously_true_and_unknown_arity_can_consume_help ... ok
+2026-09-20T14:29:01.3294373Z test command_option_parsing::unicode::tests::unicode_reference_categories_are_disjoint_sorted_and_python_compatible ... ok
+2026-09-20T14:29:01.3309572Z test command_specialized_matchers::tests::canonical_parser_feeds_database_php_curl_and_expansion_matchers ... ok
+2026-09-20T14:29:01.3336855Z test command_common_cli_matchers::tests::seven_operations_match_python_reference_vectors_in_segment_order ... ok
+2026-09-20T14:29:01.3337902Z test command_option_parsing::tests::matches_python_option_oracles ... ok
+2026-09-20T14:29:01.3353966Z test command_specialized_matchers::tests::inherited_deadline_confidence_and_size_limits_propagate_errors ... ok
+2026-09-20T14:29:01.3354885Z test command_specialized_matchers::tests::literal_configuration_preserves_the_reviewed_ascii_grammar_and_limits ... ok
+2026-09-20T14:29:01.3361629Z test command_specialized_matchers::tests::literal_evidence_requires_parser_provenance_and_exact_semantic_shape ... ok
+2026-09-20T14:29:01.3362807Z test command_specialized_matchers::unicode_tests::ascii_projection_preserves_unicode_boundaries_and_special_lowercase_mappings ... ok
+2026-09-20T14:29:01.3432533Z test command_specialized_matchers::unicode_tests::unicode_configurations_cannot_enter_the_ascii_comparison_contract ... ok
+2026-09-20T14:29:01.3433955Z test command_specialized_matchers::tests::config_admission_rejects_unknown_or_invalid_semantics ... ok
+2026-09-20T14:29:01.3435149Z test command_specialized_matchers::unicode_tests::unicode_operands_keep_python_and_php_launcher_classification_exact ... ok
+2026-09-20T14:29:01.3502499Z test command_structured_matchers::tests::expired_deadline_never_returns_empty_or_partial_evidence ... ok
+2026-09-20T14:29:01.3503429Z test command_specialized_matchers::tests::eight_operations_match_python_or_report_declared_capability_misses ... ok
+2026-09-20T14:29:01.3505731Z test command_structured_matchers::tests::opaque_unicode_operands_and_python_whitespace_are_supported ... ok
+2026-09-20T14:29:01.3609509Z test command_structured_matchers::tests::unsupported_unicode_case_mapping_is_error_not_a_negative_match ... ok
+2026-09-20T14:29:01.3625508Z test executable_flag_contract::tests::ambiguous_contracts_are_rejected_before_flag_interpretation ... ok
+2026-09-20T14:29:01.3626951Z test executable_flag_contract::tests::python_base_defaults_and_value_option_union ... ok
+2026-09-20T14:29:01.3628106Z test native_command_program::bench::native_command_program_component_diagnostic ... ignored, diagnostic component timing; run release mode explicitly
+2026-09-20T14:29:01.3629574Z test command_structured_matchers::tests::rejects_unknown_fields_and_invalid_matcher_grammars_before_admission ... ok
+2026-09-20T14:29:01.3841697Z test command_structured_matchers::tests::matches_python_specialized_oracle_for_all_eight_operations ... ok
+2026-09-20T14:29:01.4020371Z test command_option_parsing::tests::state_exhaustion_keeps_destructive_matching_and_denies_safety_proof ... ok
+2026-09-20T14:29:01.8468850Z test native_command_program::dns_control_tests::dns_projection_permission_enable_still_requires_configurable_program_gate ... ok
+2026-09-20T14:29:01.8492815Z test native_command_program::dns_control_tests::dns_projection_cross_layer_and_global_authority_floors_stay_strict ... ok
+2026-09-20T14:29:01.8513910Z test native_command_program::dns_control_tests::dns_projection_raw_validation_precedes_admission ... ok
+2026-09-20T14:29:01.8540163Z test native_command_program::dns_control_tests::dns_projection_recognizes_only_exact_kind_and_identifiers ... ok
+2026-09-20T14:29:01.8755365Z test native_command_program::dns_control_tests::dns_projection_missing_provider_catalog_target_is_rejected ... ok
+2026-09-20T14:29:01.8757084Z test native_command_program::matrix::native_command_catalog_control_matrix ... ignored, component matrix; generate trusted fixtures and run release mode explicitly
+2026-09-20T14:29:01.8796837Z test native_command_program::tests::a_previously_reviewable_command_becomes_a_hard_floor_after_permission_disable ... ok
+2026-09-20T14:29:01.9122599Z test native_command_program::dns_control_tests::dns_projection_raw_and_derived_bounds_remain_distinct ... ok
+2026-09-20T14:29:01.9341131Z test native_command_program::tests::compatibility_safe_commands_and_ruleless_permissions_obey_controls ... ok
+2026-09-20T14:29:01.9699624Z test native_command_program::dns_control_tests::dns_projection_aggregate_matches_explicit_provider_evaluation ... ok
+2026-09-20T14:29:01.9701037Z test native_command_program::tests::controls_are_bound_to_program_and_both_independent_revisions ... ok
+2026-09-20T14:29:01.9737103Z test native_command_program::tests::disabled_permission_and_failed_authority_cannot_become_allow ... ok
+2026-09-20T14:29:01.9825746Z test native_command_program::tests::graph_depth_proof_cannot_be_bypassed_by_memoized_shared_children ... ok
+2026-09-20T14:29:01.9870328Z test native_command_program::tests::local_opt_in_selects_ollama_and_safe_evidence_stays_on_its_own_segment ... ok
+2026-09-20T14:29:01.9882546Z test native_command_program::tests::packaged_program_is_admitted_once_and_exposes_explicit_coverage ... ok
+2026-09-20T14:29:01.9883433Z test pretool::tests::allows_bounded_exact_commands ... ok
+2026-09-20T14:29:01.9884003Z test pretool::tests::blocks_destructive_and_device_commands ... ok
+2026-09-20T14:29:01.9884537Z test pretool::tests::defers_only_exact_safe_git_helper_context ... ok
+2026-09-20T14:29:01.9937150Z test pretool::tests::denies_uncertain_or_networked_commands ... ok
+2026-09-20T14:29:01.9998226Z test pretool::tests::reviews_dotenv_family_shell_reads ... ok
+2026-09-20T14:29:01.9998804Z test pretool::tests::reviews_home_relative_secret_paths ... ok
+2026-09-20T14:29:02.0019001Z test pretool::tests::reviews_only_materially_risky_variants_of_safe_commands ... ok
+2026-09-20T14:29:02.0055469Z test tests::marks_complex_shell_forms_uncertain_without_partial_segments ... ok
+2026-09-20T14:29:02.0055987Z test tests::matches_python_shlex_escape_and_whitespace_semantics ... ok
+2026-09-20T14:29:02.0056521Z test tests::parses_simple_command_without_execution ... ok
+2026-09-20T14:29:02.0057194Z test tests::preserves_quotes_environment_and_path_override ... ok
+2026-09-20T14:29:02.0057723Z test tests::rejects_oversized_commands_without_partial_exact_parse ... ok
+2026-09-20T14:29:02.0058216Z test tests::splits_pipeline_but_not_quoted_pipe ... ok
+2026-09-20T14:29:02.3941182Z test native_command_program::tests::complete_observations_match_independent_python_reference_models ... ok
+2026-09-20T14:29:02.4321944Z test native_command_program::dns_control_tests::dns_projection_unique_collisions_preserve_disable_dominance_and_other_providers ... ok
+2026-09-20T14:29:02.7398074Z test native_command_program::tests::admission_rejects_tampered_unknown_and_invalid_nodes ... ok
+2026-09-20T14:29:02.7398369Z 
+2026-09-20T14:29:02.7398558Z test result: ok. 55 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.41s
+2026-09-20T14:29:02.7398795Z 
+2026-09-20T14:29:02.7443471Z      Running tests\command_compatibility.rs (rust\target\debug\deps\command_compatibility-e5b1a697f98b3917.exe)
+2026-09-20T14:29:02.7521780Z 
+2026-09-20T14:29:02.7522188Z running 7 tests
+2026-09-20T14:29:02.7531368Z test budget_and_parser_failures_cannot_become_empty_success ... ok
+2026-09-20T14:29:02.7532084Z test compound_attribution_keeps_every_segment_and_deduplicates_identity ... ok
+2026-09-20T14:29:02.7533131Z test git_disabled_permission_attribution_is_not_lost_on_native_safe_commands ... ok
+2026-09-20T14:29:02.7533785Z test github_reads_have_permission_attribution_without_fabricated_rules ... ok
+2026-09-20T14:29:02.7535300Z test graphql_remains_owned_unsupported_instead_of_permissionless_allow ... ok
+2026-09-20T14:29:02.7573223Z test frozen_independent_capability_and_admission_vectors ... ok
+2026-09-20T14:29:02.8154063Z test audited_inventory_is_exactly_the_null_matcher_catalog_subset ... ok
+2026-09-20T14:29:02.8154375Z 
+2026-09-20T14:29:02.8154631Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+2026-09-20T14:29:02.8154952Z 
+2026-09-20T14:29:02.8175875Z      Running tests\pretool_generic.rs (rust\target\debug\deps\pretool_generic-f3fe6fd6c0b15932.exe)
+2026-09-20T14:29:02.8248486Z 
+2026-09-20T14:29:02.8248750Z running 6 tests
+2026-09-20T14:29:02.8255826Z test bounds_reject_oversized_payload ... ok
+2026-09-20T14:29:02.8264841Z test allows_bounded_command_without_returning_raw_content ... ok
+2026-09-20T14:29:02.8275820Z test benign_command_cannot_erase_independent_sensitive_path_floor ... ok
+2026-09-20T14:29:02.8280772Z test tool_classification_uses_token_boundaries ... ok
+2026-09-20T14:29:02.8281160Z test covers_generic_action_classes_and_dangerous_process_floor ... ok
+2026-09-20T14:29:02.8281522Z test covers_prompt_harness_unknown_conflicts_and_bounds ... ok
+2026-09-20T14:29:02.8281679Z 
+2026-09-20T14:29:02.8281851Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:02.8282053Z 
+2026-09-20T14:29:02.8295510Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_contracts-25344bda50e1cc30.exe)
+2026-09-20T14:29:02.8362600Z 
+2026-09-20T14:29:02.8362766Z running 3 tests
+2026-09-20T14:29:02.8367595Z test tests::response_omits_empty_optionals ... ok
+2026-09-20T14:29:02.8368404Z test tests::hook_envelope_v2_rejects_unknown_fields ... ok
+2026-09-20T14:29:02.8368840Z test tests::generic_pre_tool_result_rejects_raw_content_and_unknown_fields ... ok
+2026-09-20T14:29:02.8369117Z 
+2026-09-20T14:29:02.8369356Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:02.8369649Z 
+2026-09-20T14:29:02.8382264Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_hook_core-6c0426fb07a4956a.exe)
+2026-09-20T14:29:02.8455817Z 
+2026-09-20T14:29:02.8456005Z running 9 tests
+2026-09-20T14:29:02.8458470Z test output_reference_tests::benchmark_output_extraction ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T14:29:02.8462122Z test tests::empty_inline_output_is_allowed_with_digest ... ok
+2026-09-20T14:29:02.8817111Z test tests::clean_inline_output_is_allowed ... ok
+2026-09-20T14:29:02.8828561Z test tests::observe_inline_secret_preserves_original_with_digest ... ok
+2026-09-20T14:29:02.8848271Z test tests::secret_inline_output_is_blocked ... ok
+2026-09-20T14:29:02.8849053Z test tests::stderr_is_scanned_even_when_stdout_exists ... ok
+2026-09-20T14:29:02.8862587Z test tests::upstream_deadline_is_not_restarted_before_scanning ... ok
+2026-09-20T14:29:03.1721207Z test tests::observe_truncated_inline_secret_remains_blocked_without_digest ... ok
+2026-09-20T14:29:03.7993197Z test output_reference_tests::extraction_preserves_unicode_limits_order_and_structural_truncation ... ok
+2026-09-20T14:29:03.7993508Z 
+2026-09-20T14:29:03.7993698Z test result: ok. 8 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.95s
+2026-09-20T14:29:03.7993906Z 
+2026-09-20T14:29:03.8013429Z      Running tests\decision_io.rs (rust\target\debug\deps\decision_io-4a102cd594a6bb7a.exe)
+2026-09-20T14:29:03.8094619Z 
+2026-09-20T14:29:03.8095020Z running 2 tests
+2026-09-20T14:29:03.8145463Z test source_growth_after_expected_output_is_not_equivalent ... ok
+2026-09-20T14:29:03.8145878Z test source_replacement_between_observations_is_not_equivalent ... ok
+2026-09-20T14:29:03.8146081Z 
+2026-09-20T14:29:03.8146267Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-09-20T14:29:03.8146475Z 
+2026-09-20T14:29:03.8158997Z      Running tests\windows_source.rs (rust\target\debug\deps\windows_source-6d73b879bee4aa0d.exe)
+2026-09-20T14:29:03.8233689Z 
+2026-09-20T14:29:03.8233906Z running 9 tests
+2026-09-20T14:29:03.8308280Z test matching_hash_cannot_allow_a_hard_linked_source ... ok
+2026-09-20T14:29:03.8310861Z test external_sensitive_names_and_non_checkout_sources_stay_denied ... ok
+2026-09-20T14:29:03.8365449Z test matching_hash_cannot_allow_a_junction_before_source_classification ... ok
+2026-09-20T14:29:03.8571105Z test pi_and_omp_preserve_plaintext_byte_and_deadline_bounds ... ok
+2026-09-20T14:29:03.8630145Z test observe_source_secret_preserves_the_verified_original_digest ... ok
+2026-09-20T14:29:03.8690244Z test external_source_requires_pi_or_omp_and_explicit_permission ... ok
+2026-09-20T14:29:03.8727969Z test source_secret_is_blocked_without_plaintext_or_path_in_response ... ok
+2026-09-20T14:29:03.8732106Z test pi_and_omp_preserve_unicode_newline_equivalence_and_response_schema ... ok
+2026-09-20T14:29:03.8748231Z test pi_and_omp_reject_unbound_reference_fields ... ok
+2026-09-20T14:29:03.8748454Z 
+2026-09-20T14:29:03.8748640Z test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+2026-09-20T14:29:03.8748841Z 
+2026-09-20T14:29:03.8768754Z      Running unittests src\main.rs (rust\target\debug\deps\guard_offline_regex_pilot-8e4421b42be96876.exe)
+2026-09-20T14:29:03.8848222Z 
+2026-09-20T14:29:03.8848556Z running 4 tests
+2026-09-20T14:29:03.8853563Z test tests::eof_and_unterminated_frames_differ ... ok
+2026-09-20T14:29:03.8866971Z test tests::protocol_rejects_unknown_fields ... ok
+2026-09-20T14:29:03.8867249Z test tests::separate_documents_never_complete_split_candidates ... ok
+2026-09-20T14:29:04.0832035Z test tests::unsupported_inputs_and_candidate_overflow_are_errors ... ok
+2026-09-20T14:29:04.0832378Z 
+2026-09-20T14:29:04.0832611Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+2026-09-20T14:29:04.0832922Z 
+2026-09-20T14:29:04.0852639Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_policy_snapshot-897ae80c1f77a1ad.exe)
+2026-09-20T14:29:04.0941858Z 
+2026-09-20T14:29:04.0942268Z running 6 tests
+2026-09-20T14:29:04.0947496Z test tests::canonical_json_sorts_object_keys ... ok
+2026-09-20T14:29:04.0971694Z test tests::rejects_expired_and_replayed_generation ... ok
+2026-09-20T14:29:04.0972114Z test tests::rejects_mutated_effective_policy_and_mac ... ok
+2026-09-20T14:29:04.0972554Z test tests::rejects_unknown_risk_selector_and_conflicting_harness_aliases ... ok
+2026-09-20T14:29:04.0974395Z test tests::rejects_runtime_rule_and_protocol_mismatch ... ok
+2026-09-20T14:29:04.0978421Z test tests::validates_authenticated_v3_snapshot ... ok
+2026-09-20T14:29:04.0978635Z 
+2026-09-20T14:29:04.0978855Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:04.0979162Z 
+2026-09-20T14:29:04.0994579Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_rule_contract-ad03b8c387e422ec.exe)
+2026-09-20T14:29:04.1091363Z 
+2026-09-20T14:29:04.1095287Z running 1 test
+2026-09-20T14:29:04.1966442Z test tests::contract_is_stable_and_complete ... ok
+2026-09-20T14:29:04.1966629Z 
+2026-09-20T14:29:04.1966809Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+2026-09-20T14:29:04.1967000Z 
+2026-09-20T14:29:04.1987606Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_rules-c31716a5069b0a89.exe)
+2026-09-20T14:29:04.2114239Z 
+2026-09-20T14:29:04.2114594Z running 1 test
+2026-09-20T14:29:04.2123433Z test tests::digest_is_stable_shape ... ok
+2026-09-20T14:29:04.2123653Z 
+2026-09-20T14:29:04.2123812Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:04.2124006Z 
+2026-09-20T14:29:04.2151641Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_runtime_windows_process-2bdf65529e6da592.exe)
+2026-09-20T14:29:04.2227438Z 
+2026-09-20T14:29:04.2227603Z running 30 tests
+2026-09-20T14:29:04.2231441Z test windows::job_retirement::tests::empty_job_reported_after_the_deadline_does_not_pass ... ok
+2026-09-20T14:29:04.2232133Z test windows::job_retirement::tests::a_fresh_grace_clock_cannot_extend_its_parent_cleanup_deadline ... ok
+2026-09-20T14:29:04.2232665Z test windows::job_retirement::tests::direct_child_exit_does_not_prove_a_nonempty_job_retired ... ok
+2026-09-20T14:29:04.2233795Z test windows::job_retirement::tests::expired_budget_does_not_start_another_accounting_query ... ok
+2026-09-20T14:29:04.2234344Z test windows::job_retirement::tests::failed_job_accounting_query_is_not_an_empty_job ... ok
+2026-09-20T14:29:04.2235951Z test windows::job_retirement::tests::nonzero_active_process_count_requires_later_observed_zero ... ok
+2026-09-20T14:29:04.2236735Z test windows::process_cleanup::tests::failed_cleanup_preserves_original_and_cleanup_causes ... ok
+2026-09-20T14:29:04.2237609Z test windows::process_cleanup::tests::failed_job_termination_is_not_hidden_by_direct_child_exit ... ok
+2026-09-20T14:29:04.2238194Z test windows::process_cleanup::tests::failed_termination_and_failed_wait_are_both_reported ... ok
+2026-09-20T14:29:04.2238773Z test windows::process_cleanup::tests::late_failed_direct_wait_preserves_wait_error_and_deadline_failure ... ok
+2026-09-20T14:29:04.2239854Z test windows::process_cleanup::tests::no_job_cleanup_does_not_accept_direct_exit_observed_after_its_budget ... ok
+2026-09-20T14:29:04.2240554Z test windows::process_cleanup::tests::original_setup_error_is_preserved_when_cleanup_succeeds ... ok
+2026-09-20T14:29:04.2241284Z test windows::process_cleanup::tests::signaled_owned_handle_proves_exit_after_termination_race ... ok
+2026-09-20T14:29:04.2241927Z test windows::process_cleanup::tests::successful_termination_request_does_not_hide_wait_timeout ... ok
+2026-09-20T14:29:04.2242828Z test windows::process_lifecycle::tests::duration_to_wait_millis_never_uses_infinite_sentinel ... ok
+2026-09-20T14:29:04.2292883Z test windows::source_files::tests::original_leaf_symlink_is_rejected ... ok
+2026-09-20T14:29:04.2297273Z test windows::source_files::tests::drive_alias_tests::relative_children_keep_the_original_parent_after_dos_drive_remapping ... ok
+2026-09-20T14:29:04.2305431Z test windows::source_files::tests::held_identity_detects_a_security_descriptor_change ... ok
+2026-09-20T14:29:04.2308439Z test windows::source_files::tests::source_paths_reject_devices_streams_and_parent_components ... ok
+2026-09-20T14:29:04.2314950Z test windows::source_files::tests::held_source_blocks_parent_and_leaf_replacement_and_writers ... ok
+2026-09-20T14:29:04.2332747Z test windows::source_files::tests::source_read_obeys_denied_read_acl_without_repairing_it ... ok
+2026-09-20T14:29:04.2335522Z test windows::source_files::tests::source_open_rejects_an_existing_writer ... ok
+2026-09-20T14:29:04.2357386Z test windows::source_files::tests::source_read_preserves_inherited_permissions_and_real_identity ... ok
+2026-09-20T14:29:04.2358321Z test windows::spawn_setup_tests::kill_on_close_is_set_and_only_explicitly_released_by_handoff ... ok
+2026-09-20T14:29:04.2358902Z test windows::spawn_setup_tests::failed_setup_retains_cleanup_failure_after_actual_child_reap ... ok
+2026-09-20T14:29:04.2403885Z test windows::spawn_setup_tests::actual_child_is_assigned_before_resume_and_exits_normally ... ok
+2026-09-20T14:29:04.2408493Z test windows::spawn_setup_tests::rejected_job_setup_never_resumes_and_reaps_the_actual_suspended_child ... ok
+2026-09-20T14:29:04.2409209Z test windows::source_files::tests::original_parent_junction_is_rejected_before_canonicalization ... ok
+2026-09-20T14:29:04.2425613Z test windows::spawn_setup_tests::valid_exit_code_259_is_a_completed_unsuccessful_exit ... ok
+2026-09-20T14:29:04.2459747Z test windows::tests::inherited_handle_is_not_leaked ... ok
+2026-09-20T14:29:04.2459932Z 
+2026-09-20T14:29:04.2460231Z test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+2026-09-20T14:29:04.2460482Z 
+2026-09-20T14:29:04.2471524Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_scanner-c3ebc24ccaea8803.exe)
+2026-09-20T14:29:04.2535778Z 
+2026-09-20T14:29:04.2535914Z running 8 tests
+2026-09-20T14:29:04.2537763Z test prefilter_bench_tests::benchmark_scanner_prefilter ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T14:29:04.2798071Z test tests::detects_split_token_across_chunks ... ok
+2026-09-20T14:29:04.2823135Z test tests::inert_credential_expressions_are_suppressed_during_local_retry ... ok
+2026-09-20T14:29:04.2894035Z test tests::detects_github_token_without_returning_sample ... ok
+2026-09-20T14:29:04.2913946Z test tests::realistic_medium_credentials_survive_local_retry ... ok
+2026-09-20T14:29:04.2914428Z test tests::documentation_placeholder_is_suppressed ... ok
+2026-09-20T14:29:04.9531073Z test prefilter_bench_tests::prefilter_retains_per_match_suppression_and_ordering ... ok
+2026-09-20T14:29:08.3892022Z test tests::unicode_overlap_and_document_boundaries_are_isolated ... ok
+2026-09-20T14:29:08.3892442Z 
+2026-09-20T14:29:08.3892642Z test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 4.14s
+2026-09-20T14:29:08.3892858Z 
+2026-09-20T14:29:08.3915564Z      Running unittests examples\mcp_text_facts_pilot.rs (rust\target\debug\examples\mcp_text_facts_pilot-a6f03ea2460db92b.exe)
+2026-09-20T14:29:08.3991412Z 
+2026-09-20T14:29:08.3991667Z running 6 tests
+2026-09-20T14:29:08.4096201Z test tests::failed_output_is_not_retried_or_reported_as_a_complete_request ... ok
+2026-09-20T14:29:08.4165891Z test tests::empty_input_and_repeated_complete_frames_have_exact_responses ... ok
+2026-09-20T14:29:08.4190924Z test tests::fixed_predicates_preserve_ascii_boundaries_and_boolean_groups ... ok
+2026-09-20T14:29:08.4191518Z test tests::python_whitespace_is_explicit_and_no_text_normalization_occurs ... ok
+2026-09-20T14:29:08.5079773Z test tests::partial_invalid_and_non_increasing_frames_fail_without_a_reply ... ok
+2026-09-20T14:29:08.8092602Z test tests::whole_packet_byte_limit_includes_the_header ... ok
+2026-09-20T14:29:08.8092838Z 
+2026-09-20T14:29:08.8093014Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+2026-09-20T14:29:08.8093217Z 
+2026-09-20T14:29:08.8114608Z      Running unittests src\lib.rs (rust\target\debug\deps\guard_secure_fs-1af1dca9f4015b70.exe)
+2026-09-20T14:29:08.8190368Z 
+2026-09-20T14:29:08.8190570Z running 8 tests
+2026-09-20T14:29:08.8244711Z test tests::bounded_read_rejects_hard_linked_source ... ok
+2026-09-20T14:29:08.8247416Z test tests::sensitive_paths_are_classified ... ok
+2026-09-20T14:29:08.8255011Z test tests::bounded_read_rejects_oversized_windows_file_from_held_metadata ... ok
+2026-09-20T14:29:08.8265448Z test tests::bounded_read_hashes_windows_file_with_held_identity ... ok
+2026-09-20T14:29:08.8302533Z test tests::source_classifier_allows_workflow_and_sibling_git_source ... ok
+2026-09-20T14:29:08.8306964Z test tests::source_classifier_rejects_sensitive_external_filename_without_substring_false_positive ... ok
+2026-09-20T14:29:08.8310745Z test tests::bounded_windows_read_respects_the_callers_byte_limit ... ok
+2026-09-20T14:29:08.8316666Z test tests::source_classifier_rejects_hidden_sensitive_and_escape_paths ... ok
+2026-09-20T14:29:08.8316890Z 
+2026-09-20T14:29:08.8317059Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-09-20T14:29:08.8317278Z 
+2026-09-20T14:29:08.8329695Z      Running tests\decision_io.rs (rust\target\debug\deps\decision_io-349b2a8231d8726c.exe)
+2026-09-20T14:29:08.8401456Z 
+2026-09-20T14:29:08.8401661Z running 2 tests
+2026-09-20T14:29:08.8435399Z test bounded_read_rejects_source_growth_beyond_limit ... ok
+2026-09-20T14:29:08.8435833Z test bounded_read_rejects_truncation_limit_before_materializing_more_bytes ... ok
+2026-09-20T14:29:08.8436029Z 
+2026-09-20T14:29:08.8436202Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:08.8436421Z 
+2026-09-20T14:29:08.8446053Z      Running unittests src\main.rs (rust\target\debug\deps\hol_guard_runtime-6fc3864b04520b7c.exe)
+2026-09-20T14:29:08.8556025Z 
+2026-09-20T14:29:08.8556243Z running 203 tests
+2026-09-20T14:29:08.8572897Z test approval::approval_replay_memory::tests::restart_epoch_rejects_old_artifact_state ... ok
+2026-09-20T14:29:08.8573621Z test approval::approval_replay_memory::tests::full_binding_mutation_is_rejected_before_state_transition ... ok
+2026-09-20T14:29:08.8575953Z test approval::approval_replay_memory::tests::transition_tests::every_transition_prunes_expired_entries ... ok
+2026-09-20T14:29:08.8576697Z test approval::approval_replay_memory::tests::transition_tests::failed_emit_restores_claim_for_retry ... ok
+2026-09-20T14:29:08.8577360Z test approval::approval_replay_memory::tests::expiry_and_double_consume_are_atomic ... ok
+2026-09-20T14:29:09.0358466Z test approval::approval_replay_memory::tests::capacity_is_bounded_without_eviction ... ok
+2026-09-20T14:29:09.2728945Z test approval::approval_v4::tests::assertion_mutations_fail_before_replay_claim ... ok
+2026-09-20T14:29:09.3262153Z test approval::approval_v4::tests::es256_assertion_validates_and_rejects_zero_after_counter_established ... ok
+2026-09-20T14:29:09.4082064Z test approval::approval_v4::tests::negative_tests::v4_request_policy_harness_expiry_and_authority_bindings_fail_closed ... ok
+2026-09-20T14:29:09.4618778Z test approval::approval_v4::tests::ed25519_assertion_validates_and_persists_counter_zero_and_one ... ok
+2026-09-20T14:29:09.4621155Z test approval::approval_v4_crypto::tests::base64url_rejects_noncanonical_and_round_trips ... ok
+2026-09-20T14:29:09.4622320Z test approval::approval_v4_crypto::tests::cbor_rejects_duplicate_keys_and_indefinite_maps ... ok
+2026-09-20T14:29:09.6843867Z test approval::approval_v4::tests::negative_tests::webauthn_origin_rp_flags_type_and_signature_are_verified_in_rust ... ok
+2026-09-20T14:29:09.6946293Z test approval::tests::binding_mutations_are_rejected_even_when_resigned ... ok
+2026-09-20T14:29:09.7907057Z test approval::approval_v4::tests::webauthn_optional_cross_origin_is_treated_as_false ... ok
+2026-09-20T14:29:09.7912782Z test approval::approval_v4::tests::negative_tests::v4_restart_and_concurrent_claims_fail_closed ... ok
+2026-09-20T14:29:09.9018649Z test approval::tests::lifecycle_tests::artifact_binding_mutation_and_hard_floors_fail_before_claim ... ok
+2026-09-20T14:29:09.9132709Z test approval::tests::lifecycle_tests::artifact_timing_nonce_and_integrity_are_checked ... ok
+2026-09-20T14:29:10.0424809Z test approval::tests::lifecycle_tests::consume_requires_claim_and_is_single_use ... ok
+2026-09-20T14:29:10.0798242Z test approval::tests::lifecycle_tests::binding_derivation_uses_separate_runtime_purposes ... ok
+2026-09-20T14:29:10.1216407Z test approval::tests::lifecycle_tests::policy_material_and_public_key_replacement_cannot_authorize ... ok
+2026-09-20T14:29:10.1629055Z test approval::tests::lifecycle_tests::malformed_oversize_and_deep_requests_fail_closed ... ok
+2026-09-20T14:29:10.3997494Z test approval::tests::request_identity_is_opaque_and_rust_derived_when_missing ... ok
+2026-09-20T14:29:10.4038648Z test edge::identity::tests::borrowed_identity_binds_source_policy_and_arbitrary_json_values ... ok
+2026-09-20T14:29:10.4077036Z test approval::tests::valid_artifact_allows_exact_review_and_returns_private_receipt ... ok
+2026-09-20T14:29:10.4092540Z test edge::identity::tests::malformed_payload_and_explicit_request_ids_keep_error_contract ... ok
+2026-09-20T14:29:10.4173312Z test edge::identity::tests::borrowed_identity_preserves_legacy_bytes_and_root_only_omissions ... ok
+2026-09-20T14:29:10.4244029Z test approval::tests::lifecycle_tests::policy_push_after_claim_before_consume_cannot_authorize_execution ... ok
+2026-09-20T14:29:10.4248927Z test edge::serialization::tests::counting_rejects_overflow_and_excess_without_partial_success ... ok
+2026-09-20T14:29:10.4262294Z test edge::serialization::tests::serializer_failure_is_not_accepted_as_a_short_encoding ... ok
+2026-09-20T14:29:10.4304550Z test edge::serialization::tests::borrowed_canonical_values_match_existing_bytes_for_every_json_kind ... ok
+2026-09-20T14:29:10.6115267Z test edge::tests::evaluates_complete_cursor_file_envelope_as_native_generic_result ... ok
+2026-09-20T14:29:10.6161014Z test edge::tests::evaluates_cursor_dotenv_read_as_sensitive_review ... ok
+2026-09-20T14:29:10.7106766Z test approval::tests::lifecycle_tests::replay_and_concurrent_claim_are_single_use ... ok
+2026-09-20T14:29:10.7558088Z test edge::tests::ingress_time_consumes_the_original_edge_deadline ... ok
+2026-09-20T14:29:10.7930019Z test edge::tests::normalizes_harness_event_and_extracts_pretool_command ... ok
+2026-09-20T14:29:10.8697411Z test edge::tests::rejects_conflicting_payload_event_aliases ... ok
+2026-09-20T14:29:10.8768087Z test edge::tests::rejects_declared_and_payload_event_mismatch ... ok
+2026-09-20T14:29:10.9799273Z test edge::tests::rejects_malformed_source_reference_before_review ... ok
+2026-09-20T14:29:11.0289107Z test edge::tests::rejects_unknown_harness_before_command_evaluation ... ok
+2026-09-20T14:29:11.0630135Z test edge::tests::request_digest_excludes_deadline_and_json_field_order ... ok
+2026-09-20T14:29:11.1919868Z test edge::tests::request_digest_excludes_root_adapter_timestamps_but_binds_nested_arguments ... ok
+2026-09-20T14:29:11.2941030Z test edge::tests::unknown_and_ambiguous_pretool_payloads_never_receive_an_allow_floor ... ok
+2026-09-20T14:29:11.2944576Z test hardening::tests::client_disconnects_are_not_runtime_integrity_failures ... ok
+2026-09-20T14:29:11.2945835Z test hardening::tests::descriptor_pressure_uses_bounded_exponential_backoff ... ok
+2026-09-20T14:29:11.2947263Z test hardening::tests::interrupted_accept_is_retried_without_sleep ... ok
+2026-09-20T14:29:11.2950459Z test hardening::tests::network_change_backoff_is_bounded ... ok
+2026-09-20T14:29:11.2951951Z test hardening::tests::request_budget_expires_stale_queued_work ... ok
+2026-09-20T14:29:11.4221187Z test edge::tests::validated_identity_retains_cross_language_golden_digest ... ok
+2026-09-20T14:29:11.5064429Z test edge::tests::evaluates_generic_pretool_for_supported_harness_aliases ... ok
+2026-09-20T14:29:12.6644198Z test edge::identity::tests::streamed_envelope_size_preserves_exact_limit_and_rejects_one_extra_byte ... ok
+2026-09-20T14:29:12.9605878Z test managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success ... ok
+2026-09-20T14:29:13.8405994Z test managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error ... ok
+2026-09-20T14:29:13.8543021Z test managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success ... ok
+2026-09-20T14:29:13.8553983Z test managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error ... ok
+2026-09-20T14:29:13.8819843Z test managed_resident::lease::tests::busy_lease_directory_is_retained_as_live ... ok
+2026-09-20T14:29:13.8863976Z test managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once ... ok
+2026-09-20T14:29:13.9033590Z test managed_resident::lease::tests::initial_lease_lock_retries_until_the_current_holder_releases ... ok
+2026-09-20T14:29:13.9297321Z test managed_resident::lease::tests::initial_lease_lock_returns_busy_at_the_retry_deadline ... ok
+2026-09-20T14:29:14.1907896Z test managed_resident::lease::tests::dropping_owned_malformed_lease_removes_the_owned_artifact ... ok
+2026-09-20T14:29:14.2379194Z test managed_resident::lease::tests::stale_malformed_lease_is_removed_by_liveness_cleanup ... ok
+2026-09-20T14:29:14.2865883Z test managed_resident::lease::tests::uninspectable_lease_path_retains_the_resident ... ok
+2026-09-20T14:29:14.2867674Z test managed_resident::managed_resident_windows::tests::liveness_pipe_child_probe ... ok
+2026-09-20T14:29:14.2886232Z test managed_resident::managed_resident_windows::tests::liveness_pipe_eof_probe ... ok
+2026-09-20T14:29:14.3270856Z test managed_resident::managed_resident_windows::tests::liveness_pipe_remains_open_while_child_runs_and_closes_after_wait ... ok
+2026-09-20T14:29:14.3274993Z test managed_resident::managed_resident_windows::wait_tests::every_failed_wait_closes_stdin_then_cleans_up_once_and_preserves_failure ... ok
+2026-09-20T14:29:14.3279491Z test managed_resident::managed_resident_windows::wait_tests::forced_or_unobserved_descendant_retirement_is_never_a_normal_exit ... ok
+2026-09-20T14:29:14.3283411Z test managed_resident::managed_resident_windows::wait_tests::managed_timeout_child_probe ... ok
+2026-09-20T14:29:14.3285171Z test managed_resident::managed_resident_windows::wait_tests::managed_timeout_descendant_probe ... ok
+2026-09-20T14:29:14.3286260Z test managed_resident::managed_resident_windows::wait_tests::observed_exits_close_stdin_without_forced_cleanup ... ok
+2026-09-20T14:29:14.3530908Z test managed_resident::lease::tests::lease_directory_entry_overflow_is_retained_as_live ... ok
+2026-09-20T14:29:14.8201971Z test managed_resident::managed_resident_windows::wait_tests::supervisor_wait_failures_terminate_the_actual_child_and_its_descendant ... ok
+2026-09-20T14:29:14.9059029Z test managed_resident::restart_budget::tests::authenticated_stop_clears_restart_attempts ... ok
+2026-09-20T14:29:14.9454570Z test managed_resident::restart_budget::tests::interrupted_windows_replace_restores_previous_budget ... ok
+2026-09-20T14:29:14.9522666Z test managed_resident::restart_budget::tests::restart_budget_lock_retains_directory_binding_until_drop ... ok
+2026-09-20T14:29:14.9621538Z test managed_resident::restart_budget::tests::windows_budget_existence_requires_private_regular_file_handle ... ok
+2026-09-20T14:29:15.0083790Z test managed_resident::restart_budget::tests::repeated_updates_replace_budget_without_leaving_temporary_state ... ok
+2026-09-20T14:29:15.1311737Z test managed_resident::retry_tests::managed_restart_preserves_fatal_exchange_failures_after_owner_exit ... ok
+2026-09-20T14:29:15.1312440Z test managed_resident::retry_tests::managed_retry_owner_child ... ok
+2026-09-20T14:29:15.1314976Z test managed_resident::tests::client_deadline_is_bounded ... ok
+2026-09-20T14:29:15.2362525Z test managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success ... ok
+2026-09-20T14:29:15.2364936Z test managed_resident::tests::client_stream_eof_is_clean_and_partial_headers_fail_closed ... ok
+2026-09-20T14:29:15.2369566Z test managed_resident::tests::client_stream_frames_are_bounded_and_big_endian ... ok
+2026-09-20T14:29:15.2371001Z test managed_resident::tests::generation_parser_rejects_zero_and_non_numeric ... ok
+2026-09-20T14:29:15.2970623Z test managed_resident::retry_tests::managed_restart_still_allows_connection_unavailable_before_exchange ... ok
+2026-09-20T14:29:15.3144907Z test managed_resident::tests::managed_owner_lock_allows_overlapping_private_directory_binds ... ok
+2026-09-20T14:29:15.4138767Z test managed_resident::tests::lease_directory_overflow_fails_closed_without_unbounded_collection ... ok
+2026-09-20T14:29:15.4210208Z test managed_resident::tests::client_leases_keep_shared_resident_alive_until_last_client_closes ... ok
+2026-09-20T14:29:15.4212627Z test managed_resident::tests::stale_process_identity_errors_are_platform_scoped ... ok
+2026-09-20T14:29:15.4213990Z test managed_resident::tests::stale_transport_retry_allowlist_preserves_auth_and_integrity_failures ... ok
+2026-09-20T14:29:15.4215391Z test managed_resident::windows_handoff::tests::deadline_expiry_before_proof_after_proof_and_after_disarm_all_clean_up ... ok
+2026-09-20T14:29:15.4217170Z test managed_resident::windows_handoff::tests::handoff_requires_readiness_before_releasing_and_preserves_cleanup_failure ... ok
+2026-09-20T14:29:15.4219251Z test managed_resident::windows_handoff::tests::readiness_matches_only_the_started_supervisor_generation_and_token ... ok
+2026-09-20T14:29:15.4220632Z test native_phase_observation::macro_tests::default_macros_erase_phase_and_export_dependencies ... ok
+2026-09-20T14:29:15.4221946Z test native_phase_observation::macro_tests::observation_macro_returns_original_values_and_evaluates_once ... ok
+2026-09-20T14:29:15.4223608Z test native_phase_observation::macro_tests::propagation_remains_outside_the_observed_call ... ok
+2026-09-20T14:29:15.5767108Z test oneshot::tests::concurrent_stale_snapshot_cannot_succeed_after_newer_floor ... ok
+2026-09-20T14:29:15.7207244Z test oneshot::tests::fresh_process_state_rejects_a_snapshot_not_matching_durable_authority ... ok
+2026-09-20T14:29:15.9072119Z test managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request ... ok
+2026-09-20T14:29:15.9083425Z test oneshot::tests::rejects_generation_reuse_for_a_different_policy ... ok
+2026-09-20T14:29:16.0487129Z test oneshot::tests::rejects_stale_generation_after_newer_snapshot ... ok
+2026-09-20T14:29:16.0489201Z test policy_enforcement::tests::action_floor_matrix_rejects_inconsistent_decision_fields ... ok
+2026-09-20T14:29:16.0491870Z test policy_enforcement::tests::conflicting_harness_aliases_fail_closed ... ok
+2026-09-20T14:29:16.0494194Z test policy_enforcement::tests::conflicting_harness_risk_aliases_fail_closed ... ok
+2026-09-20T14:29:16.0497202Z test policy_enforcement::tests::conflicting_request_selectors_fail_closed ... ok
+2026-09-20T14:29:16.0497992Z test policy_enforcement::tests::diagnostic::native_posttool_policy_component_diagnostic ... ignored, explicit local policy diagnostic; fixture path required
+2026-09-20T14:29:16.0499873Z test policy_enforcement::tests::observe_policy_block_raises_existing_review_to_non_overridable_floor ... ok
+2026-09-20T14:29:16.0501794Z test policy_enforcement::tests::observe_pre_policy_floor_is_non_blocking_but_intrinsic_block_is_hard ... ok
+2026-09-20T14:29:16.0503567Z test policy_enforcement::tests::observe_preserves_every_intrinsic_non_allow_pre_floor ... ok
+2026-09-20T14:29:16.0507379Z test policy_enforcement::tests::observe_preserves_intrinsic_block_but_does_not_enforce_policy_only_floor ... ok
+2026-09-20T14:29:16.0509010Z test policy_enforcement::tests::policy_allow_cannot_lower_intrinsic_review_or_block ... ok
+2026-09-20T14:29:16.0510443Z test policy_enforcement::tests::policy_block_raises_intrinsic_allow ... ok
+2026-09-20T14:29:16.0513200Z test policy_enforcement::tests::post_intrinsic_block_cannot_be_lowered_by_allow_policy ... ok
+2026-09-20T14:29:16.0515336Z test policy_enforcement::tests::post_policy_fields_raise_without_python_semantic_input ... ok
+2026-09-20T14:29:16.0522899Z test policy_enforcement::tests::post_warning_policy_preserves_allow_with_warning ... ok
+2026-09-20T14:29:16.0527809Z test policy_enforcement::tests::unknown_post_action_is_review_even_when_default_allows ... ok
+2026-09-20T14:29:16.0530741Z test policy_enforcement::tests::unreadable_tool_remains_unknown_under_allow_policy ... ok
+2026-09-20T14:29:16.0535128Z test policy_enforcement::tests::warning_policy_preserves_allow_with_warning ... ok
+2026-09-20T14:29:16.0696912Z test policy_store::approval_authority::tests::fresh_private_state_without_public_authority_is_unenrolled ... ok
+2026-09-20T14:29:16.0705466Z test policy_store::approval_authority::tests::test_record_contains_distinct_provenance_bindings ... ok
+2026-09-20T14:29:16.0710498Z test policy_store::approval_authority::tests::test_root_is_only_a_test_fixture ... ok
+2026-09-20T14:29:16.0797361Z test policy_store::approval_enrollment::tests::transition_lock_rejects_concurrent_owner_and_recovers_on_release ... ok
+2026-09-20T14:29:16.0952681Z test oneshot::tests::rejects_zero_generation_before_establishing_a_floor ... ok
+2026-09-20T14:29:16.1783447Z test policy_store::approval_v4_authority::tests::malformed_cose_and_missing_secure_state_never_load ... ok
+2026-09-20T14:29:16.1786230Z test policy_store::approval_v4_enrollment::tests::origins_are_canonical_and_bound_to_a_valid_rp_host ... ok
+2026-09-20T14:29:16.1863530Z test policy_store::policy_store_authority::tests::watcher_samples_fingerprint_after_observed_lock ... ok
+2026-09-20T14:29:16.1881937Z test policy_store::policy_store_persistence::windows_recovery_tests::authority_recovery_rejects_non_file_backup ... ok
+2026-09-20T14:29:16.2055229Z test policy_store::policy_store_persistence::windows_recovery_tests::authority_recovery_replaces_only_valid_private_backup ... ok
+2026-09-20T14:29:16.2542199Z test policy_store::policy_store_persistence::windows_recovery_tests::authority_replace_succeeds_while_a_reader_holds_the_target ... ok
+2026-09-20T14:29:16.4856821Z test policy_store::approval_v4_authority::tests::rotation_is_strictly_monotonic_and_revocation_is_terminal ... ok
+2026-09-20T14:29:16.4870346Z test policy_store::tests::authenticated_edge_preserves_clean_default_warning ... ok
+2026-09-20T14:29:16.5317339Z test managed_resident::tests::stale_lease_cleanup_requires_a_dead_process_identity ... ok
+2026-09-20T14:29:16.8677526Z test policy_store::tests::authority_fingerprint_detects_same_size_in_place_rewrite ... ok
+2026-09-20T14:29:16.8684151Z test policy_store::tests::authenticated_observe_edge_preserves_intrinsic_pretool_floor ... ok
+2026-09-20T14:29:16.8696341Z test managed_resident::tests::owner_liveness_expires_after_launcher_and_all_clients_disappear ... ok
+2026-09-20T14:29:17.3793692Z test policy_store::tests::command_authority_tests::mutation_lock_is_nonblocking_and_shared_lease_spans_decision_lifetime ... ok
+2026-09-20T14:29:17.5665078Z test policy_store::tests::command_authority_tests::python_signed_authority_vectors_match_native_lease_and_floor_codecs ... ok
+2026-09-20T14:29:17.9018111Z test policy_store::tests::command_authority_tests::closed_mutation_marker_blocks_old_decisions_and_late_acknowledgements ... ok
+2026-09-20T14:29:17.9159856Z test policy_store::tests::command_authority_tests::marker_mac_and_recovery_epoch_are_both_bound_to_exact_retained_floor ... ok
+2026-09-20T14:29:17.9858686Z test policy_store::tests::command_floor_tests::extension_program_changes_are_bound_to_policy_integrity ... ok
+2026-09-20T14:29:18.2580762Z test policy_store::tests::command_floor_tests::command_control_revisions_are_independent_and_survive_restart ... ok
+2026-09-20T14:29:18.4449304Z test policy_store::tests::compiled_generations_share_one_immutable_snapshot_and_reject_conflicts_before_publish ... ok
+2026-09-20T14:29:18.4974803Z test policy_store::tests::command_floor_tests::floor_mac_rejects_rewritten_or_removed_independent_revisions ... ok
+2026-09-20T14:29:18.4978295Z test policy_store::tests::command_floor_tests::degraded_and_quarantined_snapshots_retain_protected_control_floor ... ok
+2026-09-20T14:29:18.4995207Z test policy_store::tests::fixture_tests::fixture_rewrite_truncates_private_file_without_weakening_create_new ... ok
+2026-09-20T14:29:18.8280838Z test policy_store::tests::fixture_tests::noncommand_review_tests::malformed_and_present_commands_without_controls_do_not_claim_noncommand_scope ... ok
+2026-09-20T14:29:18.9279892Z test policy_store::tests::fixture_tests::noncommand_review_tests::noncommand_scope_preserves_nontrivial_command_floors_and_intrinsic_blocks ... ok
+2026-09-20T14:29:19.0370452Z test policy_store::tests::fixture_tests::noncommand_review_tests::current_signed_noncommand_reviews_have_distinct_receipt_scope ... ok
+2026-09-20T14:29:19.1377424Z test policy_store::tests::generation_rollback_and_same_generation_mutation_are_rejected ... ok
+2026-09-20T14:29:19.7438342Z test policy_store::tests::migration_tests::legacy_snapshot_and_floor_migrate_to_one_authority_record ... ok
+2026-09-20T14:29:19.7915323Z test policy_store::tests::missing_snapshot_is_not_ready_but_push_can_install_it ... ok
+2026-09-20T14:29:19.7935837Z test policy_store::tests::migration_tests::floor_only_migration_preserves_generation_and_allows_only_newer_push ... ok
+2026-09-20T14:29:19.9340771Z test policy_store::tests::push_rejects_unknown_fields_without_mutating_state ... ok
+2026-09-20T14:29:19.9342309Z test policy_store::tests::windows_scope_aliases_share_one_digest_identity ... ok
+2026-09-20T14:29:20.1133539Z test policy_store::tests::restarted_resident_applies_installed_policy_without_request_time_io ... ok
+2026-09-20T14:29:20.1143198Z test policy_store::tests::restart_rehydrates_snapshot_and_hook_validation_uses_memory ... ok
+2026-09-20T14:29:20.1359420Z test resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read ... ok
+2026-09-20T14:29:20.2796255Z test policy_store::tests::fault_tests::authority_write_failures_at_each_boundary_are_retryable_without_rollback ... ok
+2026-09-20T14:29:20.2806082Z test resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged ... ok
+2026-09-20T14:29:20.2811746Z test resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error ... ok
+2026-09-20T14:29:20.2813803Z test resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading ... ok
+2026-09-20T14:29:20.2815095Z test resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access ... ok
+2026-09-20T14:29:20.2816821Z test resident_client::tests::partial_or_flush_request_write_is_never_retryable ... ok
+2026-09-20T14:29:20.2818181Z test resident_client::tests::rejects_non_loopback_tcp_endpoint ... ok
+2026-09-20T14:29:20.2819379Z test resident_client::tests::response_eof_and_reset_are_never_retryable ... ok
+2026-09-20T14:29:20.2822798Z test resident_client::tests::response_teardown_after_flushed_request_is_never_retryable ... ok
+2026-09-20T14:29:20.2825187Z test resident_protocol::tests::approval_error_transport_is_finite ... ok
+2026-09-20T14:29:20.2829113Z test resident_protocol::tests::approval_requests_have_a_smaller_raw_payload_bound ... ok
+2026-09-20T14:29:20.2839653Z test resident_protocol::tests::command_control_error_transport_preserves_only_registered_fixed_codes ... ok
+2026-09-20T14:29:20.2845186Z test resident_protocol::tests::lifecycle_disposition_follows_strictly_validated_operation ... ok
+2026-09-20T14:29:20.2849507Z test resident_state::resident_state_files::tests::windows_lock_violations_are_contention ... ok
+2026-09-20T14:29:20.2851230Z test resident_state::resident_state_files::tests::would_block_is_lock_contention ... ok
+2026-09-20T14:29:20.2853747Z test resident_state::resident_state_files::windows_security::tests::windows_owner_allowlist_rejects_unrelated_principals ... ok
+2026-09-20T14:29:20.2875099Z test resident_state::tests::already_private_directory_allows_overlapping_binds ... ok
+2026-09-20T14:29:20.3485611Z test resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads ... ok
+2026-09-20T14:29:20.3579833Z test resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget ... ok
+2026-09-20T14:29:20.4391072Z test resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget ... ok
+2026-09-20T14:29:20.6226285Z test resident_state::tests::home_state_discovery_allows_nonmatching_entries_within_bound ... ok
+2026-09-20T14:29:20.6649973Z test resident_state::tests::newly_created_directory_binding_denies_rename_until_drop ... ok
+2026-09-20T14:29:20.6650562Z test resident_state::tests::home_state_discovery_rejects_seventeenth_matching_scope ... ok
+2026-09-20T14:29:20.6933353Z test resident_state::tests::private_lock_file_rejects_a_private_root_outside_the_target_scope ... ok
+2026-09-20T14:29:20.7008723Z test resident_state::tests::process_identity_rejects_a_reused_same_binary_pid_marker ... ok
+2026-09-20T14:29:20.8346056Z test resident_state::tests::home_state_discovery_fails_closed_on_total_entry_overflow ... ok
+2026-09-20T14:29:20.8898726Z test resident_state::tests::preferred_runtime_scope_is_found_after_the_fallback_scope_bound ... ok
+2026-09-20T14:29:21.0439795Z test resident_state::tests::stale_startup_lock_recovery_preserves_lockfile_for_reuse ... ok
+2026-09-20T14:29:21.0961371Z test resident_state::tests::startup_lock_allows_overlapping_private_directory_binds ... ok
+2026-09-20T14:29:21.2985327Z test resident_state::tests::startup_lock_drop_preserves_stable_private_lockfile ... ok
+2026-09-20T14:29:21.4131106Z test resident_state::tests::startup_lock_holds_advisory_lock_until_drop ... ok
+2026-09-20T14:29:22.0120940Z test resident_state::tests::startup_lock_repeated_acquisition_rewrites_without_growth ... ok
+2026-09-20T14:29:22.0130848Z test resident_state::tests::state_mac_rejects_endpoint_mutation ... ok
+2026-09-20T14:29:22.0222561Z test resident_state::tests::verify_windows_private_directory_accepts_the_configured_root ... ok
+2026-09-20T14:29:22.1050595Z test resident_state::tests::windows_create_new_rejects_existing_file_without_mutating_it ... ok
+2026-09-20T14:29:22.2418192Z test resident_state::tests::windows_state_scope_and_token_state_are_owner_private ... ok
+2026-09-20T14:29:22.2418677Z test strict_json::tests::benchmark_timeout_projection ... ignored, diagnostic release microbenchmark; not an installed latency gate
+2026-09-20T14:29:22.2867572Z test strict_json::tests::timeout_projection_obeys_the_full_strict_json_contract ... ok
+2026-09-20T14:29:22.2873718Z test tests::overload_response_is_constant_and_retryable ... ok
+2026-09-20T14:29:22.2876560Z test tests::resident_hmac_changes_with_nonce ... ok
+2026-09-20T14:29:22.2878661Z test tests::resident_hmac_matches_cross_language_vectors ... ok
+2026-09-20T14:29:22.2905896Z test tests::strict_json_rejects_deep_and_wide_values ... ok
+2026-09-20T14:29:22.2909694Z test tests::strict_json_rejects_duplicate_keys_and_trailing_values ... ok
+2026-09-20T14:29:23.3764146Z test resident_state::tests::home_state_discovery_fails_closed_on_many_state_entries ... ok
+2026-09-20T14:29:23.4311540Z test resident_state::tests::publishing_fails_closed_when_scope_entry_bound_is_exceeded ... ok
+2026-09-20T14:29:26.3892459Z test resident_state::tests::publishing_generations_retires_superseded_state ... ok
+2026-09-20T14:29:26.3892869Z 
+2026-09-20T14:29:26.3893033Z test result: ok. 201 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 17.53s
+2026-09-20T14:29:26.3893238Z 
+2026-09-20T14:29:26.3962598Z      Running unittests examples\package_lock_pilot.rs (rust\target\debug\examples\package_lock_pilot-2427e7a7e7df4fcf.exe)
+2026-09-20T14:29:26.4046459Z 
+2026-09-20T14:29:26.4046816Z running 4 tests
+2026-09-20T14:29:26.4053319Z test tests::unsupported_numeric_spellings_and_empty_legacy_projection_fall_back ... ok
+2026-09-20T14:29:26.4054135Z test tests::preserves_order_names_nested_paths_and_exact_versions ... ok
+2026-09-20T14:29:26.4054524Z test tests::entry_and_node_limits_discard_every_partial_projection ... ok
+2026-09-20T14:29:26.4055093Z test tests::duplicate_keys_in_unused_nested_metadata_never_publish_partial_entries ... ok
+2026-09-20T14:29:26.4055284Z 
+2026-09-20T14:29:26.4055431Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-09-20T14:29:26.4055769Z 
+2026-09-20T14:29:26.4972193Z ##[group]Run uv run --no-sync python -m ruff format --check src/codex_plugin_scanner/guard/native_runtime_resident.py ci/native_runtime/test_guard_native_runtime_windows_resident.py
+2026-09-20T14:29:26.4972965Z [36;1muv run --no-sync python -m ruff format --check src/codex_plugin_scanner/guard/native_runtime_resident.py ci/native_runtime/test_guard_native_runtime_windows_resident.py[0m
+2026-09-20T14:29:26.4973578Z [36;1muv run --no-sync python -m ruff check src/codex_plugin_scanner/guard/native_runtime_resident.py ci/native_runtime/test_guard_native_runtime_windows_resident.py[0m
+2026-09-20T14:29:26.5026639Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:29:26.5026858Z env:
+2026-09-20T14:29:26.5027035Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.5027304Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:29:26.5027629Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.5027866Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.5028092Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.5028306Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:29:26.5028479Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:29:26.5028645Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:29:26.5028827Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:29:26.5028988Z ##[endgroup]
+2026-09-20T14:29:26.7550533Z 2 files already formatted
+2026-09-20T14:29:26.8382126Z All checks passed!
+2026-09-20T14:29:26.9437251Z ##[group]Run $version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()
+2026-09-20T14:29:26.9437677Z [36;1m$version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()[0m
+2026-09-20T14:29:26.9437994Z [36;1m$env:HOL_GUARD_BUILD_SHA = "be612a3e562a2041b3732a33c158eeae4f1dad40"[0m
+2026-09-20T14:29:26.9438223Z [36;1m$env:HOL_GUARD_PACKAGE_VERSION = $version[0m
+2026-09-20T14:29:26.9438490Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime[0m
+2026-09-20T14:29:26.9438788Z [36;1mrust/target/release/hol-guard-runtime.exe self-test --json[0m
+2026-09-20T14:29:26.9488474Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:29:26.9488676Z env:
+2026-09-20T14:29:26.9488836Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.9489092Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:29:26.9489379Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.9489605Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.9489822Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:29:26.9490027Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:29:26.9490187Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:29:26.9490348Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:29:26.9490515Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:29:26.9490662Z ##[endgroup]
+2026-09-20T14:29:27.3083285Z    Compiling proc-macro2 v1.0.107
+2026-09-20T14:29:27.3083637Z    Compiling unicode-ident v1.0.24
+2026-09-20T14:29:27.3083877Z    Compiling quote v1.0.47
+2026-09-20T14:29:27.3084857Z    Compiling version_check v0.9.5
+2026-09-20T14:29:27.3931261Z    Compiling typenum v1.20.1
+2026-09-20T14:29:27.5800669Z    Compiling generic-array v0.14.7
+2026-09-20T14:29:27.5923743Z    Compiling cfg-if v1.0.4
+2026-09-20T14:29:27.6430951Z    Compiling memchr v2.8.3
+2026-09-20T14:29:27.7937586Z    Compiling winapi v0.3.9
+2026-09-20T14:29:28.3557577Z    Compiling serde_core v1.0.229
+2026-09-20T14:29:28.5167004Z    Compiling syn v3.0.3
+2026-09-20T14:29:28.7575039Z    Compiling cpufeatures v0.2.17
+2026-09-20T14:29:28.8072748Z    Compiling block-buffer v0.10.4
+2026-09-20T14:29:28.8329020Z    Compiling crypto-common v0.1.7
+2026-09-20T14:29:28.9183896Z    Compiling digest v0.10.7
+2026-09-20T14:29:28.9209724Z    Compiling windows-link v0.1.3
+2026-09-20T14:29:28.9674182Z    Compiling syn v2.0.119
+2026-09-20T14:29:29.0879654Z    Compiling sha2 v0.10.9
+2026-09-20T14:29:30.7727761Z    Compiling hex v0.4.3
+2026-09-20T14:29:31.0637469Z    Compiling zmij v1.0.23
+2026-09-20T14:29:31.1288352Z    Compiling serde v1.0.229
+2026-09-20T14:29:31.4288020Z    Compiling serde_derive v1.0.229
+2026-09-20T14:29:31.4412756Z    Compiling windows-strings v0.4.2
+2026-09-20T14:29:32.1252011Z    Compiling windows-result v0.3.4
+2026-09-20T14:29:32.5120403Z    Compiling thiserror v2.0.20
+2026-09-20T14:29:32.5910936Z    Compiling windows-interface v0.59.3
+2026-09-20T14:29:32.9372568Z    Compiling windows-implement v0.60.2
+2026-09-20T14:29:33.2512979Z    Compiling serde_json v1.0.151
+2026-09-20T14:29:33.2784196Z    Compiling libc v0.2.189
+2026-09-20T14:29:33.6121025Z    Compiling windows-core v0.61.2
+2026-09-20T14:29:33.6562566Z    Compiling thiserror-impl v2.0.20
+2026-09-20T14:29:33.8920814Z    Compiling bitflags v1.3.2
+2026-09-20T14:29:33.9522163Z    Compiling itoa v1.0.18
+2026-09-20T14:29:34.4901183Z    Compiling windows-permissions v0.2.4
+2026-09-20T14:29:35.1748284Z    Compiling guard-rules v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rules)
+2026-09-20T14:29:35.2953133Z    Compiling aho-corasick v1.1.5
+2026-09-20T14:29:35.3731055Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T14:29:35.5223545Z    Compiling regex-syntax v0.8.11
+2026-09-20T14:29:36.1893907Z    Compiling shlex v2.0.1
+2026-09-20T14:29:36.3489761Z    Compiling cc v1.4.4
+2026-09-20T14:29:37.2683853Z    Compiling guard-contracts v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-contracts)
+2026-09-20T14:29:37.7227174Z    Compiling regex-automata v0.4.18
+2026-09-20T14:29:41.6319127Z    Compiling guard-runtime-windows-process v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime-windows-process)
+2026-09-20T14:29:42.1967979Z    Compiling windows-threading v0.1.0
+2026-09-20T14:29:42.3452662Z    Compiling ntapi v0.4.3
+2026-09-20T14:29:42.7803888Z    Compiling windows-future v0.2.1
+2026-09-20T14:29:43.1498869Z    Compiling guard-secure-fs v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-secure-fs)
+2026-09-20T14:29:43.4661476Z    Compiling regex v1.13.1
+2026-09-20T14:29:44.6509013Z    Compiling ring v0.17.14
+2026-09-20T14:29:45.1579966Z    Compiling windows-collections v0.2.0
+2026-09-20T14:29:45.2246333Z    Compiling windows-numerics v0.2.0
+2026-09-20T14:29:45.3594816Z    Compiling getrandom v0.3.4
+2026-09-20T14:29:45.4105038Z    Compiling windows v0.61.3
+2026-09-20T14:29:45.8415913Z    Compiling guard-scanner v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-scanner)
+2026-09-20T14:29:47.9995344Z    Compiling getrandom v0.2.17
+2026-09-20T14:29:48.1231912Z    Compiling untrusted v0.9.0
+2026-09-20T14:29:48.5931299Z    Compiling guard-hook-core v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-hook-core)
+2026-09-20T14:29:50.4045870Z    Compiling guard-command v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-command)
+2026-09-20T14:29:52.7365737Z    Compiling guard-policy-snapshot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-policy-snapshot)
+2026-09-20T14:29:53.2772942Z    Compiling guard-rule-contract v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rule-contract)
+2026-09-20T14:29:53.6850934Z    Compiling fs2 v0.4.3
+2026-09-20T14:30:13.9603071Z    Compiling sysinfo v0.37.2
+2026-09-20T14:30:20.4296403Z    Compiling hol-guard-runtime v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime)
+2026-09-20T14:30:33.5034555Z     Finished `release` profile [optimized] target(s) in 1m 06s
+2026-09-20T14:30:33.5304754Z {"capabilities":{"build_sha":"be612a3e562a2041b3732a33c158eeae4f1dad40","features":["post-tool-inline-v1","post-tool-source-read-v1","oneshot-v1","framed-serve-v1","resident-protocol-v2","bounded-admission-v2","overload-signal-v1","panic-containment-v1","rule-contract-v2","pre-tool-command-model-shadow-v1","resident-command-model-shadow-v1","pre-tool-command-authority-v1","pre-tool-generic-authority-v1","native-command-program-v1","native-command-control-fence-v1","policy-snapshot-v3","policy-snapshot-push-v1","policy-snapshot-resident-generation-v1","native-approval-artifact-v3","native-approval-challenge-v3","native-approval-validation-v3","native-approval-consume-v3","native-approval-webauthn-v4","native-approval-challenge-v4","native-approval-validation-v4","native-approval-consume-v4","native-approval-replay-memory-v1","native-policy-in-memory-v1","hook-envelope-v2","native-resident-client-v1","native-resident-lifecycle-v1","authenticated-loopback-resident-v1","post-tool-source-read-windows-handles-v1"],"protocol_version":1,"rule_digest":"e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a","runtime_version":"3.0.1","target":"x86_64-windows"},"ok":true}
+2026-09-20T14:30:33.5996653Z ##[group]Run uv run --no-sync pytest ci/native_runtime/test_guard_native_runtime_windows_resident.py --tb=short
+2026-09-20T14:30:33.5997117Z [36;1muv run --no-sync pytest ci/native_runtime/test_guard_native_runtime_windows_resident.py --tb=short[0m
+2026-09-20T14:30:33.6045265Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:30:33.6045475Z env:
+2026-09-20T14:30:33.6045640Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:33.6045900Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:30:33.6046161Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:33.6046396Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:33.6046624Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:33.6046828Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:30:33.6047043Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:30:33.6047210Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:30:33.6047384Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:33.6047538Z   HOL_GUARD_NATIVE: force
+2026-09-20T14:30:33.6047856Z   HOL_GUARD_NATIVE_BINARY: D:\a\hol-guard\hol-guard\rust\target\release\hol-guard-runtime.exe
+2026-09-20T14:30:33.6048160Z ##[endgroup]
+2026-09-20T14:30:34.6268669Z ============================= test session starts =============================
+2026-09-20T14:30:34.6269083Z platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:30:34.6269385Z rootdir: D:\a\hol-guard\hol-guard
+2026-09-20T14:30:34.6269607Z configfile: pyproject.toml
+2026-09-20T14:30:34.6269817Z plugins: anyio-4.14.2, cov-7.1.0
+2026-09-20T14:30:34.6270019Z collected 5 items
+2026-09-20T14:30:34.6270122Z 
+2026-09-20T14:30:40.4035235Z ci\native_runtime\test_guard_native_runtime_windows_resident.py .....    [100%]
+2026-09-20T14:30:40.4035474Z 
+2026-09-20T14:30:40.4035601Z ============================== 5 passed in 6.23s ==============================
+2026-09-20T14:30:40.6985142Z Post job cleanup.
+2026-09-20T14:30:40.7834525Z UV_CACHE_DIR is already set to D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:40.7837557Z UV_PYTHON_INSTALL_DIR is already set to D:\a\_temp\uv-python-dir
+2026-09-20T14:30:40.7839123Z Cache hit occurred on key setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970, not saving cache.
+2026-09-20T14:30:40.9079928Z Post job cleanup.
+2026-09-20T14:30:41.0299636Z Post job cleanup.
+2026-09-20T14:30:41.1357005Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T14:30:41.1549934Z git version 2.55.0.windows.5
+2026-09-20T14:30:41.1592619Z Temporarily overriding HOME='D:\a\_temp\82037cca-5987-4880-b5fb-fe917136b201' before making global git config changes
+2026-09-20T14:30:41.1593010Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:30:41.1599669Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard
+2026-09-20T14:30:41.1790042Z Removing SSH command configuration
+2026-09-20T14:30:41.1797135Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:30:41.1989755Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:30:41.7313334Z Removing HTTP extra header
+2026-09-20T14:30:41.7321673Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:30:41.7529430Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:30:42.3988173Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:30:42.3997541Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:30:42.4170861Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:30:42.4171138Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:30:42.4199776Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:30:42.4370987Z D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:30:42.4407649Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:30:42.4607142Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:30:42.4773575Z D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:30:42.4802887Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config
+2026-09-20T14:30:42.4999161Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:30:42.8869547Z Removing credentials config 'D:\a\_temp\git-credentials-30a7d242-2f8f-4c23-99fa-43c1d5ce44c9.config'
+2026-09-20T14:30:42.9021180Z Cleaning up orphan processes
+2026-09-20T14:30:42.9134824Z Terminate orphan process: pid (6720) (vctip)

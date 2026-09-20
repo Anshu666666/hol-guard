@@ -1,0 +1,523 @@
+{
+  "schema": "priority-phase-observer-accounting.v1",
+  "original_observation_sha256": "a31f82c635977709369006be4d9ac2c341a123057a7030aa2ad6c2742470efd9",
+  "original_run": 35517987547,
+  "new_workload_invocations": 0,
+  "same_process_only": true,
+  "cross_process_subtraction": false,
+  "span_counts": {
+    "parent": {
+      "spawn": 88,
+      "io_setup": 88,
+      "wait_and_reap": 88,
+      "io_join_and_containment": 88,
+      "contained_process_call": 88
+    },
+    "daemon": {
+      "workspace_policy": 176,
+      "admission_policy": 88,
+      "scheduler_acquire": 88,
+      "runtime_status": 88,
+      "encode_envelope": 88,
+      "native_client_lease": 88,
+      "native_client_exchange": 88,
+      "decode_edge": 88,
+      "native_edge": 88,
+      "receipt_submit": 88,
+      "activity_submit": 88,
+      "worker_review": 88,
+      "hook_handler": 88
+    }
+  },
+  "instrumentation_counts_source_derived": {
+    "parent_full_input_freezes": 88,
+    "daemon_full_input_freezes": 264,
+    "daemon_entry_exit_freezes_outside_handler_span": 176,
+    "daemon_worker_freezes_inside_handler_outside_worker_span": 88,
+    "span_start_clock_samples": 1672,
+    "span_end_clock_samples": 1672,
+    "start_and_append_critical_sections": 3344,
+    "critical_section_duration_individually_measured": false
+  },
+  "groups": [
+    {
+      "harness": "claude-code",
+      "event": "PreToolUse",
+      "population": "serial",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 2,
+            "min": 0.1783749999452766,
+            "median": 0.2101669999978668,
+            "max": 0.241959000050457
+          },
+          "wait_fraction_of_launcher": {
+            "count": 2,
+            "min": 0.9757856295052729,
+            "median": 0.9793542816566823,
+            "max": 0.9829229338080916
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.2692089999999894,
+            "median": 0.3572499999999934,
+            "max": 0.44529099999999744
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 2,
+            "min": 6.897916,
+            "median": 8.333729,
+            "max": 9.769542
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 2,
+            "min": 13.441375,
+            "median": 25.310125,
+            "max": 37.178875
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.29441599999999823,
+            "median": 0.39237549999999644,
+            "max": 0.49033499999999464
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.28541600000000145,
+            "median": 0.4086665000000007,
+            "max": 0.531917
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.7744580000000028,
+            "median": 1.5325625000000045,
+            "max": 2.2906670000000062
+          }
+        }
+      }
+    },
+    {
+      "harness": "claude-code",
+      "event": "PreToolUse",
+      "population": "c16",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 16,
+            "min": 0.054123999998182626,
+            "median": 0.15166600002589803,
+            "max": 0.575916999985111
+          },
+          "wait_fraction_of_launcher": {
+            "count": 16,
+            "min": 0.9348833093082642,
+            "median": 0.9436539646035357,
+            "max": 0.9923876001941174
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.08270900000002257,
+            "median": 0.1617505000000392,
+            "max": 0.45412499999997635
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 16,
+            "min": 3.3583339999999997,
+            "median": 10.244292,
+            "max": 25.753791
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 16,
+            "min": 1.578332,
+            "median": 13.4175205,
+            "max": 220.040042
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.2797079999999994,
+            "median": 0.5068749999999982,
+            "max": 28.697208000000018
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.23766599999999727,
+            "median": 0.436708000000003,
+            "max": 2.337831999999999
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.7682080000000013,
+            "median": 2.005354999999998,
+            "max": 7.196249999999992
+          }
+        }
+      }
+    },
+    {
+      "harness": "claude-code",
+      "event": "PostToolUse",
+      "population": "serial",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 2,
+            "min": 0.26866700000329047,
+            "median": 0.3545005000290047,
+            "max": 0.4403340000547189
+          },
+          "wait_fraction_of_launcher": {
+            "count": 2,
+            "min": 0.9350792349230811,
+            "median": 0.9591847456189622,
+            "max": 0.9832902563148431
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.24004099999999085,
+            "median": 0.2585210000000018,
+            "max": 0.2770010000000127
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 2,
+            "min": 14.849374,
+            "median": 19.6759995,
+            "max": 24.502625000000002
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 2,
+            "min": 15.249625,
+            "median": 15.675479,
+            "max": 16.101333
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.37241699999999867,
+            "median": 0.7426044999999988,
+            "max": 1.112791999999999
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.14991600000000105,
+            "median": 0.17999950000000098,
+            "max": 0.2100830000000009
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 2,
+            "min": 1.1885839999999988,
+            "median": 1.7881460000000011,
+            "max": 2.3877080000000035
+          }
+        }
+      }
+    },
+    {
+      "harness": "claude-code",
+      "event": "PostToolUse",
+      "population": "c16",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 16,
+            "min": 0.0701670000055401,
+            "median": 0.1487295000102904,
+            "max": 0.4647909999891908
+          },
+          "wait_fraction_of_launcher": {
+            "count": 16,
+            "min": 0.9313392868215282,
+            "median": 0.967130941507004,
+            "max": 0.9924132868117789
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.05149800000003779,
+            "median": 0.1322504999998273,
+            "max": 0.2822909999999865
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 16,
+            "min": 4.102418,
+            "median": 10.827292,
+            "max": 29.396791
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 16,
+            "min": 5.732583,
+            "median": 30.9475215,
+            "max": 247.485376
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.22320799999999252,
+            "median": 0.47952049999999957,
+            "max": 18.843083
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.09358500000000447,
+            "median": 0.1744369999999975,
+            "max": 0.980290999999994
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.7566670000000073,
+            "median": 2.364646499999999,
+            "max": 26.060875000000024
+          }
+        }
+      }
+    },
+    {
+      "harness": "codex",
+      "event": "PreToolUse",
+      "population": "serial",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 2,
+            "min": 0.24170900001880113,
+            "median": 0.2524169999915813,
+            "max": 0.26312499996436145
+          },
+          "wait_fraction_of_launcher": {
+            "count": 2,
+            "min": 0.9665575487921964,
+            "median": 0.9790698845304979,
+            "max": 0.9915822202687995
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.14999899999992294,
+            "median": 0.16456199999996102,
+            "max": 0.1791249999999991
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 2,
+            "min": 15.677457,
+            "median": 17.5592075,
+            "max": 19.440958000000002
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 2,
+            "min": 10.505958,
+            "median": 12.602375,
+            "max": 14.698792000000001
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.26079200000000213,
+            "median": 0.27525000000000155,
+            "max": 0.28970800000000096
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.25574999999999903,
+            "median": 0.2601249999999986,
+            "max": 0.2644999999999982
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.8055430000000001,
+            "median": 1.4826049999999995,
+            "max": 2.159666999999999
+          }
+        }
+      }
+    },
+    {
+      "harness": "codex",
+      "event": "PreToolUse",
+      "population": "c16",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 16,
+            "min": 0.0404170000731483,
+            "median": 0.12287549998870873,
+            "max": 0.24891699993486327
+          },
+          "wait_fraction_of_launcher": {
+            "count": 16,
+            "min": 0.8348876166405578,
+            "median": 0.9149719762155196,
+            "max": 0.9952105894531809
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.04416599999990467,
+            "median": 0.16600050000010924,
+            "max": 0.38433299999974224
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 16,
+            "min": 3.44775,
+            "median": 6.829188,
+            "max": 21.61775
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 16,
+            "min": 7.930417,
+            "median": 21.570937,
+            "max": 42.212666
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.24029099999999914,
+            "median": 0.44735449999999943,
+            "max": 6.033708000000004
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.1829580000000064,
+            "median": 0.2873539999999988,
+            "max": 3.2021239999999977
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.6239179999999962,
+            "median": 1.4301664999999986,
+            "max": 11.382207999999999
+          }
+        }
+      }
+    },
+    {
+      "harness": "codex",
+      "event": "PostToolUse",
+      "population": "serial",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 2,
+            "min": 0.255708000097286,
+            "median": 0.2629995000825147,
+            "max": 0.2702910000677434
+          },
+          "wait_fraction_of_launcher": {
+            "count": 2,
+            "min": 0.9793335806216124,
+            "median": 0.9838667961175581,
+            "max": 0.9884000116135039
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.1383769999999913,
+            "median": 0.18906300000000442,
+            "max": 0.23974900000001753
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 2,
+            "min": 10.111125,
+            "median": 15.575229499999999,
+            "max": 21.039334
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 2,
+            "min": 10.838625,
+            "median": 17.010937499999997,
+            "max": 23.183249999999997
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.3461250000000007,
+            "median": 0.41566650000000216,
+            "max": 0.48520800000000364
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 2,
+            "min": 0.2217090000000006,
+            "median": 0.22581349999999922,
+            "max": 0.22991799999999785
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 2,
+            "min": 1.1478329999999985,
+            "median": 1.3037915000000027,
+            "max": 1.4597500000000068
+          }
+        }
+      }
+    },
+    {
+      "harness": "codex",
+      "event": "PostToolUse",
+      "population": "c16",
+      "sides": {
+        "parent": {
+          "launcher_outside_contained_ms": {
+            "count": 16,
+            "min": 0.06104200003346705,
+            "median": 0.1287079999691514,
+            "max": 0.25058400002785675
+          },
+          "wait_fraction_of_launcher": {
+            "count": 16,
+            "min": 0.9144990988254144,
+            "median": 0.937683921394755,
+            "max": 0.9862760507106851
+          },
+          "contained_process_call_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.046040000000175496,
+            "median": 0.13856300000009014,
+            "max": 3.0309990000000653
+          }
+        },
+        "daemon": {
+          "admission_policy_outside_direct_children_ms": {
+            "count": 16,
+            "min": 3.447499,
+            "median": 18.093729500000002,
+            "max": 34.85325
+          },
+          "native_client_exchange_outside_direct_children_ms": {
+            "count": 16,
+            "min": 4.595834,
+            "median": 25.431521,
+            "max": 95.173457
+          },
+          "native_edge_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.25799900000000164,
+            "median": 0.6090005000000005,
+            "max": 9.716918
+          },
+          "worker_review_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.08962400000000059,
+            "median": 0.15933349999999535,
+            "max": 0.5663340000000048
+          },
+          "hook_handler_outside_direct_children_ms": {
+            "count": 16,
+            "min": 0.5411670000000015,
+            "median": 1.5204379999999986,
+            "max": 3.8799999999999955
+          }
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Remainders combine original product glue, scheduling and diagnostic callbacks; they are not measured observer-only costs.",
+    "The parent launcher remainder includes post-process input parsing/projection/output hashing and wrapper bookkeeping; it is not a subtraction-based estimate of uninstrumented performance.",
+    "Daemon entry and exit projections are outside the handler span but can affect the containing request/child process interval; their individual durations are unavailable.",
+    "Before/after provider hashing and driver imports are outside the producer sample timers; cold daemon observer imports are inside fixture startup, not the individual launcher timers. Scheduling/cache effects remain unquantified.",
+    "The fresh registered launcher children do not import these observer modules. Their product imports, identity challenge, HTTP scheduling and exit work were not individually timed."
+  ]
+}

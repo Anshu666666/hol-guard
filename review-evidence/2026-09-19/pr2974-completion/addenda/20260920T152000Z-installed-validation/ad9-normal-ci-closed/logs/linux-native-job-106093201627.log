@@ -1,0 +1,1339 @@
+﻿2026-09-20T14:26:32.5176939Z Current runner version: '2.337.0'
+2026-09-20T14:26:32.5211563Z ##[group]Runner Image Provisioner
+2026-09-20T14:26:32.5212862Z Hosted Compute Agent
+2026-09-20T14:26:32.5214009Z Version: 20260828.587
+2026-09-20T14:26:32.5215061Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T14:26:32.5216332Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T14:26:32.5217982Z Worker ID: {8825531e-4782-4c26-a2f9-9b136941f01b}
+2026-09-20T14:26:32.5219210Z Azure Region: eastus
+2026-09-20T14:26:32.5220272Z ##[endgroup]
+2026-09-20T14:26:32.5222490Z ##[group]Operating System
+2026-09-20T14:26:32.5223559Z Ubuntu
+2026-09-20T14:26:32.5224584Z 24.04.5
+2026-09-20T14:26:32.5225394Z LTS
+2026-09-20T14:26:32.5226319Z ##[endgroup]
+2026-09-20T14:26:32.5227264Z ##[group]Runner Image
+2026-09-20T14:26:32.5228487Z Image: ubuntu-24.04
+2026-09-20T14:26:32.5229549Z Version: 20260907.300.1
+2026-09-20T14:26:32.5231613Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-20T14:26:32.5234434Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-20T14:26:32.5236135Z ##[endgroup]
+2026-09-20T14:26:32.5238241Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T14:26:32.5240897Z Contents: read
+2026-09-20T14:26:32.5241865Z Metadata: read
+2026-09-20T14:26:32.5242736Z ##[endgroup]
+2026-09-20T14:26:32.5245797Z Secret source: Actions
+2026-09-20T14:26:32.5247254Z Cache mode: write
+2026-09-20T14:26:32.5248829Z Prepare workflow directory
+2026-09-20T14:26:32.5716219Z Prepare all required actions
+2026-09-20T14:26:32.5786251Z Getting action download info
+2026-09-20T14:26:32.8629622Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T14:26:32.9708212Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-20T14:26:33.0699287Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T14:26:33.2021485Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T14:26:33.3840252Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T14:26:33.5724394Z Complete job name: linux-x64
+2026-09-20T14:26:33.6752396Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T14:26:33.6753533Z with:
+2026-09-20T14:26:33.6753977Z   persist-credentials: false
+2026-09-20T14:26:33.6754528Z   repository: hashgraph-online/hol-guard
+2026-09-20T14:26:33.6758822Z   token: ***
+2026-09-20T14:26:33.6759251Z   ssh-strict: true
+2026-09-20T14:26:33.6759679Z   ssh-user: git
+2026-09-20T14:26:33.6760086Z   clean: true
+2026-09-20T14:26:33.6760528Z   sparse-checkout-cone-mode: true
+2026-09-20T14:26:33.6761049Z   fetch-depth: 1
+2026-09-20T14:26:33.6761492Z   fetch-tags: false
+2026-09-20T14:26:33.6761931Z   show-progress: true
+2026-09-20T14:26:33.6762371Z   lfs: false
+2026-09-20T14:26:33.6762778Z   submodules: false
+2026-09-20T14:26:33.6763221Z   set-safe-directory: true
+2026-09-20T14:26:33.6763977Z ##[endgroup]
+2026-09-20T14:26:33.7751529Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T14:26:33.7753669Z ##[group]Getting Git version info
+2026-09-20T14:26:33.7754489Z Working directory is '/home/runner/work/hol-guard/hol-guard'
+2026-09-20T14:26:33.7755529Z [command]/usr/bin/git version
+2026-09-20T14:26:33.7838147Z git version 2.55.0
+2026-09-20T14:26:33.7860728Z ##[endgroup]
+2026-09-20T14:26:33.7874999Z Temporarily overriding HOME='/home/runner/work/_temp/b1832320-a2e0-41b7-b53d-73344bfa2fab' before making global git config changes
+2026-09-20T14:26:33.7876442Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:26:33.7880538Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:33.7932223Z Deleting the contents of '/home/runner/work/hol-guard/hol-guard'
+2026-09-20T14:26:33.7936593Z ##[group]Determining repository object format
+2026-09-20T14:26:33.7938817Z ##[endgroup]
+2026-09-20T14:26:33.7940035Z ##[group]Initializing the repository
+2026-09-20T14:26:33.7944198Z [command]/usr/bin/git init /home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:33.8080277Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T14:26:33.8081921Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T14:26:33.8082955Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T14:26:33.8083822Z hint: call:
+2026-09-20T14:26:33.8084525Z hint:
+2026-09-20T14:26:33.8085407Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T14:26:33.8086424Z hint:
+2026-09-20T14:26:33.8087397Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T14:26:33.8088863Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T14:26:33.8090062Z hint:
+2026-09-20T14:26:33.8090841Z hint: 	git branch -m <name>
+2026-09-20T14:26:33.8091596Z hint:
+2026-09-20T14:26:33.8092234Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T14:26:33.8093264Z Initialized empty Git repository in /home/runner/work/hol-guard/hol-guard/.git/
+2026-09-20T14:26:33.8095899Z [command]/usr/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:33.8157287Z ##[endgroup]
+2026-09-20T14:26:33.8158401Z ##[group]Disabling automatic garbage collection
+2026-09-20T14:26:33.8161616Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-20T14:26:33.8190652Z ##[endgroup]
+2026-09-20T14:26:33.8192019Z ##[group]Setting up auth
+2026-09-20T14:26:33.8192883Z Removing SSH command configuration
+2026-09-20T14:26:33.8198097Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:33.8228787Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T14:26:33.8584055Z Removing HTTP extra header
+2026-09-20T14:26:33.8590294Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:33.8622683Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T14:26:33.8833363Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:33.8839595Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:33.8869637Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T14:26:33.9089861Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T14:26:33.9132398Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:33.9160616Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:33.9192349Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:33.9222099Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:33.9248762Z ##[endgroup]
+2026-09-20T14:26:33.9249646Z ##[group]Fetching the repository
+2026-09-20T14:26:33.9258164Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +be612a3e562a2041b3732a33c158eeae4f1dad40:refs/remotes/pull/2974/merge
+2026-09-20T14:26:35.7073016Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:35.7075547Z  * [new ref]         be612a3e562a2041b3732a33c158eeae4f1dad40 -> pull/2974/merge
+2026-09-20T14:26:35.7080982Z ##[endgroup]
+2026-09-20T14:26:35.7083004Z ##[group]Determining the checkout info
+2026-09-20T14:26:35.7085152Z ##[endgroup]
+2026-09-20T14:26:35.7086814Z [command]/usr/bin/git sparse-checkout disable
+2026-09-20T14:26:35.7139709Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T14:26:35.7167443Z ##[group]Checking out the ref
+2026-09-20T14:26:35.7170962Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T14:26:36.0773958Z Note: switching to 'refs/remotes/pull/2974/merge'.
+2026-09-20T14:26:36.0774794Z 
+2026-09-20T14:26:36.0775134Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T14:26:36.0775869Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T14:26:36.0776543Z state without impacting any branches by switching back to a branch.
+2026-09-20T14:26:36.0776942Z 
+2026-09-20T14:26:36.0777298Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T14:26:36.0778530Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T14:26:36.0779068Z 
+2026-09-20T14:26:36.0779252Z   git switch -c <new-branch-name>
+2026-09-20T14:26:36.0779507Z 
+2026-09-20T14:26:36.0779700Z Or undo this operation with:
+2026-09-20T14:26:36.0779950Z 
+2026-09-20T14:26:36.0780089Z   git switch -
+2026-09-20T14:26:36.0780317Z 
+2026-09-20T14:26:36.0780644Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T14:26:36.0781095Z 
+2026-09-20T14:26:36.0781594Z HEAD is now at be612a3 Merge ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T14:26:36.0794493Z ##[endgroup]
+2026-09-20T14:26:36.0839628Z [command]/usr/bin/git log -1 --format=%H
+2026-09-20T14:26:36.0864712Z be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:26:36.0875936Z ##[group]Removing auth
+2026-09-20T14:26:36.0876813Z Removing SSH command configuration
+2026-09-20T14:26:36.0880965Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:36.0913276Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T14:26:36.1136496Z Removing HTTP extra header
+2026-09-20T14:26:36.1139894Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:36.1177327Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T14:26:36.1399368Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:36.1403860Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:36.1431779Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:36.1432614Z includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:36.1433222Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:36.1433735Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:36.1441370Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:36.1462458Z /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1472579Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git.path /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1502760Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:36.1523257Z /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1538776Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1569033Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:36.1589646Z /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1598030Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1632010Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:36.1652863Z /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1666823Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config
+2026-09-20T14:26:36.1696841Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T14:26:36.1913006Z Removing credentials config '/home/runner/work/_temp/git-credentials-0caa359e-b11e-41e3-8b44-c9bec2d8162f.config'
+2026-09-20T14:26:36.1921996Z ##[endgroup]
+2026-09-20T14:26:36.2182238Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-20T14:26:36.2184149Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-09-20T14:26:36.2184564Z with:
+2026-09-20T14:26:36.2184806Z   node-version: 22
+2026-09-20T14:26:36.2185064Z   always-auth: false
+2026-09-20T14:26:36.2185320Z   check-latest: false
+2026-09-20T14:26:36.2188179Z   token: ***
+2026-09-20T14:26:36.2188432Z ##[endgroup]
+2026-09-20T14:26:36.3664208Z Found in cache @ /opt/hostedtoolcache/node/22.23.2/x64
+2026-09-20T14:26:36.3668738Z (node:2328) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-20T14:26:36.3669861Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T14:26:36.3672225Z ##[group]Environment details
+2026-09-20T14:26:36.7826920Z node: v22.23.2
+2026-09-20T14:26:36.7827263Z npm: 10.9.8
+2026-09-20T14:26:36.7827464Z yarn: 1.22.22
+2026-09-20T14:26:36.7828807Z ##[endgroup]
+2026-09-20T14:26:36.7995197Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T14:26:36.7995615Z with:
+2026-09-20T14:26:36.7995813Z   python-version: 3.12
+2026-09-20T14:26:36.7996036Z   check-latest: false
+2026-09-20T14:26:36.7998882Z   token: ***
+2026-09-20T14:26:36.7999103Z   update-environment: true
+2026-09-20T14:26:36.7999353Z   allow-prereleases: false
+2026-09-20T14:26:36.7999583Z   freethreaded: false
+2026-09-20T14:26:36.7999802Z ##[endgroup]
+2026-09-20T14:26:36.9295412Z ##[group]Installed versions
+2026-09-20T14:26:36.9400342Z Successfully set up CPython (3.12.14)
+2026-09-20T14:26:36.9401298Z ##[endgroup]
+2026-09-20T14:26:36.9623992Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T14:26:36.9624410Z with:
+2026-09-20T14:26:36.9624610Z   version: 0.9.26
+2026-09-20T14:26:36.9624996Z   enable-cache: true
+2026-09-20T14:26:36.9625231Z   activate-environment: false
+2026-09-20T14:26:36.9625482Z   no-project: false
+2026-09-20T14:26:36.9625759Z   working-directory: /home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:36.9628693Z   github-token: ***
+2026-09-20T14:26:36.9629290Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T14:26:36.9629915Z   restore-cache: true
+2026-09-20T14:26:36.9630129Z   save-cache: true
+2026-09-20T14:26:36.9630335Z   prune-cache: true
+2026-09-20T14:26:36.9630541Z   cache-python: false
+2026-09-20T14:26:36.9630786Z   ignore-nothing-to-cache: false
+2026-09-20T14:26:36.9631086Z   ignore-empty-workdir: false
+2026-09-20T14:26:36.9631383Z   download-from-astral-mirror: true
+2026-09-20T14:26:36.9631656Z   add-problem-matchers: true
+2026-09-20T14:26:36.9631886Z   quiet: false
+2026-09-20T14:26:36.9632092Z   resolution-strategy: highest
+2026-09-20T14:26:36.9632330Z env:
+2026-09-20T14:26:36.9632581Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:36.9633029Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:26:36.9633453Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:36.9633837Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:36.9634216Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:36.9634608Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:26:36.9634928Z ##[endgroup]
+2026-09-20T14:26:37.1462332Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T14:26:37.2036731Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-09-20T14:26:37.4251391Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/68afc324-4ef5-45f6-b164-87a1e5809eaf -f /home/runner/work/_temp/e5237339-2807-4452-ba7e-97f651cadce2
+2026-09-20T14:26:37.8786073Z Added /home/runner/.local/bin to the path
+2026-09-20T14:26:37.8790796Z Added /opt/hostedtoolcache/uv/0.9.26/x86_64 to the path
+2026-09-20T14:26:37.8792244Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:26:37.8804777Z Added /home/runner/work/_temp/uv-python-dir to the path
+2026-09-20T14:26:37.8811366Z Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:26:37.8811927Z Successfully installed uv version 0.9.26
+2026-09-20T14:26:38.0263520Z Searching files using cache dependency glob: /home/runner/work/hol-guard/hol-guard/**/*requirements*.txt,/home/runner/work/hol-guard/hol-guard/**/*requirements*.in,/home/runner/work/hol-guard/hol-guard/**/*constraints*.txt,/home/runner/work/hol-guard/hol-guard/**/*constraints*.in,/home/runner/work/hol-guard/hol-guard/**/pyproject.toml,/home/runner/work/hol-guard/hol-guard/**/uv.lock,/home/runner/work/hol-guard/hol-guard/**/*.py.lock
+2026-09-20T14:26:38.0330185Z /home/runner/work/hol-guard/hol-guard/.clusterfuzzlite/requirements-atheris.txt
+2026-09-20T14:26:38.0535897Z /home/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.in
+2026-09-20T14:26:38.0542949Z /home/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.txt
+2026-09-20T14:26:38.0551439Z /home/runner/work/hol-guard/hol-guard/action/scanner-cisco-runtime-requirements.txt
+2026-09-20T14:26:38.0561553Z /home/runner/work/hol-guard/hol-guard/action/scanner-runtime-requirements.txt
+2026-09-20T14:26:38.1516619Z /home/runner/work/hol-guard/hol-guard/distributions/mcpb/pyproject.toml
+2026-09-20T14:26:38.1529575Z /home/runner/work/hol-guard/hol-guard/docker-requirements.txt
+2026-09-20T14:26:38.1823743Z /home/runner/work/hol-guard/hol-guard/pyproject.toml
+2026-09-20T14:26:38.1835934Z /home/runner/work/hol-guard/hol-guard/requirements.txt
+2026-09-20T14:26:38.5523053Z /home/runner/work/hol-guard/hol-guard/uv.lock
+2026-09-20T14:26:38.5549411Z Found 10 files to hash.
+2026-09-20T14:26:38.5629799Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T14:26:38.6166354Z Cache hit for: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T14:26:38.6794255Z Received 431681 of 431681 (100.0%), 11.8 MBs/sec
+2026-09-20T14:26:38.6794757Z Cache Size: ~0 MB (431681 B)
+2026-09-20T14:26:38.6849543Z [command]/usr/bin/tar -xf /home/runner/work/_temp/c9c577da-df5b-4d01-9a30-f7b0bf5d1dca/cache.tzst -P -C /home/runner/work/hol-guard/hol-guard --use-compress-program unzstd
+2026-09-20T14:26:38.6960101Z Cache restored successfully
+2026-09-20T14:26:38.6964567Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.12.14-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T14:26:38.8139918Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T14:26:38.8140371Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T14:26:38.8189420Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:26:38.8189700Z env:
+2026-09-20T14:26:38.8189971Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:38.8190411Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:26:38.8190838Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:38.8191219Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:38.8191590Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:38.8191965Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:26:38.8192356Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:26:38.8192723Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:26:38.8193042Z ##[endgroup]
+2026-09-20T14:26:38.8661761Z Using CPython 3.12.14 interpreter at: /opt/hostedtoolcache/Python/3.12.14/x64/bin/python3.12
+2026-09-20T14:26:38.8662441Z Creating virtual environment at: .venv
+2026-09-20T14:26:38.8936454Z    Building hol-guard @ file:///home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:38.9149205Z Downloading pydantic-core (2.0MiB)
+2026-09-20T14:26:38.9160384Z Downloading pygments (1.2MiB)
+2026-09-20T14:26:38.9212460Z Downloading cryptography (4.5MiB)
+2026-09-20T14:26:38.9245410Z Downloading libcst (2.2MiB)
+2026-09-20T14:26:38.9379564Z Downloading basedpyright (12.6MiB)
+2026-09-20T14:26:38.9388695Z Downloading ruff (11.0MiB)
+2026-09-20T14:26:38.9429545Z Downloading nodejs-wheel-binaries (57.9MiB)
+2026-09-20T14:26:39.2199847Z  Downloaded pydantic-core
+2026-09-20T14:26:39.5553925Z  Downloaded ruff
+2026-09-20T14:26:39.5770560Z  Downloaded cryptography
+2026-09-20T14:26:39.8217359Z  Downloaded pygments
+2026-09-20T14:26:39.8313714Z  Downloaded libcst
+2026-09-20T14:26:40.2452644Z       Built hol-guard @ file:///home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:41.6629553Z  Downloaded basedpyright
+2026-09-20T14:26:41.6904627Z  Downloaded nodejs-wheel-binaries
+2026-09-20T14:26:41.6907608Z Prepared 69 packages in 2.80s
+2026-09-20T14:26:41.8548490Z Installed 69 packages in 163ms
+2026-09-20T14:26:41.8549244Z  + annotated-types==0.7.0
+2026-09-20T14:26:41.8549678Z  + anyio==4.14.2
+2026-09-20T14:26:41.8550044Z  + attrs==26.1.0
+2026-09-20T14:26:41.8550432Z  + basedpyright==1.39.8
+2026-09-20T14:26:41.8550834Z  + build==1.5.0
+2026-09-20T14:26:41.8551191Z  + certifi==2026.2.25
+2026-09-20T14:26:41.8551583Z  + cffi==2.0.0
+2026-09-20T14:26:41.8551970Z  + charset-normalizer==3.4.7
+2026-09-20T14:26:41.8552399Z  + click==8.4.1
+2026-09-20T14:26:41.8552767Z  + coverage==7.13.5
+2026-09-20T14:26:41.8553150Z  + cryptography==50.0.0
+2026-09-20T14:26:41.8553537Z  + h11==0.16.0
+2026-09-20T14:26:41.8554441Z  + hol-guard==3.0.1 (from file:///home/runner/work/hol-guard/hol-guard)
+2026-09-20T14:26:41.8555459Z  + httpcore==1.0.9
+2026-09-20T14:26:41.8555833Z  + httpx==0.28.1
+2026-09-20T14:26:41.8556214Z  + httpx-sse==0.4.3
+2026-09-20T14:26:41.8556578Z  + idna==3.15
+2026-09-20T14:26:41.8556966Z  + importlib-metadata==8.9.0
+2026-09-20T14:26:41.8557413Z  + iniconfig==2.3.0
+2026-09-20T14:26:41.8558115Z  + jaraco-classes==3.4.0
+2026-09-20T14:26:41.8558557Z  + jaraco-context==6.1.2
+2026-09-20T14:26:41.8559000Z  + jaraco-functools==4.4.0
+2026-09-20T14:26:41.8559420Z  + jeepney==0.9.0
+2026-09-20T14:26:41.8559789Z  + jsonschema==4.26.0
+2026-09-20T14:26:41.8560276Z  + jsonschema-specifications==2025.9.1
+2026-09-20T14:26:41.8560767Z  + keyring==25.7.0
+2026-09-20T14:26:41.8561186Z  + libcst==1.9.0
+2026-09-20T14:26:41.8561831Z  + linkify-it-py==2.1.0
+2026-09-20T14:26:41.8562300Z  + markdown-it-py==4.0.0
+2026-09-20T14:26:41.8562729Z  + mcp==1.28.1
+2026-09-20T14:26:41.8563177Z  + mdit-py-plugins==0.5.0
+2026-09-20T14:26:41.8563655Z  + mdurl==0.1.2
+2026-09-20T14:26:41.8564180Z  + more-itertools==11.0.1
+2026-09-20T14:26:41.8564674Z  + mutmut==3.7.0
+2026-09-20T14:26:41.8565550Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T14:26:41.8566052Z  + packaging==26.0
+2026-09-20T14:26:41.8566438Z  + platformdirs==4.9.4
+2026-09-20T14:26:41.8566822Z  + pluggy==1.6.0
+2026-09-20T14:26:41.8567186Z  + psutil==7.2.2
+2026-09-20T14:26:41.8568171Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T14:26:41.8568682Z  + pycparser==3.0
+2026-09-20T14:26:41.8569186Z  + pydantic==2.12.5
+2026-09-20T14:26:41.8569616Z  + pydantic-core==2.41.5
+2026-09-20T14:26:41.8570086Z  + pydantic-settings==2.14.1
+2026-09-20T14:26:41.8570564Z  + pygments==2.20.0
+2026-09-20T14:26:41.8570967Z  + pyjwt==2.13.0
+2026-09-20T14:26:41.8571389Z  + pyproject-hooks==1.2.0
+2026-09-20T14:26:41.8571823Z  + pytest==9.0.3
+2026-09-20T14:26:41.8572200Z  + pytest-cov==7.1.0
+2026-09-20T14:26:41.8572593Z  + python-dotenv==1.2.2
+2026-09-20T14:26:41.8573018Z  + python-multipart==0.0.32
+2026-09-20T14:26:41.8573461Z  + pyyaml==6.0.3
+2026-09-20T14:26:41.8573895Z  + referencing==0.37.0
+2026-09-20T14:26:41.8574308Z  + regex==2026.4.4
+2026-09-20T14:26:41.8574676Z  + requests==2.33.1
+2026-09-20T14:26:41.8575067Z  + rich==14.2.0
+2026-09-20T14:26:41.8575436Z  + rpds-py==0.30.0
+2026-09-20T14:26:41.8575796Z  + ruff==0.15.17
+2026-09-20T14:26:41.8576187Z  + secretstorage==3.5.0
+2026-09-20T14:26:41.8576592Z  + setproctitle==1.3.7
+2026-09-20T14:26:41.8576995Z  + sse-starlette==3.4.4
+2026-09-20T14:26:41.8577430Z  + starlette==1.3.1
+2026-09-20T14:26:41.8578035Z  + textual==7.5.0
+2026-09-20T14:26:41.8578441Z  + typing-extensions==4.15.0
+2026-09-20T14:26:41.8578985Z  + typing-inspection==0.4.2
+2026-09-20T14:26:41.8579487Z  + uc-micro-py==2.0.0
+2026-09-20T14:26:41.8579746Z  + urllib3==2.7.0
+2026-09-20T14:26:41.8579961Z  + uvicorn==0.40.0
+2026-09-20T14:26:41.8580177Z  + zipp==3.23.0
+2026-09-20T14:26:41.8743419Z ##[group]Run uv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short
+2026-09-20T14:26:41.8744522Z [36;1muv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short[0m
+2026-09-20T14:26:41.8781954Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:26:41.8782215Z env:
+2026-09-20T14:26:41.8782510Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:41.8782963Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:26:41.8783388Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:41.8783777Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:41.8784153Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:41.8784545Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:26:41.8784986Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:26:41.8785362Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:26:41.8785658Z ##[endgroup]
+2026-09-20T14:26:49.0103835Z ============================= test session starts ==============================
+2026-09-20T14:26:49.0105254Z platform linux -- Python 3.12.14, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:26:49.0106091Z rootdir: /home/runner/work/hol-guard/hol-guard
+2026-09-20T14:26:49.0106726Z configfile: pyproject.toml
+2026-09-20T14:26:49.0107294Z plugins: cov-7.1.0, anyio-4.14.2
+2026-09-20T14:26:49.0108103Z collected 48 items
+2026-09-20T14:26:49.0108361Z 
+2026-09-20T14:26:49.0660463Z ci/native_runtime/test_native_hol_guard_wheel.py .....................   [ 43%]
+2026-09-20T14:26:49.1043323Z tests/test_native_policy_snapshot_inactive_namespace.py ................ [ 77%]
+2026-09-20T14:26:49.6713419Z ...........                                                              [100%]
+2026-09-20T14:26:49.6714005Z 
+2026-09-20T14:26:49.6714583Z ============================== 48 passed in 1.04s ==============================
+2026-09-20T14:26:49.8704705Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal
+2026-09-20T14:26:49.8705196Z [36;1mrustup toolchain install 1.88.0 --profile minimal[0m
+2026-09-20T14:26:49.8705542Z [36;1mrustup default 1.88.0[0m
+2026-09-20T14:26:49.8705839Z [36;1mrustup target add x86_64-unknown-linux-musl[0m
+2026-09-20T14:26:49.8706142Z [36;1msudo apt-get update[0m
+2026-09-20T14:26:49.8706481Z [36;1msudo apt-get install --yes --no-install-recommends musl-tools[0m
+2026-09-20T14:26:49.8742755Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:26:49.8743010Z env:
+2026-09-20T14:26:49.8743282Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:49.8743741Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:26:49.8744478Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:49.8744953Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:49.8745606Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:26:49.8746090Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:26:49.8746653Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:26:49.8747121Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:26:49.8747508Z ##[endgroup]
+2026-09-20T14:26:49.9302400Z info: syncing channel updates for 1.88.0-x86_64-unknown-linux-gnu
+2026-09-20T14:26:50.0474972Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:26:50.0475979Z info: downloading 3 components
+2026-09-20T14:26:57.3037238Z 
+2026-09-20T14:26:57.3112668Z   1.88.0-x86_64-unknown-linux-gnu installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:26:57.3113293Z 
+2026-09-20T14:26:57.3212478Z info: using existing install for 1.88.0-x86_64-unknown-linux-gnu
+2026-09-20T14:26:57.3218629Z info: default toolchain set to 1.88.0-x86_64-unknown-linux-gnu
+2026-09-20T14:26:57.3218966Z 
+2026-09-20T14:26:57.3287159Z   1.88.0-x86_64-unknown-linux-gnu unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:26:57.3287952Z 
+2026-09-20T14:26:57.3735175Z info: downloading component rust-std
+2026-09-20T14:27:00.0110914Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-09-20T14:27:00.0362453Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-09-20T14:27:00.0475081Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-09-20T14:27:00.0487614Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-09-20T14:27:00.0548361Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-09-20T14:27:00.0604127Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-09-20T14:27:00.0661563Z Get:7 https://dl.google.com/linux/chrome-stable/deb stable InRelease [2548 B]
+2026-09-20T14:27:00.1004440Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [478 kB]
+2026-09-20T14:27:00.1199095Z Get:9 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [429 kB]
+2026-09-20T14:27:00.2122384Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1275 kB]
+2026-09-20T14:27:00.2219264Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [294 kB]
+2026-09-20T14:27:00.2249338Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [180 kB]
+2026-09-20T14:27:00.2279053Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1689 kB]
+2026-09-20T14:27:00.2358505Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [338 kB]
+2026-09-20T14:27:00.2371275Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+2026-09-20T14:27:00.2399187Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1580 kB]
+2026-09-20T14:27:00.2500601Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [359 kB]
+2026-09-20T14:27:00.2502448Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [45.7 kB]
+2026-09-20T14:27:00.2514719Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [13.1 kB]
+2026-09-20T14:27:00.2949582Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+2026-09-20T14:27:00.2962024Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [65.9 kB]
+2026-09-20T14:27:00.2976591Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5768 B]
+2026-09-20T14:27:00.2985379Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [34.6 kB]
+2026-09-20T14:27:00.2994685Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.7 kB]
+2026-09-20T14:27:00.3002813Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+2026-09-20T14:27:00.3279245Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1009 kB]
+2026-09-20T14:27:00.3375799Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [214 kB]
+2026-09-20T14:27:00.3393576Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.4 kB]
+2026-09-20T14:27:00.3406073Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1208 kB]
+2026-09-20T14:27:00.3466509Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [243 kB]
+2026-09-20T14:27:00.3508842Z Get:31 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.2 kB]
+2026-09-20T14:27:00.3529024Z Get:32 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1449 kB]
+2026-09-20T14:27:00.3584628Z Get:33 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [336 kB]
+2026-09-20T14:27:00.3978123Z Get:35 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages [1408 B]
+2026-09-20T14:27:00.4030447Z Get:34 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [11.3 kB]
+2026-09-20T14:27:04.7585901Z Fetched 12.2 MB in 1s (9242 kB/s)
+2026-09-20T14:27:05.5606499Z Reading package lists...
+2026-09-20T14:27:05.5906398Z Reading package lists...
+2026-09-20T14:27:05.7476956Z Building dependency tree...
+2026-09-20T14:27:05.7483914Z Reading state information...
+2026-09-20T14:27:05.8800914Z The following additional packages will be installed:
+2026-09-20T14:27:05.8801683Z   musl musl-dev
+2026-09-20T14:27:05.8965034Z The following NEW packages will be installed:
+2026-09-20T14:27:05.8966252Z   musl musl-dev musl-tools
+2026-09-20T14:27:05.9129549Z 0 upgraded, 3 newly installed, 0 to remove and 73 not upgraded.
+2026-09-20T14:27:05.9130191Z Need to get 1037 kB of archives.
+2026-09-20T14:27:05.9130648Z After this operation, 4177 kB of additional disk space will be used.
+2026-09-20T14:27:05.9131178Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-09-20T14:27:05.9415519Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 musl amd64 1.2.4-2 [416 kB]
+2026-09-20T14:27:05.9773380Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 musl-dev amd64 1.2.4-2 [616 kB]
+2026-09-20T14:27:05.9908203Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 musl-tools amd64 1.2.4-2 [5540 B]
+2026-09-20T14:27:06.2333383Z Fetched 1037 kB in 0s (11.8 MB/s)
+2026-09-20T14:27:06.2560810Z Selecting previously unselected package musl:amd64.
+2026-09-20T14:27:06.2869770Z (Reading database ... 
+2026-09-20T14:27:06.2870412Z (Reading database ... 5%
+2026-09-20T14:27:06.2871070Z (Reading database ... 10%
+2026-09-20T14:27:06.2871484Z (Reading database ... 15%
+2026-09-20T14:27:06.2871865Z (Reading database ... 20%
+2026-09-20T14:27:06.2872402Z (Reading database ... 25%
+2026-09-20T14:27:06.2872742Z (Reading database ... 30%
+2026-09-20T14:27:06.2873026Z (Reading database ... 35%
+2026-09-20T14:27:06.2873538Z (Reading database ... 40%
+2026-09-20T14:27:06.2873892Z (Reading database ... 45%
+2026-09-20T14:27:06.2874229Z (Reading database ... 50%
+2026-09-20T14:27:06.2925331Z (Reading database ... 55%
+2026-09-20T14:27:06.4408033Z (Reading database ... 60%
+2026-09-20T14:27:06.6160161Z (Reading database ... 65%
+2026-09-20T14:27:06.7874901Z (Reading database ... 70%
+2026-09-20T14:27:06.9225787Z (Reading database ... 75%
+2026-09-20T14:27:07.0959510Z (Reading database ... 80%
+2026-09-20T14:27:07.2188830Z (Reading database ... 85%
+2026-09-20T14:27:07.3414487Z (Reading database ... 90%
+2026-09-20T14:27:07.4514727Z (Reading database ... 95%
+2026-09-20T14:27:07.4515106Z (Reading database ... 100%
+2026-09-20T14:27:07.4515605Z (Reading database ... 201818 files and directories currently installed.)
+2026-09-20T14:27:07.4556364Z Preparing to unpack .../musl_1.2.4-2_amd64.deb ...
+2026-09-20T14:27:07.4582896Z Unpacking musl:amd64 (1.2.4-2) ...
+2026-09-20T14:27:07.4896899Z Selecting previously unselected package musl-dev:amd64.
+2026-09-20T14:27:07.5020146Z Preparing to unpack .../musl-dev_1.2.4-2_amd64.deb ...
+2026-09-20T14:27:07.5029231Z Unpacking musl-dev:amd64 (1.2.4-2) ...
+2026-09-20T14:27:07.5608098Z Selecting previously unselected package musl-tools.
+2026-09-20T14:27:07.5729374Z Preparing to unpack .../musl-tools_1.2.4-2_amd64.deb ...
+2026-09-20T14:27:07.5737503Z Unpacking musl-tools (1.2.4-2) ...
+2026-09-20T14:27:07.6128681Z Setting up musl:amd64 (1.2.4-2) ...
+2026-09-20T14:27:07.6164441Z Setting up musl-dev:amd64 (1.2.4-2) ...
+2026-09-20T14:27:07.6193711Z Setting up musl-tools (1.2.4-2) ...
+2026-09-20T14:27:07.6215161Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-09-20T14:27:07.6235930Z Not building database; man-db/auto-update is not 'true'.
+2026-09-20T14:27:08.2555975Z 
+2026-09-20T14:27:08.2556644Z Running kernel seems to be up-to-date.
+2026-09-20T14:27:08.2557095Z 
+2026-09-20T14:27:08.2557365Z No services need to be restarted.
+2026-09-20T14:27:08.2557891Z 
+2026-09-20T14:27:08.2558201Z No containers need to be restarted.
+2026-09-20T14:27:08.2558508Z 
+2026-09-20T14:27:08.2558826Z No user sessions are running outdated binaries.
+2026-09-20T14:27:08.2559207Z 
+2026-09-20T14:27:08.2559646Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-09-20T14:27:09.0901860Z ##[group]Run uv run --no-sync python -m build --wheel --outdir pure-dist
+2026-09-20T14:27:09.0902408Z [36;1muv run --no-sync python -m build --wheel --outdir pure-dist[0m
+2026-09-20T14:27:09.0939366Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:27:09.0939619Z env:
+2026-09-20T14:27:09.0939887Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:09.0940334Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:27:09.0940783Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:09.0941184Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:09.0941569Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:09.0941958Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:27:09.0942350Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:27:09.0942958Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:27:09.0943286Z ##[endgroup]
+2026-09-20T14:27:09.2214328Z * Creating isolated environment: venv+pip...
+2026-09-20T14:27:12.4362514Z * Installing packages in isolated environment:
+2026-09-20T14:27:12.4363131Z   - hatchling<1.31
+2026-09-20T14:27:13.2058746Z * Getting build dependencies for wheel...
+2026-09-20T14:27:13.3567811Z * Building wheel...
+2026-09-20T14:27:14.3488937Z Successfully built hol_guard-3.0.1-py3-none-any.whl
+2026-09-20T14:27:14.3680056Z ##[group]Run VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+2026-09-20T14:27:14.3680705Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T14:27:14.3681153Z [36;1mexport HOL_GUARD_PACKAGE_VERSION="$VERSION"[0m
+2026-09-20T14:27:14.3681766Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release --target x86_64-unknown-linux-musl -p hol-guard-runtime[0m
+2026-09-20T14:27:14.3682482Z [36;1mruntime="rust/target/x86_64-unknown-linux-musl/release/hol-guard-runtime"[0m
+2026-09-20T14:27:14.3682923Z [36;1mLDD_OUTPUT=$(ldd "$runtime" 2>&1 || true)[0m
+2026-09-20T14:27:14.3683362Z [36;1mif grep -Eq 'not a dynamic executable|statically linked' <<< "$LDD_OUTPUT"; then[0m
+2026-09-20T14:27:14.3683794Z [36;1m  echo "Runtime is static"[0m
+2026-09-20T14:27:14.3684048Z [36;1melse[0m
+2026-09-20T14:27:14.3684312Z [36;1m  echo "Linux runtime must be statically linked" >&2[0m
+2026-09-20T14:27:14.3684689Z [36;1m  printf '%s\n' "$LDD_OUTPUT" >&2[0m
+2026-09-20T14:27:14.3684962Z [36;1m  exit 1[0m
+2026-09-20T14:27:14.3685154Z [36;1mfi[0m
+2026-09-20T14:27:14.3685353Z [36;1m"$runtime" self-test --json[0m
+2026-09-20T14:27:14.3721049Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:27:14.3721310Z env:
+2026-09-20T14:27:14.3721593Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:14.3722045Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:27:14.3722484Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:14.3722864Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:14.3723249Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:14.3723626Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:27:14.3724018Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:27:14.3724387Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:27:14.3724767Z   HOL_GUARD_BUILD_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:27:14.3725091Z ##[endgroup]
+2026-09-20T14:27:14.4960143Z     Updating crates.io index
+2026-09-20T14:27:14.8102744Z  Downloading crates ...
+2026-09-20T14:27:14.8409773Z   Downloaded cfg-if v1.0.4
+2026-09-20T14:27:14.8445652Z   Downloaded aho-corasick v1.1.5
+2026-09-20T14:27:14.8504894Z   Downloaded untrusted v0.9.0
+2026-09-20T14:27:14.8526450Z   Downloaded serde_core v1.0.229
+2026-09-20T14:27:14.8559379Z   Downloaded cpufeatures v0.2.17
+2026-09-20T14:27:14.8578506Z   Downloaded generic-array v0.14.7
+2026-09-20T14:27:14.8598958Z   Downloaded version_check v0.9.5
+2026-09-20T14:27:14.8615207Z   Downloaded crypto-common v0.1.7
+2026-09-20T14:27:14.8628247Z   Downloaded block-buffer v0.10.4
+2026-09-20T14:27:14.8641298Z   Downloaded thiserror-impl v2.0.20
+2026-09-20T14:27:14.8658399Z   Downloaded autocfg v1.5.1
+2026-09-20T14:27:14.8681791Z   Downloaded thiserror v2.0.20
+2026-09-20T14:27:14.8749952Z   Downloaded zmij v1.0.23
+2026-09-20T14:27:14.8770034Z   Downloaded digest v0.10.7
+2026-09-20T14:27:14.8791925Z   Downloaded find-msvc-tools v0.1.11
+2026-09-20T14:27:14.8812411Z   Downloaded shlex v2.0.1
+2026-09-20T14:27:14.8827869Z   Downloaded proc-macro2 v1.0.107
+2026-09-20T14:27:14.8861720Z   Downloaded unicode-ident v1.0.24
+2026-09-20T14:27:14.8893737Z   Downloaded getrandom v0.3.4
+2026-09-20T14:27:14.8933604Z   Downloaded typenum v1.20.1
+2026-09-20T14:27:14.8972415Z   Downloaded serde v1.0.229
+2026-09-20T14:27:14.9009550Z   Downloaded serde_json v1.0.151
+2026-09-20T14:27:14.9086517Z   Downloaded memchr v2.8.3
+2026-09-20T14:27:14.9146884Z   Downloaded cc v1.4.4
+2026-09-20T14:27:14.9180633Z   Downloaded regex v1.13.1
+2026-09-20T14:27:14.9237770Z   Downloaded serde_derive v1.0.229
+2026-09-20T14:27:14.9271320Z   Downloaded sha2 v0.10.9
+2026-09-20T14:27:14.9299886Z   Downloaded sysinfo v0.37.2
+2026-09-20T14:27:14.9440475Z   Downloaded quote v1.0.47
+2026-09-20T14:27:14.9484635Z   Downloaded hex v0.4.3
+2026-09-20T14:27:14.9510066Z   Downloaded bitflags v2.13.1
+2026-09-20T14:27:14.9559813Z   Downloaded itoa v1.0.18
+2026-09-20T14:27:14.9576537Z   Downloaded memoffset v0.9.1
+2026-09-20T14:27:14.9591727Z   Downloaded syn v3.0.3
+2026-09-20T14:27:14.9700248Z   Downloaded getrandom v0.2.17
+2026-09-20T14:27:14.9731595Z   Downloaded nix v0.31.3
+2026-09-20T14:27:14.9852275Z   Downloaded regex-syntax v0.8.11
+2026-09-20T14:27:14.9921274Z   Downloaded fs2 v0.4.3
+2026-09-20T14:27:14.9932692Z   Downloaded cfg_aliases v0.2.2
+2026-09-20T14:27:14.9981998Z   Downloaded regex-automata v0.4.18
+2026-09-20T14:27:15.0133298Z   Downloaded libc v0.2.189
+2026-09-20T14:27:15.0592145Z   Downloaded ring v0.17.14
+2026-09-20T14:27:15.1232875Z    Compiling version_check v0.9.5
+2026-09-20T14:27:15.1235157Z    Compiling proc-macro2 v1.0.107
+2026-09-20T14:27:15.1235598Z    Compiling cfg-if v1.0.4
+2026-09-20T14:27:15.1236024Z    Compiling unicode-ident v1.0.24
+2026-09-20T14:27:15.1518925Z    Compiling quote v1.0.47
+2026-09-20T14:27:15.1783743Z    Compiling typenum v1.20.1
+2026-09-20T14:27:15.3238921Z    Compiling generic-array v0.14.7
+2026-09-20T14:27:15.3644531Z    Compiling libc v0.2.189
+2026-09-20T14:27:15.4709018Z    Compiling memchr v2.8.3
+2026-09-20T14:27:16.2507245Z    Compiling syn v3.0.3
+2026-09-20T14:27:16.4938859Z    Compiling block-buffer v0.10.4
+2026-09-20T14:27:16.5749006Z    Compiling crypto-common v0.1.7
+2026-09-20T14:27:16.6408976Z    Compiling digest v0.10.7
+2026-09-20T14:27:16.7519043Z    Compiling cpufeatures v0.2.17
+2026-09-20T14:27:16.7790170Z    Compiling serde_core v1.0.229
+2026-09-20T14:27:16.7813629Z    Compiling sha2 v0.10.9
+2026-09-20T14:27:17.0017526Z    Compiling hex v0.4.3
+2026-09-20T14:27:17.3949128Z    Compiling autocfg v1.5.1
+2026-09-20T14:27:17.6819025Z    Compiling zmij v1.0.23
+2026-09-20T14:27:17.8538772Z    Compiling serde v1.0.229
+2026-09-20T14:27:18.0828909Z    Compiling memoffset v0.9.1
+2026-09-20T14:27:18.2280851Z    Compiling cfg_aliases v0.2.2
+2026-09-20T14:27:18.2558983Z    Compiling thiserror v2.0.20
+2026-09-20T14:27:18.4619696Z    Compiling serde_json v1.0.151
+2026-09-20T14:27:18.5309098Z    Compiling nix v0.31.3
+2026-09-20T14:27:18.8439640Z    Compiling serde_derive v1.0.229
+2026-09-20T14:27:18.8669238Z    Compiling thiserror-impl v2.0.20
+2026-09-20T14:27:18.9938760Z    Compiling itoa v1.0.18
+2026-09-20T14:27:19.2249361Z    Compiling guard-rules v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T14:27:19.3767590Z    Compiling aho-corasick v1.1.5
+2026-09-20T14:27:20.2318884Z    Compiling bitflags v2.13.1
+2026-09-20T14:27:20.5368954Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T14:27:20.6879319Z    Compiling regex-syntax v0.8.11
+2026-09-20T14:27:22.6858968Z    Compiling shlex v2.0.1
+2026-09-20T14:27:22.7549421Z    Compiling guard-contracts v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T14:27:22.7988872Z    Compiling cc v1.4.4
+2026-09-20T14:27:24.2408942Z    Compiling regex-automata v0.4.18
+2026-09-20T14:27:27.0578876Z    Compiling regex v1.13.1
+2026-09-20T14:27:28.6118864Z    Compiling ring v0.17.14
+2026-09-20T14:27:29.0960049Z    Compiling guard-secure-fs v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T14:27:29.4878897Z    Compiling getrandom v0.3.4
+2026-09-20T14:27:30.4719692Z    Compiling guard-scanner v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T14:27:30.8199079Z    Compiling getrandom v0.2.17
+2026-09-20T14:27:30.9695947Z    Compiling untrusted v0.9.0
+2026-09-20T14:27:31.0389440Z    Compiling guard-hook-core v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T14:27:31.6819722Z    Compiling guard-command v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T14:27:32.4769519Z    Compiling guard-policy-snapshot v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T14:27:35.2053711Z    Compiling guard-rule-contract v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T14:27:35.5358857Z    Compiling sysinfo v0.37.2
+2026-09-20T14:27:38.0879952Z    Compiling fs2 v0.4.3
+2026-09-20T14:27:38.1934418Z    Compiling guard-runtime-windows-process v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T14:27:46.4977962Z    Compiling hol-guard-runtime v0.1.0 (/home/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T14:27:58.6909550Z     Finished `release` profile [optimized] target(s) in 44.23s
+2026-09-20T14:27:58.7231311Z Runtime is static
+2026-09-20T14:27:58.7261487Z {"capabilities":{"build_sha":"be612a3e562a2041b3732a33c158eeae4f1dad40","features":["post-tool-inline-v1","post-tool-source-read-v1","oneshot-v1","framed-serve-v1","resident-protocol-v2","bounded-admission-v2","overload-signal-v1","panic-containment-v1","rule-contract-v2","pre-tool-command-model-shadow-v1","resident-command-model-shadow-v1","pre-tool-command-authority-v1","pre-tool-generic-authority-v1","native-command-program-v1","native-command-control-fence-v1","policy-snapshot-v3","policy-snapshot-push-v1","policy-snapshot-resident-generation-v1","native-approval-artifact-v3","native-approval-challenge-v3","native-approval-validation-v3","native-approval-consume-v3","native-approval-webauthn-v4","native-approval-challenge-v4","native-approval-validation-v4","native-approval-consume-v4","native-approval-replay-memory-v1","native-policy-in-memory-v1","hook-envelope-v2","native-resident-client-v1","native-resident-lifecycle-v1","authenticated-unix-resident-v1"],"protocol_version":1,"rule_digest":"e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a","runtime_version":"3.0.1","target":"x86_64-linux"},"ok":true}
+2026-09-20T14:27:58.7297151Z ##[group]Run VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+2026-09-20T14:27:58.7297978Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T14:27:58.7298524Z [36;1mruntime="rust/target/x86_64-unknown-linux-musl/release/hol-guard-runtime"[0m
+2026-09-20T14:27:58.7299229Z [36;1mRULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')[0m
+2026-09-20T14:27:58.7299897Z [36;1mprintf 'rule_digest=%s\n' "$RULE_DIGEST" >> "$GITHUB_OUTPUT"[0m
+2026-09-20T14:27:58.7300421Z [36;1muv run --no-sync python scripts/build_native_hol_guard_wheel.py \[0m
+2026-09-20T14:27:58.7300931Z [36;1m  --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \[0m
+2026-09-20T14:27:58.7301311Z [36;1m  --runtime "$runtime" \[0m
+2026-09-20T14:27:58.7301598Z [36;1m  --output-dir native-dist \[0m
+2026-09-20T14:27:58.7301863Z [36;1m  --version "$VERSION" \[0m
+2026-09-20T14:27:58.7302178Z [36;1m  --platform-tag manylinux_2_17_x86_64 \[0m
+2026-09-20T14:27:58.7302501Z [36;1m  --target x86_64-unknown-linux-musl \[0m
+2026-09-20T14:27:58.7302805Z [36;1m  --source-sha "$SOURCE_SHA" \[0m
+2026-09-20T14:27:58.7303089Z [36;1m  --rule-digest "$RULE_DIGEST"[0m
+2026-09-20T14:27:58.7303422Z [36;1muv pip uninstall --python .venv/bin/python hol-guard[0m
+2026-09-20T14:27:58.7303929Z [36;1muv pip install --python .venv/bin/python --no-deps --force-reinstall native-dist/*.whl[0m
+2026-09-20T14:27:58.7304501Z [36;1munset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH[0m
+2026-09-20T14:27:58.7305039Z [36;1munset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:27:58.7305618Z [36;1munset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY[0m
+2026-09-20T14:27:58.7306436Z [36;1munset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE[0m
+2026-09-20T14:27:58.7306937Z [36;1munset HOL_GUARD_PYTHON_ORACLE[0m
+2026-09-20T14:27:58.7307322Z [36;1munset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON[0m
+2026-09-20T14:27:58.7307921Z [36;1munset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST[0m
+2026-09-20T14:27:58.7308546Z [36;1munset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:27:58.7309232Z [36;1munset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY[0m
+2026-09-20T14:27:58.7309842Z [36;1munset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE[0m
+2026-09-20T14:27:58.7310454Z [36;1munset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT[0m
+2026-09-20T14:27:58.7311046Z [36;1munset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH[0m
+2026-09-20T14:27:58.7311722Z [36;1m.venv/bin/python -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json[0m
+2026-09-20T14:27:58.7312480Z [36;1m.venv/bin/python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json[0m
+2026-09-20T14:27:58.7313174Z [36;1m.venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json[0m
+2026-09-20T14:27:58.7348806Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:27:58.7349061Z env:
+2026-09-20T14:27:58.7349336Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:58.7349785Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:27:58.7350212Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:58.7350595Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:58.7350980Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:27:58.7351366Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:27:58.7351754Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:27:58.7352294Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:27:58.7352646Z   SOURCE_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:27:58.7352936Z ##[endgroup]
+2026-09-20T14:28:00.0354217Z native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl
+2026-09-20T14:28:00.1029956Z Uninstalled 1 package in 47ms
+2026-09-20T14:28:00.1030773Z  - hol-guard==3.0.1 (from file:///home/runner/work/hol-guard/hol-guard)
+2026-09-20T14:28:00.1585130Z Resolved 1 package in 2ms
+2026-09-20T14:28:00.2216246Z Prepared 1 package in 63ms
+2026-09-20T14:28:00.2495946Z Installed 1 package in 27ms
+2026-09-20T14:28:00.2497204Z  + hol-guard==3.0.1 (from file:///home/runner/work/hol-guard/hol-guard/native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl)
+2026-09-20T14:28:00.8097854Z {
+2026-09-20T14:28:00.8098468Z   "build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+2026-09-20T14:28:00.8099012Z   "cases": [
+2026-09-20T14:28:00.8099306Z     {
+2026-09-20T14:28:00.8099694Z       "case": "steady_without_client",
+2026-09-20T14:28:00.8100171Z       "hashed_bytes": 37210368,
+2026-09-20T14:28:00.8100574Z       "result": "passed",
+2026-09-20T14:28:00.8100948Z       "validation_calls": 3
+2026-09-20T14:28:00.8101311Z     },
+2026-09-20T14:28:00.8101586Z     {
+2026-09-20T14:28:00.8101868Z       "case": "fresh_child",
+2026-09-20T14:28:00.8102267Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8102633Z       "result": "passed",
+2026-09-20T14:28:00.8102983Z       "validation_calls": 2
+2026-09-20T14:28:00.8103310Z     },
+2026-09-20T14:28:00.8103573Z     {
+2026-09-20T14:28:00.8103897Z       "case": "steady_with_client",
+2026-09-20T14:28:00.8104305Z       "hashed_bytes": 0,
+2026-09-20T14:28:00.8104649Z       "result": "passed",
+2026-09-20T14:28:00.8104995Z       "validation_calls": 0
+2026-09-20T14:28:00.8105923Z     },
+2026-09-20T14:28:00.8106196Z     {
+2026-09-20T14:28:00.8106555Z       "case": "death_before_restart",
+2026-09-20T14:28:00.8107014Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8107408Z       "result": "passed",
+2026-09-20T14:28:00.8108012Z       "validation_calls": 2
+2026-09-20T14:28:00.8108355Z     },
+2026-09-20T14:28:00.8108629Z     {
+2026-09-20T14:28:00.8108961Z       "case": "live_replacement",
+2026-09-20T14:28:00.8109363Z       "result": "replaced"
+2026-09-20T14:28:00.8109694Z     },
+2026-09-20T14:28:00.8109966Z     {
+2026-09-20T14:28:00.8110321Z       "case": "replacement_first_status",
+2026-09-20T14:28:00.8110783Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8111198Z       "result": "passed",
+2026-09-20T14:28:00.8111554Z       "validation_calls": 1
+2026-09-20T14:28:00.8111894Z     },
+2026-09-20T14:28:00.8112162Z     {
+2026-09-20T14:28:00.8112509Z       "case": "replacement_fresh_child",
+2026-09-20T14:28:00.8112962Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8113344Z       "result": "passed",
+2026-09-20T14:28:00.8113700Z       "validation_calls": 2
+2026-09-20T14:28:00.8114046Z     },
+2026-09-20T14:28:00.8114309Z     {
+2026-09-20T14:28:00.8114649Z       "case": "source_sha_mismatch",
+2026-09-20T14:28:00.8115076Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8115450Z       "result": "passed",
+2026-09-20T14:28:00.8115805Z       "validation_calls": 1
+2026-09-20T14:28:00.8116147Z     },
+2026-09-20T14:28:00.8116473Z     {
+2026-09-20T14:28:00.8116812Z       "case": "source_sha_restoration",
+2026-09-20T14:28:00.8117263Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8118320Z       "result": "passed",
+2026-09-20T14:28:00.8118747Z       "validation_calls": 1
+2026-09-20T14:28:00.8119108Z     },
+2026-09-20T14:28:00.8119382Z     {
+2026-09-20T14:28:00.8119753Z       "case": "source_sha_restoration_child",
+2026-09-20T14:28:00.8120251Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8120628Z       "result": "passed",
+2026-09-20T14:28:00.8121023Z       "validation_calls": 2
+2026-09-20T14:28:00.8121357Z     },
+2026-09-20T14:28:00.8121631Z     {
+2026-09-20T14:28:00.8121980Z       "case": "package_version_mismatch",
+2026-09-20T14:28:00.8122711Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8123122Z       "result": "passed",
+2026-09-20T14:28:00.8123486Z       "validation_calls": 1
+2026-09-20T14:28:00.8123825Z     },
+2026-09-20T14:28:00.8124097Z     {
+2026-09-20T14:28:00.8124466Z       "case": "package_version_restoration",
+2026-09-20T14:28:00.8124939Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8125319Z       "result": "passed",
+2026-09-20T14:28:00.8125702Z       "validation_calls": 1
+2026-09-20T14:28:00.8126072Z     },
+2026-09-20T14:28:00.8126364Z     {
+2026-09-20T14:28:00.8126773Z       "case": "package_version_restoration_child",
+2026-09-20T14:28:00.8127306Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8127921Z       "result": "passed",
+2026-09-20T14:28:00.8128318Z       "validation_calls": 2
+2026-09-20T14:28:00.8128688Z     },
+2026-09-20T14:28:00.8128974Z     {
+2026-09-20T14:28:00.8129388Z       "case": "same_size_restored_mtime_corruption",
+2026-09-20T14:28:00.8129932Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8130333Z       "result": "passed",
+2026-09-20T14:28:00.8130719Z       "validation_calls": 1
+2026-09-20T14:28:00.8131082Z     },
+2026-09-20T14:28:00.8131370Z     {
+2026-09-20T14:28:00.8131765Z       "case": "original_artifact_restoration",
+2026-09-20T14:28:00.8132283Z       "hashed_bytes": 12403456,
+2026-09-20T14:28:00.8132693Z       "result": "passed",
+2026-09-20T14:28:00.8133077Z       "validation_calls": 1
+2026-09-20T14:28:00.8133450Z     },
+2026-09-20T14:28:00.8133728Z     {
+2026-09-20T14:28:00.8134104Z       "case": "restoration_fresh_child",
+2026-09-20T14:28:00.8134615Z       "hashed_bytes": 24806912,
+2026-09-20T14:28:00.8135032Z       "result": "passed",
+2026-09-20T14:28:00.8135434Z       "validation_calls": 2
+2026-09-20T14:28:00.8135808Z     },
+2026-09-20T14:28:00.8136121Z     {
+2026-09-20T14:28:00.8136712Z       "case": "retired_client_status",
+2026-09-20T14:28:00.8137214Z       "hashed_bytes": 37210368,
+2026-09-20T14:28:00.8137825Z       "result": "passed",
+2026-09-20T14:28:00.8138222Z       "validation_calls": 3
+2026-09-20T14:28:00.8138603Z     }
+2026-09-20T14:28:00.8138918Z   ],
+2026-09-20T14:28:00.8139350Z   "cross_release_upgrade_rollback": "not_exercised",
+2026-09-20T14:28:00.8140319Z   "identity_module_sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe",
+2026-09-20T14:28:00.8141125Z   "machine": "x86_64",
+2026-09-20T14:28:00.8141832Z   "manifest_sha256": "87d3183f8df703e5765d84c00b769e366f7d8432db99f7511644d29753ab6167",
+2026-09-20T14:28:00.8142482Z   "package_version": "3.0.1",
+2026-09-20T14:28:00.8142843Z   "platform": "linux",
+2026-09-20T14:28:00.8143512Z   "runtime_module_sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55",
+2026-09-20T14:28:00.8144676Z   "runtime_sha256": "ab9c26658149edaf5e03c5c16fbd8a24716f9c9a9335ecdbc32b6ca0366046a8",
+2026-09-20T14:28:00.8145418Z   "runtime_size": 12403456,
+2026-09-20T14:28:00.8145971Z   "schema": "hol-guard.installed-runtime-identity.v1",
+2026-09-20T14:28:00.8146651Z   "scope": "installed_status_and_real_stdio_child",
+2026-09-20T14:28:00.8147233Z   "signing_qualification": "not_exercised"
+2026-09-20T14:28:00.8147872Z }
+2026-09-20T14:28:10.9897109Z {"command_authority_fixture": {"enrollment_flow": "not_exercised", "provisioning": "isolated_ci_generated_key_empty_authority", "verified_health": "protected"}, "corpus_decisions": 21, "corpus_scope": "normalized_daemon_ingress", "default_mode": "auto", "evidence_failure_diagnostics": {"all_evidence": {}, "native_receipts": {}}, "fail_safe_decisions": 0, "fast_path": "enabled", "mode_invariants": {"off": {"decision": null, "python_oracle": false, "reason_code": "native_hook_disabled"}, "shadow": {"decision": null, "python_oracle": false, "reason_code": "native_shadow_diagnostic_disabled"}}, "oneshot_decisions": 0, "python_semantic_decisions": 0, "reason_code_counts": {"native_policy_warning": 15}, "receipt_metrics": {"accepted": 21, "deduped": 0, "dropped": 0, "durable_pending": 0, "failures": 0, "processed": 21}, "resident_decisions": 21, "resident_share": 1.0, "rollback": "off", "route_receipts": [{"event": "PreToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PostToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PreToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PostToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PreToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PostToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PreToolUse", "harness": "grok", "route": "native_resident"}, {"event": "PreToolUse", "harness": "hermes", "route": "native_resident"}, {"event": "PreToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PostToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PreToolUse", "harness": "openclaw", "route": "native_resident"}, {"event": "PreToolUse", "harness": "opencode", "route": "native_resident"}, {"event": "PreToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "zcode", "route": "native_resident"}], "runtime_reason": "native_ready", "schema": "hol-guard.native-default-installed-receipt.v1", "target": "x86_64-linux"}
+2026-09-20T14:28:17.1579221Z {"cleanup": "authenticated_daemon_stop_then_native_resident_stop", "daemon": "scoped-installed-GuardDaemonServer", "execution_path": "unmodified-generated-extension-via-scoped-installed-daemon-native-resident", "generated_extension": {"harness": "omp", "malformed_result_cases": {"negative-empty": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-malformed": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-mismatch-proof": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-missing-decision": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-missing-proof": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-nonzero-allow": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-observe": {"cli_invocations": 1, "is_error": false, "observe_mode": true, "preserved": true}}, "real_cases": {"empty": {"chars": 0, "daemon_response": {"case_id": "empty", "chars": 0, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "status": 200}, "excerpt_chars": 0, "input_content_unchanged": true, "preserved": true, "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "large-nonsource": {"chars": 15000, "daemon_response": {"case_id": "large-nonsource", "chars": 15000, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506", "sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506", "status": 200}, "excerpt_chars": 12000, "input_content_unchanged": true, "preserved": true, "sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506"}, "multiblock-crlf-unicode": {"chars": 27, "daemon_response": {"case_id": "multiblock-crlf-unicode", "chars": 27, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f", "sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f", "status": 200}, "excerpt_chars": 27, "input_content_unchanged": true, "preserved": true, "sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f"}, "small": {"chars": 18, "daemon_response": {"case_id": "small", "chars": 18, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3", "sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3", "status": 200}, "excerpt_chars": 18, "input_content_unchanged": true, "preserved": true, "sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3"}}}, "native_prerequisite": "default-auto-status-checked", "native_route_metrics": {"native_resident": 4}, "package_origin_kind": "non-editable-distribution-manifest", "package_version": "3.0.1", "runtime": {"build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40", "mode": "auto", "reason": "native_ready", "runtime_sha256": "ab9c26658149edaf5e03c5c16fbd8a24716f9c9a9335ecdbc32b6ca0366046a8", "runtime_version": "3.0.1", "target": "x86_64-linux"}, "schema": "hol-guard.installed-pi-native-output.v1", "source_checkout_import": false, "source_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40", "workflow_order": "after-native-default-auto-probe"}
+2026-09-20T14:28:17.3208469Z ##[group]Run unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+2026-09-20T14:28:17.3209094Z [36;1munset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH[0m
+2026-09-20T14:28:17.3209644Z [36;1munset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:28:17.3210428Z [36;1munset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY[0m
+2026-09-20T14:28:17.3211075Z [36;1munset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE[0m
+2026-09-20T14:28:17.3211680Z [36;1munset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON[0m
+2026-09-20T14:28:17.3212114Z [36;1munset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST[0m
+2026-09-20T14:28:17.3212624Z [36;1munset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:28:17.3213333Z [36;1munset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY[0m
+2026-09-20T14:28:17.3213950Z [36;1munset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE[0m
+2026-09-20T14:28:17.3214572Z [36;1munset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT[0m
+2026-09-20T14:28:17.3215169Z [36;1munset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH[0m
+2026-09-20T14:28:17.3216146Z [36;1mruntime=$(.venv/bin/python -c 'from codex_plugin_scanner.guard.native_runtime import native_runtime_status; status = native_runtime_status(); assert status.identity is not None; print(status.identity.path)')[0m
+2026-09-20T14:28:17.3217119Z [36;1m.venv/bin/python scripts/bench_guard_native_installed_slo.py \[0m
+2026-09-20T14:28:17.3217516Z [36;1m  --runtime "$runtime" \[0m
+2026-09-20T14:28:17.3217945Z [36;1m  --warm-iterations 2 \[0m
+2026-09-20T14:28:17.3218206Z [36;1m  --cold-iterations 2 \[0m
+2026-09-20T14:28:17.3218466Z [36;1m  --recovery-iterations 2 \[0m
+2026-09-20T14:28:17.3218741Z [36;1m  --readiness-samples 2 \[0m
+2026-09-20T14:28:17.3219031Z [36;1m  --json native-installed-slo.json \[0m
+2026-09-20T14:28:17.3219317Z [36;1m  --enforce[0m
+2026-09-20T14:28:17.3254209Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:28:17.3254468Z env:
+2026-09-20T14:28:17.3254731Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:17.3255182Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:28:17.3255626Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:17.3256008Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:17.3256390Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:17.3256778Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:28:17.3257168Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:28:17.3257532Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:28:17.3258078Z   NATIVE_STOP_DIAGNOSTIC_PATH: native-stop-diagnostic.json
+2026-09-20T14:28:17.3258412Z ##[endgroup]
+2026-09-20T14:28:45.1011536Z {
+2026-09-20T14:28:45.1012090Z   "concurrency": {
+2026-09-20T14:28:45.1012520Z     "sixteen": {
+2026-09-20T14:28:45.1012879Z       "deadline_ms": 1000.0,
+2026-09-20T14:28:45.1013296Z       "errors": 0,
+2026-09-20T14:28:45.1013617Z       "latency": {
+2026-09-20T14:28:45.1013939Z         "count": 16,
+2026-09-20T14:28:45.1014312Z         "max_ms": 463.941,
+2026-09-20T14:28:45.1014718Z         "p50_ms": 444.248,
+2026-09-20T14:28:45.1015078Z         "p95_ms": 463.941,
+2026-09-20T14:28:45.1015443Z         "p99_ms": 463.941
+2026-09-20T14:28:45.1015797Z       },
+2026-09-20T14:28:45.1016116Z       "native_overloads": 0,
+2026-09-20T14:28:45.1016488Z       "overloaded": 0,
+2026-09-20T14:28:45.1016979Z       "route_attribution": "isolated_batch_counter_conservation",
+2026-09-20T14:28:45.1017386Z       "routes": {
+2026-09-20T14:28:45.1017981Z         "native_resident": 16
+2026-09-20T14:28:45.1018630Z       }
+2026-09-20T14:28:45.1018855Z     },
+2026-09-20T14:28:45.1019069Z     "sixty_four": {
+2026-09-20T14:28:45.1019310Z       "bounded": true,
+2026-09-20T14:28:45.1019556Z       "errors": 0,
+2026-09-20T14:28:45.1019781Z       "fail_safe": 0,
+2026-09-20T14:28:45.1020181Z       "latency": {
+2026-09-20T14:28:45.1020404Z         "count": 64,
+2026-09-20T14:28:45.1020650Z         "max_ms": 635.964,
+2026-09-20T14:28:45.1020908Z         "p50_ms": 405.68,
+2026-09-20T14:28:45.1021163Z         "p95_ms": 576.869,
+2026-09-20T14:28:45.1021421Z         "p99_ms": 635.964
+2026-09-20T14:28:45.1021656Z       },
+2026-09-20T14:28:45.1021909Z       "latency_ceiling_ms": null,
+2026-09-20T14:28:45.1022205Z       "native_overloads": 0,
+2026-09-20T14:28:45.1022475Z       "overloaded": 30,
+2026-09-20T14:28:45.1022849Z       "route_attribution": "isolated_batch_counter_conservation",
+2026-09-20T14:28:45.1023236Z       "routes": {
+2026-09-20T14:28:45.1023497Z         "engine_bypassed": 30,
+2026-09-20T14:28:45.1023780Z         "native_resident": 34
+2026-09-20T14:28:45.1024039Z       }
+2026-09-20T14:28:45.1024250Z     }
+2026-09-20T14:28:45.1024447Z   },
+2026-09-20T14:28:45.1024644Z   "corpus": {
+2026-09-20T14:28:45.1024965Z     "corpus_origin": "installed_wheel_ownership_contract",
+2026-09-20T14:28:45.1025319Z     "fail_safe_decisions": 0,
+2026-09-20T14:28:45.1025565Z     "fail_safe_rate": 0.0,
+2026-09-20T14:28:45.1025806Z     "harnesses": 13,
+2026-09-20T14:28:45.1026015Z     "installed": {
+2026-09-20T14:28:45.1026228Z       "fail_safe": 0,
+2026-09-20T14:28:45.1026441Z       "oneshot": 0,
+2026-09-20T14:28:45.1026661Z       "python_semantic": 0,
+2026-09-20T14:28:45.1026934Z       "python_semantic_decisions": 0,
+2026-09-20T14:28:45.1027195Z       "resident": 21,
+2026-09-20T14:28:45.1027408Z       "routes": 21
+2026-09-20T14:28:45.1027601Z     },
+2026-09-20T14:28:45.1028227Z     "observations": 146,
+2026-09-20T14:28:45.1028622Z     "oneshot_decisions": 0,
+2026-09-20T14:28:45.1028915Z     "python_fallback_decisions": 0,
+2026-09-20T14:28:45.1029232Z     "python_semantic_decisions": 0,
+2026-09-20T14:28:45.1029505Z     "resident_share": 1.0,
+2026-09-20T14:28:45.1029793Z     "route_corpus": "installed_routes",
+2026-09-20T14:28:45.1030106Z     "routes": 21,
+2026-09-20T14:28:45.1030335Z     "rss_baseline_bytes": 740487168,
+2026-09-20T14:28:45.1030601Z     "rss_growth": 0.025528,
+2026-09-20T14:28:45.1030854Z     "rss_peak_bytes": 759390208,
+2026-09-20T14:28:45.1031104Z     "safe_failure_rate": 0.0,
+2026-09-20T14:28:45.1031355Z     "safe_failures": 0,
+2026-09-20T14:28:45.1031599Z     "safe_failures_by_size": {},
+2026-09-20T14:28:45.1031844Z     "security_denials": 30,
+2026-09-20T14:28:45.1032106Z     "security_denials_by_size": {
+2026-09-20T14:28:45.1032351Z       "1k": 30
+2026-09-20T14:28:45.1032538Z     },
+2026-09-20T14:28:45.1032731Z     "warm_failures": 0
+2026-09-20T14:28:45.1032934Z   },
+2026-09-20T14:28:45.1033111Z   "errors_16": 0,
+2026-09-20T14:28:45.1033307Z   "errors_64": 0,
+2026-09-20T14:28:45.1033523Z   "evidence_class": "smoke",
+2026-09-20T14:28:45.1033753Z   "gates": {
+2026-09-20T14:28:45.1033950Z     "1m_latency": true,
+2026-09-20T14:28:45.1034182Z     "250k_latency": true,
+2026-09-20T14:28:45.1034416Z     "5m_latency": true,
+2026-09-20T14:28:45.1034634Z     "cold_latency": true,
+2026-09-20T14:28:45.1034874Z     "concurrency": true,
+2026-09-20T14:28:45.1035132Z     "concurrency_64_bounded": true,
+2026-09-20T14:28:45.1035410Z     "installed_corpus": true,
+2026-09-20T14:28:45.1035660Z     "python_fallback": true,
+2026-09-20T14:28:45.1035895Z     "readiness": true,
+2026-09-20T14:28:45.1036113Z     "recovery_latency": true,
+2026-09-20T14:28:45.1036350Z     "resident_share": true,
+2026-09-20T14:28:45.1036576Z     "rss": true,
+2026-09-20T14:28:45.1036777Z     "safe_corpus": true,
+2026-09-20T14:28:45.1036998Z     "warm_latency": true
+2026-09-20T14:28:45.1037212Z   },
+2026-09-20T14:28:45.1037398Z   "installed_launcher": {
+2026-09-20T14:28:45.1037929Z     "boundary": "INSTALLED_LAUNCHER",
+2026-09-20T14:28:45.1038409Z     "cases_validated": [
+2026-09-20T14:28:45.1038647Z       "benign",
+2026-09-20T14:28:45.1038842Z       "redacted"
+2026-09-20T14:28:45.1039033Z     ],
+2026-09-20T14:28:45.1039268Z     "configuration": "registered_argv",
+2026-09-20T14:28:45.1039546Z     "event": "PostToolUse",
+2026-09-20T14:28:45.1039928Z     "evidence_class": "smoke",
+2026-09-20T14:28:45.1040183Z     "harness": "claude-code",
+2026-09-20T14:28:45.1040417Z     "latency": {
+2026-09-20T14:28:45.1040611Z       "count": 2,
+2026-09-20T14:28:45.1040818Z       "max_ms": 213.416,
+2026-09-20T14:28:45.1041038Z       "p50_ms": 213.207,
+2026-09-20T14:28:45.1041249Z       "p95_ms": 213.416,
+2026-09-20T14:28:45.1041467Z       "p99_ms": 213.416
+2026-09-20T14:28:45.1041670Z     },
+2026-09-20T14:28:45.1041901Z     "process_startup_included": true,
+2026-09-20T14:28:45.1042199Z     "qualification_complete": false,
+2026-09-20T14:28:45.1042506Z     "remaining_routes": "not_measured",
+2026-09-20T14:28:45.1042808Z     "stdout_and_exit_checked": true
+2026-09-20T14:28:45.1043053Z   },
+2026-09-20T14:28:45.1043238Z   "latency": {
+2026-09-20T14:28:45.1043469Z     "boundary": "DAEMON_INGRESS",
+2026-09-20T14:28:45.1043726Z     "cold_native_oneshot": {
+2026-09-20T14:28:45.1043965Z       "count": 2,
+2026-09-20T14:28:45.1044170Z       "max_ms": 7.059,
+2026-09-20T14:28:45.1044392Z       "p50_ms": 7.057,
+2026-09-20T14:28:45.1044606Z       "p95_ms": 7.059,
+2026-09-20T14:28:45.1044812Z       "p99_ms": 7.059
+2026-09-20T14:28:45.1045012Z     },
+2026-09-20T14:28:45.1045195Z     "readiness": {
+2026-09-20T14:28:45.1045395Z       "count": 2,
+2026-09-20T14:28:45.1045589Z       "max_ms": 0.051,
+2026-09-20T14:28:45.1045791Z       "p50_ms": 0.047,
+2026-09-20T14:28:45.1046004Z       "p95_ms": 0.051,
+2026-09-20T14:28:45.1046214Z       "p99_ms": 0.051
+2026-09-20T14:28:45.1046412Z     },
+2026-09-20T14:28:45.1046719Z     "resident_recovery": {
+2026-09-20T14:28:45.1046948Z       "count": 2,
+2026-09-20T14:28:45.1047148Z       "max_ms": 214.656,
+2026-09-20T14:28:45.1047362Z       "p50_ms": 189.808,
+2026-09-20T14:28:45.1047577Z       "p95_ms": 214.656,
+2026-09-20T14:28:45.1048076Z       "p99_ms": 214.656
+2026-09-20T14:28:45.1048281Z     },
+2026-09-20T14:28:45.1048461Z     "size_classes": {
+2026-09-20T14:28:45.1048660Z       "1k": {
+2026-09-20T14:28:45.1048855Z         "count": 122,
+2026-09-20T14:28:45.1049067Z         "max_ms": 635.964,
+2026-09-20T14:28:45.1049289Z         "p50_ms": 183.544,
+2026-09-20T14:28:45.1049515Z         "p95_ms": 563.652,
+2026-09-20T14:28:45.1049729Z         "p99_ms": 626.696
+2026-09-20T14:28:45.1049936Z       },
+2026-09-20T14:28:45.1050116Z       "1m": {
+2026-09-20T14:28:45.1050303Z         "count": 8,
+2026-09-20T14:28:45.1050506Z         "max_ms": 48.947,
+2026-09-20T14:28:45.1050727Z         "p50_ms": 37.876,
+2026-09-20T14:28:45.1050940Z         "p95_ms": 48.947,
+2026-09-20T14:28:45.1051153Z         "p99_ms": 48.947
+2026-09-20T14:28:45.1051354Z       },
+2026-09-20T14:28:45.1051545Z       "250k": {
+2026-09-20T14:28:45.1051738Z         "count": 8,
+2026-09-20T14:28:45.1051940Z         "max_ms": 30.406,
+2026-09-20T14:28:45.1052157Z         "p50_ms": 26.536,
+2026-09-20T14:28:45.1052369Z         "p95_ms": 30.406,
+2026-09-20T14:28:45.1052577Z         "p99_ms": 30.406
+2026-09-20T14:28:45.1052785Z       },
+2026-09-20T14:28:45.1052956Z       "5m": {
+2026-09-20T14:28:45.1053143Z         "count": 8,
+2026-09-20T14:28:45.1053339Z         "max_ms": 116.923,
+2026-09-20T14:28:45.1053574Z         "p50_ms": 113.569,
+2026-09-20T14:28:45.1053788Z         "p95_ms": 116.923,
+2026-09-20T14:28:45.1054004Z         "p99_ms": 116.923
+2026-09-20T14:28:45.1054215Z       }
+2026-09-20T14:28:45.1054383Z     },
+2026-09-20T14:28:45.1054573Z     "warm_all_harnesses": {
+2026-09-20T14:28:45.1054800Z       "count": 42,
+2026-09-20T14:28:45.1055000Z       "max_ms": 35.463,
+2026-09-20T14:28:45.1055211Z       "p50_ms": 25.304,
+2026-09-20T14:28:45.1055417Z       "p95_ms": 35.222,
+2026-09-20T14:28:45.1055625Z       "p99_ms": 35.463
+2026-09-20T14:28:45.1055822Z     },
+2026-09-20T14:28:45.1056002Z     "warm_by_event": {
+2026-09-20T14:28:45.1056346Z       "PostToolUse": {
+2026-09-20T14:28:45.1056563Z         "count": 16,
+2026-09-20T14:28:45.1056768Z         "max_ms": 35.463,
+2026-09-20T14:28:45.1056993Z         "p50_ms": 22.646,
+2026-09-20T14:28:45.1057203Z         "p95_ms": 35.463,
+2026-09-20T14:28:45.1057527Z         "p99_ms": 35.463
+2026-09-20T14:28:45.1057942Z       },
+2026-09-20T14:28:45.1058149Z       "PreToolUse": {
+2026-09-20T14:28:45.1058377Z         "count": 26,
+2026-09-20T14:28:45.1058602Z         "max_ms": 35.335,
+2026-09-20T14:28:45.1058824Z         "p50_ms": 28.777,
+2026-09-20T14:28:45.1059042Z         "p95_ms": 35.222,
+2026-09-20T14:28:45.1059257Z         "p99_ms": 35.335
+2026-09-20T14:28:45.1059473Z       }
+2026-09-20T14:28:45.1059644Z     },
+2026-09-20T14:28:45.1059829Z     "warm_by_route": {
+2026-09-20T14:28:45.1060086Z       "claude-code.PostToolUse": {
+2026-09-20T14:28:45.1060345Z         "count": 2,
+2026-09-20T14:28:45.1060547Z         "max_ms": 35.463,
+2026-09-20T14:28:45.1060758Z         "p50_ms": 30.456,
+2026-09-20T14:28:45.1060984Z         "p95_ms": 35.463,
+2026-09-20T14:28:45.1061194Z         "p99_ms": 35.463
+2026-09-20T14:28:45.1061394Z       },
+2026-09-20T14:28:45.1061617Z       "claude-code.PreToolUse": {
+2026-09-20T14:28:45.1061859Z         "count": 2,
+2026-09-20T14:28:45.1062058Z         "max_ms": 30.43,
+2026-09-20T14:28:45.1062279Z         "p50_ms": 25.001,
+2026-09-20T14:28:45.1062489Z         "p95_ms": 30.43,
+2026-09-20T14:28:45.1062699Z         "p99_ms": 30.43
+2026-09-20T14:28:45.1062896Z       },
+2026-09-20T14:28:45.1063092Z       "cline.PostToolUse": {
+2026-09-20T14:28:45.1063318Z         "count": 2,
+2026-09-20T14:28:45.1063513Z         "max_ms": 31.35,
+2026-09-20T14:28:45.1063727Z         "p50_ms": 26.025,
+2026-09-20T14:28:45.1063937Z         "p95_ms": 31.35,
+2026-09-20T14:28:45.1064147Z         "p99_ms": 31.35
+2026-09-20T14:28:45.1064349Z       },
+2026-09-20T14:28:45.1064535Z       "cline.PreToolUse": {
+2026-09-20T14:28:45.1064761Z         "count": 2,
+2026-09-20T14:28:45.1064957Z         "max_ms": 25.156,
+2026-09-20T14:28:45.1065180Z         "p50_ms": 22.818,
+2026-09-20T14:28:45.1065389Z         "p95_ms": 25.156,
+2026-09-20T14:28:45.1065596Z         "p99_ms": 25.156
+2026-09-20T14:28:45.1065802Z       },
+2026-09-20T14:28:45.1065992Z       "codex.PostToolUse": {
+2026-09-20T14:28:45.1066223Z         "count": 2,
+2026-09-20T14:28:45.1066422Z         "max_ms": 25.57,
+2026-09-20T14:28:45.1066632Z         "p50_ms": 25.342,
+2026-09-20T14:28:45.1066841Z         "p95_ms": 25.57,
+2026-09-20T14:28:45.1067056Z         "p99_ms": 25.57
+2026-09-20T14:28:45.1067254Z       },
+2026-09-20T14:28:45.1067441Z       "codex.PreToolUse": {
+2026-09-20T14:28:45.1067878Z         "count": 2,
+2026-09-20T14:28:45.1068116Z         "max_ms": 35.335,
+2026-09-20T14:28:45.1068331Z         "p50_ms": 30.246,
+2026-09-20T14:28:45.1068539Z         "p95_ms": 35.335,
+2026-09-20T14:28:45.1068753Z         "p99_ms": 35.335
+2026-09-20T14:28:45.1068958Z       },
+2026-09-20T14:28:45.1069178Z       "copilot.PostToolUse": {
+2026-09-20T14:28:45.1069431Z         "count": 2,
+2026-09-20T14:28:45.1069631Z         "max_ms": 20.652,
+2026-09-20T14:28:45.1069846Z         "p50_ms": 20.373,
+2026-09-20T14:28:45.1070054Z         "p95_ms": 20.652,
+2026-09-20T14:28:45.1070268Z         "p99_ms": 20.652
+2026-09-20T14:28:45.1070472Z       },
+2026-09-20T14:28:45.1070668Z       "copilot.PreToolUse": {
+2026-09-20T14:28:45.1070909Z         "count": 2,
+2026-09-20T14:28:45.1071102Z         "max_ms": 30.643,
+2026-09-20T14:28:45.1071315Z         "p50_ms": 27.861,
+2026-09-20T14:28:45.1071528Z         "p95_ms": 30.643,
+2026-09-20T14:28:45.1071735Z         "p99_ms": 30.643
+2026-09-20T14:28:45.1071936Z       },
+2026-09-20T14:28:45.1072122Z       "cursor.PostToolUse": {
+2026-09-20T14:28:45.1072357Z         "count": 2,
+2026-09-20T14:28:45.1072552Z         "max_ms": 19.889,
+2026-09-20T14:28:45.1072764Z         "p50_ms": 19.798,
+2026-09-20T14:28:45.1072975Z         "p95_ms": 19.889,
+2026-09-20T14:28:45.1073184Z         "p99_ms": 19.889
+2026-09-20T14:28:45.1073383Z       },
+2026-09-20T14:28:45.1073710Z       "cursor.PreToolUse": {
+2026-09-20T14:28:45.1073946Z         "count": 2,
+2026-09-20T14:28:45.1074140Z         "max_ms": 31.036,
+2026-09-20T14:28:45.1074356Z         "p50_ms": 30.838,
+2026-09-20T14:28:45.1074565Z         "p95_ms": 31.036,
+2026-09-20T14:28:45.1074771Z         "p99_ms": 31.036
+2026-09-20T14:28:45.1075444Z       },
+2026-09-20T14:28:45.1075787Z       "grok.PreToolUse": {
+2026-09-20T14:28:45.1076189Z         "count": 2,
+2026-09-20T14:28:45.1076558Z         "max_ms": 30.694,
+2026-09-20T14:28:45.1076960Z         "p50_ms": 30.507,
+2026-09-20T14:28:45.1077361Z         "p95_ms": 30.694,
+2026-09-20T14:28:45.1078029Z         "p99_ms": 30.694
+2026-09-20T14:28:45.1078427Z       },
+2026-09-20T14:28:45.1078784Z       "hermes.PreToolUse": {
+2026-09-20T14:28:45.1079206Z         "count": 2,
+2026-09-20T14:28:45.1079575Z         "max_ms": 20.545,
+2026-09-20T14:28:45.1079818Z         "p50_ms": 20.545,
+2026-09-20T14:28:45.1080039Z         "p95_ms": 20.545,
+2026-09-20T14:28:45.1080252Z         "p99_ms": 20.545
+2026-09-20T14:28:45.1080473Z       },
+2026-09-20T14:28:45.1080666Z       "kimi.PostToolUse": {
+2026-09-20T14:28:45.1080894Z         "count": 2,
+2026-09-20T14:28:45.1081100Z         "max_ms": 24.592,
+2026-09-20T14:28:45.1081310Z         "p50_ms": 22.316,
+2026-09-20T14:28:45.1081524Z         "p95_ms": 24.592,
+2026-09-20T14:28:45.1081732Z         "p99_ms": 24.592
+2026-09-20T14:28:45.1081945Z       },
+2026-09-20T14:28:45.1082133Z       "kimi.PreToolUse": {
+2026-09-20T14:28:45.1082351Z         "count": 2,
+2026-09-20T14:28:45.1082550Z         "max_ms": 30.723,
+2026-09-20T14:28:45.1082761Z         "p50_ms": 28.247,
+2026-09-20T14:28:45.1082969Z         "p95_ms": 30.723,
+2026-09-20T14:28:45.1083181Z         "p99_ms": 30.723
+2026-09-20T14:28:45.1083382Z       },
+2026-09-20T14:28:45.1083569Z       "omp.PostToolUse": {
+2026-09-20T14:28:45.1083790Z         "count": 2,
+2026-09-20T14:28:45.1083984Z         "max_ms": 30.496,
+2026-09-20T14:28:45.1084198Z         "p50_ms": 24.809,
+2026-09-20T14:28:45.1084418Z         "p95_ms": 30.496,
+2026-09-20T14:28:45.1084633Z         "p99_ms": 30.496
+2026-09-20T14:28:45.1084834Z       },
+2026-09-20T14:28:45.1085017Z       "omp.PreToolUse": {
+2026-09-20T14:28:45.1085233Z         "count": 2,
+2026-09-20T14:28:45.1085425Z         "max_ms": 31.899,
+2026-09-20T14:28:45.1085636Z         "p50_ms": 31.72,
+2026-09-20T14:28:45.1085849Z         "p95_ms": 31.899,
+2026-09-20T14:28:45.1086057Z         "p99_ms": 31.899
+2026-09-20T14:28:45.1086256Z       },
+2026-09-20T14:28:45.1086485Z       "openclaw.PreToolUse": {
+2026-09-20T14:28:45.1086735Z         "count": 2,
+2026-09-20T14:28:45.1086936Z         "max_ms": 35.222,
+2026-09-20T14:28:45.1087154Z         "p50_ms": 30.191,
+2026-09-20T14:28:45.1087384Z         "p95_ms": 35.222,
+2026-09-20T14:28:45.1087597Z         "p99_ms": 35.222
+2026-09-20T14:28:45.1088054Z       },
+2026-09-20T14:28:45.1088287Z       "opencode.PreToolUse": {
+2026-09-20T14:28:45.1088525Z         "count": 2,
+2026-09-20T14:28:45.1088725Z         "max_ms": 21.434,
+2026-09-20T14:28:45.1088941Z         "p50_ms": 20.745,
+2026-09-20T14:28:45.1089159Z         "p95_ms": 21.434,
+2026-09-20T14:28:45.1089369Z         "p99_ms": 21.434
+2026-09-20T14:28:45.1089574Z       },
+2026-09-20T14:28:45.1089766Z       "pi.PostToolUse": {
+2026-09-20T14:28:45.1089985Z         "count": 2,
+2026-09-20T14:28:45.1090183Z         "max_ms": 29.905,
+2026-09-20T14:28:45.1090399Z         "p50_ms": 24.85,
+2026-09-20T14:28:45.1090614Z         "p95_ms": 29.905,
+2026-09-20T14:28:45.1090823Z         "p99_ms": 29.905
+2026-09-20T14:28:45.1091161Z       },
+2026-09-20T14:28:45.1091617Z       "pi.PreToolUse": {
+2026-09-20T14:28:45.1091965Z         "count": 2,
+2026-09-20T14:28:45.1092313Z         "max_ms": 30.789,
+2026-09-20T14:28:45.1092624Z         "p50_ms": 27.926,
+2026-09-20T14:28:45.1107466Z         "p95_ms": 30.789,
+2026-09-20T14:28:45.1107999Z         "p99_ms": 30.789
+2026-09-20T14:28:45.1108416Z       },
+2026-09-20T14:28:45.1108788Z       "zcode.PreToolUse": {
+2026-09-20T14:28:45.1109218Z         "count": 2,
+2026-09-20T14:28:45.1109858Z         "max_ms": 30.292,
+2026-09-20T14:28:45.1110319Z         "p50_ms": 28.777,
+2026-09-20T14:28:45.1110743Z         "p95_ms": 30.292,
+2026-09-20T14:28:45.1111167Z         "p99_ms": 30.292
+2026-09-20T14:28:45.1111564Z       }
+2026-09-20T14:28:45.1111881Z     }
+2026-09-20T14:28:45.1112430Z   },
+2026-09-20T14:28:45.1112776Z   "passed": true,
+2026-09-20T14:28:45.1113239Z   "python_semantic_decisions": 0,
+2026-09-20T14:28:45.1113801Z   "qualification_complete": false,
+2026-09-20T14:28:45.1114308Z   "reference_review": {
+2026-09-20T14:28:45.1114797Z     "full_review_qualified": true,
+2026-09-20T14:28:45.1115273Z     "missing_scopes": [],
+2026-09-20T14:28:45.1115754Z     "platform_denial_cases": [],
+2026-09-20T14:28:45.1116282Z     "platform_denial_timing_eligible": false
+2026-09-20T14:28:45.1116778Z   },
+2026-09-20T14:28:45.1117119Z   "routes": {
+2026-09-20T14:28:45.1117476Z     "engine_bypassed": 30,
+2026-09-20T14:28:45.1118195Z     "native_resident": 116
+2026-09-20T14:28:45.1118611Z   },
+2026-09-20T14:28:45.1118976Z   "runtime": {
+2026-09-20T14:28:45.1119364Z     "architecture": "x86_64",
+2026-09-20T14:28:45.1119967Z     "build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+2026-09-20T14:28:45.1121014Z     "installed_package_sha256": "7d3fd842f91a6cb2370d45f21807d81303cdb6ae91b7e2b910e5c13e01fe92fe",
+2026-09-20T14:28:45.1121876Z     "mode": "auto",
+2026-09-20T14:28:45.1122325Z     "package_origin": "installed",
+2026-09-20T14:28:45.1123214Z     "package_record_sha256": "1129527394d25868e8ddc839a8cce0063b2d05e15f0c66b93f6d0a4d101d6012",
+2026-09-20T14:28:45.1124090Z     "package_version": "3.0.1",
+2026-09-20T14:28:45.1124554Z     "protocol_version": 1,
+2026-09-20T14:28:45.1125029Z     "python_version": "3.12.14",
+2026-09-20T14:28:45.1125814Z     "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+2026-09-20T14:28:45.1126974Z     "runtime_sha256": "ab9c26658149edaf5e03c5c16fbd8a24716f9c9a9335ecdbc32b6ca0366046a8",
+2026-09-20T14:28:45.1128087Z     "runtime_version": "3.0.1",
+2026-09-20T14:28:45.1128543Z     "system": "Linux",
+2026-09-20T14:28:45.1128949Z     "target": "x86_64-linux"
+2026-09-20T14:28:45.1129377Z   },
+2026-09-20T14:28:45.1129850Z   "schema": "hol-guard.native-installed-slo.v1",
+2026-09-20T14:28:45.1130543Z   "scope": "daemon_ingress_and_registered_launcher",
+2026-09-20T14:28:45.1131111Z   "thresholds": {
+2026-09-20T14:28:45.1131539Z     "direct_cold_p95_ms": 150.0,
+2026-09-20T14:28:45.1132090Z     "installed_adapter_concurrent_p99_ms": 1000.0,
+2026-09-20T14:28:45.1132721Z     "installed_adapter_p95_ms": 1000.0,
+2026-09-20T14:28:45.1133175Z     "readiness_p95_ms": 400.0
+2026-09-20T14:28:45.1133433Z   },
+2026-09-20T14:28:45.1133652Z   "timing_boundaries": {
+2026-09-20T14:28:45.1133996Z     "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+2026-09-20T14:28:45.1134389Z     "INSTALLED_LAUNCHER": "registered_argv",
+2026-09-20T14:28:45.1134689Z     "KERNEL": "not_measured",
+2026-09-20T14:28:45.1134979Z     "NATIVE_CLIENT": "cold_native_process"
+2026-09-20T14:28:45.1135244Z   }
+2026-09-20T14:28:45.1135451Z }
+2026-09-20T14:28:45.2756820Z ##[group]Run unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+2026-09-20T14:28:45.2757462Z [36;1munset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH[0m
+2026-09-20T14:28:45.2758291Z [36;1munset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:28:45.2758904Z [36;1munset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY[0m
+2026-09-20T14:28:45.2759572Z [36;1munset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE[0m
+2026-09-20T14:28:45.2760188Z [36;1munset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON[0m
+2026-09-20T14:28:45.2760618Z [36;1munset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST[0m
+2026-09-20T14:28:45.2761133Z [36;1munset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T14:28:45.2761845Z [36;1munset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY[0m
+2026-09-20T14:28:45.2762461Z [36;1munset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE[0m
+2026-09-20T14:28:45.2763073Z [36;1munset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT[0m
+2026-09-20T14:28:45.2763856Z [36;1munset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH[0m
+2026-09-20T14:28:45.2764318Z [36;1m.venv/bin/python scripts/stress_guard_daemon.py \[0m
+2026-09-20T14:28:45.2764659Z [36;1m  --requests 100000 \[0m
+2026-09-20T14:28:45.2764920Z [36;1m  --receipts 250000 \[0m
+2026-09-20T14:28:45.2765176Z [36;1m  --settle-seconds 0 \[0m
+2026-09-20T14:28:45.2765442Z [36;1m  --enforce-soak \[0m
+2026-09-20T14:28:45.2765691Z [36;1m  --json native-soak.json[0m
+2026-09-20T14:28:45.2766080Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T14:28:45.2766600Z [36;1mcp "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" native-dist/[0m
+2026-09-20T14:28:45.2767059Z [36;1mSOURCE_SHA="${GITHUB_SHA:?missing GitHub source SHA}"[0m
+2026-09-20T14:28:45.2767527Z [36;1mruntime="rust/target/x86_64-unknown-linux-musl/release/hol-guard-runtime"[0m
+2026-09-20T14:28:45.2768473Z [36;1mRULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')[0m
+2026-09-20T14:28:45.2769136Z [36;1muv run --no-sync python scripts/ci/validate_release_artifacts.py \[0m
+2026-09-20T14:28:45.2769531Z [36;1m  --dist-dir native-dist \[0m
+2026-09-20T14:28:45.2769794Z [36;1m  --version "$VERSION" \[0m
+2026-09-20T14:28:45.2770057Z [36;1m  --source-sha "$SOURCE_SHA" \[0m
+2026-09-20T14:28:45.2770333Z [36;1m  --rule-digest "$RULE_DIGEST" \[0m
+2026-09-20T14:28:45.2770631Z [36;1m  --platform manylinux_2_17_x86_64 \[0m
+2026-09-20T14:28:45.2770986Z [36;1m  --windows-waiver "validated by the platform matrix" \[0m
+2026-09-20T14:28:45.2771360Z [36;1m  --output native-artifact-evidence.json[0m
+2026-09-20T14:28:45.2806829Z shell: /usr/bin/bash -e {0}
+2026-09-20T14:28:45.2807073Z env:
+2026-09-20T14:28:45.2807335Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:45.2808045Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:28:45.2808503Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:45.2808889Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:45.2809287Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:28:45.2809670Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:28:45.2810062Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:28:45.2810427Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:28:45.2810731Z ##[endgroup]
+2026-09-20T14:47:46.7494133Z ##[error]The operation was canceled.
+2026-09-20T14:47:46.7594999Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T14:47:46.7595435Z with:
+2026-09-20T14:47:46.7595655Z   name: hol-guard-native-wheel-linux-x64
+2026-09-20T14:47:46.7596970Z   path: native-dist/*.whl
+native-default-auto.json
+native-default-auto-failure.json
+native-installed-identity.json
+installed-pi-output.json
+native-installed-slo.json
+native-soak.json
+native-artifact-evidence.json
+native-stop-diagnostic.json
+
+2026-09-20T14:47:46.7598596Z   if-no-files-found: warn
+2026-09-20T14:47:46.7599019Z   compression-level: 6
+2026-09-20T14:47:46.7599411Z   overwrite: false
+2026-09-20T14:47:46.7599805Z   include-hidden-files: false
+2026-09-20T14:47:46.7600236Z   archive: true
+2026-09-20T14:47:46.7600575Z env:
+2026-09-20T14:47:46.7600974Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:47:46.7601418Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-09-20T14:47:46.7601877Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:47:46.7602260Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:47:46.7602639Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-09-20T14:47:46.7603021Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-09-20T14:47:46.7603418Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-20T14:47:46.7603995Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-20T14:47:46.7604528Z ##[endgroup]
+2026-09-20T14:47:46.9850920Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T14:47:46.9903852Z The least common ancestor is /home/runner/work/hol-guard/hol-guard. This will be the root directory of the artifact
+2026-09-20T14:47:46.9905015Z With the provided path, there will be 6 files uploaded
+2026-09-20T14:47:46.9905888Z Artifact name is valid!
+2026-09-20T14:47:46.9906365Z Root directory input is valid!
+2026-09-20T14:47:47.1977168Z Uploading artifact: hol-guard-native-wheel-linux-x64.zip
+2026-09-20T14:47:47.2036330Z Beginning upload of artifact content to blob storage
+2026-09-20T14:47:47.9216519Z Uploaded bytes 8388608
+2026-09-20T14:47:47.9219759Z Uploaded bytes 8710009
+2026-09-20T14:47:47.9220841Z Finished uploading artifact content to blob storage!
+2026-09-20T14:47:47.9223564Z SHA256 digest of uploaded artifact is d413006872ed84d3e2eb6cbef3397148721eaa7661994d48cc71399de07ba2ea
+2026-09-20T14:47:47.9224966Z Finalizing artifact upload
+2026-09-20T14:47:48.1317343Z Artifact hol-guard-native-wheel-linux-x64 successfully finalized. Artifact ID 10607167344
+2026-09-20T14:47:48.1320179Z Artifact hol-guard-native-wheel-linux-x64 has been successfully uploaded! Final size is 8710009 bytes. Artifact ID is 10607167344
+2026-09-20T14:47:48.1322881Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35516487925/artifacts/10607167344
+2026-09-20T14:47:48.1537417Z Post job cleanup.
+2026-09-20T14:47:48.2685780Z [command]/usr/bin/git version
+2026-09-20T14:47:48.2726551Z git version 2.55.0
+2026-09-20T14:47:48.2772365Z Temporarily overriding HOME='/home/runner/work/_temp/252cce64-1bbc-481e-aa72-ca46df8a55cb' before making global git config changes
+2026-09-20T14:47:48.2774298Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:47:48.2779386Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/hol-guard/hol-guard
+2026-09-20T14:47:48.2814282Z Removing SSH command configuration
+2026-09-20T14:47:48.2823122Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:47:48.2884181Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T14:47:48.3266396Z Removing HTTP extra header
+2026-09-20T14:47:48.3271245Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:47:48.3319066Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T14:47:48.3868183Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:47:48.3905595Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:47:48.3979478Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T14:47:48.4912034Z Evaluate and set job outputs
+2026-09-20T14:47:48.4947085Z Set output 'rule_digest'
+2026-09-20T14:47:48.4959836Z Cleaning up orphan processes
+2026-09-20T14:47:48.5918007Z Terminate orphan process: pid (5496) (python)
+2026-09-20T14:47:48.6082185Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

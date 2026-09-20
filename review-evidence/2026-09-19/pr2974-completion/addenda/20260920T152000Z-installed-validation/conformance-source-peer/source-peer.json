@@ -1,0 +1,41 @@
+{
+  "schema": "pr2974.claude-conformance-v2-windows-peer.v1",
+  "reviewer": "windows_persistence_audit",
+  "source_base": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "verdict": "clear for the exact test-only source binding delta",
+  "files": [
+    {
+      "path": "tests/claude_launcher_conformance.py",
+      "git_blob": "37a54fd7c47a3d1ac24d4814d937fbd041f92426",
+      "bytes": 8285,
+      "sha256": "d965c62f79c431c2fe0914b8c469c05f8f183170974096c0d3d70e285f3aced6"
+    },
+    {
+      "path": "tests/test_claude_launcher_conformance_binding.py",
+      "git_blob": "5a1bf0322683ccea3da5aa10cb2d3ccf2c53a4c2",
+      "bytes": 8595,
+      "sha256": "15e2ce789f6c33210831086eba988453625a1309654921a373225e3b9a6fdb94"
+    },
+    {
+      "path": "tests/fixtures/claude-launcher-current-conformance-v2.json",
+      "git_blob": "0d29b9b8bc0f0c74e83b1cdd5109d5e254786411",
+      "bytes": 3012,
+      "sha256": "11fc4d1ce3650e1ad2ebffc86829f4e1e4cc63201a8227cd31bfd128e463495b"
+    }
+  ],
+  "verified": [
+    "Historical fixture, generator and prior current v1 bytes are unchanged.",
+    "Current auth Windows reader addition is exactly once immediately before the original Path.read_text return; deleting it restores the exact historical auth digest.",
+    "Both new reader providers match independently checked exact hashes.",
+    "Other historical transport/state module bytes match immutable historical hashes.",
+    "The fixed source SHA/tree and scope preserve source-only execution, installed_artifact=false and qualification_complete=false.",
+    "Missing/extra/provider repin, extra auth edit, changed branch and relocated unchanged-branch refusal controls retain fail-closed binding."
+  ],
+  "resolved_review_finding": "Initial deletion-only inverse accepted relocation of the unchanged new branch after the original return when current hashes were repinned. The final adjacency requirement and relocated-branch witness close that gap.",
+  "limits": [
+    "No product protocol, HMAC, deadline, transport or permission source changed.",
+    "No tests, application imports or workload were executed by this peer. Producer test/style/type results are separate.",
+    "Historical authentication vectors do not independently establish Windows replacement semantics; the separately reviewed native controls cover that behavior."
+  ],
+  "blocking_findings": []
+}

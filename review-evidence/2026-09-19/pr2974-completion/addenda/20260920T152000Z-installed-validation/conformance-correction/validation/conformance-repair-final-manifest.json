@@ -1,0 +1,60 @@
+{
+  "schema": "pr2974.claude-current-conformance-repair.v2",
+  "base_sha": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "base_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+  "source_paths": [
+    {
+      "path": "tests/claude_launcher_conformance.py",
+      "absolute_path": "/workspace/scratch/745337b67ff9/claude-conformance-ad9d-prep/tests/claude_launcher_conformance.py",
+      "bytes": 8285,
+      "sha256": "d965c62f79c431c2fe0914b8c469c05f8f183170974096c0d3d70e285f3aced6",
+      "git_blob": "37a54fd7c47a3d1ac24d4814d937fbd041f92426"
+    },
+    {
+      "path": "tests/fixtures/claude-launcher-current-conformance-v2.json",
+      "absolute_path": "/workspace/scratch/745337b67ff9/claude-conformance-ad9d-prep/tests/fixtures/claude-launcher-current-conformance-v2.json",
+      "bytes": 3012,
+      "sha256": "11fc4d1ce3650e1ad2ebffc86829f4e1e4cc63201a8227cd31bfd128e463495b",
+      "git_blob": "0d29b9b8bc0f0c74e83b1cdd5109d5e254786411"
+    },
+    {
+      "path": "tests/test_claude_launcher_conformance_binding.py",
+      "absolute_path": "/workspace/scratch/745337b67ff9/claude-conformance-ad9d-prep/tests/test_claude_launcher_conformance_binding.py",
+      "bytes": 8595,
+      "sha256": "15e2ce789f6c33210831086eba988453625a1309654921a373225e3b9a6fdb94",
+      "git_blob": "5a1bf0322683ccea3da5aa10cb2d3ccf2c53a4c2"
+    }
+  ],
+  "validation": {
+    "binding_controls": 29,
+    "cohort_pass": 74,
+    "cohort_skip": 29,
+    "types_errors": 0,
+    "types_warnings": 87,
+    "ruff_lint": "passed",
+    "ruff_format": "passed"
+  },
+  "limits": [
+    "No product or Rust change",
+    "No original native workload executed: 29 explicit platform/binary skips retained",
+    "Existing historical vectors, generator and prior v1 current binding unchanged",
+    "No Windows behavior equivalence or installed/full qualification claimed"
+  ],
+  "unchanged_historical": {
+    "tests/fixtures/claude-launcher-pilot-auth.json": "ebf41a37cfe9e6e05bcd9f5161874a3e1329015bb990f779e238d3c8f4b3571a",
+    "scripts/generate_claude_launcher_auth_vectors.py": "03fa95cd2b9366c8913ac5b703f153c64f2b917e1d1ba953825486ca0debeeb5",
+    "tests/fixtures/claude-launcher-current-conformance.json": "077d3148fd141f92bfdf566018c53105364e3b93d26fd85115e0fc28842d60af"
+  },
+  "peer": {
+    "tree": "85ec091c17d631acc50218e5869e5c96678ae881",
+    "blob": "4e0b0a6d1551c355be15b546fc932605fc3ed677"
+  },
+  "historical_failure_jobs": [
+    106093330744,
+    106093330698,
+    106093329326,
+    106093329258
+  ],
+  "repair_reason": "Only auth provider changed: exact Windows reader insertion at its original return boundary. Explicit v2 conformance preserves historical v1/vector/generator bytes; inverse and adjacency proof bind changed auth, separate exact current provider hashes bind Windows helpers.",
+  "prototype_peer_finding": "Inverse deletion alone admitted an unchanged branch relocated below the original return after repinning; final adjacency predicate and actual data-only regression reject it."
+}

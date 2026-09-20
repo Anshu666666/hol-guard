@@ -1,0 +1,310 @@
+{
+  "schema": "pr2974.release-lifecycle-validation-plan.v1",
+  "status": "prepared_only",
+  "execution_performed": false,
+  "publication_authorized_by_this_plan": false,
+  "qualification_complete": false,
+  "original_task_promotions": [],
+  "candidate": {
+    "product_sha": null,
+    "product_tree": null,
+    "build_sha": null,
+    "build_tree": null,
+    "build_tree_must_equal_product_tree": true,
+    "normal_native_run_id": null,
+    "artifacts": null,
+    "version_from_reviewed_source": "3.0.1",
+    "actual_version_must_be_rechecked": true,
+    "rule_digest": null
+  },
+  "expected_local_rehearsal_files": [
+    "hol_guard-3.0.1.tar.gz",
+    "hol_guard-3.0.1-py3-none-any.whl",
+    "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+    "hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl",
+    "hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl",
+    "hol_guard-3.0.1-py3-none-win_amd64.whl"
+  ],
+  "platforms": {
+    "manylinux_2_17_x86_64": "x86_64-unknown-linux-musl",
+    "macosx_13_0_x86_64": "x86_64-apple-darwin",
+    "macosx_11_0_arm64": "aarch64-apple-darwin",
+    "win_amd64": "x86_64-pc-windows-msvc"
+  },
+  "comparators": {
+    "audited_baseline": {
+      "source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "source_version": "3.0.1",
+      "wheel_bytes_manifest": null,
+      "must_recover_originals_without_rebuild": true
+    },
+    "compatible_prior": {
+      "PRIOR_PR_HEAD_SHA": "ae33987d0c8675c36a77375e03419aee920825f6",
+      "PRIOR_BUILD_SHA": "a224cc2e01e1eb8d74182fa32d78f46e9b417348",
+      "PRIOR_RUN_ID": 35217841356,
+      "PRIOR_REPOSITORY": "hashgraph-online/hol-guard",
+      "PRIOR_ARTIFACTS": {
+        "x86_64-unknown-linux-musl": {
+          "artifact_id": 10495348403,
+          "archive_sha256": "55f6058da8d589132ea2428fd1b55677fb7074bbdf7fcaf03b66853c4b11e28a",
+          "wheel_name": "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+          "wheel_sha256": "7404839d6a0d8d1c0954af7f95fe6d48663944cffb421325e8ec0006a4200602"
+        },
+        "x86_64-apple-darwin": {
+          "artifact_id": 10496030613,
+          "archive_sha256": "a880f0a08a9cd4c23d9e935c2861472dd7e2bf58ea24c5f2b8725f030176ddaf",
+          "wheel_name": "hol_guard-3.0.1-py3-none-macosx_13_0_x86_64.whl",
+          "wheel_sha256": "079e2c0261bcc8925c9a9b5484237792d1ff5119297cf4359d0c5ebe70b700bc"
+        },
+        "aarch64-apple-darwin": {
+          "artifact_id": 10496485020,
+          "archive_sha256": "d0b9983d5c7c2b6985eecaef3150134aeca6ba3fc967afa4274907cbb572badf",
+          "wheel_name": "hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl",
+          "wheel_sha256": "3efb6ebbc029554ed109eb5b9823fcc39a1df7ad4c947ab6d36d88d17f2060a6"
+        },
+        "x86_64-pc-windows-msvc": {
+          "artifact_id": 10495748426,
+          "archive_sha256": "ec65e2d9448c1a6c37202518e71e9fdc6ca338d8731f3d99d7d172e91bc64e5f",
+          "wheel_name": "hol_guard-3.0.1-py3-none-win_amd64.whl",
+          "wheel_sha256": "cb378e13d354c123de3761b0197b4b63c884fe368b65135bf576e7e42c26e089"
+        }
+      }
+    },
+    "distinct_version_pair": null
+  },
+  "build_environment": {
+    "python": "exact interpreter binding pending",
+    "uv_version": "0.9.26",
+    "frontend_version": "1.5.0",
+    "backend_observed_in_old_wheels": "hatchling==1.30.1",
+    "backend_bound_in_source": "hatchling<1.31",
+    "build_only_dependency_lock_sha256": null,
+    "build_wheelhouse_members": null,
+    "backend_source_version_stamp_change_selected": false,
+    "cargo_lock_sha256": "19dfe914f29401dc11bcd8407c93a72700dafab54b51bf1d64d3fbddf7226ee5",
+    "rust_toolchain": "1.88.0",
+    "uv_lock_sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+  },
+  "preconditions": [
+    "Reject unfilled required inputs before starting",
+    "Fresh immutable product/build tree equality and all selected source hashes",
+    "All four archive byte hashes and member identities checked before native collector",
+    "Review exact hash-locked build backend closure; isolated network resolver prohibited for sdist/rebuild observation",
+    "Prior original wheel identity and genuine stopped retirement prerequisites before transition"
+  ],
+  "commands_proposed_not_executed": [
+    {
+      "stage": "admit_native_archives",
+      "argv": [
+        "<PYTHON>",
+        "-m",
+        "scripts.ci.aggregate_native_wheel_artifacts",
+        "--artifacts-dir",
+        "<FOUR_EXACT_ARTIFACT_DIRECTORIES>",
+        "--version",
+        "<V>",
+        "--source-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--rule-digest",
+        "<RULE_DIGEST>",
+        "--output",
+        "<EVIDENCE>/native-matrix.json"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "offline_build_environment",
+      "argv": [
+        "<BUILD_PYTHON>",
+        "-m",
+        "pip",
+        "install",
+        "--no-index",
+        "--find-links",
+        "<HASH_VERIFIED_WHEELHOUSE>",
+        "--require-hashes",
+        "-r",
+        "<REVIEWED_BUILD_ONLY_LOCK>"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "sdist_each_of_two_clean_bound_checkouts",
+      "argv": [
+        "<BUILD_PYTHON>",
+        "-m",
+        "build",
+        "--sdist",
+        "--no-isolation",
+        "--outdir",
+        "<EMPTY_SDIST_OUTPUT>"
+      ],
+      "cwd": "<ONE_OF_TWO_EXACT_BUILD_SOURCE_CHECKOUTS>"
+    },
+    {
+      "stage": "wheel_from_admitted_sdist",
+      "argv": [
+        "<BUILD_PYTHON>",
+        "-m",
+        "build",
+        "--wheel",
+        "--no-isolation",
+        "--outdir",
+        "<EMPTY_REBUILT_WHEEL_OUTPUT>",
+        "<BOUNDED_EXTRACTED_SDIST_ROOT>"
+      ],
+      "cwd": "<BOUNDED_EXTRACTED_SDIST_ROOT>"
+    },
+    {
+      "stage": "exact_six_file_inventory",
+      "argv": [
+        "<PYTHON>",
+        "scripts/verify_native_runtime_release.py",
+        "validate-local",
+        "--artifact-set",
+        "full",
+        "--version",
+        "<V>",
+        "--source-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--dist-dir",
+        "<SIX_FILE_DIRECTORY>"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "all_four_native_manifests",
+      "argv": [
+        "<PYTHON>",
+        "scripts/ci/validate_release_artifacts.py",
+        "--dist-dir",
+        "<SIX_FILE_DIRECTORY>",
+        "--version",
+        "<V>",
+        "--source-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--rule-digest",
+        "<RULE_DIGEST>",
+        "--platform",
+        "manylinux_2_17_x86_64",
+        "--platform",
+        "macosx_13_0_x86_64",
+        "--platform",
+        "macosx_11_0_arm64",
+        "--platform",
+        "win_amd64",
+        "--output",
+        "<EVIDENCE>/manifest-validation.json"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "metadata_validation",
+      "argv": [
+        "<LOCKED_PUBLISH_PYTHON>",
+        "-m",
+        "twine",
+        "check",
+        "<SIX_EXACT_FILENAMES_AS_SEPARATE_ARGV>"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "stopped_transitions_per_platform_after_artifact_admission",
+      "argv": [
+        "<DRIVER_PYTHON>",
+        "scripts/ci/verify_installed_artifact_transitions.py",
+        "--python",
+        "<PLATFORM_INTERPRETER>",
+        "--baseline-wheel",
+        "<ORIGINAL_2E_WHEEL>",
+        "--candidate-wheel",
+        "<EXACT_NEW_NATIVE_WHEEL>",
+        "--baseline-sha",
+        "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+        "--candidate-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--prior-artifact-root",
+        "<EXACT_RETAINED_PRIOR_ROOT>",
+        "--prior-artifact-target",
+        "<TARGET>",
+        "--dependency-root",
+        "<EXACT_CANDIDATE_SOURCE_ROOT>",
+        "--output",
+        "<EVIDENCE>/installed-artifact-transitions.json"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "local_canary_subject_per_selected_wheel",
+      "argv": [
+        "<PYTHON>",
+        "scripts/installed_canary_proof.py",
+        "write-subject",
+        "--dist-dir",
+        "<ONE_WHEEL_DIRECTORY>",
+        "--version",
+        "<V>",
+        "--source-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--output",
+        "<EVIDENCE>/canary-subject.json"
+      ],
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    },
+    {
+      "stage": "installed_canary_rehearsal",
+      "argv": [
+        "<INSTALLED_PYTHON>",
+        "-X",
+        "pycache_prefix=<OWNED_CACHE_OUTSIDE_CHECKOUT_AND_INSTALL>",
+        "-m",
+        "scripts.run_installed_canary",
+        "--subject",
+        "<EVIDENCE>/canary-subject.json",
+        "--version",
+        "<V>",
+        "--source-sha",
+        "<ACTUAL_BUILD_SHA>",
+        "--repo-root",
+        "<EXACT_SOURCE_ROOT>",
+        "--output",
+        "<EVIDENCE>/installed-canary.json"
+      ],
+      "environment": "clear source PYTHONPATH and development override variables; installed package must remain outside checkout; driver imports remain source-bound",
+      "cwd": "<EXACT_SOURCE_ROOT>"
+    }
+  ],
+  "stopped_transition_acceptance": {
+    "positive_phases": 7,
+    "expected_legacy_rejection": 1,
+    "original_functional_downgrade_remains_false": true,
+    "full_program_qualification_remains_false": true
+  },
+  "remaining_distinct_deliverables": [
+    "actual live mixed-generation transition",
+    "request/session in-progress update without duplicate effects",
+    "actual distinct-version upgrade/downgrade/restore",
+    "selected signed/frozen package and installed post-sign manifest proof",
+    "desktop uninstall/repair source and installed proof",
+    "native approval consume continuation",
+    "production canary version/cohort and tested rollback",
+    "full original performance/resource/receipt qualification",
+    "eligible final-head review"
+  ],
+  "forbidden_in_this_preparation": [
+    "TestPyPI/PyPI upload",
+    "release/tag creation",
+    "attestation/signing",
+    "publish workflow dispatch or canary label change",
+    "PR/evidence-ref mutation",
+    "historical wheel replacement/rebuild",
+    "stopped E/F campaign run or repin"
+  ],
+  "existing_distinct_version_policy": {
+    "function": "cli/update_driver.py::_authority_blocks_downgrade",
+    "protected_downgrade_outcome": "extension_control_authority_downgrade_blocked",
+    "installer_must_not_start": true,
+    "authority_bypass_selected": false
+  }
+}

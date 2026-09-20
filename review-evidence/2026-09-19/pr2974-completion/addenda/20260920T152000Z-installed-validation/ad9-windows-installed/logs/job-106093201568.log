@@ -1,0 +1,984 @@
+﻿2026-09-20T14:26:34.0429296Z Current runner version: '2.337.0'
+2026-09-20T14:26:34.0456959Z ##[group]Runner Image Provisioner
+2026-09-20T14:26:34.0457783Z Hosted Compute Agent
+2026-09-20T14:26:34.0458356Z Version: 20260828.587
+2026-09-20T14:26:34.0458947Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T14:26:34.0459624Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T14:26:34.0460304Z Worker ID: {d0430869-5627-48ff-bd95-1dcf4b4f1091}
+2026-09-20T14:26:34.0460962Z Azure Region: westus
+2026-09-20T14:26:34.0461480Z ##[endgroup]
+2026-09-20T14:26:34.0462904Z ##[group]Operating System
+2026-09-20T14:26:34.0463519Z Microsoft Windows Server 2025
+2026-09-20T14:26:34.0464124Z 10.0.26100
+2026-09-20T14:26:34.0464591Z Datacenter
+2026-09-20T14:26:34.0465052Z ##[endgroup]
+2026-09-20T14:26:34.0465550Z ##[group]Runner Image
+2026-09-20T14:26:34.0466119Z Image: windows-2025-vs2026
+2026-09-20T14:26:34.0466685Z Version: 20260907.229.1
+2026-09-20T14:26:34.0468111Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+2026-09-20T14:26:34.0469780Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+2026-09-20T14:26:34.0471339Z ##[endgroup]
+2026-09-20T14:26:34.0472566Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T14:26:34.0474557Z Contents: read
+2026-09-20T14:26:34.0475173Z Metadata: read
+2026-09-20T14:26:34.0475676Z ##[endgroup]
+2026-09-20T14:26:34.0477824Z Secret source: Actions
+2026-09-20T14:26:34.0478762Z Cache mode: write
+2026-09-20T14:26:34.0479439Z Prepare workflow directory
+2026-09-20T14:26:34.1011905Z Prepare all required actions
+2026-09-20T14:26:34.1060477Z Getting action download info
+2026-09-20T14:26:34.4994894Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T14:26:34.8172008Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T14:26:34.9644993Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T14:26:35.4425160Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T14:26:35.7232661Z Complete job name: windows-x64
+2026-09-20T14:26:36.0278799Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T14:26:36.0280702Z with:
+2026-09-20T14:26:36.0281519Z   persist-credentials: false
+2026-09-20T14:26:36.0282329Z   repository: hashgraph-online/hol-guard
+2026-09-20T14:26:36.0287317Z   token: ***
+2026-09-20T14:26:36.0288403Z   ssh-strict: true
+2026-09-20T14:26:36.0289779Z   ssh-user: git
+2026-09-20T14:26:36.0291089Z   clean: true
+2026-09-20T14:26:36.0292154Z   sparse-checkout-cone-mode: true
+2026-09-20T14:26:36.0293391Z   fetch-depth: 1
+2026-09-20T14:26:36.0294430Z   fetch-tags: false
+2026-09-20T14:26:36.0295532Z   show-progress: true
+2026-09-20T14:26:36.0296598Z   lfs: false
+2026-09-20T14:26:36.0297604Z   submodules: false
+2026-09-20T14:26:36.0298694Z   set-safe-directory: true
+2026-09-20T14:26:36.0300251Z ##[endgroup]
+2026-09-20T14:26:36.2097370Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T14:26:36.2099704Z ##[group]Getting Git version info
+2026-09-20T14:26:36.2100711Z Working directory is 'D:\a\hol-guard\hol-guard'
+2026-09-20T14:26:36.2934114Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T14:26:37.1615672Z git version 2.55.0.windows.5
+2026-09-20T14:26:37.1659358Z ##[endgroup]
+2026-09-20T14:26:37.1680056Z Temporarily overriding HOME='D:\a\_temp\1377a696-8dc1-4f73-8720-fe31b51ad82f' before making global git config changes
+2026-09-20T14:26:37.1681638Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:26:37.1691751Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard
+2026-09-20T14:26:37.3178494Z Deleting the contents of 'D:\a\hol-guard\hol-guard'
+2026-09-20T14:26:37.3184777Z ##[group]Determining repository object format
+2026-09-20T14:26:37.3187851Z ##[endgroup]
+2026-09-20T14:26:37.3188873Z ##[group]Initializing the repository
+2026-09-20T14:26:37.3197732Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard
+2026-09-20T14:26:37.4551403Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/.git/
+2026-09-20T14:26:37.4633220Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:37.5555575Z ##[endgroup]
+2026-09-20T14:26:37.5556711Z ##[group]Disabling automatic garbage collection
+2026-09-20T14:26:37.5565570Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T14:26:37.5888581Z ##[endgroup]
+2026-09-20T14:26:37.5889993Z ##[group]Setting up auth
+2026-09-20T14:26:37.5890821Z Removing SSH command configuration
+2026-09-20T14:26:37.5902114Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:37.6239938Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:26:39.9920124Z Removing HTTP extra header
+2026-09-20T14:26:39.9936754Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:40.0282795Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:26:40.6100792Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:40.6115909Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:40.6459497Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:26:41.2320915Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T14:26:41.2677446Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:41.3058426Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:41.3473368Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:41.3829226Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:41.4206455Z ##[endgroup]
+2026-09-20T14:26:41.4207195Z ##[group]Fetching the repository
+2026-09-20T14:26:41.4223006Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +be612a3e562a2041b3732a33c158eeae4f1dad40:refs/remotes/pull/2974/merge
+2026-09-20T14:26:43.7361243Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T14:26:43.7362112Z  * [new ref]         be612a3e562a2041b3732a33c158eeae4f1dad40 -> pull/2974/merge
+2026-09-20T14:26:43.7411214Z ##[endgroup]
+2026-09-20T14:26:43.7412000Z ##[group]Determining the checkout info
+2026-09-20T14:26:43.7413409Z ##[endgroup]
+2026-09-20T14:26:43.7428870Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T14:26:43.8157410Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T14:26:43.8489832Z ##[group]Checking out the ref
+2026-09-20T14:26:43.8499335Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T14:26:44.9327873Z Updating files:  66% (3184/4787)
+2026-09-20T14:26:44.9466660Z Updating files:  67% (3208/4787)
+2026-09-20T14:26:44.9582993Z Updating files:  68% (3256/4787)
+2026-09-20T14:26:44.9706268Z Updating files:  69% (3304/4787)
+2026-09-20T14:26:44.9838788Z Updating files:  70% (3351/4787)
+2026-09-20T14:26:44.9984266Z Updating files:  71% (3399/4787)
+2026-09-20T14:26:45.0122413Z Updating files:  72% (3447/4787)
+2026-09-20T14:26:45.0268119Z Updating files:  73% (3495/4787)
+2026-09-20T14:26:45.0397678Z Updating files:  74% (3543/4787)
+2026-09-20T14:26:45.0536811Z Updating files:  75% (3591/4787)
+2026-09-20T14:26:45.0664529Z Updating files:  76% (3639/4787)
+2026-09-20T14:26:45.0807271Z Updating files:  77% (3686/4787)
+2026-09-20T14:26:45.0947863Z Updating files:  78% (3734/4787)
+2026-09-20T14:26:45.1082241Z Updating files:  79% (3782/4787)
+2026-09-20T14:26:45.1211621Z Updating files:  80% (3830/4787)
+2026-09-20T14:26:45.1364193Z Updating files:  81% (3878/4787)
+2026-09-20T14:26:45.1512647Z Updating files:  82% (3926/4787)
+2026-09-20T14:26:45.1655192Z Updating files:  83% (3974/4787)
+2026-09-20T14:26:45.1782373Z Updating files:  84% (4022/4787)
+2026-09-20T14:26:45.1930411Z Updating files:  85% (4069/4787)
+2026-09-20T14:26:45.2071388Z Updating files:  86% (4117/4787)
+2026-09-20T14:26:45.2210911Z Updating files:  87% (4165/4787)
+2026-09-20T14:26:45.2357111Z Updating files:  88% (4213/4787)
+2026-09-20T14:26:45.2493915Z Updating files:  89% (4261/4787)
+2026-09-20T14:26:45.2650930Z Updating files:  90% (4309/4787)
+2026-09-20T14:26:45.2795986Z Updating files:  91% (4357/4787)
+2026-09-20T14:26:45.2930677Z Updating files:  92% (4405/4787)
+2026-09-20T14:26:45.3064212Z Updating files:  93% (4452/4787)
+2026-09-20T14:26:45.3191277Z Updating files:  94% (4500/4787)
+2026-09-20T14:26:45.3321399Z Updating files:  95% (4548/4787)
+2026-09-20T14:26:45.3544744Z Updating files:  96% (4596/4787)
+2026-09-20T14:26:45.3939457Z Updating files:  97% (4644/4787)
+2026-09-20T14:26:45.5129673Z Updating files:  98% (4692/4787)
+2026-09-20T14:26:45.5520718Z Updating files:  99% (4740/4787)
+2026-09-20T14:26:45.5791142Z Updating files: 100% (4787/4787)
+2026-09-20T14:26:45.5791484Z Updating files: 100% (4787/4787), done.
+2026-09-20T14:26:45.5791802Z Note: switching to 'refs/remotes/pull/2974/merge'.
+2026-09-20T14:26:45.5792036Z 
+2026-09-20T14:26:45.5792330Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T14:26:45.5792959Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T14:26:45.5793417Z state without impacting any branches by switching back to a branch.
+2026-09-20T14:26:45.5793710Z 
+2026-09-20T14:26:45.5793889Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T14:26:45.5794306Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T14:26:45.5794550Z 
+2026-09-20T14:26:45.5794665Z   git switch -c <new-branch-name>
+2026-09-20T14:26:45.5794839Z 
+2026-09-20T14:26:45.5794936Z Or undo this operation with:
+2026-09-20T14:26:45.5795088Z 
+2026-09-20T14:26:45.5795163Z   git switch -
+2026-09-20T14:26:45.5795269Z 
+2026-09-20T14:26:45.5795471Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T14:26:45.5795767Z 
+2026-09-20T14:26:45.5841125Z HEAD is now at be612a3 Merge ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T14:26:45.6037121Z ##[endgroup]
+2026-09-20T14:26:45.6641304Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T14:26:45.6991579Z be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:26:45.7039869Z ##[group]Removing auth
+2026-09-20T14:26:45.7040286Z Removing SSH command configuration
+2026-09-20T14:26:45.7050209Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:26:45.7403636Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:26:46.3488093Z Removing HTTP extra header
+2026-09-20T14:26:46.3497206Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:26:46.3844912Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:26:46.9734450Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:26:46.9742864Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:26:47.0027002Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:47.0027719Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:47.0028386Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:47.0028935Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:47.0071876Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:26:47.0360303Z D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.0404943Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.0730812Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:26:47.1020165Z D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.1064765Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.1397235Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T14:26:47.1694338Z /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.1735267Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.2074583Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T14:26:47.2360527Z /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.2413041Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:26:47.2743350Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:26:47.8617661Z Removing credentials config 'D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config'
+2026-09-20T14:26:47.8629262Z ##[endgroup]
+2026-09-20T14:26:47.9093560Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T14:26:47.9094018Z with:
+2026-09-20T14:26:47.9094210Z   python-version: 3.12
+2026-09-20T14:26:47.9094437Z   check-latest: false
+2026-09-20T14:26:47.9097131Z   token: ***
+2026-09-20T14:26:47.9097343Z   update-environment: true
+2026-09-20T14:26:47.9097570Z   allow-prereleases: false
+2026-09-20T14:26:47.9097780Z   freethreaded: false
+2026-09-20T14:26:47.9097970Z ##[endgroup]
+2026-09-20T14:26:48.0740451Z ##[group]Installed versions
+2026-09-20T14:26:48.0856166Z Successfully set up CPython (3.12.10)
+2026-09-20T14:26:48.0856972Z ##[endgroup]
+2026-09-20T14:26:48.1235101Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T14:26:48.1235543Z with:
+2026-09-20T14:26:48.1235720Z   version: 0.9.26
+2026-09-20T14:26:48.1235908Z   enable-cache: true
+2026-09-20T14:26:48.1236114Z   activate-environment: false
+2026-09-20T14:26:48.1236340Z   no-project: false
+2026-09-20T14:26:48.1236561Z   working-directory: D:\a\hol-guard\hol-guard
+2026-09-20T14:26:48.1239120Z   github-token: ***
+2026-09-20T14:26:48.1239733Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T14:26:48.1240347Z   restore-cache: true
+2026-09-20T14:26:48.1240533Z   save-cache: true
+2026-09-20T14:26:48.1240713Z   prune-cache: true
+2026-09-20T14:26:48.1263616Z   cache-python: false
+2026-09-20T14:26:48.1263958Z   ignore-nothing-to-cache: false
+2026-09-20T14:26:48.1264218Z   ignore-empty-workdir: false
+2026-09-20T14:26:48.1264517Z   download-from-astral-mirror: true
+2026-09-20T14:26:48.1264778Z   add-problem-matchers: true
+2026-09-20T14:26:48.1264988Z   quiet: false
+2026-09-20T14:26:48.1265171Z   resolution-strategy: highest
+2026-09-20T14:26:48.1265386Z env:
+2026-09-20T14:26:48.1265634Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:48.1266100Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:26:48.1266548Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:48.1266936Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:48.1267324Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:48.1267632Z ##[endgroup]
+2026-09-20T14:26:48.3411803Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T14:26:48.4335418Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-x86_64-pc-windows-msvc.zip" ...
+2026-09-20T14:26:49.1288630Z [command]C:\Windows\system32\tar.exe x -C D:\a\_temp\bac83900-690c-4557-91b3-cb7d03ad23f9 -f D:\a\_temp\0644f68e-8082-4b1b-a1f9-f9378af8d82d
+2026-09-20T14:26:49.3841892Z Set UV_TOOL_BIN_DIR to D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:26:49.3845258Z Added D:\a\_temp\uv-tool-bin-dir to the path
+2026-09-20T14:26:49.3855387Z Added C:\hostedtoolcache\windows\uv\0.9.26\x86_64 to the path
+2026-09-20T14:26:49.3857770Z Set UV_TOOL_DIR to D:\a\_temp\uv-tool-dir
+2026-09-20T14:26:49.3860357Z Set UV_PYTHON_INSTALL_DIR to D:\a\_temp\uv-python-dir
+2026-09-20T14:26:49.3864003Z Added D:\a\_temp\uv-python-dir to the path
+2026-09-20T14:26:49.3875480Z Set UV_CACHE_DIR to D:\a\_temp\setup-uv-cache
+2026-09-20T14:26:49.3876008Z Successfully installed uv version 0.9.26
+2026-09-20T14:26:52.3602096Z Searching files using cache dependency glob: D:\a\hol-guard\hol-guard\**\*requirements*.txt,D:\a\hol-guard\hol-guard\**\*requirements*.in,D:\a\hol-guard\hol-guard\**\*constraints*.txt,D:\a\hol-guard\hol-guard\**\*constraints*.in,D:\a\hol-guard\hol-guard\**\pyproject.toml,D:\a\hol-guard\hol-guard\**\uv.lock,D:\a\hol-guard\hol-guard\**\*.py.lock
+2026-09-20T14:26:52.3690201Z D:\a\hol-guard\hol-guard\.clusterfuzzlite\requirements-atheris.txt
+2026-09-20T14:26:52.4044695Z D:\a\hol-guard\hol-guard\action\pypi-attestations-requirements.in
+2026-09-20T14:26:52.4056431Z D:\a\hol-guard\hol-guard\action\pypi-attestations-requirements.txt
+2026-09-20T14:26:52.4069822Z D:\a\hol-guard\hol-guard\action\scanner-cisco-runtime-requirements.txt
+2026-09-20T14:26:52.4083641Z D:\a\hol-guard\hol-guard\action\scanner-runtime-requirements.txt
+2026-09-20T14:26:52.5477622Z D:\a\hol-guard\hol-guard\distributions\mcpb\pyproject.toml
+2026-09-20T14:26:52.5494331Z D:\a\hol-guard\hol-guard\docker-requirements.txt
+2026-09-20T14:26:52.5990322Z D:\a\hol-guard\hol-guard\pyproject.toml
+2026-09-20T14:26:52.6011171Z D:\a\hol-guard\hol-guard\requirements.txt
+2026-09-20T14:26:53.3173455Z D:\a\hol-guard\hol-guard\uv.lock
+2026-09-20T14:26:53.3205954Z Found 10 files to hash.
+2026-09-20T14:26:53.3213026Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:53.8058217Z Cache hit for: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:54.6725655Z Received 432235 of 432235 (100.0%), 0.7 MBs/sec
+2026-09-20T14:26:54.6727087Z Cache Size: ~0 MB (432235 B)
+2026-09-20T14:26:54.6751664Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/460e2eea-a90a-454d-95b4-94c230b3ca52/cache.tzst -P -C D:/a/hol-guard/hol-guard --force-local --use-compress-program "zstd -d"
+2026-09-20T14:26:54.9612665Z Cache restored successfully
+2026-09-20T14:26:54.9624215Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970
+2026-09-20T14:26:55.0999138Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T14:26:55.0999823Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T14:26:55.1077096Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:26:55.1077469Z env:
+2026-09-20T14:26:55.1077737Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:55.1078213Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:26:55.1078671Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:55.1079114Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:55.1079514Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:26:55.1079866Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:26:55.1080142Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:26:55.1080609Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:26:55.1081038Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:26:55.1081294Z ##[endgroup]
+2026-09-20T14:26:55.5440475Z Using CPython 3.12.10 interpreter at: C:\hostedtoolcache\windows\Python\3.12.10\x64\python3.exe
+2026-09-20T14:26:55.5441765Z Creating virtual environment at: .venv
+2026-09-20T14:26:55.6126434Z    Building hol-guard @ file:///D:/a/hol-guard/hol-guard
+2026-09-20T14:26:55.6649673Z Downloading pygments (1.2MiB)
+2026-09-20T14:26:55.6661431Z Downloading cryptography (3.7MiB)
+2026-09-20T14:26:55.6667088Z Downloading nodejs-wheel-binaries (40.1MiB)
+2026-09-20T14:26:55.6682393Z Downloading pywin32 (9.1MiB)
+2026-09-20T14:26:55.6731372Z Downloading basedpyright (12.6MiB)
+2026-09-20T14:26:55.6805352Z Downloading libcst (2.0MiB)
+2026-09-20T14:26:55.6810128Z Downloading ruff (11.5MiB)
+2026-09-20T14:26:55.6835866Z Downloading pydantic-core (1.9MiB)
+2026-09-20T14:26:56.1895726Z  Downloaded pydantic-core
+2026-09-20T14:26:56.5613749Z  Downloaded cryptography
+2026-09-20T14:26:56.8824188Z  Downloaded pygments
+2026-09-20T14:26:56.9048821Z  Downloaded libcst
+2026-09-20T14:26:57.0355527Z  Downloaded ruff
+2026-09-20T14:26:57.1013036Z  Downloaded pywin32
+2026-09-20T14:26:58.3673396Z  Downloaded nodejs-wheel-binaries
+2026-09-20T14:26:59.5144434Z       Built hol-guard @ file:///D:/a/hol-guard/hol-guard
+2026-09-20T14:26:59.6461226Z  Downloaded basedpyright
+2026-09-20T14:26:59.6483785Z Prepared 70 packages in 4.06s
+2026-09-20T14:27:00.8962762Z Installed 70 packages in 1.24s
+2026-09-20T14:27:00.8965064Z  + annotated-types==0.7.0
+2026-09-20T14:27:00.8965899Z  + anyio==4.14.2
+2026-09-20T14:27:00.8967384Z  + attrs==26.1.0
+2026-09-20T14:27:00.8968715Z  + basedpyright==1.39.8
+2026-09-20T14:27:00.8970043Z  + build==1.5.0
+2026-09-20T14:27:00.8971607Z  + certifi==2026.2.25
+2026-09-20T14:27:00.8973099Z  + cffi==2.0.0
+2026-09-20T14:27:00.8974999Z  + charset-normalizer==3.4.7
+2026-09-20T14:27:00.8976751Z  + click==8.4.1
+2026-09-20T14:27:00.8978272Z  + colorama==0.4.6
+2026-09-20T14:27:00.8978886Z  + coverage==7.13.5
+2026-09-20T14:27:00.8980510Z  + cryptography==50.0.0
+2026-09-20T14:27:00.8981174Z  + h11==0.16.0
+2026-09-20T14:27:00.8983104Z  + hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard)
+2026-09-20T14:27:00.8984094Z  + httpcore==1.0.9
+2026-09-20T14:27:00.8985816Z  + httpx==0.28.1
+2026-09-20T14:27:00.8987104Z  + httpx-sse==0.4.3
+2026-09-20T14:27:00.8987729Z  + idna==3.15
+2026-09-20T14:27:00.8989338Z  + importlib-metadata==8.9.0
+2026-09-20T14:27:00.8990196Z  + iniconfig==2.3.0
+2026-09-20T14:27:00.8991990Z  + jaraco-classes==3.4.0
+2026-09-20T14:27:00.8993349Z  + jaraco-context==6.1.2
+2026-09-20T14:27:00.8994495Z  + jaraco-functools==4.4.0
+2026-09-20T14:27:00.8996412Z  + jsonschema==4.26.0
+2026-09-20T14:27:00.8997969Z  + jsonschema-specifications==2025.9.1
+2026-09-20T14:27:00.8999087Z  + keyring==25.7.0
+2026-09-20T14:27:00.9000783Z  + libcst==1.9.0
+2026-09-20T14:27:00.9002020Z  + linkify-it-py==2.1.0
+2026-09-20T14:27:00.9003642Z  + markdown-it-py==4.0.0
+2026-09-20T14:27:00.9007568Z  + mcp==1.28.1
+2026-09-20T14:27:00.9007927Z  + mdit-py-plugins==0.5.0
+2026-09-20T14:27:00.9008349Z  + mdurl==0.1.2
+2026-09-20T14:27:00.9010184Z  + more-itertools==11.0.1
+2026-09-20T14:27:00.9011625Z  + mutmut==3.7.0
+2026-09-20T14:27:00.9012809Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T14:27:00.9013182Z  + packaging==26.0
+2026-09-20T14:27:00.9015847Z  + platformdirs==4.9.4
+2026-09-20T14:27:00.9016598Z  + pluggy==1.6.0
+2026-09-20T14:27:00.9020061Z  + psutil==7.2.2
+2026-09-20T14:27:00.9022278Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T14:27:00.9024082Z  + pycparser==3.0
+2026-09-20T14:27:00.9026129Z  + pydantic==2.12.5
+2026-09-20T14:27:00.9028253Z  + pydantic-core==2.41.5
+2026-09-20T14:27:00.9030473Z  + pydantic-settings==2.14.1
+2026-09-20T14:27:00.9033074Z  + pygments==2.20.0
+2026-09-20T14:27:00.9034281Z  + pyjwt==2.13.0
+2026-09-20T14:27:00.9036842Z  + pyproject-hooks==1.2.0
+2026-09-20T14:27:00.9038957Z  + pytest==9.0.3
+2026-09-20T14:27:00.9040978Z  + pytest-cov==7.1.0
+2026-09-20T14:27:00.9043667Z  + python-dotenv==1.2.2
+2026-09-20T14:27:00.9045508Z  + python-multipart==0.0.32
+2026-09-20T14:27:00.9045902Z  + pywin32==311
+2026-09-20T14:27:00.9047419Z  + pywin32-ctypes==0.2.3
+2026-09-20T14:27:00.9048664Z  + pyyaml==6.0.3
+2026-09-20T14:27:00.9049828Z  + referencing==0.37.0
+2026-09-20T14:27:00.9051347Z  + regex==2026.4.4
+2026-09-20T14:27:00.9052802Z  + requests==2.33.1
+2026-09-20T14:27:00.9054656Z  + rich==14.2.0
+2026-09-20T14:27:00.9056283Z  + rpds-py==0.30.0
+2026-09-20T14:27:00.9057504Z  + ruff==0.15.17
+2026-09-20T14:27:00.9058953Z  + setproctitle==1.3.7
+2026-09-20T14:27:00.9060249Z  + sse-starlette==3.4.4
+2026-09-20T14:27:00.9061448Z  + starlette==1.3.1
+2026-09-20T14:27:00.9062716Z  + textual==7.5.0
+2026-09-20T14:27:00.9063988Z  + typing-extensions==4.15.0
+2026-09-20T14:27:00.9065452Z  + typing-inspection==0.4.2
+2026-09-20T14:27:00.9066735Z  + uc-micro-py==2.0.0
+2026-09-20T14:27:00.9067830Z  + urllib3==2.7.0
+2026-09-20T14:27:00.9069502Z  + uvicorn==0.40.0
+2026-09-20T14:27:00.9070641Z  + zipp==3.23.0
+2026-09-20T14:27:01.1053991Z ##[group]Run uv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short
+2026-09-20T14:27:01.1055215Z [36;1muv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short[0m
+2026-09-20T14:27:01.1133998Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:01.1134372Z env:
+2026-09-20T14:27:01.1134886Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:01.1135350Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:01.1135802Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:01.1136207Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:01.1136613Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:01.1137013Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:01.1137292Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:01.1137567Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:01.1137862Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:01.1138130Z ##[endgroup]
+2026-09-20T14:27:11.9601995Z ============================= test session starts =============================
+2026-09-20T14:27:11.9602789Z platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:27:11.9603439Z rootdir: D:\a\hol-guard\hol-guard
+2026-09-20T14:27:11.9603891Z configfile: pyproject.toml
+2026-09-20T14:27:11.9604321Z plugins: anyio-4.14.2, cov-7.1.0
+2026-09-20T14:27:11.9604800Z collected 40 items
+2026-09-20T14:27:11.9605029Z 
+2026-09-20T14:27:22.1492854Z tests\test_guard_storage_gate_concurrency.py .............               [ 32%]
+2026-09-20T14:27:22.2935374Z tests\test_native_policy_snapshot_inactive_namespace.py ................ [ 72%]
+2026-09-20T14:27:24.4059672Z ...........                                                              [100%]
+2026-09-20T14:27:24.4060112Z 
+2026-09-20T14:27:24.4060329Z ============================= 40 passed in 13.17s =============================
+2026-09-20T14:27:24.8339387Z ##[group]Run uv run --no-sync python -m pytest tests/test_guard_private_file_io.py tests/test_private_reader_descriptor_guards.py tests/test_windows_replaceable_file.py tests/test_windows_replaceable_reader_process.py tests/test_windows_replaceable_unicode_crt.py tests/test_windows_wtext_acceptance_probe.py tests/test_windows_atomic_replace.py tests/test_windows_atomic_replace_process.py tests/test_guard_daemon_manager.py::test_daemon_token_and_state_use_atomic_replacement --junitxml=windows-private-authority-controls.xml --tb=short
+2026-09-20T14:27:24.8343847Z [36;1muv run --no-sync python -m pytest tests/test_guard_private_file_io.py tests/test_private_reader_descriptor_guards.py tests/test_windows_replaceable_file.py tests/test_windows_replaceable_reader_process.py tests/test_windows_replaceable_unicode_crt.py tests/test_windows_wtext_acceptance_probe.py tests/test_windows_atomic_replace.py tests/test_windows_atomic_replace_process.py tests/test_guard_daemon_manager.py::test_daemon_token_and_state_use_atomic_replacement --junitxml=windows-private-authority-controls.xml --tb=short[0m
+2026-09-20T14:27:24.8420323Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:24.8420676Z env:
+2026-09-20T14:27:24.8420947Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:24.8421435Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:24.8421900Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:24.8422304Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:24.8422697Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:24.8423043Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:24.8423320Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:24.8423600Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:24.8423950Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:24.8424212Z ##[endgroup]
+2026-09-20T14:27:32.1602303Z ============================= test session starts =============================
+2026-09-20T14:27:32.1602846Z platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+2026-09-20T14:27:32.1603247Z rootdir: D:\a\hol-guard\hol-guard
+2026-09-20T14:27:32.1603848Z configfile: pyproject.toml
+2026-09-20T14:27:32.1604118Z plugins: anyio-4.14.2, cov-7.1.0
+2026-09-20T14:27:32.1604377Z collected 152 items
+2026-09-20T14:27:32.1604516Z 
+2026-09-20T14:27:32.2229190Z tests\test_guard_private_file_io.py ..s...s                              [  4%]
+2026-09-20T14:27:32.3230395Z tests\test_private_reader_descriptor_guards.py ...s........              [ 12%]
+2026-09-20T14:27:32.5810087Z tests\test_windows_replaceable_file.py ................................. [ 34%]
+2026-09-20T14:27:32.6043359Z ....                                                                     [ 36%]
+2026-09-20T14:27:37.9009167Z tests\test_windows_replaceable_reader_process.py ....................    [ 50%]
+2026-09-20T14:27:37.9579259Z tests\test_windows_replaceable_unicode_crt.py ............               [ 57%]
+2026-09-20T14:27:42.3662663Z tests\test_windows_wtext_acceptance_probe.py ......................      [ 72%]
+2026-09-20T14:27:42.5448505Z tests\test_windows_atomic_replace.py ...........................         [ 90%]
+2026-09-20T14:27:47.1553890Z tests\test_windows_atomic_replace_process.py ..............              [ 99%]
+2026-09-20T14:27:47.6512469Z tests\test_guard_daemon_manager.py .                                     [100%]
+2026-09-20T14:27:47.6513109Z 
+2026-09-20T14:27:47.6513382Z ============================== warnings summary ===============================
+2026-09-20T14:27:47.6514881Z tests/test_windows_replaceable_reader_process.py::test_actual_readers_allow_other_process_atomic_product_writer[destination_only-bounded_manager]
+2026-09-20T14:27:47.6519828Z tests/test_windows_replaceable_reader_process.py::test_actual_readers_allow_other_process_atomic_product_writer[destination_only-codex_text]
+2026-09-20T14:27:47.6521871Z tests/test_windows_replaceable_reader_process.py::test_actual_readers_allow_other_process_atomic_product_writer[separate_crt_source-bounded_manager]
+2026-09-20T14:27:47.6523712Z tests/test_windows_replaceable_reader_process.py::test_actual_readers_allow_other_process_atomic_product_writer[separate_crt_source-codex_text]
+2026-09-20T14:27:47.6526030Z   tests\test_windows_replaceable_reader_process.py:286: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6527430Z     @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+2026-09-20T14:27:47.6527932Z 
+2026-09-20T14:27:47.6528246Z tests/test_windows_replaceable_reader_process.py: 12 warnings
+2026-09-20T14:27:47.6529561Z   tests\test_windows_replaceable_reader_process.py:453: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6530981Z     @pytest.mark.parametrize("default_mode", ["inherited", "text", "binary"])
+2026-09-20T14:27:47.6531503Z 
+2026-09-20T14:27:47.6532199Z tests/test_windows_replaceable_reader_process.py::test_real_python_audit_hook_mode_change_matches_original[bounded-text]
+2026-09-20T14:27:47.6533639Z tests/test_windows_replaceable_reader_process.py::test_real_python_audit_hook_mode_change_matches_original[bounded-binary]
+2026-09-20T14:27:47.6534973Z tests/test_windows_replaceable_reader_process.py::test_real_python_audit_hook_mode_change_matches_original[text-text]
+2026-09-20T14:27:47.6536308Z tests/test_windows_replaceable_reader_process.py::test_real_python_audit_hook_mode_change_matches_original[text-binary]
+2026-09-20T14:27:47.6537830Z   tests\test_windows_replaceable_reader_process.py:460: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6539053Z     @pytest.mark.parametrize("default_mode", ["text", "binary"])
+2026-09-20T14:27:47.6539484Z 
+2026-09-20T14:27:47.6539735Z tests/test_windows_wtext_acceptance_probe.py: 16 warnings
+2026-09-20T14:27:47.6540846Z   tests\test_windows_wtext_acceptance_probe.py:261: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6542990Z     @_WINDOWS
+2026-09-20T14:27:47.6543162Z 
+2026-09-20T14:27:47.6543713Z tests/test_windows_wtext_acceptance_probe.py::test_original_audit_can_enter_wtext_and_refuse_before_open[bounded]
+2026-09-20T14:27:47.6544923Z tests/test_windows_wtext_acceptance_probe.py::test_original_audit_can_enter_wtext_and_refuse_before_open[textio]
+2026-09-20T14:27:47.6546725Z   tests\test_windows_wtext_acceptance_probe.py:270: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6547713Z     @_WINDOWS
+2026-09-20T14:27:47.6547871Z 
+2026-09-20T14:27:47.6548449Z tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[unheld]
+2026-09-20T14:27:47.6549665Z tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[missing]
+2026-09-20T14:27:47.6550905Z tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[crt_destination]
+2026-09-20T14:27:47.6552277Z tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[readonly_destination]
+2026-09-20T14:27:47.6553676Z tests/test_windows_atomic_replace_process.py::test_actual_writer_matches_original_destination_outcomes[directory_destination]
+2026-09-20T14:27:47.6555272Z   tests\test_windows_atomic_replace_process.py:107: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6556343Z     @pytest.mark.parametrize(
+2026-09-20T14:27:47.6556579Z 
+2026-09-20T14:27:47.6558070Z tests/test_windows_atomic_replace_process.py::test_ex_rename_preserves_original_audit_boundary[observe]
+2026-09-20T14:27:47.6559346Z tests/test_windows_atomic_replace_process.py::test_ex_rename_preserves_original_audit_boundary[refuse]
+2026-09-20T14:27:47.6560795Z   tests\test_windows_atomic_replace_process.py:191: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6562097Z     @pytest.mark.parametrize("refuse", [False, True], ids=["observe", "refuse"])
+2026-09-20T14:27:47.6562644Z 
+2026-09-20T14:27:47.6563154Z tests/test_windows_atomic_replace_process.py::test_ex_source_guards_reject_before_mutation[wrong_identity]
+2026-09-20T14:27:47.6564382Z tests/test_windows_atomic_replace_process.py::test_ex_source_guards_reject_before_mutation[directory_source]
+2026-09-20T14:27:47.6566094Z tests/test_windows_atomic_replace_process.py::test_ex_source_guards_reject_before_mutation[reparse_source]
+2026-09-20T14:27:47.6567602Z   tests\test_windows_atomic_replace_process.py:236: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6569010Z     @pytest.mark.parametrize("case", ["wrong_identity", "directory_source", "reparse_source"])
+2026-09-20T14:27:47.6569586Z 
+2026-09-20T14:27:47.6570141Z tests/test_windows_atomic_replace_process.py::test_actual_writer_keeps_original_single_audit_and_refusal[observe]
+2026-09-20T14:27:47.6571362Z tests/test_windows_atomic_replace_process.py::test_actual_writer_keeps_original_single_audit_and_refusal[refuse]
+2026-09-20T14:27:47.6572819Z   tests\test_windows_atomic_replace_process.py:306: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+2026-09-20T14:27:47.6574117Z     @pytest.mark.parametrize("refuse", [False, True], ids=["observe", "refuse"])
+2026-09-20T14:27:47.6574610Z 
+2026-09-20T14:27:47.6574969Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-09-20T14:27:47.6575879Z - generated xml file: D:\a\hol-guard\hol-guard\windows-private-authority-controls.xml -
+2026-09-20T14:27:47.6576723Z ================ 149 passed, 3 skipped, 50 warnings in 19.59s =================
+2026-09-20T14:27:48.0804873Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal
+2026-09-20T14:27:48.0805465Z [36;1mrustup toolchain install 1.88.0 --profile minimal[0m
+2026-09-20T14:27:48.0806046Z [36;1mrustup default 1.88.0[0m
+2026-09-20T14:27:48.0883640Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:27:48.0884011Z env:
+2026-09-20T14:27:48.0884314Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:48.0884790Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:27:48.0885265Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:48.0885678Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:48.0886103Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:27:48.0886461Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:27:48.0886751Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:27:48.0887106Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:27:48.0887419Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:27:48.0887679Z ##[endgroup]
+2026-09-20T14:27:49.7238648Z info: syncing channel updates for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:27:50.7657963Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:27:50.8003775Z info: downloading 3 components
+2026-09-20T14:28:00.2168416Z 
+2026-09-20T14:28:00.2801086Z   1.88.0-x86_64-pc-windows-msvc installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:28:00.2801698Z 
+2026-09-20T14:28:00.3765377Z info: using existing install for 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:28:00.3871751Z info: default toolchain set to 1.88.0-x86_64-pc-windows-msvc
+2026-09-20T14:28:00.3872585Z 
+2026-09-20T14:28:00.4103568Z   1.88.0-x86_64-pc-windows-msvc unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T14:28:00.4104186Z 
+2026-09-20T14:28:00.5504045Z ##[group]Run uv run --no-sync python -m build --wheel --outdir pure-dist
+2026-09-20T14:28:00.5504708Z [36;1muv run --no-sync python -m build --wheel --outdir pure-dist[0m
+2026-09-20T14:28:00.5588413Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:28:00.5588867Z env:
+2026-09-20T14:28:00.5589398Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:00.5589977Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:28:00.5590446Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:00.5590878Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:00.5591310Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:00.5591671Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:28:00.5591950Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:28:00.5592463Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:28:00.5592777Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:28:00.5593039Z ##[endgroup]
+2026-09-20T14:28:01.1064551Z * Creating isolated environment: venv+pip...
+2026-09-20T14:28:07.8866410Z * Installing packages in isolated environment:
+2026-09-20T14:28:07.8866831Z   - hatchling<1.31
+2026-09-20T14:28:11.5414717Z * Getting build dependencies for wheel...
+2026-09-20T14:28:11.9204673Z * Building wheel...
+2026-09-20T14:28:13.6947705Z Successfully built hol_guard-3.0.1-py3-none-any.whl
+2026-09-20T14:28:13.8463849Z ##[group]Run $version = uv run --no-sync python scripts/sync_repo_version.py --check
+2026-09-20T14:28:13.8464561Z [36;1m$version = uv run --no-sync python scripts/sync_repo_version.py --check[0m
+2026-09-20T14:28:13.8465026Z [36;1m$env:HOL_GUARD_PACKAGE_VERSION = $version.Trim()[0m
+2026-09-20T14:28:13.8465518Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime[0m
+2026-09-20T14:28:13.8466063Z [36;1m.\rust\target\release\hol-guard-runtime.exe self-test --json[0m
+2026-09-20T14:28:13.8547365Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:28:13.8547745Z env:
+2026-09-20T14:28:13.8548034Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:13.8548727Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:28:13.8549196Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:13.8549659Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:13.8550088Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:28:13.8550442Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:28:13.8550723Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:28:13.8551008Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:28:13.8551304Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:28:13.8551630Z   HOL_GUARD_BUILD_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:28:13.8551944Z ##[endgroup]
+2026-09-20T14:28:15.9725547Z     Updating crates.io index
+2026-09-20T14:28:16.5138049Z  Downloading crates ...
+2026-09-20T14:28:16.6398017Z   Downloaded block-buffer v0.10.4
+2026-09-20T14:28:16.6578713Z   Downloaded windows-implement v0.60.2
+2026-09-20T14:28:16.6750820Z   Downloaded windows-threading v0.1.0
+2026-09-20T14:28:16.7158790Z   Downloaded zmij v1.0.23
+2026-09-20T14:28:16.7392882Z   Downloaded windows-core v0.61.2
+2026-09-20T14:28:16.7789914Z   Downloaded unicode-ident v1.0.24
+2026-09-20T14:28:16.8364662Z   Downloaded getrandom v0.3.4
+2026-09-20T14:28:16.8835478Z   Downloaded serde v1.0.229
+2026-09-20T14:28:16.9220468Z   Downloaded typenum v1.20.1
+2026-09-20T14:28:16.9500053Z   Downloaded ntapi v0.4.3
+2026-09-20T14:28:16.9899042Z   Downloaded regex v1.13.1
+2026-09-20T14:28:17.0629160Z   Downloaded serde_json v1.0.151
+2026-09-20T14:28:17.3513779Z   Downloaded memchr v2.8.3
+2026-09-20T14:28:17.4097202Z   Downloaded cc v1.4.4
+2026-09-20T14:28:17.4509374Z   Downloaded sysinfo v0.37.2
+2026-09-20T14:28:17.6357829Z   Downloaded aho-corasick v1.1.5
+2026-09-20T14:28:17.6888724Z   Downloaded proc-macro2 v1.0.107
+2026-09-20T14:28:17.7427750Z   Downloaded syn v3.0.3
+2026-09-20T14:28:17.8770283Z   Downloaded serde_derive v1.0.229
+2026-09-20T14:28:17.9317718Z   Downloaded serde_core v1.0.229
+2026-09-20T14:28:17.9649766Z   Downloaded syn v2.0.119
+2026-09-20T14:28:18.0760783Z   Downloaded thiserror v2.0.20
+2026-09-20T14:28:18.2127270Z   Downloaded shlex v2.0.1
+2026-09-20T14:28:18.2286582Z   Downloaded regex-syntax v0.8.11
+2026-09-20T14:28:18.2948071Z   Downloaded quote v1.0.47
+2026-09-20T14:28:18.3362658Z   Downloaded hex v0.4.3
+2026-09-20T14:28:18.3530946Z   Downloaded fs2 v0.4.3
+2026-09-20T14:28:18.3794220Z   Downloaded digest v0.10.7
+2026-09-20T14:28:18.4029711Z   Downloaded windows-strings v0.4.2
+2026-09-20T14:28:18.4201530Z   Downloaded windows-result v0.3.4
+2026-09-20T14:28:18.4427173Z   Downloaded windows-permissions v0.2.4
+2026-09-20T14:28:18.5247947Z   Downloaded windows-interface v0.59.3
+2026-09-20T14:28:18.5331363Z   Downloaded windows-future v0.2.1
+2026-09-20T14:28:18.5541819Z   Downloaded version_check v0.9.5
+2026-09-20T14:28:18.5794523Z   Downloaded thiserror-impl v2.0.20
+2026-09-20T14:28:19.1935452Z   Downloaded sha2 v0.10.9
+2026-09-20T14:28:19.3323204Z   Downloaded generic-array v0.14.7
+2026-09-20T14:28:19.3629991Z   Downloaded find-msvc-tools v0.1.11
+2026-09-20T14:28:19.3855131Z   Downloaded regex-automata v0.4.18
+2026-09-20T14:28:19.5126560Z   Downloaded crypto-common v0.1.7
+2026-09-20T14:28:19.5655699Z   Downloaded bitflags v1.3.2
+2026-09-20T14:28:19.6269975Z   Downloaded windows-numerics v0.2.0
+2026-09-20T14:28:19.6451437Z   Downloaded windows-link v0.1.3
+2026-09-20T14:28:19.6534270Z   Downloaded windows-collections v0.2.0
+2026-09-20T14:28:19.6673108Z   Downloaded untrusted v0.9.0
+2026-09-20T14:28:19.6851648Z   Downloaded getrandom v0.2.17
+2026-09-20T14:28:19.7258386Z   Downloaded cfg-if v1.0.4
+2026-09-20T14:28:19.7424626Z   Downloaded itoa v1.0.18
+2026-09-20T14:28:19.7693138Z   Downloaded cpufeatures v0.2.17
+2026-09-20T14:28:19.7953387Z   Downloaded libc v0.2.189
+2026-09-20T14:28:21.4154229Z   Downloaded winapi v0.3.9
+2026-09-20T14:28:21.7841230Z   Downloaded ring v0.17.14
+2026-09-20T14:28:22.2520860Z   Downloaded windows v0.61.3
+2026-09-20T14:28:24.7317567Z    Compiling proc-macro2 v1.0.107
+2026-09-20T14:28:24.7318282Z    Compiling quote v1.0.47
+2026-09-20T14:28:24.7319052Z    Compiling unicode-ident v1.0.24
+2026-09-20T14:28:24.7335065Z    Compiling version_check v0.9.5
+2026-09-20T14:28:24.8792231Z    Compiling typenum v1.20.1
+2026-09-20T14:28:25.1226859Z    Compiling generic-array v0.14.7
+2026-09-20T14:28:25.8397908Z    Compiling cfg-if v1.0.4
+2026-09-20T14:28:25.8834572Z    Compiling winapi v0.3.9
+2026-09-20T14:28:27.3039574Z    Compiling memchr v2.8.3
+2026-09-20T14:28:27.4057443Z    Compiling serde_core v1.0.229
+2026-09-20T14:28:27.9873889Z    Compiling windows-link v0.1.3
+2026-09-20T14:28:28.0689785Z    Compiling cpufeatures v0.2.17
+2026-09-20T14:28:28.8087066Z    Compiling crypto-common v0.1.7
+2026-09-20T14:28:29.0517059Z    Compiling syn v3.0.3
+2026-09-20T14:28:29.0785438Z    Compiling block-buffer v0.10.4
+2026-09-20T14:28:29.3795011Z    Compiling digest v0.10.7
+2026-09-20T14:28:29.8228949Z    Compiling sha2 v0.10.9
+2026-09-20T14:28:30.1889287Z    Compiling syn v2.0.119
+2026-09-20T14:28:32.2353624Z    Compiling hex v0.4.3
+2026-09-20T14:28:33.3959037Z    Compiling serde v1.0.229
+2026-09-20T14:28:33.7288959Z    Compiling zmij v1.0.23
+2026-09-20T14:28:33.8654127Z    Compiling serde_derive v1.0.229
+2026-09-20T14:28:34.1709304Z    Compiling windows-result v0.3.4
+2026-09-20T14:28:35.0318712Z    Compiling windows-strings v0.4.2
+2026-09-20T14:28:36.3057839Z    Compiling thiserror v2.0.20
+2026-09-20T14:28:36.7710886Z    Compiling serde_json v1.0.151
+2026-09-20T14:28:37.0987984Z    Compiling libc v0.2.189
+2026-09-20T14:28:37.5318703Z    Compiling windows-interface v0.59.3
+2026-09-20T14:28:37.7209981Z    Compiling windows-implement v0.60.2
+2026-09-20T14:28:38.2797600Z    Compiling thiserror-impl v2.0.20
+2026-09-20T14:28:38.8752114Z    Compiling bitflags v1.3.2
+2026-09-20T14:28:38.9723110Z    Compiling itoa v1.0.18
+2026-09-20T14:28:39.0225427Z    Compiling windows-core v0.61.2
+2026-09-20T14:28:40.6831637Z    Compiling windows-permissions v0.2.4
+2026-09-20T14:28:41.0584519Z    Compiling guard-rules v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rules)
+2026-09-20T14:28:41.2926082Z    Compiling aho-corasick v1.1.5
+2026-09-20T14:28:41.4064059Z    Compiling shlex v2.0.1
+2026-09-20T14:28:41.6515093Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T14:28:42.5893729Z    Compiling regex-syntax v0.8.11
+2026-09-20T14:28:43.1971032Z    Compiling cc v1.4.4
+2026-09-20T14:28:45.1527218Z    Compiling guard-runtime-windows-process v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime-windows-process)
+2026-09-20T14:28:46.0188186Z    Compiling guard-contracts v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-contracts)
+2026-09-20T14:28:48.9868256Z    Compiling regex-automata v0.4.18
+2026-09-20T14:28:55.2340680Z    Compiling windows-threading v0.1.0
+2026-09-20T14:28:55.4058762Z    Compiling ntapi v0.4.3
+2026-09-20T14:28:55.4275370Z    Compiling windows-future v0.2.1
+2026-09-20T14:28:55.7218133Z    Compiling regex v1.13.1
+2026-09-20T14:28:56.0761073Z    Compiling ring v0.17.14
+2026-09-20T14:28:56.9497435Z    Compiling guard-secure-fs v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-secure-fs)
+2026-09-20T14:28:59.0437438Z    Compiling windows-collections v0.2.0
+2026-09-20T14:28:59.4410741Z    Compiling windows-numerics v0.2.0
+2026-09-20T14:28:59.7534883Z    Compiling getrandom v0.3.4
+2026-09-20T14:28:59.8425799Z    Compiling windows v0.61.3
+2026-09-20T14:29:01.8797682Z    Compiling guard-scanner v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-scanner)
+2026-09-20T14:29:06.9350123Z    Compiling getrandom v0.2.17
+2026-09-20T14:29:07.1474553Z    Compiling untrusted v0.9.0
+2026-09-20T14:29:07.3053256Z    Compiling guard-hook-core v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-hook-core)
+2026-09-20T14:29:10.6317524Z    Compiling guard-command v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-command)
+2026-09-20T14:29:17.3270218Z    Compiling guard-policy-snapshot v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-policy-snapshot)
+2026-09-20T14:29:17.9085672Z    Compiling guard-rule-contract v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-rule-contract)
+2026-09-20T14:29:18.7181023Z    Compiling fs2 v0.4.3
+2026-09-20T14:29:54.8972243Z    Compiling sysinfo v0.37.2
+2026-09-20T14:30:03.5334445Z    Compiling hol-guard-runtime v0.1.0 (D:\a\hol-guard\hol-guard\rust\crates\guard-runtime)
+2026-09-20T14:30:27.0949020Z     Finished `release` profile [optimized] target(s) in 2m 11s
+2026-09-20T14:30:27.1655258Z {"capabilities":{"build_sha":"be612a3e562a2041b3732a33c158eeae4f1dad40","features":["post-tool-inline-v1","post-tool-source-read-v1","oneshot-v1","framed-serve-v1","resident-protocol-v2","bounded-admission-v2","overload-signal-v1","panic-containment-v1","rule-contract-v2","pre-tool-command-model-shadow-v1","resident-command-model-shadow-v1","pre-tool-command-authority-v1","pre-tool-generic-authority-v1","native-command-program-v1","native-command-control-fence-v1","policy-snapshot-v3","policy-snapshot-push-v1","policy-snapshot-resident-generation-v1","native-approval-artifact-v3","native-approval-challenge-v3","native-approval-validation-v3","native-approval-consume-v3","native-approval-webauthn-v4","native-approval-challenge-v4","native-approval-validation-v4","native-approval-consume-v4","native-approval-replay-memory-v1","native-policy-in-memory-v1","hook-envelope-v2","native-resident-client-v1","native-resident-lifecycle-v1","authenticated-loopback-resident-v1","post-tool-source-read-windows-handles-v1"],"protocol_version":1,"rule_digest":"e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a","runtime_version":"3.0.1","target":"x86_64-windows"},"ok":true}
+2026-09-20T14:30:27.2807314Z ##[group]Run $version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()
+2026-09-20T14:30:27.2808215Z [36;1m$version = (uv run --no-sync python scripts/sync_repo_version.py --check).Trim()[0m
+2026-09-20T14:30:27.2808760Z [36;1m$runtime = "rust\target\release\hol-guard-runtime.exe"[0m
+2026-09-20T14:30:27.2809187Z [36;1m$caps = & $runtime capabilities --json | ConvertFrom-Json[0m
+2026-09-20T14:30:27.2809641Z [36;1muv run --no-sync python scripts/build_native_hol_guard_wheel.py `[0m
+2026-09-20T14:30:27.2810111Z [36;1m  --wheel "pure-dist\hol_guard-$version-py3-none-any.whl" `[0m
+2026-09-20T14:30:27.2810510Z [36;1m  --runtime $runtime `[0m
+2026-09-20T14:30:27.2810780Z [36;1m  --output-dir native-dist `[0m
+2026-09-20T14:30:27.2811045Z [36;1m  --version $version `[0m
+2026-09-20T14:30:27.2811288Z [36;1m  --platform-tag win_amd64 `[0m
+2026-09-20T14:30:27.2811567Z [36;1m  --target x86_64-pc-windows-msvc `[0m
+2026-09-20T14:30:27.2811893Z [36;1m  --source-sha $env:SOURCE_SHA `[0m
+2026-09-20T14:30:27.2812176Z [36;1m  --rule-digest $caps.rule_digest[0m
+2026-09-20T14:30:27.2812507Z [36;1m$wheel = (Get-ChildItem native-dist\*.whl).FullName[0m
+2026-09-20T14:30:27.2812925Z [36;1muv pip uninstall --python .venv\Scripts\python.exe hol-guard[0m
+2026-09-20T14:30:27.2813462Z [36;1muv pip install --python .venv\Scripts\python.exe --no-deps --force-reinstall $wheel[0m
+2026-09-20T14:30:27.2814074Z [36;1mRemove-Item Env:HOL_GUARD_NATIVE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2814723Z [36;1mRemove-Item Env:HOL_GUARD_NATIVE_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2815239Z [36;1mRemove-Item Env:HOL_GUARD_NATIVE_MODE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2815734Z [36;1mRemove-Item Env:HOL_GUARD_NATIVE_ORACLE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2816242Z [36;1mRemove-Item Env:HOL_GUARD_NATIVE_DIAGNOSTIC -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2816763Z [36;1mRemove-Item Env:HOL_GUARD_HOOK_FAST_PATH -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2817480Z [36;1mRemove-Item Env:HOL_GUARD_HOOK_FAST_PATH_SHADOW -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2818260Z [36;1mRemove-Item Env:HOL_GUARD_HOOK_SOURCE_REF -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2818777Z [36;1mRemove-Item Env:HOL_GUARD_HOOK_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2819283Z [36;1mRemove-Item Env:HOL_GUARD_FAST_PATH -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2819752Z [36;1mRemove-Item Env:HOL_GUARD_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2820259Z [36;1mRemove-Item Env:HOL_GUARD_ORACLE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2820730Z [36;1mRemove-Item Env:HOL_GUARD_DIAGNOSTIC -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2821219Z [36;1mRemove-Item Env:HOL_GUARD_TEST_MODE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2821724Z [36;1mRemove-Item Env:HOL_GUARD_TEST_KEYRING_FILE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2822288Z [36;1mRemove-Item Env:HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2822881Z [36;1mRemove-Item Env:HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2823396Z [36;1mRemove-Item Env:GUARD_NATIVE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2823847Z [36;1mRemove-Item Env:GUARD_NATIVE_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2824314Z [36;1mRemove-Item Env:GUARD_NATIVE_MODE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2824783Z [36;1mRemove-Item Env:GUARD_NATIVE_ORACLE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2825273Z [36;1mRemove-Item Env:GUARD_NATIVE_DIAGNOSTIC -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2825768Z [36;1mRemove-Item Env:GUARD_HOOK_FAST_PATH -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2828220Z [36;1mRemove-Item Env:GUARD_HOOK_FAST_PATH_SHADOW -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2828856Z [36;1mRemove-Item Env:GUARD_HOOK_SOURCE_REF -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2829379Z [36;1mRemove-Item Env:GUARD_HOOK_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2829926Z [36;1mRemove-Item Env:GUARD_FAST_PATH -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2830420Z [36;1mRemove-Item Env:GUARD_BINARY -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2830861Z [36;1mRemove-Item Env:GUARD_ORACLE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2831304Z [36;1mRemove-Item Env:GUARD_DIAGNOSTIC -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2831764Z [36;1mRemove-Item Env:GUARD_TEST_MODE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2832234Z [36;1mRemove-Item Env:GUARD_TEST_KEYRING_FILE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2832767Z [36;1mRemove-Item Env:GUARD_TEST_SYNC_AUTH_CONTEXT_JSON -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2833330Z [36;1mRemove-Item Env:GUARD_PYTEST_DURATION_OUTPUT -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2833867Z [36;1mRemove-Item Env:PYTEST_CURRENT_TEST -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2834570Z [36;1mRemove-Item Env:PYTEST_ADDOPTS -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2835049Z [36;1mRemove-Item Env:PYTEST_PLUGINS -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2835491Z [36;1mRemove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2835952Z [36;1mRemove-Item Env:HOL_GUARD_PYTHON_ORACLE -ErrorAction SilentlyContinue[0m
+2026-09-20T14:30:27.2836652Z [36;1m.venv\Scripts\python.exe -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json[0m
+2026-09-20T14:30:27.2837273Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T14:30:27.2838141Z [36;1m.venv\Scripts\python.exe -I ci/native_runtime/probe_installed_command_control_lock.py --json native-installed-control-lock.json[0m
+2026-09-20T14:30:27.2838798Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T14:30:27.2839347Z [36;1m.venv\Scripts\python.exe ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json[0m
+2026-09-20T14:30:27.2840108Z [36;1mif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-09-20T14:30:27.2913892Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-20T14:30:27.2914270Z env:
+2026-09-20T14:30:27.2914588Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:27.2915072Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:30:27.2915536Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:27.2915962Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:27.2916371Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:27.2916724Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:30:27.2917019Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:30:27.2917310Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:30:27.2917606Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:27.2917924Z   SOURCE_SHA: be612a3e562a2041b3732a33c158eeae4f1dad40
+2026-09-20T14:30:27.2918213Z ##[endgroup]
+2026-09-20T14:30:29.3537925Z native-dist\hol_guard-3.0.1-py3-none-win_amd64.whl
+2026-09-20T14:30:29.4398821Z Uninstalled 1 package in 7ms
+2026-09-20T14:30:29.4399297Z  - hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard)
+2026-09-20T14:30:29.6329336Z Resolved 1 package in 5ms
+2026-09-20T14:30:29.8547532Z Prepared 1 package in 221ms
+2026-09-20T14:30:30.0375145Z Installed 1 package in 182ms
+2026-09-20T14:30:30.0377084Z  + hol-guard==3.0.1 (from file:///D:/a/hol-guard/hol-guard/native-dist/hol_guard-3.0.1-py3-none-win_amd64.whl)
+2026-09-20T14:30:30.8194110Z {
+2026-09-20T14:30:30.8194851Z   "build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+2026-09-20T14:30:30.8196708Z   "cases": [
+2026-09-20T14:30:30.8197226Z     {
+2026-09-20T14:30:30.8197687Z       "case": "steady_without_client",
+2026-09-20T14:30:30.8198269Z       "hashed_bytes": 34051584,
+2026-09-20T14:30:30.8198778Z       "result": "passed",
+2026-09-20T14:30:30.8199172Z       "validation_calls": 3
+2026-09-20T14:30:30.8199660Z     },
+2026-09-20T14:30:30.8200043Z     {
+2026-09-20T14:30:30.8200757Z       "case": "fresh_child",
+2026-09-20T14:30:30.8201305Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8201787Z       "result": "passed",
+2026-09-20T14:30:30.8202268Z       "validation_calls": 0
+2026-09-20T14:30:30.8202739Z     },
+2026-09-20T14:30:30.8203126Z     {
+2026-09-20T14:30:30.8203531Z       "case": "steady_with_client",
+2026-09-20T14:30:30.8204069Z       "hashed_bytes": 34051584,
+2026-09-20T14:30:30.8204566Z       "result": "passed",
+2026-09-20T14:30:30.8205051Z       "validation_calls": 3
+2026-09-20T14:30:30.8205512Z     },
+2026-09-20T14:30:30.8205884Z     {
+2026-09-20T14:30:30.8206312Z       "case": "death_before_restart",
+2026-09-20T14:30:30.8206855Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8207318Z       "result": "passed",
+2026-09-20T14:30:30.8207784Z       "validation_calls": 0
+2026-09-20T14:30:30.8208268Z     },
+2026-09-20T14:30:30.8208641Z     {
+2026-09-20T14:30:30.8209044Z       "case": "live_replacement",
+2026-09-20T14:30:30.8209562Z       "result": "replaced"
+2026-09-20T14:30:30.8210025Z     },
+2026-09-20T14:30:30.8210398Z     {
+2026-09-20T14:30:30.8210879Z       "case": "replacement_first_status",
+2026-09-20T14:30:30.8211436Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8211952Z       "result": "passed",
+2026-09-20T14:30:30.8212473Z       "validation_calls": 1
+2026-09-20T14:30:30.8212938Z     },
+2026-09-20T14:30:30.8213318Z     {
+2026-09-20T14:30:30.8213731Z       "case": "replacement_fresh_child",
+2026-09-20T14:30:30.8214292Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8214756Z       "result": "passed",
+2026-09-20T14:30:30.8215224Z       "validation_calls": 0
+2026-09-20T14:30:30.8215702Z     },
+2026-09-20T14:30:30.8216083Z     {
+2026-09-20T14:30:30.8216490Z       "case": "source_sha_mismatch",
+2026-09-20T14:30:30.8217020Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8217813Z       "result": "passed",
+2026-09-20T14:30:30.8218292Z       "validation_calls": 1
+2026-09-20T14:30:30.8218753Z     },
+2026-09-20T14:30:30.8219129Z     {
+2026-09-20T14:30:30.8219554Z       "case": "source_sha_restoration",
+2026-09-20T14:30:30.8220106Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8220602Z       "result": "passed",
+2026-09-20T14:30:30.8221381Z       "validation_calls": 1
+2026-09-20T14:30:30.8221858Z     },
+2026-09-20T14:30:30.8222236Z     {
+2026-09-20T14:30:30.8222668Z       "case": "source_sha_restoration_child",
+2026-09-20T14:30:30.8223252Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8223718Z       "result": "passed",
+2026-09-20T14:30:30.8224184Z       "validation_calls": 0
+2026-09-20T14:30:30.8224641Z     },
+2026-09-20T14:30:30.8225027Z     {
+2026-09-20T14:30:30.8225451Z       "case": "package_version_mismatch",
+2026-09-20T14:30:30.8226000Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8226494Z       "result": "passed",
+2026-09-20T14:30:30.8227012Z       "validation_calls": 1
+2026-09-20T14:30:30.8227459Z     },
+2026-09-20T14:30:30.8227833Z     {
+2026-09-20T14:30:30.8228261Z       "case": "package_version_restoration",
+2026-09-20T14:30:30.8228826Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8229321Z       "result": "passed",
+2026-09-20T14:30:30.8229789Z       "validation_calls": 1
+2026-09-20T14:30:30.8230249Z     },
+2026-09-20T14:30:30.8230631Z     {
+2026-09-20T14:30:30.8231082Z       "case": "package_version_restoration_child",
+2026-09-20T14:30:30.8231682Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8232145Z       "result": "passed",
+2026-09-20T14:30:30.8232623Z       "validation_calls": 0
+2026-09-20T14:30:30.8233078Z     },
+2026-09-20T14:30:30.8233452Z     {
+2026-09-20T14:30:30.8234122Z       "case": "same_size_restored_mtime_corruption",
+2026-09-20T14:30:30.8234755Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8235251Z       "result": "passed",
+2026-09-20T14:30:30.8235720Z       "validation_calls": 1
+2026-09-20T14:30:30.8236185Z     },
+2026-09-20T14:30:30.8236567Z     {
+2026-09-20T14:30:30.8237001Z       "case": "original_artifact_restoration",
+2026-09-20T14:30:30.8237593Z       "hashed_bytes": 11350528,
+2026-09-20T14:30:30.8238098Z       "result": "passed",
+2026-09-20T14:30:30.8238571Z       "validation_calls": 1
+2026-09-20T14:30:30.8239030Z     },
+2026-09-20T14:30:30.8239411Z     {
+2026-09-20T14:30:30.8239835Z       "case": "restoration_fresh_child",
+2026-09-20T14:30:30.8240383Z       "hashed_bytes": 0,
+2026-09-20T14:30:30.8241104Z       "result": "passed",
+2026-09-20T14:30:30.8241611Z       "validation_calls": 0
+2026-09-20T14:30:30.8242117Z     },
+2026-09-20T14:30:30.8242487Z     {
+2026-09-20T14:30:30.8242905Z       "case": "retired_client_status",
+2026-09-20T14:30:30.8243460Z       "hashed_bytes": 34051584,
+2026-09-20T14:30:30.8243965Z       "result": "passed",
+2026-09-20T14:30:30.8244427Z       "validation_calls": 3
+2026-09-20T14:30:30.8244872Z     }
+2026-09-20T14:30:30.8245251Z   ],
+2026-09-20T14:30:30.8245732Z   "cross_release_upgrade_rollback": "not_exercised",
+2026-09-20T14:30:30.8246728Z   "identity_module_sha256": "3ba5629f5eca1f6d1ac6834953f38ae166eac384f3a83a749c4439cc1705c591",
+2026-09-20T14:30:30.8247670Z   "machine": "AMD64",
+2026-09-20T14:30:30.8248433Z   "manifest_sha256": "d65a148a4e8d2920b72f33ea892e75171502f079d640a4b99547aa6d1e1b4ad8",
+2026-09-20T14:30:30.8249316Z   "package_version": "3.0.1",
+2026-09-20T14:30:30.8249827Z   "platform": "win32",
+2026-09-20T14:30:30.8250636Z   "runtime_module_sha256": "2a5628007a594552fcada38e6166d2ea5e1cb9f6578e5b44a320ca5b593a6583",
+2026-09-20T14:30:30.8251852Z   "runtime_sha256": "09142ea9fa88542db7bca04dd6cb568f4b389fea2c5b4ed2709de905931b3e7c",
+2026-09-20T14:30:30.8252731Z   "runtime_size": 11350528,
+2026-09-20T14:30:30.8253341Z   "schema": "hol-guard.installed-runtime-identity.v1",
+2026-09-20T14:30:30.8254083Z   "scope": "installed_status_and_real_stdio_child",
+2026-09-20T14:30:30.8254742Z   "signing_qualification": "not_exercised"
+2026-09-20T14:30:30.8256559Z }
+2026-09-20T14:30:32.1949889Z {"cases": [{"child_acquired": true, "child_shared": true, "parent_shared": true, "released": true}, {"child_acquired": false, "child_shared": false, "parent_shared": true, "released": true}, {"child_acquired": false, "child_shared": true, "parent_shared": false, "released": true}, {"child_acquired": false, "child_shared": false, "parent_shared": false, "released": true}], "rust_publisher_interop": "separate_default_auto_probe", "schema": "hol-guard.installed-command-control-lock.v1", "scope": "installed_python_authority_lease_vs_independent_win32_child"}
+2026-09-20T14:30:50.1402848Z {"command_authority_fixture": {"enrollment_flow": "not_exercised", "provisioning": "isolated_ci_generated_key_empty_authority", "verified_health": "protected"}, "corpus_decisions": 21, "corpus_scope": "normalized_daemon_ingress", "default_mode": "auto", "evidence_failure_diagnostics": {"all_evidence": {"journal_checkpoint/os_permission": 1}, "native_receipts": {}}, "fail_safe_decisions": 0, "fast_path": "enabled", "mode_invariants": {"off": {"decision": null, "python_oracle": false, "reason_code": "native_hook_disabled"}, "shadow": {"decision": null, "python_oracle": false, "reason_code": "native_shadow_diagnostic_disabled"}}, "oneshot_decisions": 0, "python_semantic_decisions": 0, "reason_code_counts": {"native_policy_warning": 15}, "receipt_metrics": {"accepted": 21, "deduped": 0, "dropped": 0, "durable_pending": 0, "failures": 0, "processed": 21}, "resident_decisions": 21, "resident_share": 1.0, "rollback": "off", "route_receipts": [{"event": "PreToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PostToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PreToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PostToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PreToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PostToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PreToolUse", "harness": "grok", "route": "native_resident"}, {"event": "PreToolUse", "harness": "hermes", "route": "native_resident"}, {"event": "PreToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PostToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PreToolUse", "harness": "openclaw", "route": "native_resident"}, {"event": "PreToolUse", "harness": "opencode", "route": "native_resident"}, {"event": "PreToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "zcode", "route": "native_resident"}], "runtime_reason": "native_ready", "schema": "hol-guard.native-default-installed-receipt.v1", "target": "x86_64-windows"}
+2026-09-20T14:30:50.4370304Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T14:30:50.4370850Z with:
+2026-09-20T14:30:50.4371082Z   name: hol-guard-native-wheel-windows-x64
+2026-09-20T14:30:50.4371884Z   path: native-dist/*.whl
+native-default-auto.json
+native-installed-identity.json
+native-installed-control-lock.json
+
+2026-09-20T14:30:50.4372454Z   if-no-files-found: error
+2026-09-20T14:30:50.4372683Z   compression-level: 6
+2026-09-20T14:30:50.4372895Z   overwrite: false
+2026-09-20T14:30:50.4373094Z   include-hidden-files: false
+2026-09-20T14:30:50.4373314Z   archive: true
+2026-09-20T14:30:50.4373490Z env:
+2026-09-20T14:30:50.4373751Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:50.4374204Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:30:50.4374921Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:50.4375376Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:50.4375797Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:50.4376167Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:30:50.4376671Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:30:50.4376966Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:30:50.4377275Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:50.4377534Z ##[endgroup]
+2026-09-20T14:30:50.6330052Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T14:30:50.6334225Z The least common ancestor is D:\a\hol-guard\hol-guard. This will be the root directory of the artifact
+2026-09-20T14:30:50.6335155Z With the provided path, there will be 4 files uploaded
+2026-09-20T14:30:50.6341490Z Artifact name is valid!
+2026-09-20T14:30:50.6342819Z Root directory input is valid!
+2026-09-20T14:30:51.0152265Z Uploading artifact: hol-guard-native-wheel-windows-x64.zip
+2026-09-20T14:30:51.0201244Z Beginning upload of artifact content to blob storage
+2026-09-20T14:30:52.5602683Z Uploaded bytes 8255943
+2026-09-20T14:30:52.6383962Z Finished uploading artifact content to blob storage!
+2026-09-20T14:30:52.6386278Z SHA256 digest of uploaded artifact is 62e2fd5230a00341a49827106b8e0f0ca074745f245fe4e242e85cb8ca57bc60
+2026-09-20T14:30:52.6387218Z Finalizing artifact upload
+2026-09-20T14:30:53.0341677Z Artifact hol-guard-native-wheel-windows-x64 successfully finalized. Artifact ID 10606624387
+2026-09-20T14:30:53.0342875Z Artifact hol-guard-native-wheel-windows-x64 has been successfully uploaded! Final size is 8255943 bytes. Artifact ID is 10606624387
+2026-09-20T14:30:53.0350981Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35516487925/artifacts/10606624387
+2026-09-20T14:30:53.0704065Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T14:30:53.0704778Z with:
+2026-09-20T14:30:53.0705013Z   name: windows-private-authority-controls
+2026-09-20T14:30:53.0705352Z   path: windows-private-authority-controls.xml
+2026-09-20T14:30:53.0705651Z   if-no-files-found: warn
+2026-09-20T14:30:53.0705867Z   retention-days: 14
+2026-09-20T14:30:53.0706078Z   compression-level: 6
+2026-09-20T14:30:53.0706278Z   overwrite: false
+2026-09-20T14:30:53.0706476Z   include-hidden-files: false
+2026-09-20T14:30:53.0706707Z   archive: true
+2026-09-20T14:30:53.0706881Z env:
+2026-09-20T14:30:53.0707141Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:53.0707630Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:30:53.0708097Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:53.0708559Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:53.0708978Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:53.0709324Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:30:53.0709614Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:30:53.0709891Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:30:53.0710189Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:53.0710439Z ##[endgroup]
+2026-09-20T14:30:53.2558969Z With the provided path, there will be 1 file uploaded
+2026-09-20T14:30:53.2565126Z Artifact name is valid!
+2026-09-20T14:30:53.2566471Z Root directory input is valid!
+2026-09-20T14:30:53.6595786Z Uploading artifact: windows-private-authority-controls.zip
+2026-09-20T14:30:53.6640263Z Beginning upload of artifact content to blob storage
+2026-09-20T14:30:53.9741105Z Uploaded bytes 13265
+2026-09-20T14:30:54.0495343Z Finished uploading artifact content to blob storage!
+2026-09-20T14:30:54.0497373Z SHA256 digest of uploaded artifact is f2343182af1ddb2a3baf7ef242c9b454aaea6e8eada20ad7f1b5dd685c96434c
+2026-09-20T14:30:54.0499202Z Finalizing artifact upload
+2026-09-20T14:30:54.4250266Z Artifact windows-private-authority-controls successfully finalized. Artifact ID 10606509417
+2026-09-20T14:30:54.4251614Z Artifact windows-private-authority-controls has been successfully uploaded! Final size is 13265 bytes. Artifact ID is 10606509417
+2026-09-20T14:30:54.4260024Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35516487925/artifacts/10606509417
+2026-09-20T14:30:54.4589077Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T14:30:54.4590039Z with:
+2026-09-20T14:30:54.4590303Z   name: native-default-auto-failure-windows-x64
+2026-09-20T14:30:54.4590641Z   path: native-default-auto-failure.json
+2026-09-20T14:30:54.4590926Z   if-no-files-found: warn
+2026-09-20T14:30:54.4591147Z   retention-days: 14
+2026-09-20T14:30:54.4591373Z   compression-level: 6
+2026-09-20T14:30:54.4591605Z   overwrite: false
+2026-09-20T14:30:54.4591814Z   include-hidden-files: false
+2026-09-20T14:30:54.4592037Z   archive: true
+2026-09-20T14:30:54.4592227Z env:
+2026-09-20T14:30:54.4592491Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:54.4592966Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-09-20T14:30:54.4593423Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:54.4593877Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:54.4594283Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-09-20T14:30:54.4594634Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-09-20T14:30:54.4594921Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-09-20T14:30:54.4595206Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-09-20T14:30:54.4595501Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:54.4595757Z ##[endgroup]
+2026-09-20T14:30:54.6516743Z ##[warning]No files were found with the provided path: native-default-auto-failure.json. No artifacts will be uploaded.
+2026-09-20T14:30:54.6859968Z Post job cleanup.
+2026-09-20T14:30:54.8344329Z UV_CACHE_DIR is already set to D:\a\_temp\setup-uv-cache
+2026-09-20T14:30:54.8351747Z UV_PYTHON_INSTALL_DIR is already set to D:\a\_temp\uv-python-dir
+2026-09-20T14:30:54.8354884Z Cache hit occurred on key setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.12.10-pruned-4e1957317505a9398522e711a4f2f26abf3d248d66da424c6be4d71602599970, not saving cache.
+2026-09-20T14:30:54.9670346Z Post job cleanup.
+2026-09-20T14:30:55.1602617Z Post job cleanup.
+2026-09-20T14:30:55.3662789Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T14:30:55.3973933Z git version 2.55.0.windows.5
+2026-09-20T14:30:55.4053474Z Temporarily overriding HOME='D:\a\_temp\ee15802d-fed8-4fa8-87d0-177dd8bfd990' before making global git config changes
+2026-09-20T14:30:55.4054775Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T14:30:55.4067325Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard
+2026-09-20T14:30:55.4404153Z Removing SSH command configuration
+2026-09-20T14:30:55.4417575Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T14:30:55.4759486Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T14:30:56.0526138Z Removing HTTP extra header
+2026-09-20T14:30:56.0537259Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T14:30:56.0862726Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T14:30:56.6481924Z Removing includeIf entries pointing to credentials config files
+2026-09-20T14:30:56.6494697Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T14:30:56.6777134Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:30:56.6777662Z includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:30:56.6822424Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path
+2026-09-20T14:30:56.7109161Z D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:30:56.7159039Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:30:56.7496259Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T14:30:56.7821233Z D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:30:56.7868870Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/.git/worktrees/*.path D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config
+2026-09-20T14:30:56.8186113Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T14:30:57.3480668Z Removing credentials config 'D:\a\_temp\git-credentials-b574a10d-7d45-4e88-9a73-8e96d0b065d8.config'
+2026-09-20T14:30:57.3690781Z Cleaning up orphan processes
+2026-09-20T14:30:57.3836931Z Terminate orphan process: pid (8780) (vctip)

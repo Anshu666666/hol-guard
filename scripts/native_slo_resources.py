@@ -21,6 +21,10 @@ class _ProcessTreeBoundError(ValueError):
     pass
 
 
+class _ProtectedGroupInventoryError(ValueError):
+    pass
+
+
 def _psutil() -> Any:
     try:
         import psutil
@@ -61,12 +65,30 @@ def _inventory(root: Any) -> dict[tuple[int, float], Any]:
     return {_identity(process): process for process in (root, *children)}
 
 
+def _group_inventory(root: Any, members: Callable[[], tuple[int, ...]], psutil: Any) -> dict[tuple[int, float], Any]:
+    try:
+        pids = members()
+    except Exception as error:
+        raise _ProtectedGroupInventoryError from error
+    if (
+        type(pids) is not tuple
+        or not 1 <= len(pids) <= _MAX_PROCESSES
+        or any(type(pid) is not int or not 1 <= pid <= 2**31 - 1 for pid in pids)
+        or len(set(pids)) != len(pids)
+        or root.pid not in pids
+    ):
+        raise _ProtectedGroupInventoryError
+    processes = [root if pid == root.pid else psutil.Process(pid) for pid in pids]
+    return {_identity(process): process for process in processes}
+
+
 def sample_process_tree(
     pid: int | None = None,
     *,
     proc: Path = Path("/proc"),
     unavailable_reasons: Counter[str] | None = None,
     unavailable_operations: Counter[str] | None = None,
+    protected_members: Callable[[], tuple[int, ...]] | None = None,
 ) -> TreeResources | None:
     """Collect available metrics separately; denied USS is not zero memory.
 
@@ -88,7 +110,9 @@ def sample_process_tree(
             sample_operation, process_role = "create_root", "root"
             root = psutil.Process(process_id)
             sample_operation, process_role = "inventory_before", "unknown"
-            before = _inventory(root)
+            before = (
+                _inventory(root) if protected_members is None else _group_inventory(root, protected_members, psutil)
+            )
             unavailable: dict[str, str] = {}
             unavailable_metric_roles: dict[str, str] = {}
             totals: dict[str, int | float] = {name: 0 for name in _METRICS}
@@ -147,7 +171,13 @@ def sample_process_tree(
             else:
                 totals["cpu_seconds"] = sum(process_cpu.values())
             sample_operation, process_role = "inventory_after", "unknown"
-            if set(_inventory(psutil.Process(process_id))) != set(before):
+            final_root = psutil.Process(process_id)
+            after = (
+                _inventory(final_root)
+                if protected_members is None
+                else _group_inventory(final_root, protected_members, psutil)
+            )
+            if set(after) != set(before):
                 reason = "inventory_changed"
                 continue
             return TreeResources(
@@ -175,6 +205,8 @@ def sample_process_tree(
                 process_role = "root" if failed_pid == process_id else "descendant"
         except _ProcessTreeBoundError:
             reason = "process_tree_bound"
+        except _ProtectedGroupInventoryError:
+            reason = "protected_group_inventory_unavailable"
         except OSError:
             reason = "os_error"
         except (ValueError, IndexError):
@@ -189,12 +221,19 @@ def sample_process_tree(
 class ResourceSampler:
     """Retain bounded aggregates and observed descendant CPU, never process data."""
 
-    def __init__(self, *, interval_seconds: float = 0.1, pid: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        interval_seconds: float = 0.1,
+        pid: int | None = None,
+        protected_members: Callable[[], tuple[int, ...]] | None = None,
+    ) -> None:
         _psutil()  # A missing dependency is a setup error, not an unsupported OS.
         if not 0.01 <= interval_seconds <= 1.0:
             raise ValueError("resource sample interval out of bounds")
         self.interval = interval_seconds
         self.pid = os.getpid() if pid is None else pid
+        self.protected_members = protected_members
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.samples = 0
@@ -213,9 +252,17 @@ class ResourceSampler:
         self.stopped = 0.0
 
     def _sample(self) -> None:
-        value = sample_process_tree(
-            self.pid, unavailable_reasons=self.missing_reasons, unavailable_operations=self.missing_operations
-        )
+        if self.protected_members is None:
+            value = sample_process_tree(
+                self.pid, unavailable_reasons=self.missing_reasons, unavailable_operations=self.missing_operations
+            )
+        else:
+            value = sample_process_tree(
+                self.pid,
+                unavailable_reasons=self.missing_reasons,
+                unavailable_operations=self.missing_operations,
+                protected_members=self.protected_members,
+            )
         if value is None:
             self.missing += 1
             return
@@ -281,6 +328,12 @@ class ResourceSampler:
         }
         per_metric["cpu_seconds"] = per_metric["cpu_seconds"] and cpu is not None
         return {
+            "live_inventory_scope": "protected_kernel_group"
+            if self.protected_members is not None
+            else "process_ancestry",
+            "live_inventory_identity": "pid_and_creation_time_before_and_after_each_sample",
+            "sampled_memory_scope": "sum_of_live_members_during_successful_sample_windows",
+            "instantaneous_peak_proven": False,
             "scope": "daemon_fixture_process_tree" if self.pid != os.getpid() else "load_generator_process_tree",
             "collector": "psutil_with_linux_proc_cpu" if reaped else "psutil_observed_descendants",
             "samples": self.samples,

@@ -11,7 +11,7 @@ import re
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from codex_plugin_scanner.guard.daemon.hook_process_capacity import effective_cpu_count, physical_memory_bytes
 from codex_plugin_scanner.guard.native_runtime import native_runtime_status
@@ -31,6 +31,9 @@ from scripts.native_slo_qualification import confidence_summary
 from scripts.native_slo_qualification_scenarios import run_additional_scenarios, validate_receipt_profile
 from scripts.native_slo_resources import ResourceSampler
 from scripts.native_slo_workloads import source_reference_supported
+
+if TYPE_CHECKING:
+    from scripts.native_slo_launcher_resources import LauncherResourceObservation
 
 _PLATFORMS = ("linux-x64", "macos-x64", "macos-arm64", "windows-x64")
 _REQUIRED_CASES = (
@@ -145,7 +148,13 @@ def _native_sample_values(measured: Mapping[str, object], expected: int) -> list
     return [float(value) for value in values]
 
 
-def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str = "candidate") -> dict[str, object]:
+def run_block(
+    *,
+    plan: Mapping[str, int],
+    raw_file: Path,
+    receipt_profile: str = "candidate",
+    launcher_resources: LauncherResourceObservation | None = None,
+) -> dict[str, object]:
     """Measure one block using this interpreter's installed default native wheel."""
     _clear_proof_overrides()
     status = native_runtime_status()
@@ -190,7 +199,12 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
             measured = session.control("native_samples", count=count)
             direct_samples.extend(_native_sample_values(measured, count))
         raw["NATIVE_CLIENT.claude-code.PostToolUse"] = direct_samples
-        launcher, launcher_series = measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
+        if launcher_resources is None:
+            launcher, launcher_series = measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
+        else:
+            launcher, launcher_series = launcher_resources.run(
+                lambda: measure_priority_launchers(cast(LauncherSession, cast(object, session)), plan)
+            )
         raw.update(launcher_series)
         concurrent, offered, capacity_resources = measure_load_profiles(session, routes)
         native_readiness_ms = session.readiness_ms
@@ -253,6 +267,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
             "daemon_process_start_to_policy_ready_ms": startup_ms,
             "native_readiness_ms": native_readiness_ms,
             "launcher": launcher,
+            **({"launcher_resources": launcher_resources.report} if launcher_resources is not None else {}),
             "resources": resource_report,
             "capacity_resources": capacity_resources,
             "closed_loop": concurrent,
@@ -265,7 +280,7 @@ def run_block(*, plan: Mapping[str, int], raw_file: Path, receipt_profile: str =
                 "malformed_launcher_input",
                 "native_phase_attribution",
                 "all_platforms",
-                *matrix["missing_reference_scopes"],
+                *cast(list[str], matrix["missing_reference_scopes"]),
             ],
         }
     )

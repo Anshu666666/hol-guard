@@ -177,10 +177,13 @@ def test_equal_profiles_keep_exact_contract_evidence_equality(declared_pair) -> 
         paired_corpus_identity([candidate], [other])
 
 
-def test_legacy_pairs_keep_their_existing_full_digest_equality_rule() -> None:
-    assert paired_corpus_identity([{"corpus_digest": "same"}], [{"corpus_digest": "same"}]) == {
-        "corpus_definition_scope": "legacy_full_matrix_v1"
-    }
+@pytest.mark.parametrize("digest", ["same", "a" * 64])
+def test_equal_unscoped_reports_are_rejected(digest: str) -> None:
+    with pytest.raises(RuntimeError, match="corpus definition scopes differ"):
+        paired_corpus_identity([{"corpus_digest": digest}], [{"corpus_digest": digest}])
+
+
+def test_changed_unscoped_request_digests_are_rejected() -> None:
     with pytest.raises(RuntimeError, match="different corpus definitions"):
         paired_corpus_identity([{"corpus_digest": "one"}], [{"corpus_digest": "two"}])
 
@@ -190,7 +193,7 @@ def test_new_oracle_profiles_cannot_opt_out_by_omitting_both_scope_fields(declar
     baseline, candidate = deepcopy(original)
     baseline.pop("corpus_definition_scope")
     candidate.pop("corpus_definition_scope")
-    with pytest.raises(RuntimeError, match="omitted its identity scope"):
+    with pytest.raises(RuntimeError, match="corpus definition scopes differ"):
         paired_corpus_identity([baseline], [candidate])
 
 

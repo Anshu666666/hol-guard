@@ -200,7 +200,10 @@ fn malformed_and_present_commands_without_controls_do_not_claim_noncommand_scope
     )
     .unwrap();
     assert_eq!(edge.result["policy_action"], "review");
-    assert_eq!(edge.receipt.review_scope, Some(NativeReviewScopeV1::Noncommand));
+    assert_eq!(
+        edge.receipt.review_scope,
+        Some(NativeReviewScopeV1::Noncommand)
+    );
     assert!(edge.receipt.command_extensions.is_none());
     fs::remove_dir_all(root).unwrap();
 }
@@ -230,7 +233,10 @@ fn noncommand_scope_preserves_nontrivial_command_floors_and_intrinsic_blocks() {
         )
         .unwrap();
         assert_eq!(edge.result["policy_action"], "review");
-        assert_eq!(edge.receipt.review_scope, Some(NativeReviewScopeV1::Noncommand));
+        assert_eq!(
+            edge.receipt.review_scope,
+            Some(NativeReviewScopeV1::Noncommand)
+        );
         assert!(edge.receipt.command_extensions.is_none());
     }
     for (payload, command_bound) in [

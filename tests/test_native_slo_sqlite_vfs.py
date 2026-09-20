@@ -215,7 +215,8 @@ def test_writer_and_readback_connections_have_distinct_actual_opening_threads(
             connection.execute("insert into facts values ('thread', 'value')")
             connection.commit()
             written.set()
-            assert read_done.wait(5)
+            if not read_done.wait(5):
+                raise TimeoutError("readback thread did not complete")
         except BaseException as error:
             errors.append(error)
             written.set()
@@ -226,7 +227,8 @@ def test_writer_and_readback_connections_have_distinct_actual_opening_threads(
     def read() -> None:
         connection = None
         try:
-            assert written.wait(5)
+            if not written.wait(5):
+                raise TimeoutError("writer thread did not signal completion")
             connection = observer.connect(scope="readback")
             rows.extend(connection.execute("select key, value from facts").fetchall())
         except BaseException as error:

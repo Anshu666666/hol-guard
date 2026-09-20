@@ -356,10 +356,10 @@ def test_secret_hash_uses_the_current_live_fingerprint(matches: bool, monkeypatc
 
     def current_fingerprint(value: str) -> str:
         values.append(value)
-        return "scrypt$current-fixture"
+        return "scrypt$" + "a" * 64
 
     monkeypatch.setattr(base, "_secret_fingerprint", current_fingerprint)
-    expected = "scrypt$current-fixture" if matches else "scrypt$different-fixture"
+    expected = "scrypt$" + ("a" if matches else "b") * 64
 
     assert base._secret_matches_hash("fixture-current-secret", expected) is matches
     assert values == ["fixture-current-secret"]

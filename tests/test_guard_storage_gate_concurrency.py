@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,10 +26,13 @@ def _held_gate(store: GuardStore, *, exclusive: bool, connection: bool = False) 
             lease = store._connect() if connection else store._hold_storage_gate(exclusive=exclusive)
             with lease as database:
                 if connection:
-                    assert database is not None
-                    assert database.execute("select 1").fetchone()[0] == 1
+                    if database is None:
+                        raise RuntimeError("holder did not open a SQLite connection")
+                    if database.execute("select 1").fetchone()[0] != 1:
+                        raise RuntimeError("holder SQLite connection failed its query")
                 entered.set()
-                assert release.wait(timeout=2)
+                if not release.wait(timeout=2):
+                    raise TimeoutError("holder did not receive its release signal")
         except BaseException as error:
             failures.append(error)
             entered.set()
@@ -45,6 +48,33 @@ def _held_gate(store: GuardStore, *, exclusive: bool, connection: bool = False) 
         holder.join(timeout=2)
         assert not holder.is_alive()
         assert not failures
+
+
+@pytest.mark.parametrize("failure", ["missing_connection", "invalid_row", "query_error"])
+def test_holder_connection_failures_reach_the_test_thread(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    store = GuardStore(tmp_path / "guard", prime_policy_integrity=False)
+    closed: list[bool] = []
+
+    def execute(_statement: str) -> SimpleNamespace:
+        if failure == "query_error":
+            raise OSError("synthetic holder query failure")
+        return SimpleNamespace(fetchone=lambda: (0,))
+
+    @contextmanager
+    def connection() -> Generator[SimpleNamespace | None]:
+        try:
+            yield None if failure == "missing_connection" else SimpleNamespace(execute=execute)
+        finally:
+            closed.append(True)
+
+    monkeypatch.setattr(store, "_connect", connection)
+    reached_body = False
+    with pytest.raises(AssertionError), _held_gate(store, exclusive=False, connection=True):
+        reached_body = True
+    assert not reached_body
+    assert closed == [True]
 
 
 def test_two_real_sqlite_connections_share_gate_at_evidence_writer_timeout(tmp_path: Path) -> None:

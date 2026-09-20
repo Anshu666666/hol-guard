@@ -65,6 +65,7 @@ def await_ack(
                 and effective.get("default_action") == action
                 and effective.get("subprocess_action") == action
                 and (not strict or effective.get("sandbox_analysis") == "strict")
+                and publisher.current_snapshot() == snapshot
                 and time.monotonic() <= deadline
             ):
                 return snapshot
@@ -236,10 +237,6 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
                 clocks.mark("publisher_start_enter")
                 publisher.start()
                 clocks.mark("publisher_start_return")
-            else:
-                clocks.mark("daemon_start_enter")
-                session.daemon.start()
-                clocks.mark("daemon_start_return")
             minimum = int(before["generation"])
         if accepted is None:
             raise RuntimeError("workspace lifecycle acceptance was not observed")
@@ -259,6 +256,16 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
         result["binding"] = public_binding(snapshot)
         result["publication_chain"] = _chain(observer, snapshot, accepted, deadline)
         result["scope_checks"] = _scope_checks(observer, result["publication_chain"], count)
+        if scenario in {"first_admission_fault", "service_restart"}:
+            # The real constructor already starts its cold native publisher.
+            # Observe that barrier under the original registration deadline;
+            # full service startup also performs unrelated reconciliation.
+            clocks.mark("daemon_start_enter")
+            session.daemon.start()
+            clocks.mark("daemon_start_return")
+            binding, authenticated = _authenticated_readback(session.store)
+            if publisher.current_snapshot() != snapshot or not _readback_matches(binding, authenticated, snapshot):
+                raise RuntimeError("workspace full startup changed acknowledged authority")
         if scenario == "key_rotation" and not key_recovery_matches(before, snapshot):
             raise RuntimeError("workspace acknowledged key recovery linkage mismatch")
         requests.probe(0, count - 1)

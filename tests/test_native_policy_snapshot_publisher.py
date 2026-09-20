@@ -241,10 +241,24 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
         client_request=client_request,
         poll_interval_seconds=0.05,
     )
+    rejection_recorded = threading.Event()
+    rejected_errors: list[str | None] = []
+    record_error = publisher._record_error
+
+    def observe_rejection(error: str) -> None:
+        with publisher._condition:
+            record_error(error)
+            rejected_errors.append(publisher.last_error)
+            rejection_recorded.set()
+
+    monkeypatch.setattr(publisher, "_record_error", observe_rejection)
     publisher.start()
     try:
+        # Publication is asynchronous. Observe the actual rejection before
+        # checking its error; a new publication may legitimately reset it.
+        assert rejection_recorded.wait(2.0)
+        assert rejected_errors[0] == "native_policy_snapshot_ack_mismatch"
         assert not publisher.wait_until_ready(time.monotonic() + 0.5)
-        assert publisher.last_error == "native_policy_snapshot_ack_mismatch"
         assert not publisher.is_ready()
     finally:
         publisher.close()

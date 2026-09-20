@@ -84,12 +84,6 @@ def paired_corpus_identity(
     if len(digests) != 1 or not all(type(value) is str and value for value in digests):
         raise RuntimeError("paired artifacts used different corpus definitions")
     scopes = {report.get("corpus_definition_scope") for report in combined}
-    if scopes == {None}:
-        # Historical reports used the full-matrix digest. Preserve their exact
-        # equality requirement; they cannot opt into the new oracle split.
-        if any("reference_oracle_profile" in report or "contract_evidence_digest" in report for report in combined):
-            raise RuntimeError("new corpus evidence omitted its identity scope")
-        return {"corpus_definition_scope": "legacy_full_matrix_v1"}
     if scopes != {_SCOPE}:
         raise RuntimeError("paired corpus definition scopes differ")
     if not all(_is_digest(value) for value in digests):

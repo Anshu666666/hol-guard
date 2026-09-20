@@ -185,6 +185,9 @@ def test_exhausted_sample_retains_fixed_reason_after_exactly_two_attempts(
     assert report["unavailable_sample_reason_scope"] == "last_failed_attempt_after_two_attempts"
     assert report["sample_minimum_met"] is False
     assert "private" not in repr(report["unavailable_sample_reasons"])
+    role = "root" if failure in {"missing", "denied"} else "unknown"
+    assert report["unavailable_sample_operations"] == {f"inventory_before:{role}": 1}
+    assert report["unavailable_sample_operation_scope"] == "last_failed_attempt_after_two_attempts"
 
 
 def test_changed_inventory_twice_is_one_missing_sample(controlled_tree, monkeypatch):
@@ -202,6 +205,7 @@ def test_changed_inventory_twice_is_one_missing_sample(controlled_tree, monkeypa
     assert len(calls) == 4
     assert sampler.samples == 0 and sampler.missing == 1
     assert sampler.missing_reasons == Counter(inventory_changed=1)
+    assert sampler.missing_operations == Counter({"inventory_after:unknown": 1})
 
 
 def test_retry_success_does_not_count_as_a_missing_sample(controlled_tree, monkeypatch):
@@ -220,6 +224,7 @@ def test_retry_success_does_not_count_as_a_missing_sample(controlled_tree, monke
     assert len(calls) == 3
     assert sampler.samples == 1 and sampler.missing == 0
     assert sampler.missing_reasons == Counter()
+    assert sampler.missing_operations == Counter()
 
 
 def test_terminal_reason_does_not_claim_to_explain_both_attempts(controlled_tree, monkeypatch):
@@ -265,10 +270,11 @@ def test_one_missing_sample_still_fails_every_required_metric_after_250_valid(mo
 
     values = iter(range(251))
 
-    def sample(_pid, *, unavailable_reasons):
+    def sample(_pid, *, unavailable_reasons, unavailable_operations):
         value = next(values)
         if value == 125:
             unavailable_reasons["inventory_changed"] += 1
+            unavailable_operations["inventory_after:unknown"] += 1
             return None
         return resources.TreeResources(
             100, 50, float(value), 1, 1, 3, process_cpu={(42, 1.0): float(value)}, cpu_includes_reaped=True
@@ -282,6 +288,7 @@ def test_one_missing_sample_still_fails_every_required_metric_after_250_valid(mo
     assert sampler.interval == 0.1
     assert report["samples"] == 250 and report["unavailable_samples"] == 1
     assert report["unavailable_sample_reasons"] == {"inventory_changed": 1}
+    assert report["unavailable_sample_operations"] == {"inventory_after:unknown": 1}
     assert all(count == 250 for count in report["metric_samples"].values() if count)
     assert all(value is False for value in report["metric_minimum_met"].values())
     assert report["sample_minimum_met"] is False
@@ -309,3 +316,61 @@ def test_linux_waited_child_cpu_does_not_qualify_all_short_lived_descendants(con
     assert comparison["cpu_ms_per_attempt"] == {"qualified": False}
     assert comparison["rss_bytes"]["qualified"] is True
     assert comparison["private_bytes"]["qualified"] is True
+
+
+@pytest.mark.parametrize("role", ["root", "descendant"])
+@pytest.mark.parametrize("operation", ["memory_info", "num_fds", "cpu_times"])
+def test_exited_process_records_exact_operation_without_identifiers(controlled_tree, role, operation):
+    from types import SimpleNamespace
+
+    resources, root = controlled_tree
+    target = root if role == "root" else SimpleNamespace(**{**vars(root), "pid": 987654321})
+    if role == "descendant":
+        root.children = lambda **_kwargs: [target]
+    calls = []
+
+    def exited():
+        calls.append(None)
+        raise resources._psutil().NoSuchProcess(target.pid, name="private-process-name")
+
+    setattr(target, operation, exited)
+    sampler = resources.ResourceSampler(pid=42)
+    sampler._sample()
+    report = sampler.report(attempted=600)
+    expected = {"memory_info": "rss_bytes", "num_fds": "descriptors", "cpu_times": "cpu_times"}[operation]
+    assert len(calls) == 2
+    assert report["unavailable_sample_operations"] == {f"{expected}:{role}": 1}
+    assert report["unavailable_sample_reasons"] == {"process_lookup_failed": 1}
+    assert report["sample_minimum_met"] is False
+    assert "987654321" not in repr(report) and "private-process-name" not in repr(report)
+
+
+@pytest.mark.parametrize("role", ["root", "descendant"])
+def test_denied_descriptors_record_role_and_keep_the_metric_unavailable(controlled_tree, role):
+    from types import SimpleNamespace
+
+    resources, root = controlled_tree
+    target = root if role == "root" else SimpleNamespace(**{**vars(root), "pid": 987654321})
+    if role == "descendant":
+        root.children = lambda **_kwargs: [target]
+    calls = []
+
+    def denied():
+        calls.append(None)
+        raise resources._psutil().AccessDenied(target.pid, name="private-process-name")
+
+    target.num_fds = denied
+    sampler = resources.ResourceSampler(pid=42)
+    for _ in range(30):
+        sampler._sample()
+    report = sampler.report(attempted=600)
+    assert len(calls) == report["samples"] == 30
+    assert report["unavailable_samples"] == 0
+    assert report["unavailable_sample_operations"] == {}
+    assert report["unavailable_metrics"]["descriptors"] == {"permission_denied": 30}
+    assert report["unavailable_metric_roles"] == {"descriptors": {role: 30}}
+    assert report["unavailable_metric_role_scope"] == "last_permission_denial_per_metric_in_each_returned_sample"
+    assert report["peak"]["descriptors"] is None
+    assert report["metric_minimum_met"]["rss_bytes"] is True
+    assert report["metric_minimum_met"]["descriptors"] is report["sample_minimum_met"] is False
+    assert "987654321" not in repr(report) and "private-process-name" not in repr(report)

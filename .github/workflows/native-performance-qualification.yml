@@ -1,0 +1,143 @@
+name: Native performance preflight
+run-name: Native performance preflight smoke - 017f1244f1861bc4a74620a669557b78beb6d176
+
+on:
+  push:
+    branches: [codex/pr2974-installed-validation-20260920-017f1244]
+    paths:
+      - '.github/workflows/native-performance-qualification.yml'
+      - 'scripts/ci/record_native_qualification_checkouts.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-performance-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  paired-artifacts:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            prior_artifact_id: '10495348403'
+            target: x86_64-unknown-linux-musl
+            platform_tag: manylinux_2_17_x86_64
+            deployment_target: ''
+          - runner: macos-15-intel
+            prior_artifact_id: '10496030613'
+            target: x86_64-apple-darwin
+            platform_tag: macosx_13_0_x86_64
+            deployment_target: '13.0'
+          - runner: macos-15
+            prior_artifact_id: '10496485020'
+            target: aarch64-apple-darwin
+            platform_tag: macosx_11_0_arm64
+            deployment_target: '11.0'
+          - runner: windows-latest
+            prior_artifact_id: '10495748426'
+            target: x86_64-pc-windows-msvc
+            platform_tag: win_amd64
+            deployment_target: ''
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    steps:
+      - name: Check out validation driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: validation-src
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check out candidate source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: 017f1244f1861bc4a74620a669557b78beb6d176
+          persist-credentials: false
+      - name: Check out audited production baseline
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+          path: baseline-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: true
+      - name: Bind untouched qualification checkouts
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        shell: bash
+        run: |
+          python validation-src/scripts/ci/record_native_qualification_checkouts.py \
+            --baseline baseline-src --candidate candidate-src \
+            --phase before --output qualification-evidence/aggregate/checkouts-before.json
+      - name: Retrieve immutable prior candidate wheel for rollback
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        # Keep independent probes available; the mandatory transition CLI
+        # rejects absent, changed, or incorrectly identified historical bytes.
+        continue-on-error: true
+        with:
+          artifact-ids: ${{ matrix.prior_artifact_id }}
+          run-id: 35217841356
+          repository: hashgraph-online/hol-guard
+          github-token: ${{ github.token }}
+          path: prior-candidate-artifact
+      - name: Install pinned Rust target
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup target add --toolchain 1.88.0 ${{ matrix.target }}
+      - name: Install static Linux linker
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends musl-tools
+      - name: Build isolated wheels and run paired sampling
+        env:
+          QUALIFICATION_MODE: smoke
+          QUALIFICATION_TARGET: ${{ matrix.target }}
+          QUALIFICATION_PLATFORM: ${{ matrix.platform_tag }}
+          QUALIFICATION_DEPLOYMENT: ${{ matrix.deployment_target }}
+        shell: bash
+        run: |
+          python candidate-src/scripts/build_native_qualification_artifacts.py \
+            --baseline baseline-src --candidate candidate-src \
+            --target "$QUALIFICATION_TARGET" --platform-tag "$QUALIFICATION_PLATFORM" \
+            --deployment-target "$QUALIFICATION_DEPLOYMENT" \
+            --prior-artifact-root prior-candidate-artifact \
+            --mode "$QUALIFICATION_MODE" --output-dir qualification-evidence
+      - name: Observe unchanged resolver after the paired attempt
+        if: always()
+        shell: bash
+        run: |
+          python candidate-src/scripts/ci/native_loopback_resolver.py \
+            --output qualification-evidence/aggregate/runner-resolver.json
+      - name: Verify qualification checkouts remain unchanged
+        if: always()
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        shell: bash
+        run: |
+          python validation-src/scripts/ci/record_native_qualification_checkouts.py \
+            --baseline baseline-src --candidate candidate-src \
+            --phase after --output qualification-evidence/aggregate/checkouts-after.json
+      - name: Retain aggregate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-performance-017f1244f1861bc4a74620a669557b78beb6d176-preflight-smoke-${{ matrix.target }}-attempt-${{ github.run_attempt }}
+          path: |
+            qualification-evidence/aggregate/*.json
+            qualification-evidence/build-metadata.json
+          if-no-files-found: warn
+          retention-days: 30

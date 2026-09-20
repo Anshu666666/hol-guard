@@ -1,0 +1,112 @@
+{
+  "schema": "pr2974.deadline-hosted-validation-plan.v1",
+  "status": "Prepared only; no workflow dispatched, source compiled, native controls run, or product ref changed.",
+  "immutable_base": {
+    "commit": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "tree": "fbc00caa3788eb422158a2263a578e83ac626183"
+  },
+  "defect_scope": [
+    "The discovered-state path formerly converted the caller's absolute deadline to Duration before process/token validation, then rebuilt a later deadline.",
+    "Successful managed returns could cross the original deadline during final return or actual lease cleanup.",
+    "The Unix path formerly performed socket setup after one remaining-time check and could initiate connect after that deadline."
+  ],
+  "non_attribution": "These independently demonstrated source defects are not a proven cause of the observed Ubuntu signed-policy startup failures.",
+  "boundaries_preserved": [
+    "Existing 250 ms authentication phase, HMAC/request/response binding, peer identity validation, original payload/protocol, retry allowlist, and committed-error nonretryability.",
+    "Original exchange_request late-result/error mapping remains unchanged; new managed final fences transform only successful results and retain original errors.",
+    "Persistent stdout framing remains outside the managed request-result deadline. These transport fixtures do not exercise native policy evaluation."
+  ],
+  "stages": [
+    {
+      "name": "formatting_preparation",
+      "commands": [
+        "rustup toolchain install 1.88.0 --profile minimal --component rustfmt",
+        "python deadline-format-prep/format_source.py (workflow supplies exact source/driver/manifest bindings)"
+      ],
+      "scope": "Only rustfmt, source/hash/clean-tree checks and second-pass formatting idempotence. The official compiler runtime is installed as the formatter's dependency, but no compiler, Cargo command, native test or workload is invoked.",
+      "admission": "Every ten input hashes match; exact formatter hash matches official component; each returned source is UTF-8 and bounded, formats idempotently, and original source/driver trees remain clean. Returned bytes are new, unreviewed images."
+    },
+    {
+      "name": "review_and_freeze_returned_source",
+      "scope": "Download and verify the actual artifact digest/member hashes; review every formatting delta against the preserved input, retrieve every changed Git blob, create immutable before/candidate source commits against the same exact base. Do not claim the unformatted input hashes were tested."
+    },
+    {
+      "name": "separate_compile",
+      "commands": [
+        "cargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1",
+        "cargo fmt --manifest-path rust/Cargo.toml --all -- --check",
+        "cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime --no-run --message-format=json"
+      ],
+      "scope": "Rust 1.88.0 and original Cargo.lock; independent CARGO_TARGET_DIR for before and candidate. Capture exit/stderr separately. Require successful compilation and exactly the expected runtime test binary, then record binary SHA256. No expected-red interpretation can admit a compiler or collection error."
+    },
+    {
+      "name": "exact_collection",
+      "commands": [
+        "<runtime-test-binary> managed_resident::deadline_tests:: --list",
+        "<runtime-test-binary> resident_client::connect_deadline_tests:: --list"
+      ],
+      "scope": "Exact seven managed nodes; exact two Unix nodes only on Unix. Reject absent, duplicate or additional nodes, ignored cases, zero-test runs and unsupported platform claims. Broad deadline_tests is insufficient because it also selects existing tests."
+    },
+    {
+      "name": "new_real_boundary_controls",
+      "commands": [
+        "<runtime-test-binary> managed_resident::deadline_tests:: --test-threads=1 --nocapture --color never",
+        "<runtime-test-binary> resident_client::connect_deadline_tests:: --test-threads=1 --nocapture --color never"
+      ],
+      "scope": "Execute each namespace once per immutable before/candidate image. Capture exit, stdout and stderr without truncating evidence; bounded process timeout and cleanup. The exact fixed JSON result records must agree with the expected roster, not merely the failing node names.",
+      "expected_not_observed": {
+        "before_unix": {
+          "pass": 5,
+          "fail": 4
+        },
+        "candidate_unix": {
+          "pass": 9,
+          "fail": 0
+        },
+        "before_windows": {
+          "pass": 4,
+          "fail": 3
+        },
+        "candidate_windows": {
+          "pass": 7,
+          "fail": 0
+        }
+      },
+      "failure_admission": "Compile must succeed first. Baseline exit101 is admissible only for the named negative controls with their exact connection/request/error/deadline/cleanup records. Wrong assertions, setup panics, missing records, timeout, bad binary hash or any other failure reject the run. Candidate must return exit0 with every intended assertion and record."
+    },
+    {
+      "name": "existing_regressions",
+      "commands": [
+        "cargo test --manifest-path rust/Cargo.toml --locked --workspace --all-targets -- --test-threads=1",
+        "cargo clippy --manifest-path rust/Cargo.toml --locked --workspace --all-targets --all-features -- -D warnings",
+        "cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime",
+        "<release-runtime> self-test --json"
+      ],
+      "scope": "Run on reviewed exact candidate bytes and report actual commands/counts. Existing client, deadline, managed retry/auth/lease and socket controls remain enabled. Before-image negative controls are not mixed into an all-green baseline workspace claim. Set existing HOL_GUARD_BUILD_SHA to candidate source commit, not workflow commit; preserve normal metadata identity requirements. Any later command correction must be source-checked before dispatch."
+    }
+  ],
+  "workflow_sources": [
+    {
+      "path": ".github/workflows/rust-runtime.yml",
+      "git_blob": "ba892459281d26c8b3bec79550403637d061058b",
+      "note": "Existing Rust1.88/locked workspace template; its initial mutating cargo fmt is deliberately excluded from immutable validation."
+    },
+    {
+      "path": ".github/workflows/rust-daemon-edge-hardening.yml",
+      "git_blob": "605a930d3b2a038d340b33ad5321b7974256d83f",
+      "note": "Existing Ubuntu24.04/Mac14/Windows2025 toolchain/reference, not an authorization to rerun their complete workloads."
+    }
+  ],
+  "current_execution": {
+    "formatter_component_load": {
+      "exit_code": 127,
+      "source_formatted": false,
+      "reason": "Missing librustc_driver shared library; stopped without expanding local dependencies."
+    },
+    "native_compile": false,
+    "native_controls": false,
+    "workloads": false,
+    "dispatch": false,
+    "qualification_complete": false
+  }
+}

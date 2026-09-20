@@ -57,9 +57,9 @@ fn read_exact(
     stream: &mut dyn crate::ResidentStream,
     output: &mut [u8],
 ) -> Result<(), ResidentClientError> {
-    stream
-        .read_exact(output)
-        .map_err(|_| ResidentClientError::fatal("native_client_frame_read_failed".to_owned()))
+    let result = stream.read_exact(output);
+    crate::observe_native_read_value!(observe_exact_result, &result);
+    result.map_err(|_| ResidentClientError::fatal("native_client_frame_read_failed".to_owned()))
 }
 
 fn authenticate(
@@ -86,10 +86,12 @@ fn authenticate(
     // A server-proof read happens after the client has sent its nonce.  Even
     // an EOF that looks like a transport teardown at this phase is not safe
     // to replay: the peer has not completed authentication.
-    read_exact(stream, &mut server_proof).map_err(|error| ResidentClientError {
-        code: error.code,
-        retryable_teardown: false,
-    })?;
+    crate::observe_native_read_phase!(ServerProof, read_exact(stream, &mut server_proof)).map_err(
+        |error| ResidentClientError {
+            code: error.code,
+            retryable_teardown: false,
+        },
+    )?;
     let expected = hmac_sha256(token, SERVER_PROOF_LABEL, &nonce);
     if !constant_time_eq(&server_proof, &expected) {
         return Err("native_client_auth_rejected".to_owned().into());
@@ -283,7 +285,7 @@ fn read_response(
     request_id: &[u8; FRAME_REQUEST_ID_BYTES],
 ) -> Result<Vec<u8>, ResidentClientError> {
     let mut header = [0u8; FRAME_HEADER_BYTES];
-    read_exact(stream, &mut header)?;
+    crate::observe_native_read_phase!(ResponseHeader, read_exact(stream, &mut header))?;
     if !constant_time_eq(&header[..4], RESPONSE_MAGIC)
         || !constant_time_eq(&header[4..4 + FRAME_REQUEST_ID_BYTES], request_id)
     {
@@ -300,7 +302,7 @@ fn read_response(
         return Err("native_client_response_too_large".to_owned().into());
     }
     let mut response = vec![0u8; length];
-    read_exact(stream, &mut response)?;
+    crate::observe_native_read_phase!(ResponseBody, read_exact(stream, &mut response))?;
     if !constant_time_eq(&Sha256::digest(&response), digest) {
         return Err("native_client_response_digest_mismatch".to_owned().into());
     }
@@ -420,3 +422,7 @@ mod deadline_tests;
 #[cfg(all(test, unix))]
 #[path = "resident_client_connect_deadline_tests.rs"]
 mod connect_deadline_tests;
+
+#[cfg(all(test, feature = "diagnostic-phases", target_os = "macos"))]
+#[path = "resident_client_read_observation_tests.rs"]
+mod read_observation_tests;

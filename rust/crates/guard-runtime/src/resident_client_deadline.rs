@@ -43,23 +43,29 @@ impl<'a> DeadlineStream<'a> {
 
 impl Read for DeadlineStream<'_> {
     fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+        crate::observe_native_read_value!(begin_read);
         let deadline = self.read_deadline.get();
-        let result = match self
-            .stream
-            .set_resident_read_timeout(Some(remaining(deadline)?))
-        {
-            Ok(()) => self.stream.read(output),
+        let result = match crate::observe_native_read_origin!(
+            TimeoutSetter,
+            self.stream
+                .set_resident_read_timeout(Some(crate::observe_native_read_origin!(
+                    PreReadDeadline,
+                    remaining(deadline)
+                )?))
+        ) {
+            Ok(()) => crate::observe_native_read_origin!(UnderlyingRead, self.stream.read(output)),
             Err(error) => match self
                 .stream
                 .read_buffered_after_timeout_error(output, &error, deadline)
             {
-                Some(result) => result,
+                Some(result) => crate::observe_native_read_origin!(TimeoutRecovery, result),
                 None => return Err(error),
             },
         };
+        crate::observe_native_read_value!(observe_read_result, &result);
         // Socket timeout granularity can allow a successful final read past
         // the deadline. Such a response must not be accepted as timely.
-        remaining(deadline)?;
+        crate::observe_native_read_origin!(PostReadDeadline, remaining(deadline))?;
         result
     }
 }

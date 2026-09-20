@@ -6,6 +6,7 @@ substitutes its result or constructs continuation/approval authority.
 
 from __future__ import annotations
 
+import json
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -20,6 +21,39 @@ from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_launcher_approval import LauncherApprovalControl
 from scripts.native_slo_workloads import ExpectedResponse, QualificationCase
+
+
+def payload_bound_review_case(case: QualificationCase) -> QualificationCase:
+    """Declare a current direct-command review without changing the old vector.
+
+    The original git-diff vector predates the merged conservative retry gate.
+    The existing Rust dotenv-read controls require review for this direct cat
+    command, whose argv is admitted by the current compatibility binding gate.
+    This changes the selected diagnostic input, never a runtime allowlist.
+    """
+    original_command = "git diff --output=/tmp/guard-qualification.diff README.md"
+    tool_input = case.payload.get("tool_input")
+    if (
+        case.harness not in {"claude-code", "codex"}
+        or case.event != "PreToolUse"
+        or case.setup != "normal"
+        or case.expected.reason_class != "review"
+        or case.native_expected is None
+        or case.native_expected.reason_code != "native_command_review_required"
+        or not isinstance(tool_input, Mapping)
+        or dict(tool_input) != {"command": original_command}
+    ):
+        raise ValueError("current payload-bound review requires the exact original review vector")
+    payload = {**case.payload, "tool_input": {"command": "cat .env"}}
+    reason = "native_sensitive_access_review"
+    return replace(
+        case,
+        case_id=case.case_id + "/payload-bound-v1",
+        payload=payload,
+        wire_bytes=len(json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode()),
+        expected=replace(case.expected, fields={**case.expected.fields, "reason_code": reason}),
+        native_expected=replace(case.native_expected, fields={**case.native_expected.fields, "reason_code": reason}),
+    )
 
 
 def approved_review_case(case: QualificationCase) -> QualificationCase:

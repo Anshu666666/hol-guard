@@ -41,7 +41,10 @@ def parse_cpu_stat(body: bytes) -> CpuSnapshot:
             raise ValueError
         for line in lines:
             key, number = line.split()
-            if key in values or not key.replace("_", "").isalnum() or not number.isdecimal():
+            # Linux also emits this dotted key under CONFIG_SCHED_CORE. It is
+            # an auxiliary counter, not a replacement for the three totals.
+            valid_key = key.replace("_", "").isalnum() or key == "core_sched.force_idle_usec"
+            if key in values or not valid_key or not number.isdecimal():
                 raise ValueError
             value = int(number)
             if value > _MAX_COUNTER:

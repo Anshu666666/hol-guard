@@ -41,6 +41,55 @@ def test_kernel_counter_retains_three_domains_without_inventing_exact_sum() -> N
         lifetime.cpu_delta(end, start)
 
 
+@pytest.mark.parametrize("position", [0, 1, 2, 3])
+def test_linux_core_scheduling_counter_preserves_required_totals(position: int) -> None:
+    # The exact auxiliary spelling is emitted by Linux v6.8 and v6.17
+    # kernel/cgroup/rstat.c. These are source-shaped values, not hosted input.
+    lines = [b"usage_usec 200", b"user_usec 120", b"system_usec 78"]
+    lines.insert(position, b"core_sched.force_idle_usec 41")
+    snapshot = lifetime.parse_cpu_stat(b"\n".join(lines) + b"\n")
+    assert snapshot == lifetime.CpuSnapshot(usage_usec=200, user_usec=120, system_usec=78)
+
+
+@pytest.mark.parametrize(
+    "auxiliary",
+    [
+        b"core_sched.force_idle_usec 1\ncore_sched.force_idle_usec 2\n",
+        b"core_sched.force_idle_usec -1\n",
+        b"core_sched.force_idle_usec 1.0\n",
+        b"core_sched.force_idle_usec inf\n",
+        b"core_sched.force_idle_usec 9223372036854775808\n",
+        b"core_sched.force_idle_usec 1 extra\n",
+        b"core_sched.other 1\n",
+        b"other.force_idle_usec 1\n",
+        b"core_sched..force_idle_usec 1\n",
+    ],
+    ids=["duplicate", "negative", "fraction", "nonfinite", "overflow", "extra", "unknown", "namespace", "dots"],
+)
+def test_dotted_auxiliary_does_not_relax_duplicate_value_or_key_checks(auxiliary: bytes) -> None:
+    body = b"usage_usec 200\nuser_usec 120\nsystem_usec 78\n" + auxiliary
+    with pytest.raises(lifetime.LifetimeCpuUnavailableError, match="cpu_stat_invalid"):
+        lifetime.parse_cpu_stat(body)
+
+
+@pytest.mark.parametrize("missing", ["usage_usec", "user_usec", "system_usec"])
+def test_auxiliary_never_substitutes_for_a_required_lifetime_counter(missing: str) -> None:
+    lines = [f"{key} 1" for key in ("usage_usec", "user_usec", "system_usec") if key != missing]
+    lines.append("core_sched.force_idle_usec 1")
+    with pytest.raises(lifetime.LifetimeCpuUnavailableError, match="cpu_stat_invalid"):
+        lifetime.parse_cpu_stat(("\n".join(lines) + "\n").encode("ascii"))
+
+
+def test_core_scheduling_counter_still_obeys_original_row_and_byte_bounds() -> None:
+    rows = b"usage_usec 200\nuser_usec 120\nsystem_usec 78\ncore_sched.force_idle_usec 41\n"
+    rows += b"".join(f"aux_{index} 0\n".encode("ascii") for index in range(60))
+    assert lifetime.parse_cpu_stat(rows).usage_usec == 200
+    with pytest.raises(lifetime.LifetimeCpuUnavailableError, match="cpu_stat_invalid"):
+        lifetime.parse_cpu_stat(rows + b"extra 0\n")
+    with pytest.raises(lifetime.LifetimeCpuUnavailableError, match="cpu_stat_size"):
+        lifetime.parse_cpu_stat(rows + b" " * 8192)
+
+
 @pytest.fixture
 def modeled_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     if not sys.platform.startswith("linux"):

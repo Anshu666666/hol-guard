@@ -1,0 +1,314 @@
+name: Public recovery source validation
+
+on:
+  push:
+    branches: [hgp/recovery-source-validation-20260920]
+    paths: [.github/workflows/recovery-source-validation.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-recovery-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event.repository.private == false && github.event_name == 'push' && github.ref == 'refs/heads/hgp/recovery-source-validation-20260920' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        python: ["3.10", "3.12"]
+    env:
+      PUBLIC_SOURCE_SHA: 39d3251194ee3fb2c4439f7c9544e60e0a913583
+      PUBLIC_SOURCE_TREE: fbe11e8bf441ded29fc83e2c2f660e50b14101f6
+      PYTHON_VERSION: ${{ matrix.python }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: public-source
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: public-source
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Bind exact public source and single workflow child
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-list --parents -n 1 HEAD)" = "$GITHUB_SHA $PUBLIC_SOURCE_SHA"
+          test "$(git diff --name-only "$PUBLIC_SOURCE_SHA" HEAD)" = ".github/workflows/recovery-source-validation.yml"
+          git checkout --detach "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Prepare pinned dependencies and owned interpreter
+        run: |
+          set -euo pipefail
+          python -I scripts/ci/policy_contract_interpreter.py prepare
+          uv sync --frozen --extra dev --python "$PYTHON_VERSION"
+          python -I scripts/ci/policy_contract_interpreter.py verify
+      - name: Install pinned Rust for the existing slow commitment test
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+          rustc --version
+          cargo --version
+      - name: Materialize fixed source selection
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/public-recovery-source-$PYTHON_VERSION"
+          mkdir -p "$target"
+          cat > "$target/manifest.json" <<'JSON'
+          {"selectors":{"source-09":["tests/test_aibom_chunking.py","tests/test_aibom_operation_authority.py","tests/test_aibom_sync_admission.py","tests/test_cloud_review_oauth_refresh_bindings.py","tests/test_guard_aibom_cli.py","tests/test_guard_aibom_content_upload.py","tests/test_guard_aibom_content_upload_batches.py","tests/test_guard_encrypted_secret_store_stability.py","tests/test_guard_event_schema_v1.py","tests/test_guard_exact_cloud_review.py","tests/test_cloud_review_renewal_convergence.py","tests/test_cloud_review_lifecycle_process.py","tests/test_cloud_review_worker_restoration.py","tests/test_guard_exact_cloud_review_concurrency.py","tests/test_guard_exact_cloud_review_oauth.py","tests/test_guard_keyring_support.py","tests/test_guard_oauth_cached_expiry_compatibility.py","tests/test_guard_oauth_reconnect.py","tests/test_guard_oauth_refresh_resilience.py","tests/test_guard_receipt_redaction_cursor.py","tests/test_guard_store_migrations.py","tests/test_guard_supply_chain_daemon.py","tests/test_oauth_connection_authority.py","tests/test_guard_connect_completion_authority.py","tests/test_guard_connect_supply_completion.py","tests/test_sync_response_connection_authority.py","tests/test_oauth_refresh_connection_authority.py","tests/test_inventory_request_authority.py","tests/test_inventory_consumer_authority.py","tests/test_guard_sync_http_error_message.py","tests/test_guard_sync_retry_clock_isolation.py","tests/test_inventory_oauth_completion_authority.py","tests/test_guard_skill_directory_identity_downstream.py","tests/test_receipt_signed_redaction_default.py","tests/test_receipt_redaction_local_floors.py","tests/test_receipt_signed_redaction_commit.py","tests/test_cloud_review_outbox_arrival_progress.py","tests/test_optional_preferences_local_safety.py"],"focused-recovery":["tests/test_policy_signer_rotation_runtime.py","tests/test_policy_activation_failure_recovery.py","tests/test_policy_bundle_activation_atomicity.py","tests/test_policy_activation_native_visibility.py","tests/test_managed_controls_immutable_floors.py","tests/test_policy_matcher_capability.py","tests/test_policy_compile_error_projection.py","tests/test_policy_cli_error_guidance.py","tests/test_headless_cloud_sync_restart.py","tests/test_cloud_review_held_event_identity.py","tests/test_guard_cloud_review_settings.py","tests/test_cloud_review_partial_ack_repair.py","tests/test_guard_cloud_review_snapshot_repair.py","tests/test_cloud_review_sqlite_process_recovery.py","tests/test_guard_cloud_review_sqlite_recovery.py","tests/test_guard_cloud_review_redaction_reproject.py","tests/test_guard_cloud_review_sync.py","tests/test_guard_exact_cloud_review_grant_isolation.py","tests/test_guard_exact_cloud_review_stale_bindings.py","tests/test_guard_exact_cloud_review_adversarial.py","tests/test_guard_exact_cloud_review_crash_replay.py","tests/test_guard_workspace_admin_review_authority.py","tests/test_guard_workspace_admin_cloud_review.py","tests/test_guard_exact_cloud_review_no_generic_fallthrough.py","tests/test_guard_exact_cloud_review_transport_failures.py","tests/test_guard_exact_cloud_review_result_upload_retry.py","tests/test_guard_cloud_review_runtime_recovery.py","tests/test_guard_cloud_review_real_adapter_continuation.py","tests/test_guard_cloud_review_adapter_continuation.py","tests/test_guard_exact_cloud_review_revoke_race.py","tests/test_guard_exact_cloud_review_consent.py","tests/test_guard_policy_launch_boundary.py","tests/test_guard_python_native_policy_parity.py","tests/test_native_policy_vector_source_parity.py","tests/test_native_policy_snapshot_path_identity.py","tests/test_guard_extension_catalog_unknown_permissions.py","tests/test_guard_extension_control_catalog_upgrade.py","tests/test_guard_policy_support_export.py","tests/test_guard_policy_runtime_error_catalog.py"],"slow-vector-commitment":["tests/test_native_policy_vector_source_parity.py::test_source_defined_native_policy_vectors_match_actual_python"]},"expected":{"source-09":{"count":849,"nodeIdsSha256":"17e0b7507588e5fbf9f87f2ec33f4d8e9cc932722b42be2a153cb509c1ae60fd","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"},"focused-recovery":{"count":284,"nodeIdsSha256":"3ea63657355b8cd0abef9ad70161b80d8c4d8862e2a83501fcce76cb85fa355f","deselectedCount":1,"deselectedSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278"},"slow-vector-commitment":{"count":1,"nodeIdsSha256":"a4e598a2d4342f2fbe8ab378a550dd7cbdf0f51f3baa09d9cbe58563ec202278","deselectedCount":0,"deselectedSha256":"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"}},"files":[{"path":"pyproject.toml","gitBlob":"876066431cbe958a77a85edddff95a829394cfbc","bytes":8862},{"path":"uv.lock","gitBlob":"45bf8a2dcf7b1f70c4387508a94348ba54f20022","bytes":956861},{"path":"scripts/ci/policy_contract_interpreter.py","gitBlob":"26f714af2a0d07a109f83e3d59dbfe8c11089107","bytes":2010},{"path":"scripts/ci/policy_source_contract.py","gitBlob":"552725f880af9aaa2b6d5958c2c74662a97baffe","bytes":7114},{"path":"scripts/ci/policy_source_contract_roots.json","gitBlob":"97af93640fc0195a05f07e00a68e38dffc859ade","bytes":38514},{"path":"tests/conftest.py","gitBlob":"61e6d98609309fac99c9baae50fab5f47229fcde","bytes":14199},{"path":"tests/guard_test_invariants.py","gitBlob":"2aa54c626525881c7b1ecdab1077e029560f1f0d","bytes":9498},{"path":"tests/test_aibom_chunking.py","gitBlob":"947083747e722d8f8ebefe16a0a72259b7512a40","bytes":5975},{"path":"tests/test_aibom_operation_authority.py","gitBlob":"1ec0cb1f6116e59ffd2a76f6ae4b4ecaae7af1e8","bytes":28494},{"path":"tests/test_aibom_sync_admission.py","gitBlob":"a0344046d3f564992611c98485329bd8687296de","bytes":19935},{"path":"tests/test_cloud_review_oauth_refresh_bindings.py","gitBlob":"4872a5f1549b8c45d7c2ac51ad819101f8ee8a2f","bytes":2360},{"path":"tests/test_guard_aibom_cli.py","gitBlob":"ccbbc6fd818da7e2cbe2aa249884fa696ba5872a","bytes":47617},{"path":"tests/test_guard_aibom_content_upload.py","gitBlob":"0a8562123b628e04cc3447a3a4bc690caab71223","bytes":13864},{"path":"tests/test_guard_aibom_content_upload_batches.py","gitBlob":"19883c7504263601b28e9cefc72e229357dcff96","bytes":6929},{"path":"tests/test_guard_encrypted_secret_store_stability.py","gitBlob":"d074d2c2c81f9c267a7dce2be675a2d71abcb0be","bytes":4304},{"path":"tests/test_guard_event_schema_v1.py","gitBlob":"f773c2d73da5c871b7a570130d003a711d0ff117","bytes":15945},{"path":"tests/test_guard_exact_cloud_review.py","gitBlob":"3cbe7add68509a167ee0f496e8afac80eb474893","bytes":17311},{"path":"tests/test_cloud_review_renewal_convergence.py","gitBlob":"1d0c0ed1854f1cec7ed3ef10583a2b37a53f12d6","bytes":11904},{"path":"tests/test_cloud_review_lifecycle_process.py","gitBlob":"7ce2826af5b88e1071ae167045265538763ab750","bytes":8910},{"path":"tests/test_cloud_review_worker_restoration.py","gitBlob":"1f61665b5414511b7656833b6a619b1bba7ed7eb","bytes":14479},{"path":"tests/test_guard_exact_cloud_review_concurrency.py","gitBlob":"01ea718e1d849020c4636303eadb26c131b0da03","bytes":11569},{"path":"tests/test_guard_exact_cloud_review_oauth.py","gitBlob":"d5f1e727b67c0eb084dee03e130442853d907f9f","bytes":9977},{"path":"tests/test_guard_keyring_support.py","gitBlob":"2509a2a64c21c349f8f5bb7bedaab05d41b1fb49","bytes":1207},{"path":"tests/test_guard_oauth_cached_expiry_compatibility.py","gitBlob":"b4d3f8554c99b0d45efc5e6efb3f702f41c3917d","bytes":4975},{"path":"tests/test_guard_oauth_reconnect.py","gitBlob":"5b1e5a0a97b22fbfcee40389ee73a468ff929f88","bytes":30729},{"path":"tests/test_guard_oauth_refresh_resilience.py","gitBlob":"9dd402073a05f0da18c3ce6ebce707b61ed974f8","bytes":12745},{"path":"tests/test_guard_receipt_redaction_cursor.py","gitBlob":"3c945ed1425b03bb344ecd22ebb2e06d712828fb","bytes":47299},{"path":"tests/test_guard_store_migrations.py","gitBlob":"e516a900c4178d6f41c4174569b45a4dccf159bc","bytes":104915},{"path":"tests/test_guard_supply_chain_daemon.py","gitBlob":"ce7207a77139690c62d731398ab860d14620acb2","bytes":21551},{"path":"tests/test_oauth_connection_authority.py","gitBlob":"0441f694d5ac0710e24b36f838e0eeb849c09278","bytes":22353},{"path":"tests/test_guard_connect_completion_authority.py","gitBlob":"a709b91e3c9b82c0558f86a371472ad6a0c7d6fb","bytes":30614},{"path":"tests/test_guard_connect_supply_completion.py","gitBlob":"b6d0cfedec09861694a4e297b967f5c1df1b5d16","bytes":9175},{"path":"tests/test_sync_response_connection_authority.py","gitBlob":"f0fd18e991ccfea41a36d8c552a75265e1fd80dd","bytes":13336},{"path":"tests/test_oauth_refresh_connection_authority.py","gitBlob":"a57f82c8de00851fb89222e24198feb1ba4bc32a","bytes":23454},{"path":"tests/test_inventory_request_authority.py","gitBlob":"4db5bf0d023b25b15e42d0a127ba6b7098902d90","bytes":11737},{"path":"tests/test_inventory_consumer_authority.py","gitBlob":"0702ad27e21ec0908d2ea86d4595d4119cb7bcb2","bytes":20187},{"path":"tests/test_guard_sync_http_error_message.py","gitBlob":"d143f526e60d51b438cac27692130efd7c84ea37","bytes":7237},{"path":"tests/test_guard_sync_retry_clock_isolation.py","gitBlob":"6bc5c265d8df32b7d4cdcc0cb0a735cbf2170bbf","bytes":1398},{"path":"tests/test_inventory_oauth_completion_authority.py","gitBlob":"74671e83adc21a7c2547b783d3b08595e6c39b4d","bytes":7082},{"path":"tests/test_guard_skill_directory_identity_downstream.py","gitBlob":"da3f9030512f440c0a4acbe27b67bbfa9f8d8c0e","bytes":11801},{"path":"tests/test_receipt_signed_redaction_default.py","gitBlob":"c0036d857b2e029b210cbb66c9d9847f18ec81bf","bytes":6156},{"path":"tests/test_receipt_redaction_local_floors.py","gitBlob":"d10b38a2c5c2fb73f6d2efa33b24fbb30ce4f416","bytes":5654},{"path":"tests/test_receipt_signed_redaction_commit.py","gitBlob":"35c7e99f2839f04fa3be4d1d5d516e0beafe2a73","bytes":2940},{"path":"tests/test_cloud_review_outbox_arrival_progress.py","gitBlob":"8f2529f4116f3b086f2a83a9a926f99df7b2bfc5","bytes":11044},{"path":"tests/test_optional_preferences_local_safety.py","gitBlob":"e0bc762561831d8f13c67515acefd2e6c71af467","bytes":7486},{"path":"tests/test_policy_signer_rotation_runtime.py","gitBlob":"2eb6da547f2644041a30857d8b31396c9acd7174","bytes":16513},{"path":"tests/test_policy_activation_failure_recovery.py","gitBlob":"758bd2c51da4dbf8a457e59ea2d34ca28609fc1c","bytes":9283},{"path":"tests/test_policy_bundle_activation_atomicity.py","gitBlob":"0f548a7f04459123c68c9081539836a4c6f31cd5","bytes":14841},{"path":"tests/test_policy_activation_native_visibility.py","gitBlob":"868947f1246ca8ab9dcfd2530fc339ca992dc4de","bytes":5958},{"path":"tests/test_managed_controls_immutable_floors.py","gitBlob":"d391cd0d7640212703e0fb8f881be6357d6d389b","bytes":4151},{"path":"tests/test_policy_matcher_capability.py","gitBlob":"1258019b088072699f3c324f0915e8a585470f96","bytes":3451},{"path":"tests/test_policy_compile_error_projection.py","gitBlob":"4ff21687e4b114e03731c0c29cd45111087a3b8b","bytes":4662},{"path":"tests/test_policy_cli_error_guidance.py","gitBlob":"324ac2e902f18f5c7bef43d17caca5890f698a27","bytes":10325},{"path":"tests/test_headless_cloud_sync_restart.py","gitBlob":"489d8f923f03cdfd05d9a773e5e33e2b2ca16666","bytes":2101},{"path":"tests/test_cloud_review_held_event_identity.py","gitBlob":"5ccc43ad4fcc3e9a86e53bfe5aa55fa31d8e4909","bytes":2396},{"path":"tests/test_guard_cloud_review_settings.py","gitBlob":"c0980936ddef1c1284a4d80fed4c29d5d8f6186b","bytes":11369},{"path":"tests/test_cloud_review_partial_ack_repair.py","gitBlob":"82379355cae319239ed3723340e28d541d985efd","bytes":4902},{"path":"tests/test_guard_cloud_review_snapshot_repair.py","gitBlob":"96c48da6c3f786944daaef669e8b69d63bfbb0f1","bytes":4337},{"path":"tests/test_cloud_review_sqlite_process_recovery.py","gitBlob":"22b3c94fd57c461ec988ed4cc4221fcd56043fe6","bytes":2690},{"path":"tests/test_guard_cloud_review_sqlite_recovery.py","gitBlob":"b78b079191bfa8b1a03afe06c4b31022bdf91630","bytes":8513},{"path":"tests/test_guard_cloud_review_redaction_reproject.py","gitBlob":"b5a652709a076550ae27cf11a0726acdc0a6ef51","bytes":7304},{"path":"tests/test_guard_cloud_review_sync.py","gitBlob":"823f2e9f95ab8a5f8ba24cb53a853ecbf497d2dd","bytes":20202},{"path":"tests/test_guard_exact_cloud_review_grant_isolation.py","gitBlob":"5c5ec721bcf4d05580e855013fe78368c1193af4","bytes":1659},{"path":"tests/test_guard_exact_cloud_review_stale_bindings.py","gitBlob":"a6eed9914efa62a5ac739e752c0f0513f2c7b68a","bytes":2654},{"path":"tests/test_guard_exact_cloud_review_adversarial.py","gitBlob":"a5b0c0c8c97c3235f4207df53a4749059ba035e0","bytes":13375},{"path":"tests/test_guard_exact_cloud_review_crash_replay.py","gitBlob":"835328e2e456f88485110f9bf744c8582c0fa278","bytes":1710},{"path":"tests/test_guard_workspace_admin_review_authority.py","gitBlob":"a6ab809c0a47903569043931d0fea5df377e5e27","bytes":5775},{"path":"tests/test_guard_workspace_admin_cloud_review.py","gitBlob":"8e8b4844b224ce57bb6aab0dd386268747138b78","bytes":4816},{"path":"tests/test_guard_exact_cloud_review_no_generic_fallthrough.py","gitBlob":"dde041985185cd42f8ee923cb213b872d3210fee","bytes":2277},{"path":"tests/test_guard_exact_cloud_review_transport_failures.py","gitBlob":"d584c938ba117759c42fe9a705b253ce4dfe9d5e","bytes":7867},{"path":"tests/test_guard_exact_cloud_review_result_upload_retry.py","gitBlob":"04525089f7b2b887c1948c742e52a5a199b4b632","bytes":2285},{"path":"tests/test_guard_cloud_review_runtime_recovery.py","gitBlob":"02491d56facd299eb30b4ffe8b1e935d7fb523fa","bytes":9717},{"path":"tests/test_guard_cloud_review_real_adapter_continuation.py","gitBlob":"4a0f0dc1fa2b8679ca95fe5b5969e73dafc25aa7","bytes":4399},{"path":"tests/test_guard_cloud_review_adapter_continuation.py","gitBlob":"6ee970e5168c125ea4cbf61dfc69d66eb10a013b","bytes":3853},{"path":"tests/test_guard_exact_cloud_review_revoke_race.py","gitBlob":"918deddd3bf5aedb72889612c758eb2529437c7a","bytes":1935},{"path":"tests/test_guard_exact_cloud_review_consent.py","gitBlob":"7ce14f34f38be844655d760da401b85f3dcd4abc","bytes":11174},{"path":"tests/test_guard_policy_launch_boundary.py","gitBlob":"400100f9db11a0075974fbac5abbcf3274a67cec","bytes":1827},{"path":"tests/test_guard_python_native_policy_parity.py","gitBlob":"fbfd3233ce394d7a2865f819848d04dd4e025338","bytes":1476},{"path":"tests/test_native_policy_vector_source_parity.py","gitBlob":"a44b7de3f68876a5d48aa1266ed3eebd562ec2e4","bytes":4362},{"path":"tests/test_native_policy_snapshot_path_identity.py","gitBlob":"226fc899e686327ce86155bb009eb054931f826a","bytes":2370},{"path":"tests/test_guard_extension_catalog_unknown_permissions.py","gitBlob":"c2ee13d55db60b9003e031fb2d6696b63b102df0","bytes":3346},{"path":"tests/test_guard_extension_control_catalog_upgrade.py","gitBlob":"7d0fedc89a2ee51a98b0c22ffb983715cb940fe8","bytes":17311},{"path":"tests/test_guard_policy_support_export.py","gitBlob":"34c90c9d1e99d9cafd2be9a4245d7940e4eb147c","bytes":12248},{"path":"tests/test_guard_policy_runtime_error_catalog.py","gitBlob":"147819794be727ea8c1df15a1ff2f60cf8ed7b3f","bytes":1164},{"path":"rust/Cargo.toml","gitBlob":"cb0a0f7431e4a50c52536541cb4f94e48e3ede74","bytes":977},{"path":"rust/Cargo.lock","gitBlob":"0916f72d5a57d49a41c8740f0c08ee7f0aacdca2","bytes":23476},{"path":"rust/crates/guard-runtime/Cargo.toml","gitBlob":"5714e7aaeb71e6b7fed41df742cb4211e058f5da","bytes":1105},{"path":"rust/crates/guard-runtime/src/policy_vector_commitment_tests.rs","gitBlob":"90651b4bfa66114605a92f2be31fbba735d7a588","bytes":2408}],"extraArgs":{"slow-vector-commitment":["-m","slow"]}}
+          JSON
+      - name: Materialize finite case admission
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/public-recovery-source-$PYTHON_VERSION"
+          cat > "$target/group.py" <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          root = Path.cwd().resolve()
+          sys.path.insert(0, str(root))
+          import pytest
+
+          name, manifest_path, report_path = sys.argv[1:]
+          manifest = json.loads(Path(manifest_path).read_text())
+          expected = manifest["expected"][name]
+
+          def digest(ids):
+              return hashlib.sha256(json.dumps(sorted(ids), separators=(",", ":")).encode()).hexdigest()
+
+          class Evidence:
+              def __init__(self):
+                  self.items = []
+                  self.deselected = []
+                  self.collection_verified = False
+                  self.reports = []
+                  self.collect_errors = 0
+
+              def pytest_deselected(self, items):
+                  self.deselected.extend(item.nodeid for item in items)
+
+              def pytest_collectreport(self, report):
+                  if report.failed:
+                      self.collect_errors += 1
+
+              def pytest_collection_finish(self, session):
+                  self.items = [item.nodeid for item in session.items]
+                  self.collection_verified = (
+                      len(self.items) == expected["count"]
+                      and len(set(self.items)) == len(self.items)
+                      and digest(self.items) == expected["nodeIdsSha256"]
+                      and len(self.deselected) == expected["deselectedCount"]
+                      and digest(self.deselected) == expected["deselectedSha256"]
+                      and self.collect_errors == 0
+                  )
+                  if not self.collection_verified:
+                      raise pytest.UsageError("source_recovery_collection_mismatch")
+
+              def pytest_runtest_logreport(self, report):
+                  if report.when in {"setup", "call", "teardown"}:
+                      self.reports.append((report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")))
+
+          probe = Evidence()
+          code = int(pytest.main(["-q", *manifest["selectors"][name], *manifest["extraArgs"].get(name, []), "--tb=short"], plugins=[probe]))
+          allowed = set(probe.items)
+          failures = sorted({node for node, phase, outcome, xfail in probe.reports if outcome != "passed" or xfail})
+          phase_ok = all(
+              [(phase, outcome, xfail) for node, phase, outcome, xfail in probe.reports if node == item]
+              == [("setup", "passed", False), ("call", "passed", False), ("teardown", "passed", False)]
+              for item in probe.items
+          )
+          passed = code == 0 and probe.collection_verified and phase_ok and len(probe.reports) == 3 * expected["count"]
+          record = {
+              "schema": "public-recovery-source-group.v1", "group": name,
+              "sourceHead": os.environ["PUBLIC_SOURCE_SHA"], "sourceTree": os.environ["PUBLIC_SOURCE_TREE"],
+              "python": os.environ["PYTHON_VERSION"], "pytestExit": code,
+              "expectedCount": expected["count"], "collectedCount": len(probe.items),
+              "nodeIdsSha256": digest(probe.items), "collectionVerified": probe.collection_verified,
+              "deselectedCount": len(probe.deselected), "deselectedSha256": digest(probe.deselected),
+              "passedCalls": sum(phase == "call" and outcome == "passed" and not xfail for _, phase, outcome, xfail in probe.reports),
+              "skippedPhases": sum(outcome == "skipped" for _, _, outcome, _ in probe.reports),
+              "failedPhases": sum(outcome == "failed" for _, _, outcome, _ in probe.reports),
+              "xfailPhases": sum(xfail for _, _, _, xfail in probe.reports),
+              "failedKnownNodeIds": [node for node in failures if node in allowed][:expected["count"]],
+              "allThreePhasesPassed": phase_ok, "passed": passed,
+              "installedExecuted": False, "compiledNativeCommitmentExecuted": name == "slow-vector-commitment" and passed,
+          }
+          Path(report_path).write_text(json.dumps(record, sort_keys=True) + "\n")
+          print(json.dumps(record, sort_keys=True), flush=True)
+          raise SystemExit(0 if passed else (code or 1))
+          PY
+      - name: Execute configured types and exact recovery suites
+        run: |
+          set -euo pipefail
+          .venv/bin/python - <<'PY'
+          import hashlib
+          import importlib.util
+          import json
+          import os
+          from pathlib import Path
+          import signal
+          import subprocess
+          import sys
+          import time
+
+          root = Path.cwd().resolve()
+          source = os.environ["PUBLIC_SOURCE_SHA"]
+          output = Path(os.environ["RUNNER_TEMP"]) / ("public-recovery-source-" + os.environ["PYTHON_VERSION"])
+          output.mkdir(exist_ok=True)
+          manifest_path = output / "manifest.json"
+          manifest = json.loads(manifest_path.read_text())
+          results = []
+          assert sys.version_info[:2] == tuple(map(int, os.environ["PYTHON_VERSION"].split(".")))
+          assert Path(sys.prefix).resolve() == root / ".venv"
+          assert "PYTHONPATH" not in os.environ and "PYTHONDONTWRITEBYTECODE" not in os.environ
+          assert sys.dont_write_bytecode is False
+
+          def source_unchanged():
+              return (
+                  subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() == source
+                  and subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip() == os.environ["PUBLIC_SOURCE_TREE"]
+                  and not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], text=True)
+              )
+
+          assert source_unchanged()
+          for item in manifest["files"]:
+              p = root / item["path"]
+              assert p.is_file() and not p.is_symlink()
+              data = p.read_bytes()
+              assert len(data) == item["bytes"]
+              assert hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() == item["gitBlob"]
+          spec = importlib.util.spec_from_file_location("source_contract", root / "scripts/ci/policy_source_contract.py")
+          assert spec is not None and spec.loader is not None
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+          configuration = module._configuration()
+          roots = list(dict.fromkeys(configuration.original_roots + configuration.additional_roots))
+          assert len(roots) == 366 and len(configuration.groups) == 13
+          assert next(g for g in configuration.groups if g.name == "source-09").selectors == manifest["selectors"]["source-09"]
+          def wait_owned_leader(process, timeout):
+              deadline = time.monotonic() + timeout
+              while True:
+                  event = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                  if event is not None:
+                      return event.si_status if event.si_code == os.CLD_EXITED else -event.si_status
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      raise subprocess.TimeoutExpired(process.args, timeout)
+                  time.sleep(min(0.05, remaining))
+
+          def close_owned_group(process):
+              deadline = time.monotonic() + 5.0
+              # Verify it remains our waitable child before signaling its owned group.
+              try:
+                  os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+              except OSError:
+                  return False
+              # The leader is still live or unreaped, so its PID cannot be reused here.
+              try:
+                  os.killpg(process.pid, signal.SIGKILL)
+              except ProcessLookupError:
+                  pass
+              except OSError:
+                  return False
+              while True:
+                  process.poll()
+                  try:
+                      os.killpg(process.pid, 0)
+                  except ProcessLookupError:
+                      return process.returncode is not None
+                  except OSError:
+                      return False
+                  remaining = deadline - time.monotonic()
+                  if remaining <= 0:
+                      return False
+                  time.sleep(min(0.05, remaining))
+
+          def run(name, argv, timeout=600, record=True):
+              print(json.dumps({"publicValidation": name, "started": True, "sourceHead": source}), flush=True)
+              process = None
+              contained = True
+              try:
+                  process = subprocess.Popen(argv, cwd=root, start_new_session=True)
+                  try:
+                      code = wait_owned_leader(process, timeout)
+                  except subprocess.TimeoutExpired:
+                      code = 124
+              except OSError:
+                  code = 126
+              finally:
+                  if process is not None:
+                      contained = close_owned_group(process)
+              command_code = code
+              if not contained:
+                  code = 125
+              if record:
+                  results.append({"name": name, "exit": code})
+              print(json.dumps({"publicValidation": name, "exit": code, "commandExit": command_code, "sourceHead": source, "ownedProcessGroupAbsent": contained}), flush=True)
+              (output / "results.json").write_text(json.dumps(results, sort_keys=True) + "\n", encoding="utf-8")
+              if not contained:
+                  raise SystemExit(125)
+              return code
+
+          passed = False
+          try:
+              run("registered-types", ["uv", "run", "--no-sync", "basedpyright", "--level", "error", "--pythonpath", str(root / ".venv/bin/python"), "--pythonversion", os.environ["PYTHON_VERSION"], *roots], timeout=900)
+              for name in ("source-09", "focused-recovery", "slow-vector-commitment"):
+                  run(name, [sys.executable, str(output / "group.py"), name, str(manifest_path), str(output / (name + ".json"))], timeout=900)
+              passed = len(results) == 4 and all(row["exit"] == 0 for row in results)
+          finally:
+              unchanged = source_unchanged()
+              record = {
+                  "schema": "public-recovery-source-receipt.v1", "sourceHead": source,
+                  "sourceTree": os.environ["PUBLIC_SOURCE_TREE"], "validationHead": os.environ["GITHUB_SHA"],
+                  "runId": os.environ["GITHUB_RUN_ID"], "runAttempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                  "python": os.environ["PYTHON_VERSION"], "typeRoots": len(roots),
+                  "preservedSourceGroups": len(configuration.groups), "executedSourceGroups": ["source-09"],
+                  "focusedFiles": len(manifest["selectors"]["focused-recovery"]), "sourcePins": len(manifest["files"]),
+                  "expectedSourceCases": 849, "expectedFocusedCases": 284, "existingSlowDeselected": 1,
+                  "separateSlowCommitmentCases": 1, "vectorCounts": {"ordinary": 133, "mixed": 188, "generic": 260},
+                  "outcomes": results, "sourceUnchanged": unchanged, "passed": passed and unchanged,
+                  "installedExecuted": False, "compiledNativeCommitmentPassed": any(r["name"] == "slow-vector-commitment" and r["exit"] == 0 for r in results),
+              }
+              (output / "receipt.json").write_text(json.dumps(record, sort_keys=True) + "\n")
+              print(json.dumps(record, sort_keys=True), flush=True)
+          raise SystemExit(0 if passed and unchanged else 1)
+          PY
+      - name: Preserve tracked source fence
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PUBLIC_SOURCE_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$PUBLIC_SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: public-recovery-source-${{ matrix.python }}
+          path: |
+            ${{ runner.temp }}/public-recovery-source-${{ matrix.python }}/receipt.json
+            ${{ runner.temp }}/public-recovery-source-${{ matrix.python }}/source-09.json
+            ${{ runner.temp }}/public-recovery-source-${{ matrix.python }}/focused-recovery.json
+            ${{ runner.temp }}/public-recovery-source-${{ matrix.python }}/slow-vector-commitment.json
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,919 @@
+{
+  "driver_files": [
+    {
+      "bytes": 8123,
+      "git_blob": "808fd193dd450fb72b16c4bd15987421a70dd015",
+      "path": "workspace100-validation/admission.py",
+      "sha256": "1ed96fceafae21143fdce4edd5083a17409790365b8f1150507d76b4e57befb6"
+    },
+    {
+      "bytes": 4989,
+      "git_blob": "8eaff464e0cb6288166eca7cd1b3d832a946ff2b",
+      "path": "workspace100-validation/common.py",
+      "sha256": "77b501d9c324c5248bd4df3d3628098f5a0c8c82d09ca849307fa0e17214135a"
+    },
+    {
+      "bytes": 6726,
+      "git_blob": "ddb5d8eca9a375208001618f6dc3d3796b745527",
+      "path": "workspace100-validation/install.py",
+      "sha256": "8aa42279ac1b237755b97b62f7efb72f7595e0476209fa8ae581b7ea40e07245"
+    },
+    {
+      "bytes": 19,
+      "git_blob": "9a150a6547ec10eb361b21eaed14f79c1b2c80bd",
+      "path": "workspace100-validation/pytest.ini",
+      "sha256": "713f986ee48be06ad4bff2a700d39514a9f69e34b3547af52366c0a274e30e5b"
+    },
+    {
+      "bytes": 1473,
+      "git_blob": "ec2e98a71e23f7822a7f1297217f561470fb95af",
+      "path": "workspace100-validation/read_result.py",
+      "sha256": "da1477f54495ec9ce35332062d320e41c5578759f6810d741845d6c05f67d0b1"
+    },
+    {
+      "bytes": 5855,
+      "git_blob": "af15442b5472e5d521ff8fe0b75d95d3fc62fe26",
+      "path": "workspace100-validation/reader_controls/test_admission.py",
+      "sha256": "468465d4617781b1e08773ccb8af31d319b905dbb495c3ce9405fe7f598aba5e"
+    },
+    {
+      "bytes": 3779,
+      "git_blob": "bde5240f9b5ed74af51f44fbb5604fe512337b2f",
+      "path": "workspace100-validation/reader_controls/test_install.py",
+      "sha256": "382f973c9c33150e624d6a1c7cffd0bb70cc08b51b356c0e8e4881f12dcb1e5f"
+    },
+    {
+      "bytes": 4032,
+      "git_blob": "adcebeb0f2d7a7c3eed7c7726d5d55e876ad1d5b",
+      "path": "workspace100-validation/retain_results.py",
+      "sha256": "513a7735b37ceb1b91e7cfae18a50576c1a3b7d215efb8ec45284be354557daa"
+    },
+    {
+      "bytes": 9683,
+      "git_blob": "fafbb6e31ef3726ec8e94ec66d300272565d1b77",
+      "path": "workspace100-validation/run.py",
+      "sha256": "a18357b3cbf476c47a1934d963bc2e39ca2e32bea9aa8ac16c92ea32a45f08cb"
+    }
+  ],
+  "expected_reader_nodes": [
+    "reader_controls/test_admission.py::test_complete_proof_roundtrip_preserves_original_subset_failure",
+    "reader_controls/test_admission.py::test_incomplete_or_changed_ledger_is_refused[tail]",
+    "reader_controls/test_admission.py::test_incomplete_or_changed_ledger_is_refused[truncate]",
+    "reader_controls/test_admission.py::test_incomplete_or_changed_ledger_is_refused[hash]",
+    "reader_controls/test_admission.py::test_incomplete_or_changed_ledger_is_refused[duplicate_part]",
+    "reader_controls/test_admission.py::test_incomplete_or_changed_ledger_is_refused[summary]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[exit]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[full_matrix]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[case_order]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[missing_case]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[failed_cell]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[late]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[runtime]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[cleanup]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[secondary]",
+    "reader_controls/test_admission.py::test_original_failure_cannot_be_admitted[receipt]",
+    "reader_controls/test_admission.py::test_ambiguous_json_is_refused[{\"x\":1,\"x\":2}]",
+    "reader_controls/test_admission.py::test_ambiguous_json_is_refused[{\"x\":NaN}]",
+    "reader_controls/test_admission.py::test_ambiguous_json_is_refused[{\"x\":Infinity}]",
+    "reader_controls/test_install.py::test_exact_archive_wheel_runtime_source_and_empty_initializer_are_admitted",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[archive]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[source]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[runtime]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[manifest]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[package_roster]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[traversal]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[omitted_module]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[excluded_included]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[exclusion_removed]",
+    "reader_controls/test_install.py::test_any_mismatched_archive_or_executable_or_source_is_refused[exclusion_extra]"
+  ],
+  "prior_incomplete_normal_job": {
+    "conclusion": "cancelled",
+    "job": 106093201627,
+    "no_soak_success_credit": true,
+    "run": 35516487925,
+    "soak_report_present": false
+  },
+  "retained_wheel": {
+    "actual_build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+    "archive_identity": {
+      "bytes": 8710009,
+      "sha256": "d413006872ed84d3e2eb6cbef3397148721eaa7661994d48cc71399de07ba2ea"
+    },
+    "artifact_id": 10607167344,
+    "normal_job_conclusion": "cancelled",
+    "normal_job_id": 106093201627,
+    "normal_run_id": 35516487925,
+    "product_source_sha": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+    "product_source_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+    "runtime_identity": {
+      "bytes": 12403456,
+      "sha256": "ab9c26658149edaf5e03c5c16fbd8a24716f9c9a9335ecdbc32b6ca0366046a8"
+    },
+    "runtime_manifest": {
+      "package_version": "3.0.1",
+      "platform_tag": "manylinux_2_17_x86_64",
+      "protocol_version": 1,
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "runtime_sha256": "ab9c26658149edaf5e03c5c16fbd8a24716f9c9a9335ecdbc32b6ca0366046a8",
+      "runtime_size": 12403456,
+      "schema": "hol-guard-native-runtime.v1",
+      "source_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+      "target": "x86_64-unknown-linux-musl"
+    },
+    "soak_report_available": false,
+    "wheel_identity": {
+      "bytes": 8917135,
+      "sha256": "cd6a5ed8ac264da3aa1e9d8419b3e18183dba4f51e20bb26ac469bfd4c81dae6"
+    },
+    "wheel_member": "native-dist/hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+    "wheel_name": "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl"
+  },
+  "reused_source_controls": {
+    "composition_peer_tree": "11b7f7ff76b903dd3320631d25dc7eaa66611770",
+    "head_delta_paths": [
+      "tests/claude_launcher_conformance.py",
+      "tests/fixtures/claude-launcher-current-conformance-v2.json",
+      "tests/test_claude_launcher_conformance_binding.py"
+    ],
+    "matching_leaf_census_sha256": "6623926cfab67ca9e11166aee3f6ad82b4392138cf2982853948c8c04c380d15",
+    "no_repeat_execution_credit": true,
+    "original_junit_identity": {
+      "bytes": 24081,
+      "git_blob": "8602a3a7e5d8bacbaac6ca4a20e7d1ff7e511eb6",
+      "sha256": "9e659efeb5068b37e936cf8bd66f2fd5866c17b4f565babef73cf635968f2d6e"
+    },
+    "original_result_identity": {
+      "bytes": 35972,
+      "git_blob": "43fdbf9f9e187c0a43b9581fdcd9ff03ba13558d",
+      "sha256": "28d4ba9d6515fa99b257dfc8cc28b62f7851def3fc9a54c70fda875dc417929b"
+    },
+    "original_total_passed": 108,
+    "original_total_skipped": 17,
+    "preflight_packet_tree": "0ca7d566632bd39c6fa6ca54743134e24970615b",
+    "product_and_all_other_leaves_unchanged": true,
+    "schema": "pr2974.workspace100.reused-source-controls.v1",
+    "scope": "Exact byte provenance for already executed source controls; not installed or timing admission.",
+    "selected_cases": [
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_fails_closed_when_publisher_times_out",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_ignores_publisher_cache_and_lifecycle_generation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_rejects_expired_resident_authority",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_rejects_forged_floor_mac",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_non_publishing_worker_does_not_close_shared_publisher",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_publishing_worker_closes_publisher_it_started",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_binds_resident_authority_without_publishing",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_prepare_workspace_policy_rejects_out_of_range_generation_floor",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_cache_binding",
+        "name": "test_acked_snapshot_binding_fails_closed_when_secret_material_load_raises",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_retired_directory_accepts_first_new_generation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_first_generation_in_new_scope_remains_supported",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_absent_runtime_directory_preserves_explicit_no_state_double",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_stable_generation_is_admitted",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_changed_live_generation_is_refused",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_first_generation_still_requires_newest_ack_generation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[PermissionError-False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[PermissionError-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[FileNotFoundError-False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[FileNotFoundError-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[OSError-False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_failed_iteration_is_not_an_empty_namespace[OSError-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_partially_consumed_iteration_is_not_complete[False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_partially_consumed_iteration_is_not_complete[True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_root_stat_permission_failure_is_not_absence",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_mutation_during_enumeration_is_not_a_complete_snapshot[False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_mutation_during_enumeration_is_not_a_complete_snapshot[True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_namespace_replacement_before_ack_is_refused[False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_namespace_replacement_before_ack_is_refused[True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_namespace_replacement_after_ack_sample_is_refused[False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_namespace_replacement_after_ack_sample_is_refused[True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_new_generation_after_ack_sample_is_refused",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_malformed_generation_is_unobserved[generation-x.json]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_malformed_generation_is_unobserved[generation-1]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_malformed_generation_is_unobserved[generation-.json]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_symlinked_scope_is_unobserved",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_inactive_namespace",
+        "name": "test_publisher_accepts_retained_empty_scope_after_one_push",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_resident_fingerprint_mismatch_enters_bounded_retry_backoff",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_run_loop_backs_off_after_resident_mismatch_at_expired_deadline",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_run_loop_preserves_failed_retry_backoff_across_stable_database_writes",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_stable_database_heartbeat_does_not_reset_failed_retry_backoff",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_non_database_policy_change_records_observation_before_failed_retry",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_non_database_policy_change_revokes_readiness_before_compilation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_config_change_revokes_readiness_before_compilation_and_preserves_retry[enforce]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_config_change_revokes_readiness_before_compilation_and_preserves_retry[observe]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_resident_retry",
+        "name": "test_invalid_policy_observation_then_valid_recovery_rearms_publication",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_policy_merge_never_downgrades_enforcing_posture_to_watch",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_v3_builder_derives_and_provisions_verifier_before_snapshot_push",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_scope_aliases_share_one_digest_identity",
+        "outcome": "skipped"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_floor_only_ack_materializes_strictly_new_generation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_floor_recovery_requires_exact_typed_ack[response0]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_floor_recovery_requires_exact_typed_ack[response1]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_floor_recovery_requires_exact_typed_ack[response2]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_surfaces_resident_start_timeout",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_lost_ack_retries_identical_payload",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_process_restart_reuses_cached_payload",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_renewal_failure_keeps_barrier_closed_at_expiry",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_renewal_materializes_higher_generation_before_expiry",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_renewal_retry_reuses_candidate_with_bounded_backoff",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_snapshot_transaction_recovers_each_persistence_boundary[cache]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_snapshot_transaction_recovers_each_persistence_boundary[state]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_snapshot_transaction_recovers_each_persistence_boundary[cleanup]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_auto_hook_uses_barrier_without_loading_config_per_request",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_prepare_workspace_policy_uses_bounded_first_workspace_handshake",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_prepare_workspace_policy_skips_wait_after_publisher_error",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_prepare_workspace_policy_waits_publish_budget_without_caller_deadline",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_does_not_ack_snapshot_after_concurrent_mutation",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_rejects_mutated_ack_without_opening_barrier",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_repushes_after_resident_generation_change",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_does_not_republish_for_generation_created_by_own_ack",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_rejects_ack_after_resident_restart_before_barrier",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_publisher_startup_ack_and_mutation_push",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_same_generation_retries_reuse_exact_signed_snapshot_bytes",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_read_rejects_ancestor_reparse_before_open",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_snapshot_write_holds_parent_binding_across_commit",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_directory_binding_fails_closed_on_reparse_parent",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_commit_rejects_foreign_owner_before_acl_or_rename",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_storage_writer_has_no_path_replace_in_native_branch",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_atomic_writer_cleans_temp_on_precommit_failure",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_verifier_key_provisioning_holds_state_binding",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_private_state_binding_closes_replaced_state_handle",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_reader_closes_handle_on_all_failures[acl-None-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_reader_closes_handle_on_all_failures[short-6-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_reader_closes_handle_on_all_failures[oversize-262145-True]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_reader_closes_handle_on_all_failures[read-None-False]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_cache_reader_verifies_and_reads_one_handle",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_create_new_validation_failure_deletes_before_close",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_open_handle_uses_disk_nonreparse_read_contract",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_existing_directory_reapplies_owner_and_dacl_on_same_handle",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_existing_directory_reapplies_private_dacl_on_same_handle",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_private_descriptor_deduplicates_system_owner_ace",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_snapshot_cache_read_holds_state_binding",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_generation_read_holds_state_binding",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_v3_publisher",
+        "name": "test_windows_pending_cleanup_uses_bound_file_handle",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_generation_state_completes_actual_short_writes",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_incomplete_generation_write_preserves_prior_state[zero]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_incomplete_generation_write_preserves_prior_state[error]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_incomplete_generation_write_preserves_prior_state[interrupted]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_generation_sync_failure_preserves_prior_state",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_parent_handoff_never_exposes_an_unbound_parent",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_parent_handoff_rejects_wrong_restoration_identity",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_parent_handoff_rejects_redirected_initial_open_before_releasing_original",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_original_parent_identity_reads_the_held_handle[directory]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_original_parent_identity_reads_the_held_handle[reparse]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_original_parent_identity_reads_the_held_handle[file]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_original_parent_identity_reads_the_held_handle[failure]",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_parent_handoff_preserves_rename_failure_when_restore_also_fails",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_parent_handoff_preserves_rename_failure_when_close_also_fails",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_rename_parent_configuration_retains_no_delete_barrier",
+        "outcome": "passed"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_actual_directory_replacement_is_refused_during_handoff",
+        "outcome": "skipped"
+      },
+      {
+        "classname": "tests.test_native_policy_snapshot_write_safety",
+        "name": "test_windows_actual_atomic_replacement_with_overlapping_parent_handles",
+        "outcome": "skipped"
+      }
+    ],
+    "selected_passed": 107,
+    "selected_skipped": 3,
+    "sole_parent": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+    "source_head": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+    "source_tree": "341d2c02c79b0c510544df5297600d5a3a47f211",
+    "tested_source_and_selected_controls_matching_leaves": 1485,
+    "tested_tree": "55ae133ce01788575f227cae808513c89164d5d2",
+    "wheel_build_sha": "be612a3e562a2041b3732a33c158eeae4f1dad40",
+    "wheel_build_tree": "19977465d6e419f1276d75fb6bd1b3477f5c9720",
+    "wheel_product_head": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d"
+  },
+  "schema": "pr2974.workspace100.installed-validation-manifest.v1",
+  "source_files": [
+    {
+      "bytes": 8647,
+      "git_blob": "23680beabff6cc6ca6f49f46afb00d65d879826b",
+      "path": "pyproject.toml",
+      "sha256": "f6538a00756a7604c72127732774267f8549cace4b6b29468a4e6d18fc6511cb"
+    },
+    {
+      "bytes": 11759,
+      "git_blob": "0048bed6b5ff33460ee575979b041e798deca57c",
+      "path": "scripts/native_slo_workspace.py",
+      "sha256": "b6a418945c8c1f18f9f1f29ee85337d06e6f6a4ee33643c6ec326fc55e9f0c4b"
+    },
+    {
+      "bytes": 12641,
+      "git_blob": "99a3def7bc4bb97148d450ff8b5623470c1918a4",
+      "path": "scripts/native_slo_workspace_decision.py",
+      "sha256": "972f0c351316764ce9b1e4e67d00b5fd28a4be0cecb88db97363d276f7bf730b"
+    },
+    {
+      "bytes": 16880,
+      "git_blob": "2228638126776fa992a482375f472acc9e9bc927",
+      "path": "scripts/native_slo_workspace_lifecycle.py",
+      "sha256": "0ad8d7b4ee33a885e11ea3dac11f5865a97b20edaa6c28aa2bda2268404b2baf"
+    },
+    {
+      "bytes": 2716,
+      "git_blob": "53e18a8fa59eb64993ebb3bf4905ef5b9f4929fd",
+      "path": "scripts/native_slo_workspace_lifecycle_clocks.py",
+      "sha256": "c0453b67d55220986e4f33ae0a7de379c68c8531fdba4062209cbe903710a01b"
+    },
+    {
+      "bytes": 17837,
+      "git_blob": "b0745afe9db7b196cc3fe5d6d988bb5c01a0b9f5",
+      "path": "scripts/native_slo_workspace_lifecycle_evidence.py",
+      "sha256": "4c0024c999b5ac5d6f76bae679a8b6e42af8e7a8a41b661b262e715a4a26374a"
+    },
+    {
+      "bytes": 4935,
+      "git_blob": "c52f89a06b7a18f174131b6a41fdc0d823d47a53",
+      "path": "scripts/native_slo_workspace_lifecycle_evidence_schema.py",
+      "sha256": "02505897fc64739d40a86accfbfda0a5a9bef3f2ec471afcd1602fd8a09f41ca"
+    },
+    {
+      "bytes": 11733,
+      "git_blob": "ada09527e01bfbdbb71dee593675f501ea95aa1d",
+      "path": "scripts/native_slo_workspace_lifecycle_faults.py",
+      "sha256": "9be7b3365f7e56b39a8cfd8703a28a40f8ac63e89a6dbbacc16e11f616b9e794"
+    },
+    {
+      "bytes": 5924,
+      "git_blob": "88eeef82ea2010a9676fda22a55aec2b8d47947b",
+      "path": "scripts/native_slo_workspace_lifecycle_runner.py",
+      "sha256": "81acd393efb72216ce25e1fd69b1ce48e02f69690e8b934e4dae24ab2674d650"
+    },
+    {
+      "bytes": 6072,
+      "git_blob": "ccfa9bb7735a1a62cc0910e18ae6928c963092a5",
+      "path": "scripts/native_slo_workspace_lifecycle_service.py",
+      "sha256": "876fd377088426017cb73a948f9f5115fdc6733d10a8b22e4848ccfeff28e193"
+    },
+    {
+      "bytes": 13161,
+      "git_blob": "ea382d142d37e9de784c590e5130b332f0133202",
+      "path": "scripts/native_slo_workspace_observer.py",
+      "sha256": "ebce4c05e0ef84d445ccb991e0b1a6464c53998cef5477dd470ab0da26c7046d"
+    },
+    {
+      "bytes": 11730,
+      "git_blob": "7e7a3f0432d5b9419c6d89ae6080909130ac9999",
+      "path": "scripts/native_slo_workspace_poststart.py",
+      "sha256": "5479e0306e11bdfba415b9725b532fd56ce0e4f33d124a662616de5cc4f669a7"
+    },
+    {
+      "bytes": 11899,
+      "git_blob": "af3d101423bb5c3eda194e0fde106858555d53fb",
+      "path": "scripts/native_slo_workspace_poststart_evidence.py",
+      "sha256": "96b1bd460e1f7f05a3112861687ad97553f2573b06e68e3a74c9644087b58bab"
+    },
+    {
+      "bytes": 15447,
+      "git_blob": "cd924f84efa83b89271bde88d1e2047f1aa95a63",
+      "path": "scripts/native_slo_workspace_poststart_observation.py",
+      "sha256": "cc5853f081ffd9acefd7a86791042f170917b09e05cfba74f4fc1451eb184b5d"
+    },
+    {
+      "bytes": 18459,
+      "git_blob": "4d8760cabd6756719357a864447e5f021acf92b4",
+      "path": "scripts/native_slo_workspace_poststart_session.py",
+      "sha256": "fe6706bf562318df6c7bf9711386d534a7f9745076de41a7b09ff9c5caf26d01"
+    },
+    {
+      "bytes": 19326,
+      "git_blob": "6e48f94b6c73d4c4e886e6bedd89890f00eea6f3",
+      "path": "scripts/native_slo_workspace_request_observer.py",
+      "sha256": "c7dca27b52d990e6f65e8e35dd328cd07b2f843469087edf23d2f33d66187a7f"
+    },
+    {
+      "bytes": 2592,
+      "git_blob": "4253a9b8329953ab324b5771e54392136d72c8bf",
+      "path": "scripts/native_slo_workspace_scopes.py",
+      "sha256": "fc9168f6e1a088c23eb184b4b2f8305882dbca917c0820f68fbab69406444c59"
+    },
+    {
+      "bytes": 19730,
+      "git_blob": "cdb106a1a81e8dda71d6ab2e82857d064a5d7c2f",
+      "path": "scripts/native_slo_workspace_server.py",
+      "sha256": "792719fa0b083b0f63db760aab6c7a29d268b45a84624a69dca8efa355e8e50d"
+    },
+    {
+      "bytes": 3839,
+      "git_blob": "aac818243c9d30797d8beaf99ea8305408af8774",
+      "path": "scripts/native_slo_workspace_startup.py",
+      "sha256": "94f8e462da7c10f5be3e666be1f8b885ba6c95c45837a6380204252584f9543f"
+    },
+    {
+      "bytes": 4596,
+      "git_blob": "2a918caa7f4d1db032be34a14ceeb75857a07913",
+      "path": "scripts/native_slo_workspace_trace.py",
+      "sha256": "9dc65eea8eb3bdc75a318023935b793ec89ed2b9be34a94808d359a32e36720e"
+    },
+    {
+      "bytes": 9203,
+      "git_blob": "566cc6c1d070eec66833ef2e23362d0bffb05e28",
+      "path": "tests/native_workspace_request_fixtures.py",
+      "sha256": "5b696d0c6dd2118572e22d21df1876893ad30ec119de9a2539ef990b6c6592cf"
+    },
+    {
+      "bytes": 10313,
+      "git_blob": "e111c0555e7501a26884fdd0c83f5d57fd9f25a0",
+      "path": "tests/test_native_policy_snapshot_cache_binding.py",
+      "sha256": "f695ad00bcc7241c3b2587156a4991559c337264f2770f4fc8aed3c4fb43b30c"
+    },
+    {
+      "bytes": 10889,
+      "git_blob": "bb804026bd355e1bca00929e406f0dc197704496",
+      "path": "tests/test_native_policy_snapshot_inactive_namespace.py",
+      "sha256": "c5a75c08cf50965ed1292ad89fdb5d99ab99ea23d78daa7444111466bc97da6e"
+    },
+    {
+      "bytes": 13774,
+      "git_blob": "6d1c4045498f511afe9bb043e1b05d3844a8764e",
+      "path": "tests/test_native_policy_snapshot_resident_retry.py",
+      "sha256": "3123bfe505629caeeed6adafa010f88a6a608ab4fa162246c572e1804dec62ea"
+    },
+    {
+      "bytes": 9333,
+      "git_blob": "b73e7f4ed86dd69d0f2ffc0924dbb493fe0c123f",
+      "path": "tests/test_native_policy_snapshot_v3_publisher.py",
+      "sha256": "7b0cca1c64bedaf9b4050edf957491ab648d34d469c6432f9ba980ac748d0a80"
+    },
+    {
+      "bytes": 11975,
+      "git_blob": "45c410bbe1c1b481cb590276b677e1987c79c7ad",
+      "path": "tests/test_native_policy_snapshot_write_safety.py",
+      "sha256": "ec5be25fd3128f913a58789f92c0d3a70af052b0ecdd9a45f77a485c8b47a8dd"
+    },
+    {
+      "bytes": 13824,
+      "git_blob": "d5902a98084e1023e1d267f41bae878e45b70dc5",
+      "path": "tests/test_native_slo_workspace_lifecycle_evidence.py",
+      "sha256": "1fc74813a6baf38147be3832ebf0690b169247ee6bbd758d91bd21be0213d085"
+    },
+    {
+      "bytes": 961060,
+      "git_blob": "791b2efebdd6774bf7f1b5bd2504dd8cea3cac46",
+      "path": "uv.lock",
+      "sha256": "e3b9190128f06c6743ac3c49446b5d6b312b2ea1d15a7f99f7b83991837b4d78"
+    }
+  ],
+  "source_parent": "ad9d9238e5f6cb01d392d0ed6c01389bbb41ec7d",
+  "source_sha": "f8f190a286159b46bf14a624a62ba52b5d2371a3",
+  "source_tree": "341d2c02c79b0c510544df5297600d5a3a47f211",
+  "workload": {
+    "counts": [
+      100
+    ],
+    "expected_original_exit": 1,
+    "headline_timing_eligible": false,
+    "native_builds": 0,
+    "original_cli_invocations": 1,
+    "original_complete_lifecycle_matrix_visited": false,
+    "original_implemented_checks_passed": false,
+    "original_readiness_ms": 400,
+    "original_reports_and_ledgers_retained": true,
+    "production_instrumentation": false,
+    "qualification_complete": false,
+    "scenarios": [
+      "lost_metadata_hint",
+      "key_rotation",
+      "first_admission_fault",
+      "expiry_fault",
+      "service_restart"
+    ],
+    "script": "scripts/native_slo_workspace_lifecycle_runner.py",
+    "separate_five_cell_admission_required": true,
+    "workload_retries": 0
+  }
+}

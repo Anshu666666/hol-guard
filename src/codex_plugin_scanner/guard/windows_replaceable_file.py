@@ -1,8 +1,8 @@
-"""Read-only Windows handles for authority files replaced by their owner.
+"""Read-only Windows handles for private authority-file reads.
 
-Sharing permits another authorized handle to replace the file. It grants this
-handle no write or delete access. Callers retain their existing path, ownership,
-privacy, size, identity, and content checks.
+Text/binary native handles permit delete sharing for a compatible atomic writer.
+Unicode-default CRT reads keep their original BOM, translation and sharing
+behavior. Callers retain path, ownership, privacy, size, identity and content checks.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ _OPEN_EXISTING = 3
 _OPEN_REPARSE_POINT = 0x00200000
 _DIRECTORY_OR_REPARSE = 0x00000010 | 0x00000400
 _FILE_TYPE_DISK = 1
+_UNICODE_DEFAULT = 0x10000
 
 
 @lru_cache(maxsize=1)
@@ -91,9 +92,19 @@ def _crt_api() -> Any:
     if sys.implementation.name != "cpython":
         raise OSError("windows_replaceable_read_crt_unavailable")
     name = "ucrtbased.dll" if hasattr(sys, "gettotalrefcount") else "ucrtbase.dll"
-    api = ctypes.CDLL(name)
+    api = ctypes.CDLL(name, use_errno=True)
     api._get_fmode.argtypes = [ctypes.POINTER(ctypes.c_int)]
     api._get_fmode.restype = ctypes.c_int
+    api._wopen.argtypes = [ctypes.c_wchar_p, ctypes.c_int, ctypes.c_int]
+    api._wopen.restype = ctypes.c_int
+    api._set_thread_local_invalid_parameter_handler.argtypes = [ctypes.c_void_p]
+    api._set_thread_local_invalid_parameter_handler.restype = ctypes.c_void_p
+    handler_type = ctypes.CFUNCTYPE(
+        None, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint, ctypes.c_size_t
+    )
+    # Keep the callback alive with its CRT binding. Pointer arguments are never
+    # dereferenced or retained. This handler affects only the calling thread.
+    api._guard_silent_invalid_parameter_handler = handler_type(lambda *_arguments: None)
     return api
 
 
@@ -102,8 +113,7 @@ def _default_translation_mode() -> int:
     result = _crt_api()._get_fmode(ctypes.byref(mode))
     if result:
         raise OSError(result, "windows_replaceable_read_default_mode_failed")
-    if mode.value not in (os.O_TEXT, os.O_BINARY):
-        # _wopen's Unicode/BOM rules are not provided by open_osfhandle.
+    if mode.value not in (os.O_TEXT, os.O_BINARY, _UNICODE_DEFAULT):
         raise OSError("windows_replaceable_read_translation_mode_unsupported")
     return mode.value
 
@@ -114,6 +124,45 @@ def _descriptor_flags(flags: int) -> int:
     binary = getattr(os, "O_BINARY", 0)
     mode = binary if flags & binary else _default_translation_mode()
     return os.O_RDONLY | mode | getattr(os, "O_NOINHERIT", 0)
+
+
+def _open_original_unicode_descriptor(name: str, flags: int) -> int:
+    """Keep the original CRT's Unicode/BOM/offset rules and delete-sharing limit."""
+
+    api = _crt_api()
+    quiet = ctypes.cast(api._guard_silent_invalid_parameter_handler, ctypes.c_void_p)
+    previous = api._set_thread_local_invalid_parameter_handler(quiet)
+    descriptor = -1
+    error_number = 0
+    failure = cleanup_failure = None
+    try:
+        # Preserve the original unflagged _wopen request. The CRT, not this
+        # module, samples its default and performs BOM detection/translation.
+        descriptor = int(api._wopen(name, flags | getattr(os, "O_NOINHERIT", 0), 0o777))
+        error_number = ctypes.get_errno()
+    except BaseException as error:
+        failure = error
+    finally:
+        try:
+            api._set_thread_local_invalid_parameter_handler(previous)
+        except BaseException as error:
+            cleanup_failure = error
+    if failure is None and descriptor < 0:
+        message = os.strerror(error_number) if error_number else "Error"
+        failure = OSError(error_number, message, name)
+    if cleanup_failure is not None:
+        if failure is None:
+            failure = cleanup_failure
+        else:
+            failure.add_note("windows_replaceable_read_thread_handler_restore_failed")
+    if failure is not None:
+        if descriptor >= 0:
+            try:
+                os.close(descriptor)
+            except BaseException:
+                failure.add_note("windows_replaceable_read_close_failed")
+        raise failure
+    return descriptor
 
 
 def _transfer_descriptor(handle: int, flags: int) -> int:
@@ -142,6 +191,8 @@ def _require_disk(api: Any, handle: int) -> None:
 
 def _open_descriptor(name: str, flags: int) -> int:
     descriptor_flags = _descriptor_flags(flags)
+    if descriptor_flags & _UNICODE_DEFAULT:
+        return _open_original_unicode_descriptor(name, flags)
     api = _file_api()
     handle = api.CreateFileW(
         name,

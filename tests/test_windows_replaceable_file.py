@@ -289,7 +289,7 @@ def test_explicit_fileio_binary_does_not_consult_default(monkeypatch):
     assert reader._descriptor_flags(0x8080) == 0x8080
 
 
-@pytest.mark.parametrize("mode", [0, 0x10000], ids=["invalid", "unicode_bom_unproved"])
+@pytest.mark.parametrize("mode", [0], ids=["invalid"])
 def test_unsupported_default_translation_fails_before_native_open(monkeypatch, mode):
     crt = _Crt(mode=mode)
     monkeypatch.setattr(reader, "os", _WindowsOs())

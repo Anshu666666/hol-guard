@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -13,6 +15,7 @@ from codex_plugin_scanner.guard.daemon.manager import load_guard_daemon_url
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.runtime_artifact_reconciliation import RuntimeArtifactReconciliation
 from codex_plugin_scanner.guard.store import GuardStore
+from tests.test_oauth_connection_authority import _store
 
 
 def test_daemon_serve_publishes_listen_state_before_artifact_reconciliation(
@@ -326,9 +329,7 @@ def test_desktop_owned_core_executable_prefers_runtime_owner(monkeypatch, tmp_pa
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows files do not use POSIX execute bits")
-def test_desktop_owned_core_executable_ignores_non_executable_owner(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_desktop_owned_core_executable_ignores_non_executable_owner(monkeypatch, tmp_path: Path) -> None:
     from codex_plugin_scanner.guard.dashboard_launcher import _desktop_owned_core_executable
 
     owner = tmp_path / "hol-guard"
@@ -391,3 +392,88 @@ def test_serve_enables_full_capacity_on_the_caller_thread(
     assert stopper.is_alive() is False
     assert daemon._owned_service_ready is False
     assert daemon._owner_lock is None
+
+
+@pytest.mark.parametrize("failure_site", ["_capture_oauth_connection_unlocked", "_set_sync_payload_unlocked"])
+@pytest.mark.parametrize("diagnostic_fails", [False, True])
+def test_persist_aibom_inventory_context_swallows_sqlite_errors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_site: str,
+    diagnostic_fails: bool,
+) -> None:
+    store, _ = _store(tmp_path)
+    daemon = GuardDaemonServer(
+        store,
+        host="127.0.0.1",
+        port=0,
+        workspace_dir=tmp_path / "workspace",
+        home_dir=tmp_path / "home",
+        idle_timeout_seconds=0,
+    )
+    calls: list[str] = []
+    diagnostics: list[tuple[str, str]] = []
+
+    def fail(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        calls.append(failure_site)
+        raise sqlite3.DatabaseError("UNRETAINED_SYNTHETIC_SQL_DETAIL")
+
+    def record(event: str, *, detail: str) -> None:
+        diagnostics.append((event, detail))
+        if diagnostic_fails:
+            raise RuntimeError("UNRETAINED_SYNTHETIC_DIAGNOSTIC_DETAIL")
+
+    try:
+        assert daemon._aibom_context_source is not None
+        with monkeypatch.context() as patch:
+            patch.setattr(store, failure_site, fail)
+            patch.setattr(daemon._diagnostics, "record", record)
+            daemon._persist_aibom_inventory_context()
+        assert calls == [failure_site]
+        assert diagnostics == [("aibom_inventory_context_persist_failed", "DatabaseError")]
+        assert store.get_sync_payload("aibom_inventory_context") is None
+    finally:
+        daemon._server.server_close()
+
+
+@pytest.mark.parametrize("transition", ["unchanged", "refresh", "reconnect", "grant-change"])
+def test_persist_aibom_inventory_context_retains_exact_connection_authority(
+    tmp_path: Path,
+    transition: str,
+) -> None:
+    store, inputs = _store(tmp_path)
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    daemon = GuardDaemonServer(
+        store,
+        host="127.0.0.1",
+        port=0,
+        workspace_dir=workspace,
+        home_dir=home,
+        idle_timeout_seconds=0,
+    )
+    try:
+        source = daemon._aibom_context_source
+        assert source is not None
+        if transition == "refresh":
+            refreshed: dict[str, Any] = {**inputs, "access_token": "rotated-synthetic-access"}
+            store.set_oauth_local_credentials(**refreshed, expected_connection=source)
+        elif transition == "reconnect":
+            store.clear_oauth_local_credentials()
+            store.set_oauth_local_credentials(**inputs)
+        elif transition == "grant-change":
+            rebound: dict[str, Any] = {**inputs, "grant_id": "other-synthetic-grant"}
+            store.set_oauth_local_credentials(**rebound, expected_connection=source)
+        current = store.capture_oauth_connection(allow_primary=True, allow_recoverable=True)
+        assert current is not None
+        assert current.credentials()["workspace_id"] == source.credentials()["workspace_id"]
+        assert source.same_authority(current) is (transition in {"unchanged", "refresh"})
+        daemon._persist_aibom_inventory_context()
+        assert store.get_sync_payload("aibom_inventory_context") == (
+            {"workspace_dir": str(workspace), "home_dir": str(home), "workspace_id": inputs["workspace_id"]}
+            if transition in {"unchanged", "refresh"}
+            else None
+        )
+    finally:
+        daemon._server.server_close()

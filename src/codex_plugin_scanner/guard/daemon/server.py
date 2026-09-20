@@ -230,6 +230,7 @@ from ..store_evidence import (
 )
 from ..store_storage_maintenance import DEFAULT_GUARD_EVENT_LIMIT, DEFAULT_RECEIPT_DETAIL_LIMIT
 from ..supply_chain_repair import coordinate_supply_chain_repair, repair_sync_intelligence
+from .aibom_inventory_persist import persist_aibom_inventory_context
 from .bounded_http import BoundedThreadingHTTPServer
 from .cloud_sync_summary import headless_cloud_sync_summary
 from .command_activity_api import (
@@ -8267,23 +8268,14 @@ class GuardDaemonServer:
             storage_complete = self._maintain_storage_best_effort()
 
     def _persist_aibom_inventory_context(self) -> None:
-        if self._aibom_workspace_dir is None or self._aibom_context_source is None:
-            return
-        store = self._server.store
-        with store.hold_oauth_credential_lock():
-            source = store._capture_oauth_connection_unlocked(allow_primary=True, allow_recoverable=True)
-            if source is None or not self._aibom_context_source.same_authority(source):
-                return
-            workspace_id = source.credentials().get("workspace_id")
-            if not isinstance(workspace_id, str) or not workspace_id.strip():
-                return
-            payload: dict[str, object] = {
-                "workspace_dir": str(self._aibom_workspace_dir),
-                "workspace_id": workspace_id,
-            }
-            if self._aibom_home_dir is not None:
-                payload["home_dir"] = str(self._aibom_home_dir)
-            store._set_sync_payload_unlocked("aibom_inventory_context", payload, _now())
+        persist_aibom_inventory_context(
+            store=self._server.store,
+            cached_source=self._aibom_context_source,
+            workspace_dir=self._aibom_workspace_dir,
+            home_dir=self._aibom_home_dir,
+            now=_now,
+            record_diagnostic=self._diagnostics.record,
+        )
 
     def _serve_forever(self) -> None:
         stop_reason = "serve_loop_returned"

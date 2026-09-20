@@ -1,0 +1,63 @@
+{
+  "schema": "pr2974.ROOT-frozen-record-and-declaration-source-peer.v1",
+  "status": "clear_within_stated_prerequisite_scope_pending_GitHub_execution",
+  "initial_owner": "e2d9ae5af2db944ac6712fa9cfcdc751aa32f1fa",
+  "corrected_owner": "e26e375f3cc4f91a807c2a4237e475a9631689ff",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_pair_records.py",
+      "git_blob": "f027fcbaac7a6a4b736b78fb85c7fe573a288ae0",
+      "bytes": 3721,
+      "sha256": "28d762a59c1d4659c6602367527e7fccecec370108f650c2a7790029abcd22ca"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_pair_source.py",
+      "git_blob": "ef22e389bfda72c1eea78caac15d7bb7ab601d08",
+      "bytes": 8336,
+      "sha256": "5d37650791b141326af4066b69f7cd07a844979508318de869c5efb1e80ba263"
+    },
+    {
+      "path": "tests/test_mcp_risk_pair_source.py",
+      "git_blob": "86387da54a9c0d8ee775746f486be8d49f33b860",
+      "bytes": 9979,
+      "sha256": "dfffa6bb1a995a168d3c770fb240fdbeedc17a77c48c176b4e8797f1882c4ae7"
+    },
+    {
+      "path": "tests/test_mcp_risk_pair_records.py",
+      "git_blob": "5d0c80d69cf26f2c36b687f8b7a45a9baea5a0ef",
+      "bytes": 4576,
+      "sha256": "663cd413d938e2563ae96abb57086a406c03e8a01d51abd1c104af2747ed37ee"
+    }
+  ],
+  "four_actual_current_readbacks_exact": true,
+  "source_changed_only_two_identity_disjunctions": true,
+  "record_changed_only_class_namespace_keys_and_base_identity": true,
+  "findings_closed": [
+    "Opaque colliding class namespace keys are refused before descriptor membership/get; exact namespace iteration does not invoke key equality.",
+    "Unknown constant/default metaclass types are compared by identity, avoiding custom __eq__ or __getattribute__ during refusal.",
+    "Record bases are checked by tuple length and element identity, avoiding custom class equality."
+  ],
+  "constructor_scope": [
+    "Exact type metaclass and module; object-only base; no custom allocation, lookup or finalizer.",
+    "Canonical compiled generated init shape, exact object closure, original module globals, no defaults/kwdefaults.",
+    "Original native member descriptors for slotted token and native dict descriptor/no field descriptors for literal record.",
+    "Caller still must admit explicit record methods, field values and all reached providers; no full application purity or production reuse claim."
+  ],
+  "native_code_name_check": {
+    "source_url": "https://raw.githubusercontent.com/python/cpython/v3.12.13/Objects/codeobject.c",
+    "git_blob": "6f7b8b54dcfa3c911bd30bc4c10b28e5362acc8a",
+    "sha256": "60365e71ac9fc8411c546f86de3a1f49b6190ebb40b893ed31c6ff0b2cb5493f",
+    "bytes": 75495,
+    "excerpt": "\nstatic int\nintern_strings(PyObject *tuple)\n{\n    PyInterpreterState *interp = _PyInterpreterState_GET();\n    Py_ssize_t i;\n\n    for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {\n        PyObject *v = PyTuple_GET_ITEM(tuple, i);\n        if (v == NULL || !PyUnicode_CheckExact(v)) {\n            PyErr_SetString(PyExc_SystemError,\n                            \"non-string found in code slot\");\n            return -1;\n        }\n        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);\n    }\n    return 0;\n}\n\n/* Intern selected string constants */",
+    "finding": "intern_strings refuses non-exact-Unicode names; current co_names/locals names cannot carry arbitrary string-subclass comparison callbacks. co_consts permits opaque objects and is separately refused by the repaired recursive key."
+  },
+  "validation": {
+    "these_exact_revisions_executed": false,
+    "source_controls_reviewed": true,
+    "external_sandbox_rejection_preserved": true,
+    "authorized_next_route": "GitHub immutable validation",
+    "format_and_type_checks_pending": true
+  },
+  "canonical_refs_changed": false,
+  "qualification_complete": false
+}

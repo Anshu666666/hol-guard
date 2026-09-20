@@ -151,7 +151,12 @@ def _append_configured_resource_setting_artifacts(
             )
             continue
         for match in matches:
-            id_root = default_root if match.is_relative_to(default_root) else match if match.is_dir() else match.parent
+            if match.is_relative_to(default_root):
+                id_root = default_root
+            elif match.is_dir():
+                id_root = match
+            else:
+                id_root = match.parent
             if artifact_type == "extension":
                 if match.is_dir():
                     self._append_extension_artifacts(

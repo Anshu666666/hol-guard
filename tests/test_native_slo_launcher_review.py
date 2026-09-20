@@ -12,7 +12,12 @@ import pytest
 
 from codex_plugin_scanner.guard.daemon.hook_native_review_approval import queue_native_pre_tool_review
 from scripts import native_slo_launcher_corpus as corpus
-from scripts.native_slo_launcher_review import LauncherReviewFixture, approved_review_case, validate_resolution
+from scripts.native_slo_launcher_review import (
+    LauncherReviewFixture,
+    approved_review_case,
+    payload_bound_review_case,
+    validate_resolution,
+)
 from scripts.native_slo_priority_launchers import RegisteredLauncher
 from scripts.native_slo_workloads import build_cases
 
@@ -304,8 +309,15 @@ def test_ordinary_corpus_retains_review_obligation_without_starting_approval(tmp
 
 
 @pytest.mark.parametrize("codex_completed", [True, False])
-def test_corpus_executes_both_review_flows_and_keeps_failed_attempts(tmp_path, monkeypatch, codex_completed):
+@pytest.mark.parametrize("current_profile", [False, True], ids=["historical-git", "current-payload-bound"])
+def test_corpus_executes_both_review_flows_and_keeps_failed_attempts(
+    tmp_path, monkeypatch, codex_completed, current_profile
+):
     cases = [_case(tmp_path / "claude", "claude-code"), _case(tmp_path / "codex", "codex")]
+    selected_cases = [payload_bound_review_case(case) for case in cases] if current_profile else cases
+    run_corpus = (
+        corpus.run_current_registered_approval_corpus if current_profile else corpus.run_registered_approval_corpus
+    )
     routes = {"native_resident": 0}
     attempts = []
 
@@ -345,12 +357,13 @@ def test_corpus_executes_both_review_flows_and_keeps_failed_attempts(tmp_path, m
                         "python_oracle_disabled": True,
                         "fault_scope": "none",
                     },
-                    "native_result": dict(cases[0].native_expected.fields),
+                    "native_result": dict(selected_cases[0].native_expected.fields),
                 }
             raise AssertionError(operation)
 
     def launch(_session, _launcher, case, *, process_evidence, approval_wait):
         assert approval_wait
+        assert case.payload == next(value.payload for value in selected_cases if value.harness == case.harness)
         attempts.append((case.harness, case.expected.reason_class))
         routes["native_resident"] += 2 if case.harness == "codex" else 1
         process_evidence.update(returncode=0, stdout_bytes=10, stdout_sha256="c" * 64)
@@ -379,15 +392,17 @@ def test_corpus_executes_both_review_flows_and_keeps_failed_attempts(tmp_path, m
     )
     evidence_file = tmp_path / "attempts.jsonl"
     if codex_completed:
-        result = corpus.run_registered_approval_corpus(tmp_path / "runtime", evidence_file=evidence_file)
+        result = run_corpus(tmp_path / "runtime", evidence_file=evidence_file)
         assert result["validated_cases"] == 2
         assert result["validated_attempts"] == 3
         assert "browser_approval_continuation" not in result["remaining"]
         assert result["qualification_complete"] is False
-        assert result["scope"] == "priority_approval"
+        assert result["scope"] == (
+            "current_payload_bound_priority_approval" if current_profile else "priority_approval"
+        )
     else:
         with pytest.raises(RuntimeError, match="continuation unproven"):
-            corpus.run_registered_approval_corpus(tmp_path / "runtime", evidence_file=evidence_file)
+            run_corpus(tmp_path / "runtime", evidence_file=evidence_file)
     assert attempts == [("claude-code", "review"), ("claude-code", "approved_review"), ("codex", "approved_review")]
     rows = [json.loads(line) for line in evidence_file.read_text().splitlines()]
     assert len([row for row in rows if row["status"] == "offered"]) == 3

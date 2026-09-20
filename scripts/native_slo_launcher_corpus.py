@@ -27,7 +27,12 @@ from scripts.native_slo_contract import assert_privacy_safe, clear_proof_environ
 from scripts.native_slo_corpus_run import _IMPLEMENTED_SETUPS
 from scripts.native_slo_daemon_fixture import DaemonFixture, witnessed_route
 from scripts.native_slo_failure import failure_evidence
-from scripts.native_slo_launcher_review import approved_review_case, await_resolution, validate_resolution
+from scripts.native_slo_launcher_review import (
+    approved_review_case,
+    await_resolution,
+    payload_bound_review_case,
+    validate_resolution,
+)
 from scripts.native_slo_priority_launchers import (
     LauncherSession,
     RegisteredLauncher,
@@ -269,7 +274,16 @@ def run_registered_approval_corpus(runtime: Path, *, evidence_file: Path) -> dic
     return _run_registered_corpus(runtime, evidence_file=evidence_file, review_only=True)
 
 
-def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: bool) -> dict[str, object]:
+def run_current_registered_approval_corpus(runtime: Path, *, evidence_file: Path) -> dict[str, object]:
+    """Retain the original approval oracles on an explicitly current bound input."""
+    return _run_registered_corpus(runtime, evidence_file=evidence_file, review_only=True, payload_bound_review=True)
+
+
+def _run_registered_corpus(
+    runtime: Path, *, evidence_file: Path, review_only: bool, payload_bound_review: bool = False
+) -> dict[str, object]:
+    if payload_bound_review and not review_only:
+        raise ValueError("current review selection cannot alter the ordinary control corpus")
     evidence_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     validated: list[str] = []
     validated_ids: list[str] = []
@@ -292,7 +306,9 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
                         or (original.expected.reason_class == "review") != review_only
                     ):
                         continue
-                    case = installed_expectation(original)
+                    case = installed_expectation(
+                        payload_bound_review_case(original) if payload_bound_review else original
+                    )
                     selected_cases[case.case_id] = case
                     case_digest = hashlib.sha256(case.case_id.encode()).hexdigest()
                     launcher = launchers[case.harness, case.event]
@@ -365,12 +381,16 @@ def _run_registered_corpus(runtime: Path, *, evidence_file: Path, review_only: b
     if review_only and remaining:
         raise RuntimeError("installed launcher approval corpus coverage incomplete")
     platform_scope = platform_scope_summary(tuple(selected_cases.values()), validated_ids)
-    remaining.update(platform_scope["missing_scopes"])
+    remaining.update(cast(list[str], platform_scope["missing_scopes"]))
     return assert_privacy_safe(
         {
             "schema": "hol-guard.registered-launcher-corpus.v1",
             "boundary": "INSTALLED_LAUNCHER",
-            "scope": "priority_approval" if review_only else "priority_fault_corpus",
+            "scope": "current_payload_bound_priority_approval"
+            if payload_bound_review
+            else "priority_approval"
+            if review_only
+            else "priority_fault_corpus",
             "validated_cases": len(validated),
             "validated_attempts": offered_attempts,
             "review_harnesses": sorted(review_harnesses),

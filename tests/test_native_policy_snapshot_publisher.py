@@ -219,12 +219,15 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
     guard_home = tmp_path / "guard-home"
     store = GuardStore(guard_home)
     master = b"t" * 32
+    deliveries: list[bytes] = []
     monkeypatch.setattr(store, "_policy_integrity_secret_material", lambda *, create: (master, "master-id"))
 
     def client_request(**kwargs: object) -> bytes:
         payload = kwargs["payload"]
         assert isinstance(payload, bytes)
         snapshot = json.loads(payload)["request"]["snapshot"]
+        assert snapshot["policy_digest"] != "c" * 64
+        deliveries.append(payload)
         return json.dumps(
             {
                 "status": "accepted",
@@ -241,7 +244,6 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
         client_request=client_request,
         poll_interval_seconds=0.05,
     )
-    rejection_recorded = threading.Event()
     rejected_errors: list[str | None] = []
     record_error = publisher._record_error
 
@@ -249,17 +251,20 @@ def test_publisher_rejects_mutated_ack_without_opening_barrier(
         with publisher._condition:
             record_error(error)
             rejected_errors.append(publisher.last_error)
-            rejection_recorded.set()
 
     monkeypatch.setattr(publisher, "_record_error", observe_rejection)
-    publisher.start()
+    publisher._epoch = 1
     try:
-        # Publication is asynchronous. Observe the actual rejection before
-        # checking its error; a new publication may legitimately reset it.
-        assert rejection_recorded.wait(2.0)
-        assert rejected_errors[0] == "native_policy_snapshot_ack_mismatch"
-        assert not publisher.wait_until_ready(time.monotonic() + 0.5)
+        # A closed barrier alone does not prove an asynchronous attempt returned.
+        # Exercise one real publication before checking its malformed ACK result.
+        deadline = time.monotonic() + 0.5
+        publisher._publish_once()
+        assert len(deliveries) == 1
+        assert rejected_errors == ["native_policy_snapshot_ack_mismatch"]
+        assert not publisher.wait_until_ready(deadline)
+        assert publisher.last_error == "native_policy_snapshot_ack_mismatch"
         assert not publisher.is_ready()
+        assert publisher.current_snapshot() is None
     finally:
         publisher.close()
 

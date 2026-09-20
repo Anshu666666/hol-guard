@@ -1,0 +1,246 @@
+{
+  "schema": "pr2974.rsp100.native-provider-independent-source-peer.v1",
+  "status": "CLEAR_WITH_EXPLICIT_CALLER_PRECONDITIONS_PENDING_EXECUTION",
+  "proposal": {
+    "blob": "59bd0c4ce17787e65ac82e1af2949980bcba4b37",
+    "bytes": 458426,
+    "sha256": "3bbff1d186e46b891491c7dd3f184835e38f6e2af5672dee15a4d07a2e615386"
+  },
+  "complete_reviewed_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_pair_native.py",
+      "content": "\"\"\"Fixed native providers reached by the private risk-analysis pair.\n\nThe caller owns exact input and HASH/RLock instance provenance and verifies this\nmodule's source/bootstrap. This predicate constructs no hash or lock and invokes\nnone of the providers. Unsupported runtimes or hashing backends remain uncached.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport _thread\nimport _weakref\nimport builtins\nimport hashlib\nimport math\nimport sys\nimport weakref\nfrom types import (\n    BuiltinFunctionType,\n    MappingProxyType,\n    MethodDescriptorType,\n    ModuleType,\n    SimpleNamespace,\n)\nfrom typing import TypeGuard\n\ntry:\n    import _hashlib as _openssl\nexcept ImportError:\n    _openssl = None\n\n_TYPE = type\n_OBJECT = object\n_DICT = dict\n_STR = str\n_INT = int\n_TUPLE = tuple\n_ALL = all\n_LEN = len\n_VERSION_TYPE = type(sys.version_info)\n_IMMUTABLE_TYPE = 1 << 8\n\n\ndef _is_module(value: object) -> TypeGuard[ModuleType]:\n    return _TYPE(value) is ModuleType\n\n\ndef _is_type(value: object) -> TypeGuard[type]:\n    return _TYPE(value) is _TYPE\n\n\ndef _is_version(value: object) -> TypeGuard[tuple[object, ...]]:\n    return _TYPE(value) is _VERSION_TYPE\n\n\ndef _text(value: object, expected: str) -> bool:\n    return _TYPE(value) is _STR and value == expected\n\n\ndef _module_values(value: object, name: str) -> dict[str, object] | None:\n    if not _is_module(value):\n        return None\n    values: dict[str, object] = ModuleType.__getattribute__(value, \"__dict__\")\n    if _TYPE(values) is not _DICT or not _ALL(_TYPE(key) is _STR for key in values):\n        return None\n    if not _text(values.get(\"__name__\"), name):\n        return None\n    return values\n\n\ndef _native_function(value: object, module: ModuleType, name: str) -> bool:\n    if _TYPE(value) is not BuiltinFunctionType:\n        return False\n    return (\n        _OBJECT.__getattribute__(value, \"__self__\") is module\n        and _text(_OBJECT.__getattribute__(value, \"__name__\"), name)\n    )\n\n\ndef _immutable_class(\n    value: object, module_name: str, name: str, methods: tuple[str, ...]\n) -> bool:\n    if not _is_type(value):\n        return False\n    namespace: MappingProxyType[str, object] = _TYPE.__getattribute__(value, \"__dict__\")\n    if _TYPE(namespace) is not MappingProxyType:\n        return False\n    if not _ALL(_TYPE(key) is _STR for key in namespace):\n        return False\n    flags = _TYPE.__getattribute__(value, \"__flags__\")\n    if _TYPE(flags) is not _INT or flags & _IMMUTABLE_TYPE == 0:\n        return False\n    bases = _TYPE.__getattribute__(value, \"__bases__\")\n    mro = _TYPE.__getattribute__(value, \"__mro__\")\n    if _TYPE(bases) is not _TUPLE or _LEN(bases) != 1 or bases[0] is not _OBJECT:\n        return False\n    if _TYPE(mro) is not _TUPLE or _LEN(mro) != 2 or mro[0] is not value or mro[1] is not _OBJECT:\n        return False\n    if not _text(namespace.get(\"__module__\"), module_name):\n        return False\n    if not _text(_TYPE.__getattribute__(value, \"__name__\"), name):\n        return False\n    for method_name in methods:\n        descriptor = namespace.get(method_name)\n        if _TYPE(descriptor) is not MethodDescriptorType:\n            return False\n        if _OBJECT.__getattribute__(descriptor, \"__objclass__\") is not value:\n            return False\n        if not _text(_OBJECT.__getattribute__(descriptor, \"__name__\"), method_name):\n            return False\n    return True\n\n\ndef _supported_runtime(namespace: dict[str, object]) -> bool:\n    version = namespace.get(\"version_info\")\n    implementation = namespace.get(\"implementation\")\n    if not _is_version(version) or _TYPE(implementation) is not SimpleNamespace:\n        return False\n    parts = (\n        _TUPLE.__getitem__(version, 0),\n        _TUPLE.__getitem__(version, 1),\n        _TUPLE.__getitem__(version, 2),\n    )\n    if not _ALL(_TYPE(part) is _INT for part in parts):\n        return False\n    if not (parts[0] == 3 and parts[1] == 12 and (parts[2] == 13 or parts[2] == 14)):\n        return False\n    values: dict[str, object] = _OBJECT.__getattribute__(implementation, \"__dict__\")\n    if _TYPE(values) is not _DICT or not _ALL(_TYPE(key) is _STR for key in values):\n        return False\n    return _text(values.get(\"name\"), \"cpython\")\n\n\ndef check_native_pair_providers() -> bool:\n    \"\"\"Check the fixed OpenSSL, finite-float, weakref and lock providers.\"\"\"\n    builtin_values = _module_values(builtins, \"builtins\")\n    runtime = _module_values(sys, \"sys\")\n    if builtin_values is None or runtime is None:\n        return False\n    for name, expected in (\n        (\"type\", _TYPE), (\"object\", _OBJECT), (\"dict\", _DICT), (\"str\", _STR),\n        (\"int\", _INT), (\"tuple\", _TUPLE), (\"all\", _ALL), (\"len\", _LEN),\n    ):\n        if builtin_values.get(name) is not expected:\n            return False\n    if not _supported_runtime(runtime) or not _is_module(_openssl):\n        return False\n    hashes = _module_values(hashlib, \"hashlib\")\n    openssl = _module_values(_openssl, \"_hashlib\")\n    finite = _module_values(math, \"math\")\n    refs = _module_values(weakref, \"weakref\")\n    native_refs = _module_values(_weakref, \"_weakref\")\n    locks = _module_values(_thread, \"_thread\")\n    if hashes is None or openssl is None or finite is None:\n        return False\n    if refs is None or native_refs is None or locks is None:\n        return False\n    sha256 = openssl.get(\"openssl_sha256\")\n    if hashes.get(\"_hashlib\") is not _openssl or hashes.get(\"sha256\") is not sha256:\n        return False\n    if not _native_function(sha256, _openssl, \"openssl_sha256\"):\n        return False\n    if not _immutable_class(openssl.get(\"HASH\"), \"_hashlib\", \"HASH\", (\"update\", \"digest\", \"hexdigest\")):\n        return False\n    if not _native_function(finite.get(\"isfinite\"), math, \"isfinite\"):\n        return False\n    count = native_refs.get(\"getweakrefcount\")\n    if refs.get(\"getweakrefcount\") is not count:\n        return False\n    if not _native_function(count, _weakref, \"getweakrefcount\"):\n        return False\n    return _immutable_class(locks.get(\"RLock\"), \"_thread\", \"RLock\", (\"__enter__\", \"__exit__\"))\n",
+      "sha": "e3952bd20233f889f566b390eb577a4010604510",
+      "bytes": 6044,
+      "sha256": "54fc034754c22154f802791bff0473819b09633c9ec9ce09c29ea1e39d5b0a94",
+      "lines": 171
+    },
+    {
+      "path": "tests/test_mcp_risk_pair_native.py",
+      "content": "\"\"\"Finite provider controls; no application request or lock is constructed.\"\"\"\n\nfrom __future__ import annotations\n\nimport _hashlib\nimport _thread\nimport _weakref\nimport hashlib\nimport math\nimport sys\nimport weakref\nfrom types import FrameType, ModuleType\nfrom typing import cast\n\nimport pytest\n\nfrom codex_plugin_scanner.guard import mcp_risk_pair_native as providers\n\n_SUPPORTED = sys.implementation.name == \"cpython\" and sys.version_info[:3] in (\n    (3, 12, 13), (3, 12, 14),\n)\n\n\n@pytest.fixture\ndef supported_native_profile() -> None:\n    if not _SUPPORTED:\n        pytest.skip(\"The native provider profile admits only CPython 3.12.13/.14\")\n    assert providers.check_native_pair_providers()\n\n\ndef _unexpected(*args: object, **kwargs: object) -> object:\n    raise AssertionError(\"Provider admission must not invoke replaced callbacks\")\n\n\ndef test_canonical_native_profile_calls_no_provider(supported_native_profile: None) -> None:\n    calls: list[str] = []\n    previous = sys.getprofile()\n    constructor = hashlib.sha256\n    finite = math.isfinite\n    count = _weakref.getweakrefcount\n\n    def observe(_frame: FrameType, event: str, argument: object) -> None:\n        if event == \"c_call\" and (\n            argument is constructor or argument is finite or argument is count\n        ):\n            calls.append(\"provider\")\n\n    sys.setprofile(observe)\n    try:\n        admitted = providers.check_native_pair_providers()\n    finally:\n        sys.setprofile(previous)\n    assert admitted\n    assert calls == []\n\n\n@pytest.mark.parametrize(\n    (\"module\", \"name\"),\n    [\n        (hashlib, \"sha256\"), (hashlib, \"_hashlib\"), (_hashlib, \"openssl_sha256\"),\n        (_hashlib, \"HASH\"), (math, \"isfinite\"), (weakref, \"getweakrefcount\"),\n        (_weakref, \"getweakrefcount\"), (_thread, \"RLock\"),\n    ],\n)\ndef test_replaced_native_provider_refuses_without_call(\n    supported_native_profile: None,\n    monkeypatch: pytest.MonkeyPatch,\n    module: ModuleType,\n    name: str,\n) -> None:\n    monkeypatch.setattr(module, name, _unexpected)\n    assert not providers.check_native_pair_providers()\n\n\n@pytest.mark.parametrize(\n    (\"cls\", \"name\"),\n    [\n        (_hashlib.HASH, \"update\"), (_hashlib.HASH, \"digest\"),\n        (_hashlib.HASH, \"hexdigest\"), (_thread.RLock, \"__enter__\"),\n        (_thread.RLock, \"__exit__\"),\n    ],\n)\ndef test_native_method_owner_is_immutable(\n    supported_native_profile: None,\n    cls: type,\n    name: str,\n) -> None:\n    before = vars(cls)[name]\n    assert cls.__flags__ & (1 << 8)\n    with pytest.raises(TypeError):\n        setattr(cls, name, _unexpected)\n    assert vars(cls)[name] is before\n    assert providers.check_native_pair_providers()\n\n\n@pytest.mark.parametrize(\"module\", (_hashlib, _thread, math, weakref))\ndef test_native_module_keys_checked_before_lookup(\n    supported_native_profile: None,\n    module: ModuleType,\n) -> None:\n    calls: list[str] = []\n\n    class Key:\n        def __hash__(self) -> int:\n            return hash(\"__name__\")\n\n        def __eq__(self, other: object) -> bool:\n            calls.append(\"eq\")\n            return False\n\n    key = Key()\n    namespace = cast(dict[object, object], vars(module))\n    namespace[key] = None\n    calls.clear()\n    try:\n        admitted = providers.check_native_pair_providers()\n        observed = calls.copy()\n    finally:\n        del namespace[key]\n    assert not admitted\n    assert observed == []\n\n\n@pytest.mark.parametrize((\"module\", \"name\"), [(_hashlib, \"HASH\"), (_thread, \"RLock\")])\ndef test_native_class_keys_checked_before_flags(\n    supported_native_profile: None,\n    monkeypatch: pytest.MonkeyPatch,\n    module: ModuleType,\n    name: str,\n) -> None:\n    calls: list[str] = []\n\n    class Key:\n        def __hash__(self) -> int:\n            return hash(\"__module__\")\n\n        def __eq__(self, other: object) -> bool:\n            calls.append(\"eq\")\n            return False\n\n    key = Key()\n    namespace = {\"__module__\": module.__name__, key: None}\n    replacement = type(name, (object,), cast(dict[str, object], namespace))\n    monkeypatch.setattr(module, name, replacement)\n    calls.clear()\n    admitted = providers.check_native_pair_providers()\n    assert not admitted\n    assert calls == []\n\n\n@pytest.mark.parametrize(\n    (\"module\", \"name\"), [(_hashlib, \"HASH\"), (_thread, \"RLock\"), (math, \"isfinite\")]\n)\ndef test_unknown_native_type_does_not_run_metaclass_equality(\n    supported_native_profile: None,\n    monkeypatch: pytest.MonkeyPatch,\n    module: ModuleType,\n    name: str,\n) -> None:\n    calls: list[str] = []\n\n    class Meta(type):\n        def __eq__(self, other: object) -> bool:\n            calls.append(\"eq\")\n            return False\n\n    class Opaque(metaclass=Meta):\n        pass\n\n    monkeypatch.setattr(module, name, Opaque())\n    assert not providers.check_native_pair_providers()\n    assert calls == []\n\n\ndef test_unknown_hashing_backend_refuses(\n    supported_native_profile: None,\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n    monkeypatch.setattr(providers, \"_openssl\", None)\n    assert not providers.check_native_pair_providers()\n\n\ndef test_different_openssl_algorithm_refuses(\n    supported_native_profile: None,\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n    monkeypatch.setattr(hashlib, \"sha256\", hashlib.sha512)\n    assert not providers.check_native_pair_providers()\n\n\ndef test_unsupported_native_runtime_refuses(monkeypatch: pytest.MonkeyPatch) -> None:\n    monkeypatch.setattr(sys, \"version_info\", (3, 13, 0, \"final\", 0))\n    assert not providers.check_native_pair_providers()\n",
+      "sha": "d2ef36bbff63055f715ee4a910b8a51a674def3b",
+      "bytes": 5514,
+      "sha256": "b63ffa2e61313c4da3cae22a330ea50443524895ea41b8b168c406d4e5a3c24a",
+      "lines": 193
+    }
+  ],
+  "independently_fetched_primary": [
+    {
+      "path": "Modules/_hashopenssl.c",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "41ec16426b09b5f313a0beaa7f3edc5a832c0797",
+      "other_git_blob": "41ec16426b09b5f313a0beaa7f3edc5a832c0797",
+      "bytes": 64019,
+      "sha256": "fbbfbceeb0752f8787e91549aaa2876f483857cb9bf15064d1d21a29f77a167a",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/mathmodule.c",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "d856ff6c354a4047ad52598f6b86d55322964a85",
+      "other_git_blob": "d856ff6c354a4047ad52598f6b86d55322964a85",
+      "bytes": 132777,
+      "sha256": "436a01da195e3c2b9576a4b9188d5d62e9883e62e74f2d60bc55194bfce98281",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/_weakref.c",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "387b8fa9d0a6f140275eeca4714c7f6f62eeae68",
+      "other_git_blob": "387b8fa9d0a6f140275eeca4714c7f6f62eeae68",
+      "bytes": 5071,
+      "sha256": "c172c22853586f2d1f46a11605a0ed6a6a61094612c439b6ba13087712a7be10",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/_threadmodule.c",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "56a9f3d893650f3a3535138241a0f14d5218e26a",
+      "other_git_blob": "56a9f3d893650f3a3535138241a0f14d5218e26a",
+      "bytes": 54259,
+      "sha256": "277217c4a704bc84f9b7caf79123eaed8a45288c3023747e457df5d817cc8bc1",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Lib/hashlib.py",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "1b16441cb60ba7787b62ce6784656f6b9761409f",
+      "other_git_blob": "1b16441cb60ba7787b62ce6784656f6b9761409f",
+      "bytes": 9349,
+      "sha256": "6dbdebf270868b391080e21dc9687eddfaf321c965ad979f68d3f5c423c613ab",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Lib/weakref.py",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "25b70927e29c31d5fbe48beab554270c866c5829",
+      "other_git_blob": "25b70927e29c31d5fbe48beab554270c866c5829",
+      "bytes": 21513,
+      "sha256": "56f8d313fb74019e53eb9287400702fbce788b7fe30e097b0b6e06296f3f080c",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Include/object.h",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "0d94cf825534d3fb25fd60c4329eda07b2694bd3",
+      "other_git_blob": "0d94cf825534d3fb25fd60c4329eda07b2694bd3",
+      "bytes": 37155,
+      "sha256": "68b97095c521fcb3fab7193e166870b0c040c8f19ac50efb42088364862503a7",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/clinic/_hashopenssl.c.h",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "84e23462b875c6fc26c3e9577d667822578ccc33",
+      "other_git_blob": "84e23462b875c6fc26c3e9577d667822578ccc33",
+      "bytes": 54687,
+      "sha256": "9e259dc03df7a01019e1849b1c17efd6bde197e0694aed27ced51d7a83ac9432",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/clinic/mathmodule.c.h",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "97c16a43c905599236372aed38add513f90cc675",
+      "other_git_blob": "97c16a43c905599236372aed38add513f90cc675",
+      "bytes": 23602,
+      "sha256": "dfef14526c862c32b09eb99d45d4a930e3a2199e17c95926f990dba3db3b5a9e",
+      "actual_both_bodies_equal": true
+    },
+    {
+      "path": "Modules/clinic/_weakref.c.h",
+      "ref": "3bb231a6a5dc02b95658877318bf61501a7209e9",
+      "other_ref": "2abcf904b8dac8c999d2b3aac76681abb333798a",
+      "git_blob": "48feb042cac039020a458c4a423ad6dc4c2b68cf",
+      "other_git_blob": "48feb042cac039020a458c4a423ad6dc4c2b68cf",
+      "bytes": 3433,
+      "sha256": "5386070b8d9e0d18ad26952380cc122a3e4227ac9f559e3d61ee71a01a5a357a",
+      "actual_both_bodies_equal": true
+    }
+  ],
+  "additional_primary": [
+    {
+      "path": "Objects/methodobject.c",
+      "ref": "v3.12.13",
+      "git_blob": "51752dec3dd08c3dcf9104baf215cd7ddf92f1b8",
+      "bytes": 17966,
+      "sha256": "195354540ad127b4feca953ed55fbe0d9f3aa0e1d345a2a48bc0a381031a1bd0"
+    },
+    {
+      "path": "Objects/descrobject.c",
+      "ref": "v3.12.13",
+      "git_blob": "a6c90e7ac1323f03457eb7bc7f5d4b3a701fd77a",
+      "bytes": 66901,
+      "sha256": "f71bce9414284ed2af0ac860b777e6afffa83fad9a3e2e3e9ef9e8909a956d8f"
+    },
+    {
+      "path": "Objects/typeobject.c",
+      "ref": "v3.12.13",
+      "git_blob": "b0c79d34e6525bff2babe2de3d4cbf8cfeb08905",
+      "bytes": 328862,
+      "sha256": "77e687a382ef5fbced0be9c99fb722e2531131f4cdd1216994a8a52696c21501"
+    }
+  ],
+  "actual_reached_excerpts": [
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 649,
+      "end": 682,
+      "content": "    /\n\nUpdate this hash object's state with the provided string.\n[clinic start generated code]*/\n\nstatic PyObject *\nEVP_update(EVPobject *self, PyObject *obj)\n/*[clinic end generated code: output=ec1d55ed2432e966 input=9b30ec848f015501]*/\n{\n    int result;\n    Py_buffer view;\n\n    GET_BUFFER_VIEW_OR_ERROUT(obj, &view);\n\n    if (self->lock == NULL && view.len >= HASHLIB_GIL_MINSIZE) {\n        self->lock = PyThread_allocate_lock();\n        /* fail? lock = NULL and we fail over to non-threaded code. */\n    }\n\n    if (self->lock != NULL) {\n        Py_BEGIN_ALLOW_THREADS\n        PyThread_acquire_lock(self->lock, 1);\n        result = EVP_hash(self, view.buf, view.len);\n        PyThread_release_lock(self->lock);\n        Py_END_ALLOW_THREADS\n    } else {\n        result = EVP_hash(self, view.buf, view.len);\n    }\n\n    PyBuffer_Release(&view);\n\n    if (result == -1)\n        return NULL;\n    Py_RETURN_NONE;"
+    },
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 685,
+      "end": 691,
+      "content": "static PyMethodDef EVP_methods[] = {\n    EVP_UPDATE_METHODDEF\n    EVP_DIGEST_METHODDEF\n    EVP_HEXDIGEST_METHODDEF\n    EVP_COPY_METHODDEF\n    {NULL, NULL}  /* sentinel */\n};"
+    },
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 769,
+      "end": 785,
+      "content": "static PyType_Slot EVPtype_slots[] = {\n    {Py_tp_dealloc, EVP_dealloc},\n    {Py_tp_repr, EVP_repr},\n    {Py_tp_doc, (char *)hashtype_doc},\n    {Py_tp_methods, EVP_methods},\n    {Py_tp_getset, EVP_getseters},\n    {0, 0},\n};\n\nstatic PyType_Spec EVPtype_spec = {\n    \"_hashlib.HASH\",    /*tp_name*/\n    sizeof(EVPobject),  /*tp_basicsize*/\n    0,                  /*tp_itemsize*/\n    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,\n    EVPtype_slots\n};\n"
+    },
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 940,
+      "end": 1015,
+      "content": "\nstatic PyObject*\npy_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,\n                int usedforsecurity)\n{\n    Py_buffer view = { 0 };\n    PY_EVP_MD *digest = NULL;\n    PyTypeObject *type;\n    EVPobject *self = NULL;\n\n    if (data_obj != NULL) {\n        GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);\n    }\n\n    digest = py_digest_by_name(\n        module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity\n    );\n    if (digest == NULL) {\n        goto exit;\n    }\n\n    if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {\n        type = get_hashlib_state(module)->EVPXOFtype;\n    } else {\n        type = get_hashlib_state(module)->EVPtype;\n    }\n\n    self = newEVPobject(type);\n    if (self == NULL) {\n        goto exit;\n    }\n\n#if defined(EVP_MD_CTX_FLAG_NON_FIPS_ALLOW) && OPENSSL_VERSION_NUMBER < 0x30000000L\n    // In OpenSSL 1.1.1 the non FIPS allowed flag is context specific while\n    // in 3.0.0 it is a different EVP_MD provider.\n    if (!usedforsecurity) {\n        EVP_MD_CTX_set_flags(self->ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);\n    }\n#endif\n\n    int result = EVP_DigestInit_ex(self->ctx, digest, NULL);\n    if (!result) {\n        notify_ssl_error_occurred();\n        Py_CLEAR(self);\n        goto exit;\n    }\n\n    if (view.buf && view.len) {\n        if (view.len >= HASHLIB_GIL_MINSIZE) {\n            /* We do not initialize self->lock here as this is the constructor\n             * where it is not yet possible to have concurrent access. */\n            Py_BEGIN_ALLOW_THREADS\n            result = EVP_hash(self, view.buf, view.len);\n            Py_END_ALLOW_THREADS\n        } else {\n            result = EVP_hash(self, view.buf, view.len);\n        }\n        if (result == -1) {\n            assert(PyErr_Occurred());\n            Py_CLEAR(self);\n            goto exit;\n        }\n    }\n\nexit:\n    if (data_obj != NULL) {\n        PyBuffer_Release(&view);\n    }\n    if (digest != NULL) {\n        PY_EVP_MD_free(digest);\n    }\n\n    return (PyObject *)self;\n}\n\n"
+    },
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 1119,
+      "end": 1127,
+      "content": "static PyObject *\n_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,\n                             int usedforsecurity)\n/*[clinic end generated code: output=1f874a34870f0a68 input=549fad9d2930d4c5]*/\n{\n    return py_evp_fromname(module, Py_hash_sha256, data_obj, usedforsecurity);\n}\n\n"
+    },
+    {
+      "path": "Modules/_hashopenssl.c",
+      "start": 2250,
+      "end": 2263,
+      "content": "hashlib_init_evptype(PyObject *module)\n{\n    _hashlibstate *state = get_hashlib_state(module);\n\n    state->EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);\n    if (state->EVPtype == NULL) {\n        return -1;\n    }\n    if (PyModule_AddType(module, state->EVPtype) < 0) {\n        return -1;\n    }\n    return 0;\n}\n"
+    },
+    {
+      "path": "Modules/_threadmodule.c",
+      "start": 77,
+      "end": 128,
+      "content": "/* Helper to acquire an interruptible lock with a timeout.  If the lock acquire\n * is interrupted, signal handlers are run, and if they raise an exception,\n * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE\n * are returned, depending on whether the lock can be acquired within the\n * timeout.\n */\nstatic PyLockStatus\nacquire_timed(PyThread_type_lock lock, _PyTime_t timeout)\n{\n    PyThreadState *tstate = _PyThreadState_GET();\n    _PyTime_t endtime = 0;\n    if (timeout > 0) {\n        endtime = _PyDeadline_Init(timeout);\n    }\n\n    PyLockStatus r;\n    do {\n        _PyTime_t microseconds;\n        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);\n\n        /* first a simple non-blocking try without releasing the GIL */\n        r = PyThread_acquire_lock_timed(lock, 0, 0);\n        if (r == PY_LOCK_FAILURE && microseconds != 0) {\n            Py_BEGIN_ALLOW_THREADS\n            r = PyThread_acquire_lock_timed(lock, microseconds, 1);\n            Py_END_ALLOW_THREADS\n        }\n\n        if (r == PY_LOCK_INTR) {\n            /* Run signal handlers if we were interrupted.  Propagate\n             * exceptions from signal handlers, such as KeyboardInterrupt, by\n             * passing up PY_LOCK_INTR.  */\n            if (_PyEval_MakePendingCalls(tstate) < 0) {\n                return PY_LOCK_INTR;\n            }\n\n            /* If we're using a timeout, recompute the timeout after processing\n             * signals, since those can take time.  */\n            if (timeout > 0) {\n                timeout = _PyDeadline_Get(endtime);\n\n                /* Check for negative values, since those mean block forever.\n                 */\n                if (timeout < 0) {\n                    r = PY_LOCK_FAILURE;\n                }\n            }\n        }\n    } while (r == PY_LOCK_INTR);  /* Retry if we were interrupted. */\n\n    return r;\n}"
+    },
+    {
+      "path": "Modules/_threadmodule.c",
+      "start": 357,
+      "end": 391,
+      "content": "static PyObject *\nrlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)\n{\n    _PyTime_t timeout;\n    unsigned long tid;\n    PyLockStatus r = PY_LOCK_ACQUIRED;\n\n    if (lock_acquire_parse_args(args, kwds, &timeout) < 0)\n        return NULL;\n\n    tid = PyThread_get_thread_ident();\n    if (self->rlock_count > 0 && tid == self->rlock_owner) {\n        unsigned long count = self->rlock_count + 1;\n        if (count <= self->rlock_count) {\n            PyErr_SetString(PyExc_OverflowError,\n                            \"Internal lock count overflowed\");\n            return NULL;\n        }\n        self->rlock_count = count;\n        Py_RETURN_TRUE;\n    }\n    r = acquire_timed(self->rlock_lock, timeout);\n    if (r == PY_LOCK_ACQUIRED) {\n        assert(self->rlock_count == 0);\n        self->rlock_owner = tid;\n        self->rlock_count = 1;\n    }\n    else if (r == PY_LOCK_INTR) {\n        return NULL;\n    }\n\n    return PyBool_FromLong(r == PY_LOCK_ACQUIRED);\n}\n\nPyDoc_STRVAR(rlock_acquire_doc,"
+    },
+    {
+      "path": "Modules/_threadmodule.c",
+      "start": 414,
+      "end": 435,
+      "content": "                        \"cannot release un-acquired lock\");\n        return NULL;\n    }\n    if (--self->rlock_count == 0) {\n        self->rlock_owner = 0;\n        PyThread_release_lock(self->rlock_lock);\n    }\n    Py_RETURN_NONE;\n}\n\nPyDoc_STRVAR(rlock_release_doc,\n\"release()\\n\\\n\\n\\\nRelease the lock, allowing another thread that is blocked waiting for\\n\\\nthe lock to acquire the lock.  The lock must be in the locked state,\\n\\\nand must be locked by the same thread that unlocks it; otherwise a\\n\\\n`RuntimeError` is raised.\\n\\\n\\n\\\nDo note that if the lock was acquire()d several times in a row by the\\n\\\ncurrent thread, release() needs to be called as many times for the lock\\n\\\nto be available for other threads.\");\n"
+    },
+    {
+      "path": "Modules/_threadmodule.c",
+      "start": 567,
+      "end": 615,
+      "content": "static PyMethodDef rlock_methods[] = {\n    {\"acquire\",      _PyCFunction_CAST(rlock_acquire),\n     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},\n    {\"release\",      (PyCFunction)rlock_release,\n     METH_NOARGS, rlock_release_doc},\n    {\"_is_owned\",     (PyCFunction)rlock_is_owned,\n     METH_NOARGS, rlock_is_owned_doc},\n    {\"_acquire_restore\", (PyCFunction)rlock_acquire_restore,\n     METH_VARARGS, rlock_acquire_restore_doc},\n    {\"_release_save\", (PyCFunction)rlock_release_save,\n     METH_NOARGS, rlock_release_save_doc},\n    {\"_recursion_count\", (PyCFunction)rlock_recursion_count,\n     METH_NOARGS, rlock_recursion_count_doc},\n    {\"__enter__\",    _PyCFunction_CAST(rlock_acquire),\n     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},\n    {\"__exit__\",    (PyCFunction)rlock_release,\n     METH_VARARGS, rlock_release_doc},\n#ifdef HAVE_FORK\n    {\"_at_fork_reinit\",    (PyCFunction)rlock__at_fork_reinit,\n     METH_NOARGS, NULL},\n#endif\n    {NULL,           NULL}              /* sentinel */\n};\n\n\nstatic PyMemberDef rlock_type_members[] = {\n    {\"__weaklistoffset__\", T_PYSSIZET, offsetof(rlockobject, in_weakreflist), READONLY},\n    {NULL},\n};\n\nstatic PyType_Slot rlock_type_slots[] = {\n    {Py_tp_dealloc, (destructor)rlock_dealloc},\n    {Py_tp_repr, (reprfunc)rlock_repr},\n    {Py_tp_methods, rlock_methods},\n    {Py_tp_alloc, PyType_GenericAlloc},\n    {Py_tp_new, rlock_new},\n    {Py_tp_members, rlock_type_members},\n    {Py_tp_traverse, rlock_traverse},\n    {0, 0},\n};\n\nstatic PyType_Spec rlock_type_spec = {\n    .name = \"_thread.RLock\",\n    .basicsize = sizeof(rlockobject),\n    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |\n              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),\n    .slots = rlock_type_slots,\n};\n"
+    },
+    {
+      "path": "Modules/_weakref.c",
+      "start": 25,
+      "end": 37,
+      "content": "static Py_ssize_t\n_weakref_getweakrefcount_impl(PyObject *module, PyObject *object)\n/*[clinic end generated code: output=301806d59558ff3e input=cedb69711b6a2507]*/\n{\n    PyWeakReference **list;\n\n    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object)))\n        return 0;\n\n    list = GET_WEAKREFS_LISTPTR(object);\n    return _PyWeakref_GetWeakrefCount(*list);\n}\n"
+    },
+    {
+      "path": "Modules/mathmodule.c",
+      "start": 3046,
+      "end": 3056,
+      "content": "\nReturn True if x is neither an infinity nor a NaN, and False otherwise.\n[clinic start generated code]*/\n\nstatic PyObject *\nmath_isfinite_impl(PyObject *module, double x)\n/*[clinic end generated code: output=8ba1f396440c9901 input=46967d254812e54a]*/\n{\n    return PyBool_FromLong((long)Py_IS_FINITE(x));\n}\n"
+    },
+    {
+      "path": "Include/object.h",
+      "start": 490,
+      "end": 498,
+      "content": " * the \"__new__\" key in the type dictionary. */\n#define Py_TPFLAGS_DISALLOW_INSTANTIATION (1UL << 7)\n\n/* Set if the type object is immutable: type attributes cannot be set nor deleted */\n#define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)\n\n/* Set if the type object is dynamically allocated */\n#define Py_TPFLAGS_HEAPTYPE (1UL << 9)\n"
+    }
+  ],
+  "findings": [
+    "Both complete proposed file Git/SHA256/UTF-8 byte pins independently recomputed and fetched. All ten complete primary provider files independently fetched at both immutable commits and byte-equal to proposal.",
+    "The exact native BuiltinFunctionType check precedes object-level metadata reads. CPython methodobject.c reads __name__ from m_ml->ml_name and __self__ from m_self; both getters have null setters. Writable __module__ metadata is not used for this ownership proof.",
+    "HASH and RLock are genuine immutable heap types in the pinned C sources. Exact type metaclass, exact-string raw namespace keys, immutable flag, identity-only object base/MRO, fixed native descriptor owner/name checks reject ordinary Python classes, subclasses, copied foreign descriptors and opaque metadata without invoking them.",
+    "Native sha256 dispatch passes the fixed algorithm to py_evp_fromname and creates the module-state EVPtype. This establishes the intended native constructor only under independently admitted exact bytes and trusted installed OpenSSL/native binary preconditions.",
+    "Raw module/class namespace iteration precedes string dictionary lookups. Text comparison requires exact str; bases and MRO comparisons use identity. No hash/lock construction, lock acquisition, digest/update, weakref count or isfinite calculation occurs in this predicate.",
+    "All 26 prospective cases are source-derived from nine definitions: 1 canonical, 8 aliases, 5 immutable method owners, 4 opaque module-key collisions, 2 opaque class-key collisions, 3 unknown-type controls, 1 missing backend, 1 wrong algorithm, 1 unsupported runtime. Unsupported-version skip is explicit; no actual collection or result is claimed."
+  ],
+  "limits": [
+    "Caller must prove this guard and its captured inspection anchors/globals/bootstrap, actual application aliases, exact input shapes, newly native-created HASH provenance and exact owned RLock instance/slot. The source guard cannot authenticate its own mutable globals.",
+    "Native function/type identity is not a proof of all window effects. RLock acquire_timed may release the GIL and call _PyEval_MakePendingCalls following an interrupted wait. Large hash initialization/update can release the GIL. Caller signal/window/reentrancy/concurrency admission remains necessary.",
+    "math.isfinite's generated conversion admits arbitrary __float__/__index__ for general objects; caller exact primitive input restriction remains necessary. Exact bytes likewise avoids arbitrary buffer providers.",
+    "No arbitrary extension-forged native types, ctypes/native-memory tampering, complete heap guarantee, OpenSSL configuration attestation, Python parsing/formatting/type checking/import, tests, performance, workload, source commit, refs or workflow launch."
+  ]
+}

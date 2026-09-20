@@ -1,0 +1,250 @@
+{
+  "schema": "hol-guard.pr2974.exact-fixed-review-thread-resolution.v1",
+  "at": "2026-09-20 06:00:49 UTC",
+  "source": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "proposal": {
+    "git_blob": "254076cb2471581a00b288c798fde1fd33639843",
+    "bytes": 83423,
+    "sha256": "f1b5519aaae5ea41b35400cdcc0c635e9e0fe4234aa89c4238041be8024c6de2"
+  },
+  "independent_peer": "db652729fca19f5b80df7b8f881745c2bce8eb8a",
+  "before": [
+    {
+      "id": "PRRT_kwDORzZri86kHMJT",
+      "is_resolved": false,
+      "is_outdated": true,
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "line": null,
+      "diff_side": "RIGHT",
+      "start_line": null,
+      "start_diff_side": null,
+      "original_line": 106,
+      "original_start_line": null,
+      "resolved_by": null,
+      "comments": [
+        {
+          "id": "PRRC_kwDORzZri87xxL7L",
+          "database_id": 4056202955,
+          "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Prohibited nested conditional**\n\n`_code` uses a nested conditional expression, violating the repository directive prohibiting nested ternaries and requiring explicit conditionals. Expand the recognized-code, missing-value, and unknown-value cases into explicit branches while preserving their evaluation order and results. This repository requirement must be satisfied before merging.\n\n```suggestion\n    if type(value) is str and value in _CODES:\n        return value\n    elif value is None:\n        return None\n    else:\n        return \"other\"\n```\n\n**Rule Used:** Nested ternies are illegal. All logic should be clear and use conditionals. ([source](https://app.greptile.com/hol/-/custom-context?memory=5bc5a84f-7863-4cc9-9d5a-575de0b9b6be))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20106%0A%0AComment%3A%0A**Prohibited%20nested%20conditional**%0A%0A%60_code%60%20uses%20a%20nested%20conditional%20expression%2C%20violating%20the%20repository%20directive%20prohibiting%20nested%20ternaries%20and%20requiring%20explicit%20conditionals.%20Expand%20the%20recognized-code%2C%20missing-value%2C%20and%20unknown-value%20cases%20into%20explicit%20branches%20while%20preserving%20their%20evaluation%20order%20and%20results.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A%60%60%60suggestion%0A%20%20%20%20if%20type%28value%29%20is%20str%20and%20value%20in%20_CODES%3A%0A%20%20%20%20%20%20%20%20return%20value%0A%20%20%20%20elif%20value%20is%20None%3A%0A%20%20%20%20%20%20%20%20return%20None%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20return%20%22other%22%0A%60%60%60%0A%0A**Rule%20Used%3A**%20Nested%20ternies%20are%20illegal.%20All%20logic%20should%20be%20clear%20and%20use%20conditionals.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3D5bc5a84f-7863-4cc9-9d5a-575de0b9b6be%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+          "created_at": "2026-09-20T05:22:39Z",
+          "updated_at": "2026-09-20T05:22:41Z",
+          "author": {
+            "login": "greptile-apps",
+            "name": "greptile-apps",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+            "id": null
+          },
+          "viewer_did_author": false
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDORzZri86kHMJb",
+      "is_resolved": false,
+      "is_outdated": true,
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "line": null,
+      "diff_side": "RIGHT",
+      "start_line": null,
+      "start_diff_side": "RIGHT",
+      "original_line": 134,
+      "original_start_line": 129,
+      "resolved_by": null,
+      "comments": [
+        {
+          "id": "PRRC_kwDORzZri87xxL7X",
+          "database_id": 4056202967,
+          "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Legacy package fallback added**\n\nThe new `_evidence_failure_snapshot` wrapper explicitly supports older installed packages by returning `None` when their diagnostics module is missing. This violates the repository directive prohibiting legacy fallbacks and support. Require the current diagnostics contract here, retaining the existing outer diagnostic-error boundary so failures cannot replace the original probe exception. This repository requirement must be satisfied before merging.\n\n**Rule Used:** What: \"Legacy\" should not be supported  Why: We want to eliminate tech debt   Good: No legacy fallbacks, redirects, tests, etc. ([source](https://app.greptile.com/hol/-/custom-context?memory=c1ba7189-733a-40b9-8b0d-2e7a5f85a373))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20129-134%0A%0AComment%3A%0A**Legacy%20package%20fallback%20added**%0A%0AThe%20new%20%60_evidence_failure_snapshot%60%20wrapper%20explicitly%20supports%20older%20installed%20packages%20by%20returning%20%60None%60%20when%20their%20diagnostics%20module%20is%20missing.%20This%20violates%20the%20repository%20directive%20prohibiting%20legacy%20fallbacks%20and%20support.%20Require%20the%20current%20diagnostics%20contract%20here%2C%20retaining%20the%20existing%20outer%20diagnostic-error%20boundary%20so%20failures%20cannot%20replace%20the%20original%20probe%20exception.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A**Rule%20Used%3A**%20What%3A%20%22Legacy%22%20should%20not%20be%20supported%20%20Why%3A%20We%20want%20to%20eliminate%20tech%20debt%20%20%20Good%3A%20No%20legacy%20fallbacks%2C%20redirects%2C%20tests%2C%20etc.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3Dc1ba7189-733a-40b9-8b0d-2e7a5f85a373%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+          "created_at": "2026-09-20T05:22:39Z",
+          "updated_at": "2026-09-20T05:22:41Z",
+          "author": {
+            "login": "greptile-apps",
+            "name": "greptile-apps",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+            "id": null
+          },
+          "viewer_did_author": false
+        }
+      ]
+    }
+  ],
+  "mutation_responses": [
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "Action completed."
+        }
+      ],
+      "structuredContent": {
+        "review_thread": {
+          "id": "PRRT_kwDORzZri86kHMJT",
+          "is_resolved": true,
+          "is_outdated": true,
+          "path": "ci/native_runtime/default_auto_failure.py",
+          "line": null,
+          "diff_side": "RIGHT",
+          "start_line": null,
+          "start_diff_side": null,
+          "original_line": 106,
+          "original_start_line": null,
+          "resolved_by": {
+            "login": "kantorcodes",
+            "name": "kantorcodes",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/u/6068672?u=304bc9f4512c677786835926a69deb67d75ec7fc&v=4",
+            "id": null
+          },
+          "comments": [
+            {
+              "id": "PRRC_kwDORzZri87xxL7L",
+              "database_id": 4056202955,
+              "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Prohibited nested conditional**\n\n`_code` uses a nested conditional expression, violating the repository directive prohibiting nested ternaries and requiring explicit conditionals. Expand the recognized-code, missing-value, and unknown-value cases into explicit branches while preserving their evaluation order and results. This repository requirement must be satisfied before merging.\n\n```suggestion\n    if type(value) is str and value in _CODES:\n        return value\n    elif value is None:\n        return None\n    else:\n        return \"other\"\n```\n\n**Rule Used:** Nested ternies are illegal. All logic should be clear and use conditionals. ([source](https://app.greptile.com/hol/-/custom-context?memory=5bc5a84f-7863-4cc9-9d5a-575de0b9b6be))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20106%0A%0AComment%3A%0A**Prohibited%20nested%20conditional**%0A%0A%60_code%60%20uses%20a%20nested%20conditional%20expression%2C%20violating%20the%20repository%20directive%20prohibiting%20nested%20ternaries%20and%20requiring%20explicit%20conditionals.%20Expand%20the%20recognized-code%2C%20missing-value%2C%20and%20unknown-value%20cases%20into%20explicit%20branches%20while%20preserving%20their%20evaluation%20order%20and%20results.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A%60%60%60suggestion%0A%20%20%20%20if%20type%28value%29%20is%20str%20and%20value%20in%20_CODES%3A%0A%20%20%20%20%20%20%20%20return%20value%0A%20%20%20%20elif%20value%20is%20None%3A%0A%20%20%20%20%20%20%20%20return%20None%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20return%20%22other%22%0A%60%60%60%0A%0A**Rule%20Used%3A**%20Nested%20ternies%20are%20illegal.%20All%20logic%20should%20be%20clear%20and%20use%20conditionals.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3D5bc5a84f-7863-4cc9-9d5a-575de0b9b6be%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+              "created_at": "2026-09-20T05:22:39Z",
+              "updated_at": "2026-09-20T05:22:41Z",
+              "author": {
+                "login": "greptile-apps",
+                "name": "greptile-apps",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+                "id": null
+              },
+              "viewer_did_author": null
+            }
+          ]
+        }
+      },
+      "isError": false
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "Action completed."
+        }
+      ],
+      "structuredContent": {
+        "review_thread": {
+          "id": "PRRT_kwDORzZri86kHMJb",
+          "is_resolved": true,
+          "is_outdated": true,
+          "path": "ci/native_runtime/default_auto_failure.py",
+          "line": null,
+          "diff_side": "RIGHT",
+          "start_line": null,
+          "start_diff_side": "RIGHT",
+          "original_line": 134,
+          "original_start_line": 129,
+          "resolved_by": {
+            "login": "kantorcodes",
+            "name": "kantorcodes",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/u/6068672?u=304bc9f4512c677786835926a69deb67d75ec7fc&v=4",
+            "id": null
+          },
+          "comments": [
+            {
+              "id": "PRRC_kwDORzZri87xxL7X",
+              "database_id": 4056202967,
+              "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Legacy package fallback added**\n\nThe new `_evidence_failure_snapshot` wrapper explicitly supports older installed packages by returning `None` when their diagnostics module is missing. This violates the repository directive prohibiting legacy fallbacks and support. Require the current diagnostics contract here, retaining the existing outer diagnostic-error boundary so failures cannot replace the original probe exception. This repository requirement must be satisfied before merging.\n\n**Rule Used:** What: \"Legacy\" should not be supported  Why: We want to eliminate tech debt   Good: No legacy fallbacks, redirects, tests, etc. ([source](https://app.greptile.com/hol/-/custom-context?memory=c1ba7189-733a-40b9-8b0d-2e7a5f85a373))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20129-134%0A%0AComment%3A%0A**Legacy%20package%20fallback%20added**%0A%0AThe%20new%20%60_evidence_failure_snapshot%60%20wrapper%20explicitly%20supports%20older%20installed%20packages%20by%20returning%20%60None%60%20when%20their%20diagnostics%20module%20is%20missing.%20This%20violates%20the%20repository%20directive%20prohibiting%20legacy%20fallbacks%20and%20support.%20Require%20the%20current%20diagnostics%20contract%20here%2C%20retaining%20the%20existing%20outer%20diagnostic-error%20boundary%20so%20failures%20cannot%20replace%20the%20original%20probe%20exception.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A**Rule%20Used%3A**%20What%3A%20%22Legacy%22%20should%20not%20be%20supported%20%20Why%3A%20We%20want%20to%20eliminate%20tech%20debt%20%20%20Good%3A%20No%20legacy%20fallbacks%2C%20redirects%2C%20tests%2C%20etc.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3Dc1ba7189-733a-40b9-8b0d-2e7a5f85a373%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+              "created_at": "2026-09-20T05:22:39Z",
+              "updated_at": "2026-09-20T05:22:41Z",
+              "author": {
+                "login": "greptile-apps",
+                "name": "greptile-apps",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+                "id": null
+              },
+              "viewer_did_author": null
+            }
+          ]
+        }
+      },
+      "isError": false
+    }
+  ],
+  "after": [
+    {
+      "id": "PRRT_kwDORzZri86kHMJT",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "line": null,
+      "diff_side": "RIGHT",
+      "start_line": null,
+      "start_diff_side": null,
+      "original_line": 106,
+      "original_start_line": null,
+      "resolved_by": {
+        "login": "kantorcodes",
+        "name": "kantorcodes",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/6068672?u=304bc9f4512c677786835926a69deb67d75ec7fc&v=4",
+        "id": null
+      },
+      "comments": [
+        {
+          "id": "PRRC_kwDORzZri87xxL7L",
+          "database_id": 4056202955,
+          "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Prohibited nested conditional**\n\n`_code` uses a nested conditional expression, violating the repository directive prohibiting nested ternaries and requiring explicit conditionals. Expand the recognized-code, missing-value, and unknown-value cases into explicit branches while preserving their evaluation order and results. This repository requirement must be satisfied before merging.\n\n```suggestion\n    if type(value) is str and value in _CODES:\n        return value\n    elif value is None:\n        return None\n    else:\n        return \"other\"\n```\n\n**Rule Used:** Nested ternies are illegal. All logic should be clear and use conditionals. ([source](https://app.greptile.com/hol/-/custom-context?memory=5bc5a84f-7863-4cc9-9d5a-575de0b9b6be))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20106%0A%0AComment%3A%0A**Prohibited%20nested%20conditional**%0A%0A%60_code%60%20uses%20a%20nested%20conditional%20expression%2C%20violating%20the%20repository%20directive%20prohibiting%20nested%20ternaries%20and%20requiring%20explicit%20conditionals.%20Expand%20the%20recognized-code%2C%20missing-value%2C%20and%20unknown-value%20cases%20into%20explicit%20branches%20while%20preserving%20their%20evaluation%20order%20and%20results.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A%60%60%60suggestion%0A%20%20%20%20if%20type%28value%29%20is%20str%20and%20value%20in%20_CODES%3A%0A%20%20%20%20%20%20%20%20return%20value%0A%20%20%20%20elif%20value%20is%20None%3A%0A%20%20%20%20%20%20%20%20return%20None%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20return%20%22other%22%0A%60%60%60%0A%0A**Rule%20Used%3A**%20Nested%20ternies%20are%20illegal.%20All%20logic%20should%20be%20clear%20and%20use%20conditionals.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3D5bc5a84f-7863-4cc9-9d5a-575de0b9b6be%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+          "created_at": "2026-09-20T05:22:39Z",
+          "updated_at": "2026-09-20T05:22:41Z",
+          "author": {
+            "login": "greptile-apps",
+            "name": "greptile-apps",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+            "id": null
+          },
+          "viewer_did_author": false
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDORzZri86kHMJb",
+      "is_resolved": true,
+      "is_outdated": true,
+      "path": "ci/native_runtime/default_auto_failure.py",
+      "line": null,
+      "diff_side": "RIGHT",
+      "start_line": null,
+      "start_diff_side": "RIGHT",
+      "original_line": 134,
+      "original_start_line": 129,
+      "resolved_by": {
+        "login": "kantorcodes",
+        "name": "kantorcodes",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/6068672?u=304bc9f4512c677786835926a69deb67d75ec7fc&v=4",
+        "id": null
+      },
+      "comments": [
+        {
+          "id": "PRRC_kwDORzZri87xxL7X",
+          "database_id": 4056202967,
+          "body": "<a href=\"#\"><img alt=\"P2\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/p2.svg?v=9\" align=\"top\"></a> **Legacy package fallback added**\n\nThe new `_evidence_failure_snapshot` wrapper explicitly supports older installed packages by returning `None` when their diagnostics module is missing. This violates the repository directive prohibiting legacy fallbacks and support. Require the current diagnostics contract here, retaining the existing outer diagnostic-error boundary so failures cannot replace the original probe exception. This repository requirement must be satisfied before merging.\n\n**Rule Used:** What: \"Legacy\" should not be supported  Why: We want to eliminate tech debt   Good: No legacy fallbacks, redirects, tests, etc. ([source](https://app.greptile.com/hol/-/custom-context?memory=c1ba7189-733a-40b9-8b0d-2e7a5f85a373))\n\nNote: If this suggestion doesn't match your team's coding style, reply to this and let me know. I'll remember it for next time!\n\n<a href=\"https://app.greptile.com/api/ide/codex?prompt=IMPORTANT%3A%20Work%20in%20the%20repository%20%22hashgraph-online%2Fhol-guard%22%20on%20the%20existing%20branch%20%22chore%2Fresolve-2797-conflicts%22.%20Checkout%20that%20branch%20%E2%80%94%20do%20NOT%20create%20a%20new%20branch%20or%20open%20a%20new%20PR.%20Push%20your%20changes%20to%20%22chore%2Fresolve-2797-conflicts%22.%0A%0AThis%20is%20a%20comment%20left%20during%20a%20code%20review.%0APath%3A%20ci%2Fnative_runtime%2Fdefault_auto_failure.py%0ALine%3A%20129-134%0A%0AComment%3A%0A**Legacy%20package%20fallback%20added**%0A%0AThe%20new%20%60_evidence_failure_snapshot%60%20wrapper%20explicitly%20supports%20older%20installed%20packages%20by%20returning%20%60None%60%20when%20their%20diagnostics%20module%20is%20missing.%20This%20violates%20the%20repository%20directive%20prohibiting%20legacy%20fallbacks%20and%20support.%20Require%20the%20current%20diagnostics%20contract%20here%2C%20retaining%20the%20existing%20outer%20diagnostic-error%20boundary%20so%20failures%20cannot%20replace%20the%20original%20probe%20exception.%20This%20repository%20requirement%20must%20be%20satisfied%20before%20merging.%0A%0A**Rule%20Used%3A**%20What%3A%20%22Legacy%22%20should%20not%20be%20supported%20%20Why%3A%20We%20want%20to%20eliminate%20tech%20debt%20%20%20Good%3A%20No%20legacy%20fallbacks%2C%20redirects%2C%20tests%2C%20etc.%20%28%5Bsource%5D%28https%3A%2F%2Fapp.greptile.com%2Fhol%2F-%2Fcustom-context%3Fmemory%3Dc1ba7189-733a-40b9-8b0d-2e7a5f85a373%29%29%0A%0A---%0A%0AFor%20each%20issue%20above%2C%20determine%20whether%20it%20is%20valid%20and%20should%20be%20fixed.%20If%20so%2C%20fix%20it%20directly.&repo=hashgraph-online%2Fhol-guard&pr=2974&platform=github\"><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodexDark.svg?v=7\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"><img alt=\"Fix in Codex\" src=\"https://greptile-static-assets.s3.amazonaws.com/badges/FixInCodex.svg?v=7\"></picture></a>",
+          "created_at": "2026-09-20T05:22:39Z",
+          "updated_at": "2026-09-20T05:22:41Z",
+          "author": {
+            "login": "greptile-apps",
+            "name": "greptile-apps",
+            "email": null,
+            "avatar_url": "https://avatars.githubusercontent.com/in/867647?v=4",
+            "id": null
+          },
+          "viewer_did_author": false
+        }
+      ]
+    }
+  ],
+  "total_threads": 59,
+  "resolved_threads": 59,
+  "comments_or_reviews_posted": false,
+  "human_approval_claim": false,
+  "fresh_greptile_threshold_claim": false,
+  "whole_ci_pass_claim": false,
+  "new_regression_case_execution_claim": false
+}

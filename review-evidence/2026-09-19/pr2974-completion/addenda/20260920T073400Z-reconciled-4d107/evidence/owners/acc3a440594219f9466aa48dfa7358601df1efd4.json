@@ -1,0 +1,39 @@
+{
+  "schema": "pr2974-root-json-constant-allocation-peer.v1",
+  "status": "bounded-source-review-clear-execution-pending",
+  "proposal": {
+    "git_blob": "c993919544cedbb7036b1a808632e20591abc603",
+    "bytes": 66130,
+    "sha256": "51129c062e82e0febf06fae87c6377e5aa299b3488c4c1d48c2485bf3ebc16b9"
+  },
+  "source_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_pair_json.py",
+      "sha": "0a7e0de45b3ec5d799cd0dd12e8683753995b250",
+      "bytes": 11326
+    },
+    {
+      "path": "tests/test_mcp_risk_pair_json.py",
+      "sha": "e1df516d126c7a3d1a591c303acf36b1c3190e4f",
+      "bytes": 14205
+    }
+  ],
+  "before_full_bodies_match_reviewed_0614558": true,
+  "actual_after_blobs_exact_readback": true,
+  "review": [
+    "Read complete original293-line predicate/49-case source and complete308-line successor/added restoration controls. Previous native-surface review and exact input/bootstrap/provider preconditions remain.",
+    "Read the primary CPython3.12.13 excerpts update_one_slot, tp_new_wrapper, object_init, encoder_new, encoder_dealloc, encoder_traverse, encoder_clear and native type specification retained in the proposal.",
+    "A restored __new__ can leave a generic tp_new while restoring visible class declarations; the fixed native allocation probe distinguishes the concrete failure. The probe is called only after all visible class/native function/value/source checks.",
+    "Probe arguments are fixed None, verified native encode_basestring_ascii, colon/comma strings and False booleans. It receives no application value and performs no serialization. The native encoder constructor parses/stores these arguments without invoking the encoder/default callback.",
+    "Only TypeError becomes refusal. Other allocation/runtime failures are not silently converted into pass and remain outside a universal purity or cannot-fail claim.",
+    "Both pair boundaries must call this predicate; application caller must still prove exact plain finite JSON, supported dump flags and canonical source/bootstrap roots.",
+    "The added fresh-child controls preserve the original native __new__ failure outcome and __call__ restoration parity. All51 prospective cases remain UNRUN."
+  ],
+  "limits": [
+    "No CPython runtime execution, syntax, formatting, type-check, integration, performance, or full RSP100 acceptance claim.",
+    "No native-memory inspection or general heap-integrity claim.",
+    "The private cache and actual MCP route remain inactive until integrated and validated."
+  ],
+  "refs_changed": false,
+  "workflow_launched": false
+}

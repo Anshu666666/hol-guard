@@ -8270,20 +8270,27 @@ class GuardDaemonServer:
         if self._aibom_workspace_dir is None or self._aibom_context_source is None:
             return
         store = self._server.store
-        with store.hold_oauth_credential_lock():
-            source = store._capture_oauth_connection_unlocked(allow_primary=True, allow_recoverable=True)
-            if source is None or not self._aibom_context_source.same_authority(source):
-                return
-            workspace_id = source.credentials().get("workspace_id")
-            if not isinstance(workspace_id, str) or not workspace_id.strip():
-                return
-            payload: dict[str, object] = {
-                "workspace_dir": str(self._aibom_workspace_dir),
-                "workspace_id": workspace_id,
-            }
-            if self._aibom_home_dir is not None:
-                payload["home_dir"] = str(self._aibom_home_dir)
-            store._set_sync_payload_unlocked("aibom_inventory_context", payload, _now())
+        try:
+            with store.hold_oauth_credential_lock():
+                source = store._capture_oauth_connection_unlocked(allow_primary=True, allow_recoverable=True)
+                if source is None or not self._aibom_context_source.same_authority(source):
+                    return
+                workspace_id = source.credentials().get("workspace_id")
+                if not isinstance(workspace_id, str) or not workspace_id.strip():
+                    return
+                payload: dict[str, object] = {
+                    "workspace_dir": str(self._aibom_workspace_dir),
+                    "workspace_id": workspace_id,
+                }
+                if self._aibom_home_dir is not None:
+                    payload["home_dir"] = str(self._aibom_home_dir)
+                store._set_sync_payload_unlocked("aibom_inventory_context", payload, _now())
+        except sqlite3.DatabaseError as error:
+            with suppress(Exception):
+                self._diagnostics.record(
+                    "aibom_inventory_context_persist_failed",
+                    detail=type(error).__name__,
+                )
 
     def _serve_forever(self) -> None:
         stop_reason = "serve_loop_returned"

@@ -187,6 +187,7 @@ def test_all_lifecycle_acceptance_and_failure_facts_survive_exactly(cell):
         service_replacement={
             "scope": "two_python_service_instances_same_process_same_owned_home",
             "service_instances": 2,
+            "cold_observation_boundary": "before_real_constructor_start",
             **dict.fromkeys(evidence._SERVICE_FLAGS, True),
             "python_process_restarted": False,
             "same_owned_home_identity": False,
@@ -240,6 +241,7 @@ def test_all_lifecycle_acceptance_and_failure_facts_survive_exactly(cell):
         "nonfinite_time",
         "unknown_service_fact",
         "nonboolean_service_fact",
+        "wrong_cold_observation_boundary",
     ],
 )
 def test_unknown_malformed_or_unbounded_proof_rejected_before_ledger_write(cell, fault):
@@ -270,10 +272,13 @@ def test_unknown_malformed_or_unbounded_proof_rejected_before_ledger_write(cell,
         cell["service_replacement"] = {
             "scope": "two_python_service_instances_same_process_same_owned_home",
             "service_instances": 2,
+            "cold_observation_boundary": "before_real_constructor_start",
             **dict.fromkeys(evidence._SERVICE_FLAGS, True),
         }
         if fault == "unknown_service_fact":
             cell["service_replacement"]["private_home"] = "private-input"
+        elif fault == "wrong_cold_observation_boundary":
+            cell["service_replacement"]["cold_observation_boundary"] = "after_constructor_return"
         else:
             cell["service_replacement"]["same_owned_home_identity"] = 1
     ledger = Ledger()

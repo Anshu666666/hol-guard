@@ -12,6 +12,13 @@ pub const NATIVE_HOOK_DECISION_RECEIPT_V1_SCHEMA: &str = "guard-native-hook-deci
 pub const NATIVE_HOOK_DECISION_RECEIPT_MAX_BYTES: usize = 16 * 1024;
 pub const NATIVE_HOOK_DECISION_RECEIPT_MAX_STRING_BYTES: usize = 512;
 
+/// Current native extraction proved a review has no command-policy domain.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum NativeReviewScopeV1 {
+    Noncommand,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct NativeHookDecisionReceiptV1 {
@@ -42,6 +49,8 @@ pub struct NativeHookDecisionReceiptV1 {
     pub deadline_budget_ms: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub command_extensions: Option<super::NativeCommandReceiptBindingV1>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review_scope: Option<NativeReviewScopeV1>,
 }
 
 impl NativeHookDecisionReceiptV1 {

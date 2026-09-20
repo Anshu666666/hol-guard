@@ -34,7 +34,8 @@ def installed_windows_source_reference_supported(runtime: Path) -> bool:
         or status.identity is None
         or status.capabilities is None
         or status.identity.path.resolve() != runtime.resolve()
-        or status.capabilities.target != "x86_64-pc-windows-msvc"
+        # Capabilities expose ARCH-OS; the wheel manifest uses a Rust triple.
+        or status.capabilities.target != "x86_64-windows"
     ):
         raise RuntimeError("source qualification runtime identity is not bound")
     return _WINDOWS_SOURCE_CAPABILITY in status.capabilities.features

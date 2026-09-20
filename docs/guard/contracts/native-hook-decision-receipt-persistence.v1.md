@@ -29,6 +29,17 @@ code, workspace/source-reference booleans, and deadline budget. It never
 contains raw payload, command, prompt, path, URL, content, secret, or private
 path data.
 
+A current `PreToolUse` review may include `review_scope: "noncommand"`
+when successful Rust extraction found no command in the admitted request. This
+optional marker is part of `decision_id` and cannot coexist with
+`command_extensions`. Missing command evidence alone does not establish this
+scope. Generic WebFetch, Read, and MCP reviews use the separate
+`guard.native-review-policy-binding.v2` approval domain, which retains the
+selected ACKed enforcing policy generation/digest/runtime, rule digest, Rust request
+digest, harness/event, and workspace/source flags. Commands retain their
+existing command binding. An old receipt without either proof cannot authorize
+local approval reuse; a changed request or policy requires a fresh approval.
+
 ## Persistence
 
 `RuntimeHookEvidenceWriter.submit_native_decision_receipt()` performs only
@@ -49,6 +60,16 @@ there is no semantic fallback.
 validation and `INSERT OR IGNORE` make retries and process restarts
 idempotent. Persistence remains control-plane state and is not an authority
 input for later hook decisions.
+
+Migration 29 stores the optional noncommand marker in
+`native_hook_review_scopes`, keyed by `decision_id`, in the same transaction as
+the receipt. The original receipt table keeps its prior columns so an older
+artifact can still read ordinary command and PostToolUse rows after rollback.
+The current getter reconstructs the full identity with one bounded join and
+rejects a missing or changed marker. Receipt deletion also removes its marker,
+including deletion by an older connection without foreign-key enforcement.
+The journal preserves the complete typed receipt. Storage readback does not
+supply approval authority or replace the current native result and ACK.
 
 ## Machine-readable evidence
 

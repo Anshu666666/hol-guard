@@ -92,6 +92,8 @@ def _identity_payload(receipt: Mapping[str, object]) -> dict[str, object]:
     }
     if "command_extensions" in receipt:
         identity["command_extensions"] = receipt["command_extensions"]
+    if "review_scope" in receipt:
+        identity["review_scope"] = receipt["review_scope"]
     return identity
 
 
@@ -172,12 +174,25 @@ def validate_native_decision_receipt(value: object) -> dict[str, object] | None:
     if not isinstance(value, Mapping):
         return None
     receipt = dict(cast(Mapping[str, object], value))
-    if set(receipt) not in (_REQUIRED_FIELDS, _REQUIRED_FIELDS | {"command_extensions"}):
+    if set(receipt) not in (
+        _REQUIRED_FIELDS,
+        _REQUIRED_FIELDS | {"command_extensions"},
+        _REQUIRED_FIELDS | {"review_scope"},
+    ):
         return None
     if "command_extensions" in receipt and not valid_native_command_receipt_binding(receipt["command_extensions"]):
         return None
     decision_id = _validate_receipt_identity(receipt)
     if decision_id is None or not _validate_receipt_policy(receipt) or not _validate_receipt_limits(receipt):
+        return None
+    if "review_scope" in receipt and (
+        receipt["review_scope"] != "noncommand"
+        or receipt["event_name"] != "PreToolUse"
+        or receipt["policy_action"] not in {"review", "require-reapproval"}
+        or receipt["decision"] != "deny"
+        or receipt["observe_mode"] is not False
+        or any(not isinstance(receipt[field], str) for field in ("policy_digest", "rule_digest", "runtime_identity"))
+    ):
         return None
     expected_decision_id = hashlib.sha256(canonical_receipt_bytes(receipt)).hexdigest()
     if decision_id != expected_decision_id:

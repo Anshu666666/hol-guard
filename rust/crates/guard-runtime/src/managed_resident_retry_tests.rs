@@ -75,6 +75,9 @@ fn accept_bounded(listener: &TcpListener) -> TcpStream {
     loop {
         match listener.accept() {
             Ok((stream, _)) => {
+                // BSD sockets inherit the listener's nonblocking mode. The
+                // exchange below uses blocking I/O with bounded timeouts.
+                stream.set_nonblocking(false).unwrap();
                 stream
                     .set_read_timeout(Some(Duration::from_secs(2)))
                     .unwrap();

@@ -4,6 +4,9 @@ use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
+#[path = "policy_store_noncommand_review_tests.rs"]
+mod noncommand_review_tests;
+
 #[test]
 fn fixture_rewrite_truncates_private_file_without_weakening_create_new() {
     let root = test_root("fixture-private-rewrite");

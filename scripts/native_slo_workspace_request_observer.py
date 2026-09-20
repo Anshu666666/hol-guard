@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from scripts.native_slo_adapter import payload
 from scripts.native_slo_expiry import _authenticated_readback, _readback_matches
+from scripts.native_slo_mixed_request import fixture_request, request_attempt
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_workspace_decision import (
     MAX_REQUESTS,
@@ -174,7 +174,7 @@ class WorkspaceRequestObserver:
             attempt = None
             try:
                 request = kwargs.get("payload")
-                attempt = request.get("tool_use_id") if isinstance(request, Mapping) else None
+                attempt = request_attempt(request)
             except BaseException:
                 with self._lock:
                     self._faults += 1
@@ -251,7 +251,7 @@ class WorkspaceRequestObserver:
                 guard_home=self.session.guard_home,
                 workspace=self.workspaces[workspace_index],
                 harness="claude-code",
-                request_payload={**payload("PreToolUse"), "tool_use_id": attempt},
+                request_payload=fixture_request("claude-code", "PreToolUse", attempt=attempt),
             )
             self._guard(
                 attempt,

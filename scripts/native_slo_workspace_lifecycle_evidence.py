@@ -294,9 +294,10 @@ def _facts(result: Mapping[str, Any]) -> dict[str, Any]:
             continue
         _require(type(value) is dict)
         if kind == "service_replacement":
-            _require(set(value) == _SERVICE_FLAGS | {"scope", "service_instances"})
+            _require(set(value) == _SERVICE_FLAGS | {"scope", "service_instances", "cold_observation_boundary"})
             _flags(value, _SERVICE_FLAGS)
             _require(value["scope"] == "two_python_service_instances_same_process_same_owned_home")
+            _require(value["cold_observation_boundary"] == "before_real_constructor_start")
             _require(type(value["service_instances"]) is int and value["service_instances"] == 2)
         elif kind == "key_change":
             _require(

@@ -5,7 +5,9 @@ import subprocess
 import time
 from pathlib import Path
 
-from native_hook_client_support import (
+import pytest
+
+from ci.native_runtime.native_hook_client_support import (
     _invoke,
     _request,
     _result,
@@ -14,8 +16,7 @@ from native_hook_client_support import (
     _terminate_state_process,
     _write_forged_state,
 )
-from native_hook_client_support import native_runtime as _native_runtime_fixture  # noqa: F401
-
+from ci.native_runtime.native_hook_client_support import native_runtime as _native_runtime_fixture  # noqa: F401
 from ci.native_runtime.resident_test_support import process_is_alive
 
 
@@ -172,3 +173,49 @@ def test_native_hook_client_restart_budget_opens_circuit(
     )
     assert blocked.returncode != 0
     assert b"native_resident_restart_circuit_open" in blocked.stderr
+
+
+@pytest.mark.parametrize(
+    "tool_name,tool_input",
+    [
+        ("WebFetch", {"url": "https://example.test/docs", "prompt": "read"}),
+        ("Read", {"file_path": ".env"}),
+        ("mcp__filesystem__read", {"path": "README.md"}),
+    ],
+)
+def test_current_resident_noncommand_review_reaches_exact_once_approval(
+    native_runtime: tuple[Path, Path], tmp_path: Path, tool_name: str, tool_input: dict[str, str]
+) -> None:
+    from codex_plugin_scanner.guard.store import GuardStore
+    from tests.test_native_noncommand_review_binding import _pause, _resolve, assert_current_review_roundtrip
+
+    runtime, state_dir = native_runtime
+    envelope = json.loads(_request(runtime, tmp_path, default_action="review"))
+    envelope["harness"] = "cursor"
+    envelope["raw_payload"] = {"tool_name": tool_name, "tool_input": tool_input}
+    edge = _invoke(runtime, state_dir, json.dumps(envelope, separators=(",", ":")).encode())
+    case = {
+        "edge": edge,
+        "payload": envelope["raw_payload"],
+        "source": envelope["source"],
+        "snapshot": envelope["policy_snapshot"],
+    }
+    receipt = edge["receipt"]
+    assert isinstance(receipt, dict)
+    assert receipt["review_scope"] == "noncommand"
+    store = GuardStore(tmp_path / "approval-store")
+    assert_current_review_roundtrip(store, case)
+    original = _pause(store, case)
+    old_id = _resolve(store, original, "cursor")
+    changed = json.loads(json.dumps(envelope))
+    field = next(iter(tool_input))
+    changed["raw_payload"]["tool_input"][field] += "-changed"
+    changed_edge = _invoke(runtime, state_dir, json.dumps(changed, separators=(",", ":")).encode())
+    changed_receipt = changed_edge["receipt"]
+    assert isinstance(changed_receipt, dict)
+    assert changed_receipt["request_digest"] != receipt["request_digest"]
+    response = _pause(store, {**case, "edge": changed_edge, "payload": changed["raw_payload"]})
+    assert response["policy_action"] == "review"
+    assert response["approval_request_id"] != old_id
+    assert "approval_reuse_status" not in response
+    assert _pause(store, case)["approval_reuse_status"] == "accepted"

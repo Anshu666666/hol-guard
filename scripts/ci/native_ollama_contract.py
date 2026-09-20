@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+import secrets
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import cast
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 from codex_plugin_scanner.guard.native_command_observations import validate_native_command_observations
 from codex_plugin_scanner.guard.native_decision_receipt import receipt_matches_edge, validate_native_decision_receipt
+
+if TYPE_CHECKING:
+    from codex_plugin_scanner.guard.store import GuardStore
+
+LEGACY_RETRY_SCOPE = "resolved_legacy_approval_does_not_authorize_unknown_executable"
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,13 +73,87 @@ def validated_build_sha(value: object) -> str:
     return cast(str, value)
 
 
+def review_payload(workspace: Path, case: OllamaCase) -> dict[str, object]:
+    """Keep a strong native correlation separate from the report's phase label."""
+    return {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": case.command},
+        "tool_use_id": "ollama-fixture-" + secrets.token_hex(16),
+        "cwd": str(workspace),
+    }
+
+
+def payload_digest(payload: Mapping[str, object]) -> str:
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
+
+
+def require_same_ack(before: Mapping[str, object], current: Mapping[str, object]) -> None:
+    require(
+        all(
+            field in before and field in current and before[field] == current[field]
+            for field in ("generation", "policy_digest", "runtime_identity", "command_extensions")
+        ),
+        "legacy_retry_ack_changed",
+    )
+
+
+def validate_legacy_retry(
+    store: GuardStore,
+    prior_id: str,
+    next_id: str | None,
+    first: Mapping[str, object],
+    retry: Mapping[str, object],
+) -> dict[str, object]:
+    """Require a new durable review for the identical request and native binding."""
+    require(next_id is not None and next_id != prior_id, "legacy_retry_did_not_queue_distinct_review")
+    prior = store.get_approval_request(prior_id)
+    pending = store.get_approval_request(cast(str, next_id))
+    require(
+        prior is not None and prior.get("status") == "resolved" and prior.get("resolution_action") == "allow",
+        "legacy_resolution_not_preserved",
+    )
+    require(
+        pending is not None and pending.get("status") == "pending" and pending.get("harness") == "claude-code",
+        "legacy_retry_review_not_durable",
+    )
+    require(
+        all(
+            field in first and field in retry and first[field] is not None and first[field] == retry[field]
+            for field in (
+                "hook_envelope_digest",
+                "request_digest",
+                "policy_generation",
+                "policy_digest",
+                "control_revision",
+                "observations_digest",
+            )
+        ),
+        "legacy_retry_request_or_authority_changed",
+    )
+    require(
+        retry.get("legacy_approval_reused") is False
+        and retry.get("approval_durable") is True
+        and retry.get("action") == "review",
+        "legacy_retry_did_not_remain_review",
+    )
+    return {
+        "approval_retry_scope": LEGACY_RETRY_SCOPE,
+        "prior_resolution_preserved": True,
+        "distinct_pending_review": True,
+        "same_hook_envelope": True,
+        "same_native_request_and_policy": True,
+    }
+
+
 def validate_review(
     case: OllamaCase,
     edge: Mapping[str, object],
     response: Mapping[str, object],
     *,
     expected_binding: Mapping[str, object],
-    approval_reused: bool = False,
 ) -> dict[str, object]:
     """Require exact native attribution, binding, floor and delivered decision."""
     require(edge.get("authority") == "rust", "authority_mismatch")
@@ -128,24 +211,20 @@ def validate_review(
         "native_floor_mismatch",
     )
     specific = response.get("hookSpecificOutput")
-    require(not approval_reused or case.action == "review", "approval_bypassed_native_block")
-    delivered_action = "allow" if approval_reused else case.action
-    delivered_permission = "allow" if approval_reused else "ask" if case.action == "review" else "deny"
+    delivered_permission = "ask" if case.action == "review" else "deny"
     require(
         isinstance(specific, Mapping)
         and specific.get("hookEventName") == "PreToolUse"
         and specific.get("permissionDecision") == delivered_permission
-        and response.get("policy_action") == delivered_action
+        and response.get("policy_action") == case.action
         and response.get("reason_code") == case.reason,
         "delivered_decision_mismatch",
     )
-    if case.action == "review" and not approval_reused:
+    require("approval_reuse_status" not in response, "legacy_approval_reused")
+    if case.action == "review":
         require(
             isinstance(response.get("approval_request_id"), str) and response["approval_request_id"], "approval_missing"
         )
-        require("approval_reuse_status" not in response, "stale_approval_reused")
     else:
         require("approval_request_id" not in response, "block_became_review")
-    if approval_reused:
-        require(response.get("approval_reuse_status") == "accepted", "legacy_approval_not_reused")
     return cast(dict[str, object], receipt)

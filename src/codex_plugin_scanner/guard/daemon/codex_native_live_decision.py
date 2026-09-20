@@ -181,7 +181,13 @@ def complete_native_codex_live_decision(
                 return failure
             worker.metrics.record_route("native_resident")
             worker._record_native_decision_receipt(receipt)
-            binding = native_review_policy_binding(harness="codex", native_result=result, verified_receipt=receipt)
+            binding = native_review_policy_binding(
+                harness="codex",
+                native_result=result,
+                verified_receipt=receipt,
+                policy_snapshot=snapshot,
+                workspace_bound=workspace is not None,
+            )
             if not native_review_binding_matches(request, binding):
                 return failure
             if not isinstance(stored_envelope, Mapping) or receipt.get("request_digest") != stored_envelope.get(

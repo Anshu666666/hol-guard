@@ -243,13 +243,14 @@ fn evaluate_validated_envelope(
     }
     let (result, receipt) = match event_name.as_str() {
         "PreToolUse" => {
-            let native = guard_command::pretool::evaluate_pre_tool_envelope_with_extensions(
-                &harness,
-                &event_name,
-                &envelope.raw_payload,
-                policy_snapshot.and_then(|snapshot| snapshot.command_extensions.as_ref()),
-                deadline,
-            );
+            let (native, command_absent) =
+                guard_command::pretool::evaluate_pre_tool_envelope_with_extensions_and_scope(
+                    &harness,
+                    &event_name,
+                    &envelope.raw_payload,
+                    policy_snapshot.and_then(|snapshot| snapshot.command_extensions.as_ref()),
+                    deadline,
+                );
             let evaluated = if let Some(snapshot) = policy_snapshot {
                 crate::policy_enforcement::apply_pre_tool_policy(
                     snapshot,
@@ -267,7 +268,7 @@ fn evaluate_validated_envelope(
                 &request_digest,
                 &harness,
                 &kind,
-                &evaluated,
+                (&evaluated, command_absent),
             )?;
             let value = serde_json::to_value(evaluated)
                 .map_err(|_| "native_hook_edge_response_invalid".to_owned())?;

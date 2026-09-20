@@ -82,6 +82,7 @@ _CODES: Final = frozenset(
         "sqlite_code_unavailable",
         "os_other",
         "os_code_unavailable",
+        "os_timeout",
         "value_error",
         "type_error",
         "runtime_error",
@@ -108,6 +109,8 @@ def evidence_failure_code(error: BaseException) -> str:
     if any(error_type is candidate for candidate in _SQLITE_TYPES):
         code = getattr(error, "sqlite_errorcode", None)
         return _SQLITE_CODES.get(code & 0xFF, "sqlite_other") if type(code) is int else "sqlite_code_unavailable"
+    if error_type is TimeoutError:
+        return "os_timeout"
     if any(error_type is candidate for candidate in _OS_TYPES):
         code = cast(OSError, error).errno
         return _OS_CODES.get(code, "os_other") if type(code) is int else "os_code_unavailable"

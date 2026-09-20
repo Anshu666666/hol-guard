@@ -167,7 +167,7 @@ def control(tmp_path, monkeypatch):
         state.calls.append((args, kwargs))
         if state.native_error is not None:
             raise state.native_error
-        attempt = kwargs["payload"]["tool_use_id"]
+        attempt = kwargs["payload"].get("native_slo_attempt", kwargs["payload"].get("tool_use_id"))
         index = int(attempt.rsplit("-", 1)[1]) if attempt.startswith("mixed-policy-") else 31
         state.edge = {"receipt": receipt(state.snapshot, index, state.action)}
         if state.before_return is not None:

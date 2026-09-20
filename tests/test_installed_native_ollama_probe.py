@@ -119,25 +119,15 @@ def test_native_oracle_rejects_plausible_but_wrong_outcomes(mutation: str) -> No
         validate_review(ACTIVE_CASES[0], edge, response, expected_binding=expected)
 
 
-def test_legacy_approval_allow_is_explicit_and_cannot_hide_disabled_context_or_block() -> None:
-    case = ACTIVE_CASES[0]
+@pytest.mark.parametrize("case", (ACTIVE_CASES[0], RESTRICTED_CASES[0]))
+def test_legacy_approval_allow_cannot_replace_review_or_independent_block(case) -> None:
     edge, response = _wire(case)
     expected = edge["result"]["command_extensions"]["binding"]
-    response.pop("approval_request_id")
+    response.pop("approval_request_id", None)
     response.update(policy_action="allow", approval_reuse_status="accepted")
     response["hookSpecificOutput"]["permissionDecision"] = "allow"
-    assert validate_review(case, edge, response, expected_binding=expected, approval_reused=True) == edge["receipt"]
     with pytest.raises(AssertionError, match="installed_ollama_"):
         validate_review(case, edge, response, expected_binding=expected)
-    blocked, block_response = _wire(RESTRICTED_CASES[0])
-    with pytest.raises(AssertionError, match="approval_bypassed_native_block"):
-        validate_review(
-            RESTRICTED_CASES[0],
-            blocked,
-            block_response,
-            expected_binding=blocked["result"]["command_extensions"]["binding"],
-            approval_reused=True,
-        )
 
 
 @pytest.mark.parametrize("mutation", ("owner", "segment", "extra"))

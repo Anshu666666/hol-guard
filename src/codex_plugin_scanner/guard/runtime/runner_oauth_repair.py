@@ -54,20 +54,6 @@ def _guard_runtime_upgrade_restart_message() -> str:
     )
 
 
-def _guard_runtime_was_upgraded() -> bool:
-    loaded_identity = runner._LOADED_HOL_GUARD_RUNTIME_PACKAGE_IDENTITY
-    if loaded_identity is None:
-        return True
-    return runner._hol_guard_runtime_package_identity() != loaded_identity
-
-
-def _guard_runtime_upgrade_restart_message() -> str:
-    return (
-        "HOL Guard was upgraded while this process was running. Restart the agent application "
-        "before Guard Cloud access resumes."
-    )
-
-
 def _invalid_grant_oauth_payload(payload: object) -> bool:
     if not isinstance(payload, dict):
         return False

@@ -11,6 +11,7 @@ from ..native_decision_receipt import receipt_matches_edge, validate_native_deci
 NATIVE_REVIEW_BINDING_FIELD = "native_review_policy_binding"
 NATIVE_REVIEW_REQUEST_DIGEST_FIELD = "native_review_request_digest"
 _SCHEMA = "guard.native-review-policy-binding.v1"
+_NONCOMMAND_SCHEMA = "guard.native-review-policy-binding.v2"
 
 
 def native_codex_request_digest(native_result: Mapping[str, object], verified_receipt: object) -> str | None:
@@ -35,14 +36,18 @@ def native_codex_request_digest(native_result: Mapping[str, object], verified_re
 
 
 def native_review_policy_binding(
-    *, harness: str, native_result: Mapping[str, object], verified_receipt: object
+    *,
+    harness: str,
+    native_result: Mapping[str, object],
+    verified_receipt: object,
+    policy_snapshot: Mapping[str, object] | None = None,
+    workspace_bound: bool | None = None,
 ) -> dict[str, object]:
-    """Capture the verified current native command-policy domain.
+    """Capture the verified current native review domain.
 
-    Review reuse requires a typed receipt and exact command-extension binding.
-    Missing or inconsistent binding evidence fails closed instead of creating
-    an unbound approval domain. Receipt persistence is asynchronous and does
-    not participate in this check.
+    Commands require their exact extension binding. A noncommand review needs
+    the current Rust extraction marker and matching ACKed snapshot; absence of
+    command evidence alone is insufficient. Persistence remains asynchronous.
     """
 
     receipt = validate_native_decision_receipt(verified_receipt)
@@ -59,6 +64,8 @@ def native_review_policy_binding(
     if any(not isinstance(receipt.get(field), str) for field in ("policy_digest", "rule_digest", "runtime_identity")):
         raise ValueError("native_review_policy_binding_invalid")
     command_binding = receipt.get("command_extensions")
+    if receipt.get("review_scope") == "noncommand":
+        return _noncommand_binding(receipt, native_result, policy_snapshot, workspace_bound)
     if not isinstance(command_binding, dict) or command_binding.get("uncertainty_count") != 0:
         raise ValueError("native_review_policy_binding_invalid")
     return {
@@ -67,6 +74,56 @@ def native_review_policy_binding(
         "rule_digest": receipt["rule_digest"],
         "runtime_identity": receipt["runtime_identity"],
         "command_extensions": dict(command_binding),
+    }
+
+
+def _noncommand_binding(
+    receipt: Mapping[str, object],
+    native_result: Mapping[str, object],
+    snapshot: Mapping[str, object] | None,
+    workspace_bound: bool | None,
+) -> dict[str, object]:
+    from ..native_hook_edge import _decode_pre_tool_result
+
+    # The marker is emitted only after native extraction proved no command.
+    # Validate current authority independently; legacy receipts or removing a
+    # command binding cannot create this separate approval domain.
+    if (
+        snapshot is None
+        or snapshot.get("mode") != "enforce"
+        or type(snapshot.get("generation")) is not int
+        or snapshot.get("generation") != receipt["policy_generation"]
+        or any(snapshot.get(field) != receipt[field] for field in ("policy_digest", "runtime_identity"))
+        or ("rule_digest" in snapshot and snapshot["rule_digest"] != receipt["rule_digest"])
+        or type(workspace_bound) is not bool
+        or receipt["workspace_bound"] is not workspace_bound
+        or "command_extensions" in receipt
+        or "command_extensions" in native_result
+        or not _decode_pre_tool_result(dict(native_result), harness=str(receipt["harness"]))
+    ):
+        raise ValueError("native_review_policy_binding_invalid")
+    action = native_result["action"]
+    assert isinstance(action, Mapping)
+    return {
+        "schema": _NONCOMMAND_SCHEMA,
+        "review_scope": "noncommand",
+        **{
+            field: receipt[field]
+            for field in (
+                "policy_generation",
+                "policy_digest",
+                "rule_digest",
+                "runtime_identity",
+                "request_digest",
+                "harness",
+                "event_name",
+                "payload_kind",
+                "workspace_bound",
+                "source_ref_external_allowed",
+            )
+        },
+        "action_type": action["action_type"],
+        "operation": action["operation"],
     }
 
 

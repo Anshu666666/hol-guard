@@ -9,6 +9,7 @@ import pytest
 from scripts import native_slo_daemon_fixture as fixture
 from scripts import native_slo_session as session_module
 from scripts import native_slo_workspace_server as workspace_module
+from scripts import native_slo_workspace_startup as startup_module
 from scripts.native_slo_failure import FixtureFailureError
 
 
@@ -68,6 +69,15 @@ def test_observer_is_installed_before_start_and_restored_after_owned_daemon_clea
 
     monkeypatch.setattr(session_module, "AdapterSession", Adapter)
     monkeypatch.setattr(workspace_module, "WorkspaceScenarioFixture", Workspace)
+
+    def construct(runtime, *, count, configuration, progress, lifetime):
+        adapter = Adapter(runtime, configuration=configuration, progress=progress)
+        workspace = Workspace(adapter, count)
+        lifetime.enter_context(workspace.observer)
+        lifetime.callback(workspace.close)
+        return adapter, workspace
+
+    monkeypatch.setattr(startup_module, "construct_workspace_session", construct)
     monkeypatch.setattr(
         fixture, "StartupDiagnostic", lambda _emit: nullcontext(SimpleNamespace(progress=lambda *_: None))
     )

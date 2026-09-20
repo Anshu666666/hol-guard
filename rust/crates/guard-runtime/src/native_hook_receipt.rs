@@ -41,6 +41,7 @@ struct DecisionReceiptInputs<'a> {
     reviewed_output_sha256: Option<&'a str>,
     observe_mode: bool,
     command_extensions: Option<&'a guard_contracts::NativeCommandReceiptBindingV1>,
+    review_scope: Option<guard_contracts::NativeReviewScopeV1>,
 }
 
 fn build_decision_receipt(
@@ -82,6 +83,10 @@ fn build_decision_receipt(
         identity["command_extensions"] = serde_json::to_value(binding)
             .map_err(|_| "native_hook_decision_receipt_digest_failed".to_owned())?;
     }
+    if let Some(scope) = inputs.review_scope {
+        identity["review_scope"] = serde_json::to_value(scope)
+            .map_err(|_| "native_hook_decision_receipt_digest_failed".to_owned())?;
+    }
     let canonical = guard_policy_snapshot::canonical_json_bytes(&identity)
         .map_err(|_| "native_hook_decision_receipt_digest_failed".to_owned())?;
     let decision_id = hex::encode(Sha256::digest(&canonical));
@@ -110,6 +115,7 @@ fn build_decision_receipt(
         observe_mode: inputs.observe_mode,
         deadline_budget_ms: envelope.deadline_budget_ms,
         command_extensions: inputs.command_extensions.cloned(),
+        review_scope: inputs.review_scope,
     };
     let encoded = serde_json::to_vec(&receipt)
         .map_err(|_| "native_hook_decision_receipt_encode_failed".to_owned())?;
@@ -126,8 +132,9 @@ pub(crate) fn receipt_from_pre_tool(
     request_digest: &str,
     harness: &str,
     payload_kind: &GuardHookPayloadKindV2,
-    result: &PreToolResultV1,
+    review: (&PreToolResultV1, bool),
 ) -> Result<NativeHookDecisionReceiptV1, String> {
+    let (result, command_absent) = review;
     build_decision_receipt(
         envelope,
         snapshot,
@@ -148,6 +155,14 @@ pub(crate) fn receipt_from_pre_tool(
                 .command_extensions
                 .as_ref()
                 .map(|value| &value.binding),
+            review_scope: (snapshot.is_some()
+                && command_absent
+                && result.command_extensions.is_none()
+                && matches!(
+                    result.policy_action.as_str(),
+                    "review" | "require-reapproval"
+                ))
+            .then_some(guard_contracts::NativeReviewScopeV1::Noncommand),
         },
     )
 }
@@ -178,6 +193,7 @@ pub(crate) fn receipt_from_post_tool(
             reviewed_output_sha256: result.reviewed_output_sha256.as_deref(),
             observe_mode: result.observe_mode,
             command_extensions: None,
+            review_scope: None,
         },
     )
 }

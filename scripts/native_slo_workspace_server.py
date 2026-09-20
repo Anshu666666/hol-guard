@@ -29,31 +29,25 @@ BURST_WRITES = 32
 
 class WorkspaceScenarioFixture:
     def __init__(self, session: Any, count: int) -> None:
-        from codex_plugin_scanner.guard.native_runtime import native_runtime_status
+        self._prepare(session.daemon._server.hook_worker.policy_snapshot_publisher, session.workspace, count)
+        self.attach(session)
 
+    @classmethod
+    def before_start(cls, publisher: Any, workspace: Any, count: int) -> WorkspaceScenarioFixture:
+        fixture = cls.__new__(cls)
+        fixture._prepare(publisher, workspace, count)
+        return fixture
+
+    def _prepare(self, publisher: Any, workspace: Any, count: int) -> None:
         if type(count) is not int or count not in WORKSPACE_COUNTS:
             raise ValueError("workspace count outside declared matrix")
-        self.session = session
-        self.worker = session.daemon._server.hook_worker
-        self.publisher = self.worker.policy_snapshot_publisher
-        status = native_runtime_status()
-        if (
-            self.worker.test_oracle is not None
-            or status.mode != "auto"
-            or not status.available
-            or not status.compatible
-            or status.reason != "native_ready"
-            or status.identity is None
-            or status.identity.path.resolve() != session.runtime.resolve()
-        ):
-            raise RuntimeError("workspace qualification requires exact installed native authority")
-        if self.publisher._thread is not None:
+        self.publisher = publisher
+        if publisher._thread is not None:
             raise RuntimeError("workspace observer must precede publisher startup")
-        self.runtime_build_sha = getattr(status.capabilities, "build_sha", None)
         initial_cache = getattr(self.publisher, "_compiled_workspace_policies", {})
         if not isinstance(initial_cache, Mapping) or initial_cache:
             raise RuntimeError("workspace initial compilation cache must be empty")
-        self.workspaces = (session.workspace, *(session.root / f"workspace-{index}" for index in range(1, count)))
+        self.workspaces = (workspace, *(workspace.parent / f"workspace-{index}" for index in range(1, count)))
         self.observer = PublicationObserver(self.publisher, self.workspaces)
         self.witness: ReceiptWitness | None = None
         self.next_phase = 0
@@ -62,13 +56,34 @@ class WorkspaceScenarioFixture:
         self.finished = False
         self.phases: list[dict[str, Any]] = []
         self.initial_started = time.monotonic()
-        for workspace in self.workspaces[1:]:
-            workspace.mkdir(mode=0o700)
-            if self.publisher.register_workspace(workspace) is not True:
+        for index, path in enumerate(self.workspaces):
+            if index:
+                path.mkdir(mode=0o700)
+            if path not in self.publisher._workspace_paths and self.publisher.register_workspace(path) is not True:
                 raise RuntimeError("workspace registration was not accepted")
         if set(self.workspaces) != self.publisher._workspace_paths:
             raise RuntimeError("workspace registration count mismatch")
         self.registration_ms = (time.monotonic() - self.initial_started) * 1000
+
+    def attach(self, session: Any) -> None:
+        from codex_plugin_scanner.guard.native_runtime import native_runtime_status
+
+        self.session = session
+        self.worker = session.daemon._server.hook_worker
+        status = native_runtime_status()
+        if (
+            self.worker.policy_snapshot_publisher is not self.publisher
+            or self.workspaces[0] != session.workspace
+            or self.worker.test_oracle is not None
+            or status.mode != "auto"
+            or not status.available
+            or not status.compatible
+            or status.reason != "native_ready"
+            or status.identity is None
+            or status.identity.path.resolve() != session.runtime.resolve()
+        ):
+            raise RuntimeError("workspace qualification requires exact installed native authority")
+        self.runtime_build_sha = getattr(status.capabilities, "build_sha", None)
 
     def close(self) -> None:
         if self.witness is not None:

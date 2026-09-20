@@ -317,10 +317,26 @@ pub fn evaluate_pre_tool_envelope_with_extensions(
     controls: Option<&CompiledNativeCommandControls>,
     deadline: Option<Instant>,
 ) -> PreToolResultV1 {
+    evaluate_pre_tool_envelope_with_extensions_and_scope(
+        harness, event, payload, controls, deadline,
+    )
+    .0
+}
+
+/// Return whether successful native extraction proved there was no command.
+/// Action classes alone cannot prove this: an MCP payload can carry a command.
+pub fn evaluate_pre_tool_envelope_with_extensions_and_scope(
+    harness: &str,
+    event: &str,
+    payload: &Value,
+    controls: Option<&CompiledNativeCommandControls>,
+    deadline: Option<Instant>,
+) -> (PreToolResultV1, bool) {
     let signals = match extract_generic_signals(payload) {
         Ok(value) => value,
-        Err(error) => return generic_error_result(harness, event, error),
+        Err(error) => return (generic_error_result(harness, event, error), false),
     };
+    let command_absent = signals.command.is_none();
     let command_decision = signals.command.as_deref().map(|command| {
         evaluate_pre_tool(&CommandModelRequestV1 {
             command: command.to_owned(),
@@ -330,12 +346,13 @@ pub fn evaluate_pre_tool_envelope_with_extensions(
         })
     });
     let result = evaluate_signals(harness, event, &signals, command_decision.as_ref());
-    match (controls, command_decision) {
+    let result = match (controls, command_decision) {
         (Some(controls), Some(Ok(decision))) => {
             controls.apply(&decision.command_model, result, deadline)
         }
         _ => result,
-    }
+    };
+    (result, command_absent)
 }
 
 fn evaluate_signals(

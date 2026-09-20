@@ -139,6 +139,36 @@ def test_append_failure_is_dropped_receipt_evidence(tmp_path: Path, monkeypatch:
     _assert_reconciled(writer)
 
 
+def test_timeout_before_commit_retains_failure_after_successful_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = GuardStore(tmp_path)
+    persist = store.record_native_decision_receipt
+    attempts = 0
+
+    def timeout_once(receipt):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise TimeoutError("private storage gate path /private/example")
+        return persist(receipt)
+
+    monkeypatch.setattr(store, "record_native_decision_receipt", timeout_once)
+    writer = RuntimeHookEvidenceWriter(store=store, batch_wait_seconds=0)
+    try:
+        assert writer.submit_native_decision_receipt(_receipt())
+        _wait_for(lambda: receipt_corpus_is_complete(writer.stats(), expected=1))
+    finally:
+        assert writer.stop(timeout_seconds=3)
+    stats = writer.stats()
+    assert stats["receipt_failure_diagnostics"] == {"receipt_persistence/os_timeout": 1}
+    assert stats["receipt_processed"] == stats["receipt_failures"] == 1
+    assert stats["receipt_dropped"] == stats["receipt_durable_pending"] == 0
+    assert attempts == 2 and store.native_decision_receipt_count() == 1
+    assert "private" not in json.dumps(stats)
+    _assert_reconciled(writer)
+
+
 def test_checkpoint_retry_is_not_a_receipt_persistence_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     store = GuardStore(tmp_path)
     checkpoint = writer_module.checkpoint_journal
@@ -367,6 +397,8 @@ def test_unknown_codes_and_varied_messages_cannot_grow_diagnostic_keys() -> None
     [
         (OSError("private unavailable errno"), "os_code_unavailable"),
         (OSError(errno.EIO, "private I/O detail"), "os_other"),
+        (TimeoutError("private storage timeout"), "os_timeout"),
+        (TimeoutError(errno.ETIMEDOUT, "private transport timeout"), "os_timeout"),
         (ValueError("private value"), "value_error"),
         (TypeError("private type"), "type_error"),
         (RuntimeError("private runtime"), "runtime_error"),

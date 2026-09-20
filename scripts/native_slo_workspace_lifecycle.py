@@ -155,6 +155,17 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
     accepted: float | None = None
     snapshot: Mapping[str, Any] | None = None
     lifetime = ExitStack()
+
+    def prepare_service(current: Any) -> None:
+        nonlocal publisher, observer, fault, accepted
+        publisher = current
+        observer = lifetime.enter_context(PublicationObserver(current, workspaces))
+        if scenario == "first_admission_fault":
+            fault = lifetime.enter_context(FirstAdmissionReplyFault(current))
+        register_scopes(current, workspaces)
+        accepted = time.monotonic()
+        result["acceptance_boundary"] = "cold_provider_all_workspace_registrations_returned"
+
     try:
         # Keep the stricter overlay active through key/expiry/service changes.
         # The lost-hint cell introduces it as the measured actual mutation.
@@ -170,7 +181,7 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             deadline=time.monotonic() + MAX_READINESS_P95_MS / 1000,
         )
         if scenario in {"first_admission_fault", "service_restart"}:
-            result["service_replacement"] = replace_service(session, workspaces)
+            result["service_replacement"] = replace_service(session, workspaces, prepare=prepare_service)
             publisher = session.daemon._server.hook_worker.policy_snapshot_publisher
         elif scenario == "expiry_fault":
             expiry = expire_acknowledged_authority(session)
@@ -191,7 +202,8 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
                 raise RuntimeError("workspace expiry proof incomplete")
             result["fault_request"] = unavailable_request(session, workspaces[-1])
             publisher = replace_expired_publisher(session, workspaces)
-        observer = lifetime.enter_context(PublicationObserver(publisher, workspaces))
+        if observer is None:
+            observer = lifetime.enter_context(PublicationObserver(publisher, workspaces))
         witness = lifetime.enter_context(closing(ReceiptWitness(session, maximum=1).__enter__()))
         requests = lifetime.enter_context(WorkspaceRequestObserver(session, witness, workspaces, maximum=1))
         if scenario == "lost_metadata_hint":
@@ -208,16 +220,16 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             minimum = int(before["generation"]) + 1
             result["acceptance_boundary"] = "supported_command_key_recovery_return"
         else:
-            if scenario == "first_admission_fault":
-                fault = lifetime.enter_context(FirstAdmissionReplyFault(publisher))
-            register_scopes(publisher, workspaces)
-            accepted = time.monotonic()
-            result["acceptance_boundary"] = "cold_provider_all_workspace_registrations_returned"
             if scenario == "expiry_fault":
+                register_scopes(publisher, workspaces)
+                accepted = time.monotonic()
+                result["acceptance_boundary"] = "cold_provider_all_workspace_registrations_returned"
                 publisher.start()
             else:
                 session.daemon.start()
             minimum = int(before["generation"])
+        if accepted is None:
+            raise RuntimeError("workspace lifecycle acceptance was not observed")
         deadline = accepted + MAX_READINESS_P95_MS / 1000
         result["accepted_ms"] = (accepted - observer.started) * 1000
         snapshot = await_ack(
@@ -299,18 +311,22 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             _cleanup(result, "partial_writer_drain", lambda: result.update(writer_drained=_drain(session)))
             _cleanup(result, "partial_request_close", requests.close)
             _cleanup(result, "partial_receipt_reconcile", lambda: witness.reconcile(verify_all=True))
+            partial_accepted = accepted
             _cleanup(
                 result,
                 "partial_request_join",
                 lambda: result.update(
-                    requests=requests.join(accepted=accepted, snapshot=snapshot, action="allow", declared_indexes=(0,))
+                    requests=requests.join(
+                        accepted=partial_accepted, snapshot=snapshot, action="allow", declared_indexes=(0,)
+                    )
                 ),
             )
         _cleanup(result, "observation_restore", lifetime.close)
         if observer is not None:
-            _cleanup(result, "publication_freeze", observer.freeze)
-            _cleanup(result, "publication_report", lambda: result.update(publication_observer=observer.report()))
-            _cleanup(result, "publication_rows", lambda: result.update(publication_rows=observer.rows()))
+            final_observer = observer
+            _cleanup(result, "publication_freeze", final_observer.freeze)
+            _cleanup(result, "publication_report", lambda: result.update(publication_observer=final_observer.report()))
+            _cleanup(result, "publication_rows", lambda: result.update(publication_rows=final_observer.rows()))
             result["passed"] = result["passed"] and result.get("publication_observer", {}).get("complete") is True
         if requests is not None and "requests" not in result:
             result["recovered_request_cohort_complete"] = False

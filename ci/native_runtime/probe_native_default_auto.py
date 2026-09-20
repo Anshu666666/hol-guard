@@ -38,6 +38,7 @@ from ci.native_runtime.default_auto_routes import (
     _ownership_routes,
     _require,
 )
+from ci.native_runtime.default_auto_startup_failure import SmokePublicationObservation
 from codex_plugin_scanner.guard.config import hook_fast_path_enabled
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
@@ -368,7 +369,7 @@ def _assert_binary_override_ignored(identity: NativeRuntimeIdentity) -> None:
 
 
 def _run_native_smoke(root: Path) -> None:
-    with native_policy_snapshot(root / "guard-home") as snapshot:
+    with SmokePublicationObservation(root / "guard-home"), native_policy_snapshot(root / "guard-home") as snapshot:
         clean = review_post_tool_native(
             _request(root, "const value = 1;\n", "default-auto-clean"),
             observe_mode=False,

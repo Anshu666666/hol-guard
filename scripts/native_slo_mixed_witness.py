@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from scripts.native_slo_mixed_receipt_reader import InstalledReceiptReader
+from scripts.native_slo_mixed_request import attempt_label, request_attempt
 
 if TYPE_CHECKING:
     from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_queue_observation import EvidenceQueueObservation
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
 
 MAX_ATTEMPTS = 100_000
 MAX_CONTROL_ACTIONS = 64
-_ID = re.compile(r"^mixed-(?:load|policy|recovery)-[0-9]{1,6}$")
 _RECEIPT_FIELDS = ("decision_id", "policy_generation", "policy_digest", "decision", "policy_action")
 
 
@@ -98,7 +98,8 @@ class ReceiptWitness:
             self._counts[name] += value
 
     def observe(self, attempt: object, edge: object) -> None:
-        if not isinstance(attempt, str) or _ID.fullmatch(attempt) is None:
+        attempt = attempt_label(attempt)
+        if attempt is None:
             return
         receipt = edge.get("receipt") if isinstance(edge, Mapping) else None
         if not isinstance(receipt, Mapping):
@@ -143,7 +144,7 @@ class ReceiptWitness:
 
         def observed_review(**kwargs: Any) -> Any:
             result = review(**kwargs)
-            self.observe(kwargs.get("payload", {}).get("tool_use_id"), result)
+            self.observe(request_attempt(kwargs.get("payload")), result)
             return result
 
         def observed_submit(*args: Any, **kwargs: Any) -> Any:

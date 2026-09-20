@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+
 from .store_base_definition import preserve_store_base_module as _preserve_module
 
 
@@ -59,9 +61,14 @@ def _secret_fingerprint(value: str) -> str:
 
 @_preserve_module
 def _secret_matches_hash(value: str, expected_hash: str) -> bool:
-    if not expected_hash.startswith(_base._SECRET_FINGERPRINT_PREFIX):
+    prefix = _base._SECRET_FINGERPRINT_PREFIX
+    if (
+        not expected_hash.startswith(prefix)
+        or len(expected_hash) != len(prefix) + 2 * _base._SECRET_FINGERPRINT_DKLEN
+        or any(character not in "0123456789abcdef" for character in expected_hash[len(prefix) :])
+    ):
         return False
-    return _base._secret_fingerprint(value) == expected_hash
+    return hmac.compare_digest(_base._secret_fingerprint(value), expected_hash)
 
 
 @_preserve_module

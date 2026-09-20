@@ -16,6 +16,7 @@ from scripts import native_slo_mixed
 from scripts.native_slo_contract import MAX_INSTALLED_ADAPTER_P99_MS
 from scripts.native_slo_mixed import _checks, _receipt_pages, _schedule, run_mixed_scenario
 from scripts.native_slo_mixed_load import MixedLoad, MixedPlan, PrivateLedger
+from scripts.native_slo_mixed_request import request_attempt
 from scripts.native_slo_mixed_response import delivered_decision
 
 
@@ -25,7 +26,9 @@ def test_success_failure_and_capacity_are_retained_in_the_same_denominator(tmp_p
 
     def request(_harness: str, payload: object) -> tuple[dict[str, object], float]:
         assert isinstance(payload, dict)
-        index = int(payload["tool_use_id"].rsplit("-", 1)[1])
+        attempt = request_attempt(payload)
+        assert attempt is not None
+        index = int(attempt.rsplit("-", 1)[1])
         if index == 1:
             raise OSError("must never be retained as raw exception text")
         if index == 2:

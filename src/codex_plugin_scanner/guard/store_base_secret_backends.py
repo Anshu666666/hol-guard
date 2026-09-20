@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+
 from .store_base_definition import preserve_store_base_module as _preserve_module
 
 
@@ -40,7 +42,9 @@ class FallbackSecretStore:
             primary_value = self.primary.get_secret(secret_id)
         except Exception:
             primary_value = None
-        if primary_value == value:
+        if primary_value is not None and hmac.compare_digest(
+            primary_value.encode("utf-8", "surrogatepass"), value.encode("utf-8", "surrogatepass")
+        ):
             return
         try:
             self.primary.set_secret(secret_id, value)

@@ -51,6 +51,7 @@ def pause_native_pre_tool_for_approval(
     workspace: Path | None,
     guard_home: Path,
     verified_receipt: object = None,
+    policy_snapshot: Mapping[str, object] | None = None,
     home_dir: Path | None = None,
     config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object]:
@@ -60,7 +61,11 @@ def pause_native_pre_tool_for_approval(
     tool_name = _native_review_tool_name(payload)
     try:
         binding = native_review_policy_binding(
-            harness=harness, native_result=native_result, verified_receipt=verified_receipt
+            harness=harness,
+            native_result=native_result,
+            verified_receipt=verified_receipt,
+            policy_snapshot=policy_snapshot,
+            workspace_bound=workspace is not None,
         )
     except ValueError:
         failed = dict(native_result)
@@ -134,6 +139,7 @@ def queue_native_pre_tool_review(
     workspace: Path | None,
     guard_home: Path,
     verified_receipt: object = None,
+    policy_snapshot: Mapping[str, object] | None = None,
     home_dir: Path | None = None,
     config_reader: Callable[[Path], dict[str, object]] | None = None,
 ) -> dict[str, object] | None:
@@ -141,7 +147,11 @@ def queue_native_pre_tool_review(
 
     try:
         binding = native_review_policy_binding(
-            harness=harness, native_result=native_result, verified_receipt=verified_receipt
+            harness=harness,
+            native_result=native_result,
+            verified_receipt=verified_receipt,
+            policy_snapshot=policy_snapshot,
+            workspace_bound=workspace is not None,
         )
     except ValueError:
         return None

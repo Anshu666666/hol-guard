@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 import threading
@@ -14,6 +15,10 @@ from typing import Any
 
 _MAX_PROCESSES = 4096
 _METRICS = ("rss_bytes", "private_bytes", "cpu_seconds", "processes", "threads", "descriptors", "handles")
+
+
+class _ProcessTreeBoundError(ValueError):
+    pass
 
 
 def _psutil() -> Any:
@@ -51,20 +56,28 @@ def _identity(process: Any) -> tuple[int, float]:
 def _inventory(root: Any) -> dict[tuple[int, float], Any]:
     children = root.children(recursive=True)
     if len(children) >= _MAX_PROCESSES:
-        raise ValueError("process tree exceeded measurement bound")
+        raise _ProcessTreeBoundError("process tree exceeded measurement bound")
     return {_identity(process): process for process in (root, *children)}
 
 
-def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -> TreeResources | None:
+def sample_process_tree(
+    pid: int | None = None,
+    *,
+    proc: Path = Path("/proc"),
+    unavailable_reasons: Counter[str] | None = None,
+) -> TreeResources | None:
     """Collect available metrics separately; denied USS is not zero memory.
 
     PID and creation time are checked before and after enumeration. Linux CPU
     includes live processes and their waited-for children via /proc. Elsewhere
     the sampler retains CPU for observed processes that later exit; very short
     descendants that exit between polls are explicitly outside that coverage.
+    A missing sample records only the last of the two failed attempts; retry
+    failures preceding a successful sample do not change the sample counts.
     """
     psutil = _psutil()
     process_id = os.getpid() if pid is None else pid
+    reason = "invalid_process_data"
     for _ in range(2):
         try:
             root = psutil.Process(process_id)
@@ -114,6 +127,7 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
             else:
                 totals["cpu_seconds"] = sum(process_cpu.values())
             if set(_inventory(psutil.Process(process_id))) != set(before):
+                reason = "inventory_changed"
                 continue
             return TreeResources(
                 rss_bytes=None if "rss_bytes" in unavailable else int(totals["rss_bytes"]),
@@ -127,8 +141,18 @@ def sample_process_tree(pid: int | None = None, *, proc: Path = Path("/proc")) -
                 process_cpu=process_cpu,
                 cpu_includes_reaped=cpu_includes_reaped,
             )
-        except (psutil.NoSuchProcess, psutil.AccessDenied, OSError, ValueError, IndexError):
-            continue
+        except psutil.NoSuchProcess:
+            reason = "process_lookup_failed"
+        except (psutil.AccessDenied, PermissionError):
+            reason = "permission_denied"
+        except _ProcessTreeBoundError:
+            reason = "process_tree_bound"
+        except OSError:
+            reason = "os_error"
+        except (ValueError, IndexError):
+            reason = "invalid_process_data"
+    if unavailable_reasons is not None:
+        unavailable_reasons[reason] += 1
     return None
 
 
@@ -145,6 +169,7 @@ class ResourceSampler:
         self._thread: threading.Thread | None = None
         self.samples = 0
         self.missing = 0
+        self.missing_reasons: Counter[str] = Counter()
         self.first: TreeResources | None = None
         self.last: TreeResources | None = None
         self.peaks: dict[str, int | float] = {}
@@ -156,7 +181,7 @@ class ResourceSampler:
         self.stopped = 0.0
 
     def _sample(self) -> None:
-        value = sample_process_tree(self.pid)
+        value = sample_process_tree(self.pid, unavailable_reasons=self.missing_reasons)
         if value is None:
             self.missing += 1
             return
@@ -201,27 +226,33 @@ class ResourceSampler:
     def report(self, *, attempted: int) -> dict[str, object]:
         elapsed = max(0.0, (self.stopped or time.monotonic()) - self.started)
         cpu = None
+        unavailable = {name: dict(reasons) for name, reasons in self.unavailable.items()}
         reaped = self.first is not None and self.last is not None and self.last.cpu_includes_reaped
         if self.first is not None and self.last is not None and "cpu_seconds" not in self.unavailable:
             if reaped and self.first.cpu_seconds is not None and self.last.cpu_seconds is not None:
                 difference = self.last.cpu_seconds - self.first.cpu_seconds
             else:
                 difference = sum(self._observed_cpu.values()) - self._initial_cpu
-            if difference >= 0:
+            if math.isfinite(difference) and difference >= 0:
                 cpu = difference
+            else:
+                unavailable.setdefault("cpu_seconds", {})["invalid_cumulative_delta"] = 1
         required = ("rss_bytes", "private_bytes", "cpu_seconds", "processes", "threads")
         required += ("handles",) if sys.platform == "win32" else ("descriptors",)
         per_metric = {
             name: self.metric_samples[name] >= 30 and name not in self.unavailable and self.missing == 0
             for name in required
         }
+        per_metric["cpu_seconds"] = per_metric["cpu_seconds"] and cpu is not None
         return {
             "scope": "daemon_fixture_process_tree" if self.pid != os.getpid() else "load_generator_process_tree",
             "collector": "psutil_with_linux_proc_cpu" if reaped else "psutil_observed_descendants",
             "samples": self.samples,
             "unavailable_samples": self.missing,
+            "unavailable_sample_reasons": dict(self.missing_reasons),
+            "unavailable_sample_reason_scope": "last_failed_attempt_after_two_attempts",
             "metric_samples": dict(self.metric_samples),
-            "unavailable_metrics": {name: dict(reasons) for name, reasons in self.unavailable.items()},
+            "unavailable_metrics": unavailable,
             "metric_minimum_met": per_metric,
             "sample_minimum_met": all(per_metric.values()),
             "elapsed_seconds": round(elapsed, 6),
@@ -233,7 +264,12 @@ class ResourceSampler:
             "cpu_seconds": cpu,
             "cpu_ms_per_attempt": round(cpu * 1000 / attempted, 6) if cpu is not None and attempted > 0 else None,
             "cpu_includes_reaped_descendants": reaped,
-            "short_exited_descendants_cpu_complete": reaped,
+            # Linux waited-child counters cover observed ancestry. They do not
+            # prove coverage of children orphaned or reparented between polls.
+            "short_exited_descendants_cpu_complete": False,
+            "short_exited_descendants_cpu_scope": "current_tree_and_waited_children_only"
+            if reaped
+            else "observed_processes_only",
             "includes_load_generator": self.pid == os.getpid(),
             "fixture_control_overhead_included": self.pid != os.getpid(),
         }

@@ -15,8 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from scripts.native_slo_adapter import payload
 from scripts.native_slo_contract import summarize
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_mixed_witness import MAX_ATTEMPTS
 from scripts.native_slo_session import _is_explicit_capacity_response
@@ -184,7 +184,7 @@ class MixedLoad:
                 harness = "claude-code" if index % 2 else "codex"
                 event = "PostToolUse" if index % 3 == 0 else "PreToolUse"
                 size = "250k" if event == "PostToolUse" and index % 2 == 0 else "1k"
-                request = {**payload(event, size), "tool_use_id": f"mixed-load-{index}"}
+                request = fixture_request(harness, event, size, attempt=f"mixed-load-{index}")
                 try:
                     response, latency = self.request(harness, request)
                     if not math.isfinite(latency) or latency < 0:

@@ -148,7 +148,7 @@ fn native_protocol_edge_allocation_phases() {
                 &expected_identity.1,
                 "claude-code",
                 &GuardHookPayloadKindV2::Inline,
-                &native,
+                (&native, false),
             )
             .unwrap();
             measure(
@@ -164,7 +164,7 @@ fn native_protocol_edge_allocation_phases() {
                         &expected_identity.1,
                         "claude-code",
                         &GuardHookPayloadKindV2::Inline,
-                        result,
+                        (result, false),
                     )
                     .unwrap()
                 },

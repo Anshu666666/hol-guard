@@ -382,17 +382,18 @@ def _serve(
         workspace_fixture = None
         with StartupDiagnostic(_emit) as diagnostic:
             diagnostic.progress("construct")
-            adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
-            try:
-                if workspace_count is not None:
-                    from scripts.native_slo_workspace_server import WorkspaceScenarioFixture
+            if workspace_count is None:
+                adapter = AdapterSession(runtime, configuration=configuration, progress=diagnostic.progress)
+            else:
+                from scripts.native_slo_workspace_startup import construct_workspace_session
 
-                    workspace_fixture = WorkspaceScenarioFixture(adapter, workspace_count)
-                    lifetime.enter_context(workspace_fixture.observer)
-                    lifetime.callback(workspace_fixture.close)
-            except BaseException:
-                adapter.close()
-                raise
+                adapter, workspace_fixture = construct_workspace_session(
+                    runtime,
+                    count=workspace_count,
+                    configuration=configuration,
+                    progress=diagnostic.progress,
+                    lifetime=lifetime,
+                )
             diagnostic.progress("start")
             try:
                 session = lifetime.enter_context(adapter)

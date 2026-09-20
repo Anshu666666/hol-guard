@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -102,7 +103,7 @@ def test_non_linux_cpu_retains_observed_exited_processes_without_claiming_comple
             resources.TreeResources(100, 50, 1.5, 1, 1, 3, process_cpu={(10, 1.0): 1.5}),
         ]
     )
-    monkeypatch.setattr(resources, "sample_process_tree", lambda _pid: next(snapshots))
+    monkeypatch.setattr(resources, "sample_process_tree", lambda _pid, **_kwargs: next(snapshots))
     sampler = resources.ResourceSampler(pid=10)
     for _ in range(3):
         sampler._sample()
@@ -119,3 +120,192 @@ def test_missing_psutil_is_an_explicit_dependency_error(monkeypatch: pytest.Monk
     monkeypatch.setitem(sys.modules, "psutil", None)
     with pytest.raises(RuntimeError, match="pinned psutil"):
         resources.ResourceSampler()
+
+
+@pytest.fixture
+def controlled_tree(monkeypatch):
+    from types import SimpleNamespace
+
+    from scripts import native_slo_resources as resources
+
+    root = SimpleNamespace(
+        pid=42,
+        create_time=lambda: 1.0,
+        children=lambda **_kwargs: [],
+        memory_info=lambda: SimpleNamespace(rss=100),
+        memory_full_info=lambda: SimpleNamespace(uss=50),
+        cpu_times=lambda: SimpleNamespace(user=1.0, system=0.0),
+        num_threads=lambda: 1,
+        num_fds=lambda: 3,
+    )
+    psutil = resources._psutil()
+    monkeypatch.setattr(psutil, "Process", lambda _pid: root)
+    monkeypatch.setattr(resources.sys, "platform", "linux")
+    monkeypatch.setattr(resources, "_stat", lambda _pid, _proc: (1, 1, 100))
+    return resources, root
+
+
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        ("missing", "process_lookup_failed"),
+        ("denied", "permission_denied"),
+        ("os", "os_error"),
+        ("value", "invalid_process_data"),
+        ("index", "invalid_process_data"),
+        ("bound", "process_tree_bound"),
+    ],
+)
+def test_exhausted_sample_retains_fixed_reason_after_exactly_two_attempts(
+    controlled_tree, monkeypatch, failure, reason
+):
+    resources, _root = controlled_tree
+    psutil = resources._psutil()
+    errors = {
+        "missing": psutil.NoSuchProcess(42),
+        "denied": psutil.AccessDenied(42),
+        "os": OSError("private /home/example/error"),
+        "value": ValueError("private malformed process data"),
+        "index": IndexError("private field"),
+        "bound": resources._ProcessTreeBoundError("private bound"),
+    }
+    calls = []
+
+    def unavailable(_root):
+        calls.append(None)
+        raise errors[failure]
+
+    monkeypatch.setattr(resources, "_inventory", unavailable)
+    sampler = resources.ResourceSampler(pid=42)
+    sampler._sample()
+    report = sampler.report(attempted=600)
+    assert len(calls) == 2
+    assert report["samples"] == 0 and report["unavailable_samples"] == 1
+    assert report["unavailable_sample_reasons"] == {reason: 1}
+    assert report["unavailable_sample_reason_scope"] == "last_failed_attempt_after_two_attempts"
+    assert report["sample_minimum_met"] is False
+    assert "private" not in repr(report["unavailable_sample_reasons"])
+
+
+def test_changed_inventory_twice_is_one_missing_sample(controlled_tree, monkeypatch):
+    resources, root = controlled_tree
+    inventories = iter([{(42, 1.0): root}, {}, {(42, 1.0): root}, {}])
+    calls = []
+
+    def inventory(_root):
+        calls.append(None)
+        return next(inventories)
+
+    monkeypatch.setattr(resources, "_inventory", inventory)
+    sampler = resources.ResourceSampler(pid=42)
+    sampler._sample()
+    assert len(calls) == 4
+    assert sampler.samples == 0 and sampler.missing == 1
+    assert sampler.missing_reasons == Counter(inventory_changed=1)
+
+
+def test_retry_success_does_not_count_as_a_missing_sample(controlled_tree, monkeypatch):
+    resources, root = controlled_tree
+    calls = []
+
+    def inventory(_root):
+        calls.append(None)
+        if len(calls) == 1:
+            raise OSError("first attempt only")
+        return {(42, 1.0): root}
+
+    monkeypatch.setattr(resources, "_inventory", inventory)
+    sampler = resources.ResourceSampler(pid=42)
+    sampler._sample()
+    assert len(calls) == 3
+    assert sampler.samples == 1 and sampler.missing == 0
+    assert sampler.missing_reasons == Counter()
+
+
+def test_terminal_reason_does_not_claim_to_explain_both_attempts(controlled_tree, monkeypatch):
+    resources, _root = controlled_tree
+    errors = iter([resources._psutil().AccessDenied(42), ValueError("second attempt")])
+
+    def inventory(_root):
+        raise next(errors)
+
+    monkeypatch.setattr(resources, "_inventory", inventory)
+    reasons = Counter()
+    assert resources.sample_process_tree(42, unavailable_reasons=reasons) is None
+    assert reasons == Counter(invalid_process_data=1)
+
+
+@pytest.mark.parametrize("last_cpu", [9.0, float("nan"), float("inf")])
+def test_invalid_linux_cpu_delta_fails_cpu_coverage_with_thirty_valid_snapshots(monkeypatch, last_cpu):
+    from scripts import native_slo_resources as resources
+
+    snapshots = iter(
+        resources.TreeResources(100, 50, value, 1, 1, 3, process_cpu={(42, 1.0): value}, cpu_includes_reaped=True)
+        for value in [10.0] * 29 + [last_cpu]
+    )
+    monkeypatch.setattr(resources, "sample_process_tree", lambda _pid, **_kwargs: next(snapshots))
+    sampler = resources.ResourceSampler(pid=42)
+    for _ in range(30):
+        sampler._sample()
+    sampler.started, sampler.stopped = 1.0, 31.0
+    report = sampler.report(attempted=600)
+    assert report["samples"] == 30 and report["unavailable_samples"] == 0
+    assert report["metric_samples"]["cpu_seconds"] == 30
+    assert report["cpu_seconds"] is report["cpu_ms_per_attempt"] is None
+    assert report["unavailable_metrics"] == {"cpu_seconds": {"invalid_cumulative_delta": 1}}
+    assert report["metric_minimum_met"]["cpu_seconds"] is False
+    assert report["metric_minimum_met"]["rss_bytes"] is True
+    assert report["sample_minimum_met"] is False
+    assert sampler.report(attempted=600) == report
+    assert sampler.unavailable == {}
+
+
+def test_one_missing_sample_still_fails_every_required_metric_after_250_valid(monkeypatch):
+    from scripts import native_slo_resources as resources
+
+    values = iter(range(251))
+
+    def sample(_pid, *, unavailable_reasons):
+        value = next(values)
+        if value == 125:
+            unavailable_reasons["inventory_changed"] += 1
+            return None
+        return resources.TreeResources(
+            100, 50, float(value), 1, 1, 3, process_cpu={(42, 1.0): float(value)}, cpu_includes_reaped=True
+        )
+
+    monkeypatch.setattr(resources, "sample_process_tree", sample)
+    sampler = resources.ResourceSampler(pid=42)
+    for _ in range(251):
+        sampler._sample()
+    report = sampler.report(attempted=600)
+    assert sampler.interval == 0.1
+    assert report["samples"] == 250 and report["unavailable_samples"] == 1
+    assert report["unavailable_sample_reasons"] == {"inventory_changed": 1}
+    assert all(count == 250 for count in report["metric_samples"].values() if count)
+    assert all(value is False for value in report["metric_minimum_met"].values())
+    assert report["sample_minimum_met"] is False
+    assert report["cpu_seconds"] == 250.0
+    assert report["cpu_ms_per_attempt"] == round(250_000 / 600, 6)
+
+
+def test_linux_waited_child_cpu_does_not_qualify_all_short_lived_descendants(controlled_tree, monkeypatch):
+    from scripts.native_slo_acceptance import resource_comparisons
+
+    resources, _root = controlled_tree
+    ticks = iter(range(100, 130))
+    monkeypatch.setattr(resources, "_stat", lambda _pid, _proc: (1, 1, next(ticks)))
+    sampler = resources.ResourceSampler(pid=42)
+    for _ in range(30):
+        sampler._sample()
+    report = sampler.report(attempted=600)
+    assert report["sample_minimum_met"] is True
+    assert report["cpu_ms_per_attempt"] > 0
+    assert report["cpu_includes_reaped_descendants"] is True
+    assert report["short_exited_descendants_cpu_complete"] is False
+    assert report["short_exited_descendants_cpu_scope"] == "current_tree_and_waited_children_only"
+    arm = [{"resources": report}] * 5
+    comparison = resource_comparisons(arm, arm)
+    assert comparison["cpu_ms_per_attempt"] == {"qualified": False}
+    assert comparison["rss_bytes"]["qualified"] is True
+    assert comparison["private_bytes"]["qualified"] is True

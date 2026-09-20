@@ -27,9 +27,7 @@ def _status(runtime: Path, features: tuple[str, ...]) -> NativeRuntimeStatus:
         compatible=True,
         reason="native_ready",
         identity=NativeRuntimeIdentity(runtime, 1, 1, "a" * 64),
-        capabilities=NativeRuntimeCapabilities(
-            1, "1.0.0", "b" * 64, "c" * 40, "x86_64-pc-windows-msvc", features
-        ),
+        capabilities=NativeRuntimeCapabilities(1, "1.0.0", "b" * 64, "c" * 40, "x86_64-windows", features),
     )
 
 
@@ -63,9 +61,7 @@ def test_feature_from_an_unbound_or_unready_runtime_cannot_select_the_source_ora
         assert status.capabilities is not None
         status = replace(status, capabilities=replace(status.capabilities, target="x86_64-unknown-linux-gnu"))
     else:
-        value = {"mode": "force", "available": False, "compatible": False, "reason": "native_unavailable"}.get(
-            mutation
-        )
+        value = {"mode": "force", "available": False, "compatible": False, "reason": "native_unavailable"}.get(mutation)
         status = replace(status, **{mutation: value})
     monkeypatch.setattr(witness, "native_runtime_status", lambda: status)
     with pytest.raises(RuntimeError, match="identity is not bound"):
@@ -82,9 +78,7 @@ def test_exact_candidate_capability_preserves_all_full_source_and_privacy_oracle
     assert candidate == full_source
     sources = [case for case in candidate if case.payload_kind == "source_file_ref"]
     assert {case.harness for case in sources}.issuperset({"pi", "omp"})
-    assert {case.expected.reason_class for case in sources}.issuperset(
-        {"benign", "completed_block", "observation"}
-    )
+    assert {case.expected.reason_class for case in sources}.issuperset({"benign", "completed_block", "observation"})
     for case in sources:
         assert case.native_expected is not None
         workloads.validate_native_result(case, dict(case.native_expected.fields))
@@ -100,9 +94,7 @@ def test_exact_candidate_capability_preserves_all_full_source_and_privacy_oracle
     with pytest.raises(AssertionError):
         workloads.validate_native_result(benign, false_digest)
     assert all(
-        "reviewed_excerpt" not in case.native_expected.fields
-        for case in sources
-        if case.native_expected is not None
+        "reviewed_excerpt" not in case.native_expected.fields for case in sources if case.native_expected is not None
     )
 
 

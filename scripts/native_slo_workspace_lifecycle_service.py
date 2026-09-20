@@ -6,8 +6,11 @@ reports a Python process restart or substitutes a resident-only restart.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+from scripts.native_slo_workspace_startup import prepare_owned_publisher
 
 
 def _stopped_thread(thread: Any) -> bool:
@@ -29,7 +32,9 @@ def require_owned_paths(session: Any, workspaces: tuple[Path, ...]) -> None:
         raise RuntimeError("workspace lifecycle requires one owned canonical home")
 
 
-def replace_service(session: Any, workspaces: tuple[Path, ...]) -> dict[str, object]:
+def replace_service(
+    session: Any, workspaces: tuple[Path, ...], *, prepare: Callable[[Any], None] | None = None
+) -> dict[str, object]:
     """Construct the next cold service only after actual old-owner containment."""
     from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
     from codex_plugin_scanner.guard.store import GuardStore
@@ -63,7 +68,15 @@ def replace_service(session: Any, workspaces: tuple[Path, ...]) -> dict[str, obj
     store = GuardStore(home)
     store._extension_control_authority_secret_store = EncryptedFileSecretStore(home)
     verify_empty_command_authority(store)
-    current = GuardDaemonServer(store, host="127.0.0.1", port=0)
+
+    def before_start(cold: Any) -> None:
+        if cold._workspace_paths or cold.current_snapshot_binding() is not None:
+            raise RuntimeError("workspace replacement publisher was not cold before startup")
+        if prepare is not None:
+            prepare(cold)
+
+    with prepare_owned_publisher(store, before_start) as captured:
+        current = GuardDaemonServer(store, host="127.0.0.1", port=0)
     session.store, session.daemon = store, current
     after_home = home.stat()
     cold = current._server.hook_worker.policy_snapshot_publisher
@@ -71,9 +84,7 @@ def replace_service(session: Any, workspaces: tuple[Path, ...]) -> dict[str, obj
         current is previous
         or current._server.runtime_session_id == previous_session
         or cold is publisher
-        or cold._thread is not None
-        or cold._workspace_paths
-        or cold.current_snapshot_binding() is not None
+        or cold is not captured[0]
         or (before_home.st_dev, before_home.st_ino) != (after_home.st_dev, after_home.st_ino)
     ):
         raise RuntimeError("workspace replacement was not cold on the same owned home")
@@ -88,6 +99,7 @@ def replace_service(session: Any, workspaces: tuple[Path, ...]) -> dict[str, obj
         "same_owned_home_identity": True,
         "fresh_store_and_service": True,
         "cold_publisher_without_ack": True,
+        "cold_observation_boundary": "before_real_constructor_start",
         "empty_command_authority_reloaded": True,
     }
 

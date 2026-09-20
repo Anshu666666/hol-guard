@@ -13,8 +13,8 @@ from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from scripts.native_slo_adapter import payload
 from scripts.native_slo_contract import MAX_READINESS_P95_MS
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_response import delivered_decision
 from scripts.native_slo_mixed_witness import MAX_CONTROL_ACTIONS, ReceiptWitness, writer_drained
 
@@ -214,7 +214,7 @@ class MixedScenarioFixture:
 
         assert self.witness is not None
         attempt = f"mixed-{kind}-{index}"
-        request = {**payload("PreToolUse"), "tool_use_id": attempt}
+        request = fixture_request("claude-code", "PreToolUse", attempt=attempt)
         response = _request(
             self.session.daemon,
             guard_home=self.session.guard_home,

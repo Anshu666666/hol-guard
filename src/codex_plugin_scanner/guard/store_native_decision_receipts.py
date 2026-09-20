@@ -14,6 +14,24 @@ from .native_decision_receipt import validate_native_decision_receipt
 
 NATIVE_DECISION_RECEIPT_MIGRATION_VERSION: Final = 26
 NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION: Final = 28
+NATIVE_REVIEW_SCOPE_MIGRATION_VERSION: Final = 29
+_REVIEW_SCOPE_SCHEMA: Final = (
+    """
+    create table if not exists native_hook_review_scopes (
+      decision_id text primary key references native_hook_decision_receipts(decision_id) on delete cascade,
+      review_scope text not null check (review_scope = 'noncommand')
+    )
+    """,
+    # Retention by an older connection must also remove the sidecar when that
+    # connection does not enable SQLite foreign-key enforcement.
+    """
+    create trigger if not exists native_hook_review_scope_cleanup
+    after delete on native_hook_decision_receipts
+    begin
+      delete from native_hook_review_scopes where decision_id = old.decision_id;
+    end
+    """,
+)
 _MAX_COMMAND_BINDING_CHARACTERS: Final = 2048
 _COMMAND_BINDING_COLUMN: Final = (
     "command_extensions_json text check (command_extensions_json is null "
@@ -67,17 +85,27 @@ def native_decision_receipt_index_statements() -> tuple[str, ...]:
 
 
 def native_decision_receipt_migration_versions() -> tuple[int, ...]:
-    return (NATIVE_DECISION_RECEIPT_MIGRATION_VERSION, NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION)
+    return (
+        NATIVE_DECISION_RECEIPT_MIGRATION_VERSION,
+        NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION,
+        NATIVE_REVIEW_SCOPE_MIGRATION_VERSION,
+    )
 
 
 def ensure_native_command_receipt_binding_schema(connection: sqlite3.Connection, *, applied_at: str) -> None:
-    """Upgrade legacy receipt rows without inventing a missing command binding."""
+    """Upgrade receipt rows without inventing command binding or review scope."""
     columns = {str(row[1]) for row in connection.execute("pragma table_info(native_hook_decision_receipts)")}
     if "command_extensions_json" not in columns:
         connection.execute("alter table native_hook_decision_receipts add column " + _COMMAND_BINDING_COLUMN)
-    connection.execute(
+    # Keep the prior receipt-table projection unchanged for artifact rollback.
+    for statement in _REVIEW_SCOPE_SCHEMA:
+        connection.execute(statement)
+    connection.executemany(
         "insert or ignore into schema_migrations (version, applied_at) values (?, ?)",
-        (NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION, applied_at),
+        (
+            (version, applied_at)
+            for version in (NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION, NATIVE_REVIEW_SCOPE_MIGRATION_VERSION)
+        ),
     )
 
 
@@ -123,13 +151,19 @@ class StoreNativeDecisionReceiptsMixin:
             return None
         with self._connect() as connection:
             row = connection.execute(
-                "select * from native_hook_decision_receipts where decision_id = ?",
+                "select receipt.*, scope.review_scope as _native_review_scope "
+                "from native_hook_decision_receipts as receipt "
+                "left join native_hook_review_scopes as scope using (decision_id) "
+                "where receipt.decision_id = ?",
                 (decision_id,),
             ).fetchone()
         if row is None:
             return None
         result = dict(row)
         result.pop("recorded_at")
+        review_scope = result.pop("_native_review_scope")
+        if review_scope is not None:
+            result["review_scope"] = review_scope
         raw_binding = result.pop("command_extensions_json")
         if raw_binding is not None:
             if not isinstance(raw_binding, str) or len(raw_binding) > _MAX_COMMAND_BINDING_CHARACTERS:
@@ -215,6 +249,14 @@ def _record_native_decision_receipts(
                 for validated in validated_receipts
             ],
         )
+        connection.executemany(
+            "insert or ignore into native_hook_review_scopes (decision_id, review_scope) values (?, ?)",
+            [
+                (receipt["decision_id"], receipt["review_scope"])
+                for receipt in validated_receipts
+                if "review_scope" in receipt
+            ],
+        )
     return tuple(cast(str, receipt["decision_id"]) for receipt in validated_receipts)
 
 
@@ -227,6 +269,7 @@ def cast_bool(value: object) -> bool:
 __all__ = [
     "NATIVE_COMMAND_RECEIPT_BINDING_MIGRATION_VERSION",
     "NATIVE_DECISION_RECEIPT_MIGRATION_VERSION",
+    "NATIVE_REVIEW_SCOPE_MIGRATION_VERSION",
     "StoreNativeDecisionReceiptsMixin",
     "ensure_native_command_receipt_binding_schema",
     "native_decision_receipt_index_statements",

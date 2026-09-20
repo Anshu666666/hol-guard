@@ -50,9 +50,14 @@ from codex_plugin_scanner.guard.store import GuardStore  # noqa: E402
 from scripts.ci.native_ollama_contract import (  # noqa: E402
     ACTIVE_CASES,
     INACTIVE_CASES,
+    LEGACY_RETRY_SCOPE,
     RESTRICTED_CASES,
     OllamaCase,
+    payload_digest,
     require,
+    require_same_ack,
+    review_payload,
+    validate_legacy_retry,
     validate_review,
     validated_build_sha,
 )
@@ -265,7 +270,7 @@ def review_case(
     case: OllamaCase,
     snapshot: Mapping[str, Any],
     *,
-    approval_reused: bool = False,
+    request_payload: Mapping[str, object],
 ) -> tuple[dict[str, object], str | None]:
     worker = session.daemon._server.hook_worker
     captured: list[dict[str, object]] = []
@@ -285,13 +290,7 @@ def review_case(
             guard_home=session.guard_home,
             workspace=session.workspace,
             harness="claude-code",
-            request_payload={
-                "hook_event_name": "PreToolUse",
-                "tool_name": "Bash",
-                "tool_input": {"command": case.command},
-                "tool_use_id": phase + "." + case.name,
-                "cwd": str(session.workspace),
-            },
+            request_payload=request_payload,
         )
     finally:
         worker._review_raw_hook_native = original
@@ -308,7 +307,7 @@ def review_case(
         "managed_control_revision": control["managed_revision"],
         "control_effective_digest": control["effective_digest"],
     }
-    receipt = validate_review(case, captured[0], response, expected_binding=expected, approval_reused=approval_reused)
+    receipt = validate_review(case, captured[0], response, expected_binding=expected)
     require(receipt["policy_generation"] == snapshot["generation"], "receipt_generation_mismatch")
     # Compact controls omit the authority epoch and mutation fence. The full
     # acknowledged policy digest binds both and must match the actual receipt.
@@ -320,7 +319,7 @@ def review_case(
         time.sleep(0.01)
     approval_recorded = False
     approval_id = None
-    if case.action == "review" and not approval_reused:
+    if case.action == "review":
         approval_id = cast(str, response["approval_request_id"])
         approval = session.store.get_approval_request(approval_id)
         require(
@@ -332,6 +331,8 @@ def review_case(
         "phase": phase,
         "case": case.name,
         "decision_id": decision_id,
+        "hook_envelope_digest": payload_digest(request_payload),
+        "request_digest": receipt["request_digest"],
         "policy_generation": receipt["policy_generation"],
         "policy_digest": receipt["policy_digest"],
         "control_revision": control["revision"],
@@ -343,7 +344,7 @@ def review_case(
         "route": "native_resident",
         "receipt_durable": True,
         "approval_durable": approval_recorded,
-        "legacy_approval_reused": approval_reused,
+        "legacy_approval_reused": False,
     }, approval_id
 
 
@@ -397,15 +398,22 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
                 require(generation > previous_generation, "generation_did_not_advance")
                 previous_generation = generation
                 for case in cases:
-                    record, approval_id = review_case(session, phase, case, snapshot)
+                    request_payload = review_payload(session.workspace, case)
+                    record, approval_id = review_case(session, phase, case, snapshot, request_payload=request_payload)
                     results.append(record)
                     if phase == "enabled" and case.name == "push":
                         progress["phase"] = "approved_retry"
                         require(approval_id is not None, "approval_missing")
                         approve_review(session.store, password, cast(str, approval_id))
                         current = ready_binding(session, revision, phase="approved_retry")
-                        record, _ = review_case(session, "approved_retry", case, current, approval_reused=True)
-                        results.append(record)
+                        require_same_ack(snapshot, current)
+                        retry, next_id = review_case(
+                            session, "approved_retry", case, current, request_payload=request_payload
+                        )
+                        retry.update(
+                            validate_legacy_retry(session.store, cast(str, approval_id), next_id, record, retry)
+                        )
+                        results.append(retry)
                         progress["phase"] = phase
             progress["phase"] = "stale_write_rejected"
             try:
@@ -415,7 +423,13 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
             else:
                 raise AssertionError("installed_ollama_stale_revision_accepted")
             snapshot = ready_binding(session, revision, phase="stale_write_rejected")
-            record, _ = review_case(session, "stale_write_rejected", ACTIVE_CASES[0], snapshot)
+            record, _ = review_case(
+                session,
+                "stale_write_rejected",
+                ACTIVE_CASES[0],
+                snapshot,
+                request_payload=review_payload(session.workspace, ACTIVE_CASES[0]),
+            )
             results.append(record)
     finally:
         if not entered:
@@ -439,6 +453,7 @@ def _run_probe(expected: Mapping[str, object], progress: dict[str, Any]) -> dict
             "stale_control_write_rejected": True,
             "prior_approval_did_not_bypass_disabled_controls": True,
             "native_approval_consume_qualified": False,
+            "approval_retry_scope": LEGACY_RETRY_SCOPE,
         }
     )
 
@@ -460,6 +475,7 @@ def run_probe(expected: Mapping[str, object]) -> dict[str, object]:
                 "retained_scope": "completed_cases_only",
                 "package_downgrade_qualified": False,
                 "native_approval_consume_qualified": False,
+                "approval_retry_scope": LEGACY_RETRY_SCOPE,
             }
         )
 

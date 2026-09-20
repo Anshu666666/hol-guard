@@ -177,6 +177,7 @@ class DefaultAutoFailureCapture:
         self._identity: dict[str, object] = {}
         self._deliveries: list[dict[str, object]] = []
         self._corpus: dict[str, object] = {}
+        self._smoke_publication: dict[str, object] = {}
         self._incomplete = False
         self._primary_failure: str | None = None
         self._expected_sha = _hex(os.environ.get("SOURCE_SHA"), 40)
@@ -254,6 +255,9 @@ class DefaultAutoFailureCapture:
         if self._corpus_active:
             self._primary_failure = _failure_category(error)
 
+    def smoke_publication(self, report: dict[str, object]) -> None:
+        self._smoke_publication = report
+
     def __exit__(
         self, kind: type[BaseException] | None, error: BaseException | None, trace: TracebackType | None
     ) -> None:
@@ -289,6 +293,7 @@ class DefaultAutoFailureCapture:
                 **report,
                 "deliveries": self._deliveries,
                 "corpus": self._corpus,
+                "smoke_publication": self._smoke_publication,
                 "detail_incomplete": self._incomplete,
             }
             encoded = json.dumps(detailed, sort_keys=True, separators=(",", ":"))

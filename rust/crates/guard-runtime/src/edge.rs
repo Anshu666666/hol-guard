@@ -16,6 +16,8 @@ const MAX_HARNESS_BYTES: usize = 64;
 const MAX_EVENT_BYTES: usize = 64;
 const MAX_PATH_BYTES: usize = 32 * 1024;
 
+#[path = "edge_encrypted.rs"]
+mod encrypted;
 #[path = "edge_identity.rs"]
 mod identity;
 #[path = "edge_serialization.rs"]
@@ -235,9 +237,14 @@ fn evaluate_validated_envelope(
         deadline,
     } = validated;
     let kind = payload_kind(&envelope.raw_payload)?;
-    if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {
-        return Err("native_hook_encrypted_payload_unsupported".to_owned());
-    }
+    let inner_payload = if kind == GuardHookPayloadKindV2::EncryptedPayloadRef {
+        if event_name != "PostToolUse" || !matches!(harness.as_str(), "pi" | "omp") {
+            return Err("native_hook_encrypted_payload_unsupported".to_owned());
+        }
+        Some(encrypted::hydrate(&envelope.raw_payload, deadline)?)
+    } else {
+        None
+    };
     if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
         return Err("native_request_deadline_exceeded".to_owned());
     }
@@ -275,7 +282,12 @@ fn evaluate_validated_envelope(
             (value, receipt)
         }
         "PostToolUse" => {
-            let payload_kind = kind.clone();
+            // Classify authenticated inner content for the existing policy join;
+            // the public receipt still commits to the original outer reference.
+            let payload_kind = match inner_payload.as_ref() {
+                Some(payload) => payload_kind(payload)?,
+                None => kind.clone(),
+            };
             let request = NativeHookRequestV1 {
                 protocol_version: NATIVE_PROTOCOL_VERSION,
                 request_id: envelope.request_id.clone(),
@@ -283,7 +295,7 @@ fn evaluate_validated_envelope(
                 event_name: event_name.clone(),
                 // Transfer the already-bound payload into the typed hook
                 // request, then restore ownership before building its receipt.
-                payload: std::mem::take(&mut envelope.raw_payload),
+                payload: inner_payload.unwrap_or_else(|| std::mem::take(&mut envelope.raw_payload)),
                 cwd: envelope.source.cwd.clone(),
                 home_dir: envelope.source.home_dir.clone(),
                 guard_home: envelope.source.guard_home.clone(),
@@ -306,7 +318,9 @@ fn evaluate_validated_envelope(
             } else {
                 native
             };
-            envelope.raw_payload = request.payload;
+            if kind != GuardHookPayloadKindV2::EncryptedPayloadRef {
+                envelope.raw_payload = request.payload;
+            }
             let receipt = receipt_from_post_tool(
                 &envelope,
                 policy_snapshot.map(AdmittedPolicySnapshot::snapshot),

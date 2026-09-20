@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from codex_plugin_scanner.guard.store import GuardStore
 
 LEGACY_RETRY_SCOPE = "resolved_legacy_approval_does_not_authorize_unknown_executable"
+READINESS_PHASES = frozenset(
+    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
+)
 
 
 @dataclass(frozen=True, slots=True)

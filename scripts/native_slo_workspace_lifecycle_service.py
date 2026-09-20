@@ -10,6 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from scripts.native_slo_workspace_lifecycle_clocks import LifecycleClocks
 from scripts.native_slo_workspace_startup import prepare_owned_publisher
 
 
@@ -33,7 +34,11 @@ def require_owned_paths(session: Any, workspaces: tuple[Path, ...]) -> None:
 
 
 def replace_service(
-    session: Any, workspaces: tuple[Path, ...], *, prepare: Callable[[Any], None] | None = None
+    session: Any,
+    workspaces: tuple[Path, ...],
+    *,
+    prepare: Callable[[Any], None] | None = None,
+    clocks: LifecycleClocks | None = None,
 ) -> dict[str, object]:
     """Construct the next cold service only after actual old-owner containment."""
     from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
@@ -65,7 +70,11 @@ def replace_service(
         raise RuntimeError("workspace old service containment incomplete")
     # A fresh store and server are essential; changing only the publisher or
     # restarting the Rust resident cannot satisfy the service lifecycle cell.
+    if clocks is not None:
+        clocks.mark("store_constructor_enter")
     store = GuardStore(home)
+    if clocks is not None:
+        clocks.mark("store_constructor_return")
     store._extension_control_authority_secret_store = EncryptedFileSecretStore(home)
     verify_empty_command_authority(store)
 
@@ -76,7 +85,11 @@ def replace_service(
             prepare(cold)
 
     with prepare_owned_publisher(store, before_start) as captured:
+        if clocks is not None:
+            clocks.mark("server_constructor_enter")
         current = GuardDaemonServer(store, host="127.0.0.1", port=0)
+        if clocks is not None:
+            clocks.mark("server_constructor_return")
     session.store, session.daemon = store, current
     after_home = home.stat()
     cold = current._server.hook_worker.policy_snapshot_publisher

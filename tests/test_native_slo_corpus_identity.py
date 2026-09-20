@@ -13,6 +13,7 @@ import pytest
 from scripts import native_slo_source_witness as witness
 from scripts import native_slo_workloads as workloads
 from scripts.native_slo_acceptance import scoped_acceptance
+from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_corpus_identity import corpus_identity, paired_corpus_identity
 from scripts.native_slo_qualification_run import workload_matrix
 from tests.test_native_slo_windows_source_capability import _status
@@ -72,19 +73,50 @@ def test_windows_source_feature_keeps_shared_requests_and_separate_untimed_evide
     assert baseline["corpus_digest"] == candidate["corpus_digest"]
     assert baseline["contract_evidence_digest"] != candidate["contract_evidence_digest"]
     result = paired_corpus_identity([baseline], [candidate])
-    assert result["source_reference_oracle_profiles"] == {
+    assert result["reference_oracle_profiles"] == {
         "baseline": "windows_refusal_v1",
         "candidate": "windows_handles_v1",
     }
-    assert result["source_reference_feature_evidence"] == {
+    assert result["reference_feature_evidence"] == {
         "baseline_full_review": False,
         "candidate_full_review": True,
         "headline_timing_eligible": False,
-        "source_performance_comparison_available": False,
+        "reference_performance_comparison_available": False,
     }
     acceptance = scoped_acceptance([baseline], [candidate], {}, {"independent_runs": True})
     assert acceptance["scopes"]["reference_full_review"]["qualified"] is False
     assert acceptance["migration_benefit_go"] is False
+
+
+def test_serialized_qualification_blocks_keep_exact_finite_oracle_evidence(declared_pair) -> None:
+    _, reports = declared_pair
+    baseline, candidate = [json.loads(json.dumps(assert_privacy_safe(report))) for report in reports]
+    identity = paired_corpus_identity([baseline], [candidate])
+    restored = json.loads(json.dumps(assert_privacy_safe(identity)))
+    assert restored["reference_oracle_profiles"] == {
+        "baseline": "windows_refusal_v1",
+        "candidate": "windows_handles_v1",
+    }
+    assert restored["reference_feature_evidence"] == {
+        "baseline_full_review": False,
+        "candidate_full_review": True,
+        "headline_timing_eligible": False,
+        "reference_performance_comparison_available": False,
+    }
+    assert baseline["corpus_digest"] == candidate["corpus_digest"]
+    assert restored["contract_evidence_digests"] == {
+        "baseline": reports[0]["contract_evidence_digest"],
+        "candidate": reports[1]["contract_evidence_digest"],
+    }
+
+
+@pytest.mark.parametrize("arm", (0, 1))
+def test_serialized_block_requires_its_explicit_oracle_profile(declared_pair, arm: int) -> None:
+    _, reports = declared_pair
+    restored = [json.loads(json.dumps(assert_privacy_safe(report))) for report in reports]
+    restored[arm].pop("reference_oracle_profile")
+    with pytest.raises(RuntimeError, match="source oracle profile changed within a paired arm"):
+        paired_corpus_identity([restored[0]], [restored[1]])
 
 
 @pytest.mark.parametrize(
@@ -129,7 +161,7 @@ def test_source_transition_requires_exact_baseline_and_completed_candidate_evide
 
 def test_profile_and_evidence_must_be_stable_within_each_arm(declared_pair) -> None:
     _, (baseline, candidate) = declared_pair
-    for field, value in (("source_reference_oracle_profile", "unix_source_v1"), ("contract_evidence_digest", "a" * 64)):
+    for field, value in (("reference_oracle_profile", "unix_source_v1"), ("contract_evidence_digest", "a" * 64)):
         changed = {**candidate, field: value}
         with pytest.raises(RuntimeError, match="within a paired arm"):
             paired_corpus_identity([baseline, baseline], [candidate, changed])

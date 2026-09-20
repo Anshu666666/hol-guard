@@ -11,6 +11,7 @@ from codex_plugin_scanner.guard import native_runtime
 from codex_plugin_scanner.guard.daemon import hook_worker
 from scripts import native_slo_session
 from scripts.native_slo_failure import FixtureFailureError
+from scripts.native_slo_workspace_lifecycle_clocks import LifecycleClocks, valid_lifecycle_clocks
 from scripts.native_slo_workspace_lifecycle_faults import FirstAdmissionReplyFault
 from scripts.native_slo_workspace_lifecycle_service import register_scopes, replace_service
 from scripts.native_slo_workspace_observer import PublicationObserver
@@ -92,7 +93,16 @@ def test_first_admission_fault_is_attached_before_real_replacement_constructor_p
 
             monkeypatch.setattr(adapter, "stop_resident", lambda: True)
             before_calls = len(calls)
-            proof = replace_service(adapter, (adapter.workspace,), prepare=prepare)
+            clocks = LifecycleClocks()
+            proof = replace_service(adapter, (adapter.workspace,), prepare=prepare, clocks=clocks)
+            assert valid_lifecycle_clocks(clocks.report())
+            assert list(clocks.boundaries) == [
+                "store_constructor_enter",
+                "store_constructor_return",
+                "server_constructor_enter",
+                "server_constructor_return",
+            ]
+            assert clocks.boundaries["store_constructor_return"] <= clocks.boundaries["server_constructor_enter"]
             publisher = adapter.daemon._server.hook_worker.policy_snapshot_publisher
             lifetime.callback(publisher.close)
             assert retained["accepted_before_start"]

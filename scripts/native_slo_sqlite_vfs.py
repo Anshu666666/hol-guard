@@ -21,6 +21,7 @@ from typing import Any
 from uuid import uuid4
 
 from scripts.native_slo_sqlite_vfs_identity import already_mapped, code_mapping, image_identity, pinned_extension
+from scripts.native_slo_sqlite_vfs_loader import load_verified_extension, loader_descriptor_report
 
 _ACTIVE = threading.Lock()
 _LOADED_IMAGES: dict[tuple[int, int], dict[str, Any]] = {}
@@ -93,13 +94,12 @@ class SQLiteVFSObservation:
             previous = _LOADED_IMAGES.get(image_key)
             if previous is not None and previous != extension_identity:
                 raise ValueError("a resident extension image changed after its prior admission")
-            if previous is None and (len(_LOADED_IMAGES) >= 4 or already_mapped(extension_identity)):
-                raise ValueError("extension is already mapped without admission or exceeds the four-image bound")
-            _LOADED_IMAGES[image_key] = extension_identity
+            if previous is None and already_mapped(extension_identity):
+                raise ValueError("extension is already mapped without admission")
             self._control = sqlite3.connect(":memory:", check_same_thread=False)
             self._control.enable_load_extension(True)
             try:
-                self._control.load_extension(f"/proc/self/fd/{descriptor}", entrypoint="sqlite3_guardvfsext_init")
+                load_verified_extension(self._control, descriptor, extension_identity)
             finally:
                 self._control.enable_load_extension(False)
             self.name = f"guard_rsp131_{uuid4().hex}"
@@ -107,7 +107,6 @@ class SQLiteVFSObservation:
             observer_mapping = code_mapping(first["observer_code_address"])
             if any(observer_mapping[key] != extension_identity[key] for key in ("device", "inode")):
                 raise RuntimeError("loaded observer callback does not belong to the verified extension inode")
-            _LOADED_IMAGES[image_key] = extension_identity
             if not first["registered"] or not first["default_vfs_unchanged"]:
                 raise RuntimeError("named VFS registration did not preserve the default VFS")
             source_id = self._control.execute("select sqlite_source_id()").fetchone()[0]
@@ -122,7 +121,7 @@ class SQLiteVFSObservation:
             api_mapping = code_mapping(first["sqlite_api_code_address"])
             if any(api_mapping[key] != api_identity[key] for key in ("device", "inode")):
                 raise RuntimeError("SQLite API callback does not belong to its hashed runtime image")
-            self.identity = {
+            self.identity: dict[str, Any] = {
                 "extension": extension_identity,
                 "python": image_identity(Path(sys.executable)),
                 "python_sqlite_extension": image_identity(Path(_sqlite3.__file__)),
@@ -136,6 +135,7 @@ class SQLiteVFSObservation:
                 "database_admission_identity": [metadata.st_dev, metadata.st_ino],
                 "platform": sys.platform,
             }
+            _LOADED_IMAGES[image_key] = extension_identity
         except BaseException:
             try:
                 try:
@@ -256,6 +256,7 @@ class SQLiteVFSObservation:
             )
             return {
                 "identity": copy.deepcopy(self.identity),
+                "loader": loader_descriptor_report(self.identity["extension"], admitted_images=len(_LOADED_IMAGES)),
                 "vfs": observed,
                 "attested_connections": dict(self._connects),
                 "connection_failures": self._connect_failures,

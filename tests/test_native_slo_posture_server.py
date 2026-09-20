@@ -16,6 +16,40 @@ from scripts.native_slo_posture_witness import POSTURE_ROUTES, binding_key, post
 from tests.test_native_slo_posture import _context, _response
 
 
+@pytest.mark.parametrize("route", range(len(POSTURE_ROUTES)))
+def test_posture_http_request_keeps_case_payload_with_separate_attempt_label(tmp_path, monkeypatch, route):
+    from scripts import native_slo_session
+    from scripts.native_slo_mixed_request import request_attempt
+
+    worker = SimpleNamespace(policy_snapshot_publisher=SimpleNamespace())
+    session = SimpleNamespace(
+        root=tmp_path,
+        workspace=tmp_path,
+        guard_home=tmp_path / "guard-home",
+        daemon=SimpleNamespace(_server=SimpleNamespace(hook_worker=worker)),
+    )
+    fixture = PostureScenarioFixture(session)
+    calls = []
+
+    def request(daemon, **kwargs):
+        calls.append((daemon, kwargs))
+        return {}
+
+    monkeypatch.setattr(native_slo_session, "_request", request)
+    fixture._request(route, phase="enforce_to_watch", part="before")
+    assert len(calls) == 1 and calls[0][0] is session.daemon
+    harness, event = POSTURE_ROUTES[route]
+    body = calls[0][1]["request_payload"]
+    native_field = "tool_use_id" if harness == "claude-code" else "tool_call_id"
+    assert request_attempt(body) == fixture.rows[0]["attempt"] == "mixed-load-0"
+    assert isinstance(body[native_field], str) and body[native_field].startswith("fixture-")
+    assert {key: value for key, value in body.items() if key not in {native_field, "native_slo_attempt"}} == (
+        posture_case(harness, event).payload
+    )
+    assert calls[0][1]["harness"] == harness
+    assert fixture.rows[0]["state"] == "completed"
+
+
 @pytest.mark.parametrize("fault", ("", "extra_route", "missing_native_observation", "transport_failure"))
 def test_actual_threads_conserve_each_modeled_request_and_reject_extra_or_missing_routes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fault: str

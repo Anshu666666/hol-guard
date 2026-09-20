@@ -42,8 +42,8 @@ image name; these are diagnostic metadata.
 The extension and each successfully registered callback context stay resident
 until process exit. This prevents freeing a callback after the last xClose but
 before SQLite finishes its enclosing connection teardown. At most 16 registration
-contexts are admitted per loaded extension image. The Python adapter admits at
-most four extension image identities, each at most 8 MiB, per process. This retained diagnostic memory
+contexts are admitted per loaded extension image. The Python adapter retains at
+most 16 verified loader-image descriptors, each for an image at most 8 MiB, per process. This retained diagnostic memory
 and the fixed counter/connection-attestation overhead must be included in any
 future resource measurement. Every named VFS unregisters after its observed files
 close; the module-local proxy restores first. Ending observation with live files
@@ -66,8 +66,16 @@ descriptor and loads that descriptor through the actual Python SQLite connection
 It hashes Python, `_sqlite3`, and the image containing the actual SQLite API-table
 function. The actual observer and SQLite API callback mappings must match the
 hashed files' device/inode identities. A resident extension without prior
-admission, or a changed previously admitted image, is refused. This prevents
-`dlopen` descriptor-path reuse from silently substituting an earlier image.
+admission, or a changed previously admitted image, is refused. Each verified
+image uses one distinct, close-on-exec loader descriptor until process exit;
+repeated loads of the same unchanged image reuse that descriptor. This keeps
+`/proc/self/fd` loader aliases unique while SQLite retains code permanently.
+An attempted load can retain code even if admission later fails, so its loader
+descriptor remains quarantined within the same bound. Only images that pass
+complete callback and engine attestation enter the admitted-image registry.
+The report separates these retained loader descriptors from the named VFS and
+database connection closure. The observer-scoped descriptor still rechecks the
+image digest and metadata at teardown, then closes.
 The extension build hides internal symbols and exports only its load entrypoint. Each observed connection must attest its real database filename,
 engine source ID, and exactly one new main-file VFS open.
 

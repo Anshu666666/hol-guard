@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from scripts.native_slo_contract import SAFE_ROUTE_NAMES, assert_privacy_safe
 from scripts.native_slo_workspace_decision import MAX_REQUESTS, authority_projection, finite_time, join_decisions
+from scripts.native_slo_workspace_lifecycle_clocks import valid_lifecycle_clocks
 from scripts.native_slo_workspace_lifecycle_evidence_schema import (
     _ACK_FLAGS,
     _ATTEMPT,
@@ -293,7 +294,9 @@ def _facts(result: Mapping[str, Any]) -> dict[str, Any]:
             _require(assert_privacy_safe({kind: value}) == {kind: value})
             continue
         _require(type(value) is dict)
-        if kind == "service_replacement":
+        if kind == "lifecycle_clocks":
+            _require(valid_lifecycle_clocks(value))
+        elif kind == "service_replacement":
             _require(set(value) == _SERVICE_FLAGS | {"scope", "service_instances", "cold_observation_boundary"})
             _flags(value, _SERVICE_FLAGS)
             _require(value["scope"] == "two_python_service_instances_same_process_same_owned_home")

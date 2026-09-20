@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import threading
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -10,6 +11,44 @@ from scripts import native_slo_workspace_server as server
 from scripts.native_slo_workspace_observer import PublicationObserver
 
 BINDING = {"generation": 7, "policy_digest": "a" * 64, "runtime_identity": "b" * 64}
+
+
+def test_workspace_probe_joins_only_its_explicit_diagnostic_attempt(tmp_path, monkeypatch):
+    from scripts import native_slo_session
+    from scripts.native_slo_adapter import payload
+    from scripts.native_slo_mixed_request import request_attempt
+
+    value: Any = server.WorkspaceScenarioFixture.__new__(server.WorkspaceScenarioFixture)
+    value.session = SimpleNamespace(daemon=object(), guard_home=tmp_path / "guard", workspace=tmp_path)
+    rows, offered = {}, []
+    value.witness = SimpleNamespace(row=rows.get, started=10.0)
+
+    def request(daemon, **kwargs):
+        assert daemon is value.session.daemon
+        body = kwargs["request_payload"]
+        offered.append(body)
+        rows[request_attempt(body)] = {
+            "policy_generation": BINDING["generation"],
+            "policy_digest": BINDING["policy_digest"],
+            "policy_action": "block",
+            "decision": "deny",
+            "decision_id": "c" * 64,
+            "native_finished_ms": 20.0,
+        }
+        return {
+            "hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny"},
+            "policy_action": "block",
+        }
+
+    monkeypatch.setattr(native_slo_session, "_request", request)
+    result = value._probe(0, BINDING, "block", 10.0)
+    assert result["first_native_receipt_matches"] is True
+    assert result["attempt"] == "mixed-policy-0" and len(offered) == 1
+    body = offered[0]
+    assert body["tool_use_id"].startswith("fixture-")
+    assert {key: val for key, val in body.items() if key not in {"tool_use_id", "native_slo_attempt"}} == payload(
+        "PreToolUse"
+    )
 
 
 def _authority_fixture(tmp_path, monkeypatch):

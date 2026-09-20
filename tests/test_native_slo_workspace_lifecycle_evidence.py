@@ -203,6 +203,12 @@ def test_all_lifecycle_acceptance_and_failure_facts_survive_exactly(cell):
             "fault_request": fault_request(),
         },
         expiry={**dict.fromkeys(evidence._EXPIRY_FLAGS, True), "control_binding_preserved": False},
+        lifecycle_clocks={
+            "origin": "lifecycle_cell_entry_monotonic",
+            "scope": "instrumented_caller_boundaries",
+            "acceptance_deadline_changed": False,
+            "boundaries_ms": {"daemon_start_enter": 10.0},
+        },
         fault={
             "scope": "one_real_accepted_reply_discarded_before_first_python_admission",
             "real_client_calls": 2,

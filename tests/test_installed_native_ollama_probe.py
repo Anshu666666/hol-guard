@@ -327,6 +327,7 @@ def test_expected_build_identity_requires_an_exact_canonical_commit(value, tmp_p
         (None, 0.0, "native_policy_windows_acl_verify_failed", "unclassified"),
         (None, 0.0, "native_policy_snapshot_generation_lock_timeout", "unclassified"),
         (None, 0.0, "native_policy_windows_acl_not_private:protected=0,count=3", "unclassified"),
+        (None, 0.0, "", "none"),
         ({"generation": 2}, 0.425, None, "none"),
     ],
 )

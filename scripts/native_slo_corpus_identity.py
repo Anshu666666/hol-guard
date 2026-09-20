@@ -69,7 +69,7 @@ def corpus_identity(definition: Mapping[str, object]) -> dict[str, str]:
         "corpus_digest": _digest(shared),
         "corpus_definition_scope": _SCOPE,
         "contract_evidence_digest": _digest(evidence),
-        "source_reference_oracle_profile": profile,
+        "reference_oracle_profile": profile,
     }
 
 
@@ -87,9 +87,7 @@ def paired_corpus_identity(
     if scopes == {None}:
         # Historical reports used the full-matrix digest. Preserve their exact
         # equality requirement; they cannot opt into the new oracle split.
-        if any(
-            "source_reference_oracle_profile" in report or "contract_evidence_digest" in report for report in combined
-        ):
+        if any("reference_oracle_profile" in report or "contract_evidence_digest" in report for report in combined):
             raise RuntimeError("new corpus evidence omitted its identity scope")
         return {"corpus_definition_scope": "legacy_full_matrix_v1"}
     if scopes != {_SCOPE}:
@@ -100,7 +98,7 @@ def paired_corpus_identity(
     evidence_digests: dict[str, str] = {}
     source_results: dict[str, bool] = {}
     for arm, reports in (("baseline", baseline), ("candidate", candidate)):
-        observed = {report.get("source_reference_oracle_profile") for report in reports}
+        observed = {report.get("reference_oracle_profile") for report in reports}
         evidence = {report.get("contract_evidence_digest") for report in reports}
         if len(observed) != 1 or not all(type(value) is str and value in _PROFILES for value in observed):
             raise RuntimeError("source oracle profile changed within a paired arm")
@@ -109,9 +107,7 @@ def paired_corpus_identity(
         profiles[arm] = cast(str, next(iter(observed)))
         evidence_digests[arm] = cast(str, next(iter(evidence)))
         source_results[arm] = all(
-            _object(_object(report.get("contract_corpus")).get("platform_scope")).get(
-                "reference_review_qualified"
-            )
+            _object(_object(report.get("contract_corpus")).get("platform_scope")).get("reference_review_qualified")
             is True
             for report in reports
         )
@@ -134,12 +130,12 @@ def paired_corpus_identity(
             raise RuntimeError("candidate Windows full source contract was not proven")
     return {
         "corpus_definition_scope": _SCOPE,
-        "source_reference_oracle_profiles": profiles,
+        "reference_oracle_profiles": profiles,
         "contract_evidence_digests": evidence_digests,
-        "source_reference_feature_evidence": {
+        "reference_feature_evidence": {
             "baseline_full_review": source_results["baseline"],
             "candidate_full_review": source_results["candidate"],
             "headline_timing_eligible": False,
-            "source_performance_comparison_available": False,
+            "reference_performance_comparison_available": False,
         },
     }

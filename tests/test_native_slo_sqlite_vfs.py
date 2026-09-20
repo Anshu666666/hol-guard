@@ -21,6 +21,7 @@ import pytest
 from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_queue_observation import EvidenceQueueObservation
 from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_writer import RuntimeHookEvidenceWriter
 from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_witness import ReceiptWitness
 from scripts.native_slo_sqlite_vfs import SQLiteVFSObservation
 from tests.test_native_decision_receipt import _receipt
@@ -358,7 +359,7 @@ def test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distin
     queue = EvidenceQueueObservation()
     receipts = [_receipt(request_id=f"vfs-{index}") for index in range(3)]
     edges = {f"mixed-load-{index}": {"receipt": receipt} for index, receipt in enumerate(receipts)}
-    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: edges[kwargs["payload"]["tool_use_id"]])
+    worker = SimpleNamespace(_review_raw_hook_native=lambda **kwargs: edges[kwargs["payload"]["native_slo_attempt"]])
     session = SimpleNamespace(
         store=store,
         guard_home=store.guard_home,
@@ -369,10 +370,8 @@ def test_actual_guard_writer_receipts_keep_journal_vfs_queue_and_readback_distin
     try:
         with writer._condition:
             for index, receipt in enumerate(receipts):
-                assert (
-                    worker._review_raw_hook_native(payload={"tool_use_id": f"mixed-load-{index}"})
-                    is edges[f"mixed-load-{index}"]
-                )
+                request = fixture_request("claude-code", "PostToolUse", attempt=f"mixed-load-{index}")
+                assert worker._review_raw_hook_native(payload=request) is edges[f"mixed-load-{index}"]
                 assert writer.submit_native_decision_receipt(receipt) is True
             assert writer.submit_native_decision_receipt(receipts[0]) is True
         assert writer.stop(timeout_seconds=3)

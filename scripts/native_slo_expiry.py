@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from typing import Any, TypedDict
 
 from scripts.native_slo_observation_failure import contextual_failure
+from scripts.native_slo_publisher_failure import rejected_starting_snapshot
 
 
 class _RenewalCommandInputs(TypedDict, total=False):
@@ -97,7 +98,10 @@ def expire_acknowledged_authority(session: Any) -> dict[str, bool]:
     publisher = worker.policy_snapshot_publisher
     previous = publisher.current_snapshot()
     if previous is None:
-        raise RuntimeError("expiry fixture requires an acknowledged starting generation")
+        error = RuntimeError("expiry fixture requires an acknowledged starting generation")
+        raise contextual_failure(
+            error, expiry_stage="starting_authority", publisher_state=rejected_starting_snapshot(publisher)
+        ) from error
     starting_binding, starting_accepted = _authenticated_readback(session.store)
     if not _readback_matches(starting_binding, starting_accepted, previous):
         raise RuntimeError("expiry fixture starting authority readback mismatch")

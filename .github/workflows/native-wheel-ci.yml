@@ -208,6 +208,8 @@ jobs:
           workspaces: rust
           shared-key: native-wheel
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      - name: Verify macOS resident deadlines and buffered peer-close responses
+        run: cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime resident_client -- --nocapture --test-threads=1
       - name: Build pure Python wheel
         run: uv run --no-sync python -m build --wheel --outdir pure-dist
       - name: Build native runtime
@@ -323,6 +325,8 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify Windows storage sharing and exclusive recovery
+        run: uv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |

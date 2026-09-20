@@ -244,3 +244,210 @@ fn zero_budget_is_rejected_before_endpoint_or_process_access() {
     assert_eq!(error.code, "native_client_deadline_exceeded");
     assert!(!error.retryable_teardown);
 }
+
+struct TimeoutFallbackProbe {
+    complete_after_deadline: bool,
+    fallback_reads: usize,
+}
+
+impl Read for TimeoutFallbackProbe {
+    fn read(&mut self, _output: &mut [u8]) -> io::Result<usize> {
+        panic!("a failed timeout setter cannot enter the blocking read")
+    }
+}
+
+impl Write for TimeoutFallbackProbe {
+    fn write(&mut self, _input: &[u8]) -> io::Result<usize> {
+        unreachable!()
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        unreachable!()
+    }
+}
+
+impl ResidentStream for TimeoutFallbackProbe {
+    fn set_resident_read_timeout(&self, _timeout: Option<Duration>) -> io::Result<()> {
+        Err(io::Error::from_raw_os_error(22))
+    }
+
+    fn set_resident_write_timeout(&self, _timeout: Option<Duration>) -> io::Result<()> {
+        unreachable!()
+    }
+
+    fn set_resident_nonblocking(&self, _nonblocking: bool) -> io::Result<()> {
+        panic!("the deadline reader must not toggle socket mode")
+    }
+
+    fn read_buffered_after_timeout_error(
+        &mut self,
+        output: &mut [u8],
+        _error: &io::Error,
+        deadline: Instant,
+    ) -> Option<io::Result<usize>> {
+        if !self.complete_after_deadline {
+            return None;
+        }
+        self.fallback_reads += 1;
+        thread::sleep(
+            deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(1),
+        );
+        output[0] = b'x';
+        Some(Ok(1))
+    }
+}
+
+#[test]
+fn unsupported_timeout_error_is_preserved_without_reading() {
+    let mut stream = TimeoutFallbackProbe {
+        complete_after_deadline: false,
+        fallback_reads: 0,
+    };
+    let error = DeadlineStream::new(&mut stream, Instant::now() + Duration::from_secs(1))
+        .read(&mut [0u8; 1])
+        .unwrap_err();
+    assert_eq!(error.raw_os_error(), Some(22));
+    assert_eq!(stream.fallback_reads, 0);
+}
+
+#[test]
+fn buffered_fallback_cannot_bypass_absolute_deadline_after_read() {
+    let mut stream = TimeoutFallbackProbe {
+        complete_after_deadline: true,
+        fallback_reads: 0,
+    };
+    let error = DeadlineStream::new(&mut stream, Instant::now() + Duration::from_millis(200))
+        .read(&mut [0u8; 1])
+        .unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    assert_eq!(stream.fallback_reads, 1);
+}
+
+#[cfg(target_os = "macos")]
+mod macos_closed_peer {
+    use super::*;
+    use std::os::fd::AsFd;
+    use std::os::unix::net::UnixStream;
+
+    const REQUEST_ID: [u8; FRAME_REQUEST_ID_BYTES] = [0x51; FRAME_REQUEST_ID_BYTES];
+
+    fn closed_response(header: &[u8], body: &[u8]) -> UnixStream {
+        let (client, mut server) = UnixStream::pair().unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .unwrap();
+        server.write_all(header).unwrap();
+        server.write_all(body).unwrap();
+        drop(server);
+        let error = client
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(nix::errno::Errno::EINVAL as i32));
+        let mut descriptors = [nix::poll::PollFd::new(
+            client.as_fd(),
+            nix::poll::PollFlags::POLLIN,
+        )];
+        assert_eq!(
+            nix::poll::poll(&mut descriptors, nix::poll::PollTimeout::ZERO).unwrap(),
+            1
+        );
+        assert!(descriptors[0]
+            .revents()
+            .unwrap()
+            .contains(nix::poll::PollFlags::POLLHUP));
+        client
+    }
+
+    fn assert_blocking(stream: &UnixStream) {
+        let flags = nix::fcntl::fcntl(stream, nix::fcntl::FcntlArg::F_GETFL).unwrap();
+        assert_eq!(flags & nix::fcntl::OFlag::O_NONBLOCK.bits(), 0);
+    }
+
+    #[test]
+    fn complete_bound_response_survives_peer_close_without_changing_socket_mode() {
+        let mut client = closed_response(&response_header(&REQUEST_ID, b"{}"), b"{}");
+        assert_blocking(&client);
+        let mut stream =
+            DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
+        assert_eq!(
+            read_committed_response(&mut stream, &REQUEST_ID).unwrap(),
+            b"{}"
+        );
+        assert_eq!(stream.read(&mut [0u8; 1]).unwrap(), 0);
+        assert_blocking(&client);
+    }
+
+    #[test]
+    fn malformed_or_partial_buffered_responses_remain_fatal() {
+        for (header, body, code) in [
+            (
+                response_header(&[0x52; FRAME_REQUEST_ID_BYTES], b"{}"),
+                b"{}".as_slice(),
+                "native_client_response_binding_failed",
+            ),
+            (
+                response_header(&REQUEST_ID, b"{}"),
+                b"[]".as_slice(),
+                "native_client_response_digest_mismatch",
+            ),
+            (
+                response_header(&REQUEST_ID, b"{}"),
+                b"{".as_slice(),
+                "native_client_frame_read_failed",
+            ),
+        ] {
+            let mut client = closed_response(&header, body);
+            let mut stream =
+                DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
+            let error = read_committed_response(&mut stream, &REQUEST_ID).unwrap_err();
+            assert_eq!(error.code, code);
+            assert!(!error.retryable_teardown);
+        }
+    }
+
+    #[test]
+    fn expired_deadline_leaves_buffered_response_unread() {
+        let mut client = closed_response(&response_header(&REQUEST_ID, b"{}"), b"{}");
+        let error = DeadlineStream::new(&mut client, Instant::now())
+            .read(&mut [0u8; 1])
+            .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        let mut stream =
+            DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
+        assert_eq!(
+            read_committed_response(&mut stream, &REQUEST_ID).unwrap(),
+            b"{}"
+        );
+    }
+
+    #[test]
+    fn fallback_requires_exact_setter_error_and_actual_peer_hangup() {
+        let (mut client, mut server) = UnixStream::pair().unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .unwrap();
+        server.write_all(b"x").unwrap();
+        let mut output = [0u8; 1];
+        let deadline = Instant::now() + Duration::from_millis(250);
+        assert!(client
+            .read_buffered_after_timeout_error(
+                &mut output,
+                &io::Error::from_raw_os_error(22),
+                deadline
+            )
+            .is_none());
+        assert_eq!(output, [0]);
+        drop(server);
+        assert!(client
+            .read_buffered_after_timeout_error(
+                &mut output,
+                &io::Error::from_raw_os_error(13),
+                deadline
+            )
+            .is_none());
+        assert_eq!(output, [0]);
+        assert_eq!(client.read(&mut output).unwrap(), 1);
+        assert_eq!(output, [b'x']);
+        assert_blocking(&client);
+    }
+}

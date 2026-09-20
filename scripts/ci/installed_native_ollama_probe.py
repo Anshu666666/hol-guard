@@ -51,6 +51,7 @@ from scripts.ci.native_ollama_contract import (  # noqa: E402
     ACTIVE_CASES,
     INACTIVE_CASES,
     LEGACY_RETRY_SCOPE,
+    READINESS_PHASES,
     RESTRICTED_CASES,
     OllamaCase,
     payload_digest,
@@ -124,9 +125,8 @@ def prepare_fixture_authority(store: GuardStore) -> str:
     """Use isolated fixture enrollment, then production mutation approvals."""
     from scripts.native_slo_command_fixture import verify_empty_command_authority
 
-    # AdapterSession provisioned the real generated-key empty authority before
-    # daemon construction. Verify it again instead of bootstrapping a second
-    # authority after the publisher has started.
+    # AdapterSession provisioned the generated-key empty authority before daemon
+    # construction. Verify it here without bootstrapping another authority.
     verify_empty_command_authority(store)
     password = secrets.token_urlsafe(36)
     update_settings(
@@ -189,9 +189,6 @@ def commit_controls(store: GuardStore, password: str, layer: ExtensionControlLay
     return view.revision
 
 
-_READINESS_PHASES = frozenset(
-    {"initial", "enabled", "disabled", "updated", "settings_rollback", "approved_retry", "stale_write_rejected"}
-)
 _PUBLISHER_ERRORS = (
     frozenset(
         {
@@ -237,8 +234,14 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
     if snapshot is None or finished > deadline:
         publisher = worker.policy_snapshot_publisher
         error = publisher.last_error
+        if error in _PUBLISHER_ERRORS:
+            publisher_error = error
+        elif error:
+            publisher_error = "unclassified"
+        else:
+            publisher_error = "none"
         detail = failure_evidence(AssertionError("installed_ollama_native_readiness_failed"))
-        detail["phase"] = phase if phase in _READINESS_PHASES else "unknown"
+        detail["phase"] = phase if phase in READINESS_PHASES else "unknown"
         detail["readiness"] = {
             "expected_revision": revision,
             "budget_ms": MAX_READINESS_P95_MS,
@@ -247,7 +250,7 @@ def ready_binding(session: AdapterSession, revision: int, *, phase: str) -> dict
             "budget_exhausted": finished > deadline,
             "publisher_ready_after_failure": publisher.is_ready(),
             "publisher_closed_after_failure": publisher.closed,
-            "publisher_error": error if error in _PUBLISHER_ERRORS else "unclassified" if error else "none",
+            "publisher_error": publisher_error,
         }
         try:
             cast(dict[str, object], detail["readiness"]).update(publisher_error_diagnostic(error))

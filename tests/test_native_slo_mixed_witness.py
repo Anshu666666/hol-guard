@@ -14,6 +14,7 @@ import pytest
 from codex_plugin_scanner.guard.daemon import runtime_hook_evidence_journal as journal
 from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_writer import RuntimeHookEvidenceWriter
 from codex_plugin_scanner.guard.store import GuardStore
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_server import MixedScenarioFixture
 from scripts.native_slo_mixed_witness import ReceiptWitness, _JournalOS, writer_drained
 from tests.test_native_command_observations import _observations
@@ -87,7 +88,8 @@ def test_actual_writer_admission_journal_io_and_sql_are_observed_without_modifyi
     )
     witness = ReceiptWitness(session, maximum=1).__enter__()
     try:
-        assert worker._review_raw_hook_native(payload={"tool_use_id": "mixed-load-0"}) is edge
+        request = fixture_request("claude-code", "PostToolUse", attempt="mixed-load-0")
+        assert worker._review_raw_hook_native(payload=request) is edge
         assert writer.submit_native_decision_receipt(receipt) is True
         assert writer.stop(timeout_seconds=3)
         witness.reconcile()

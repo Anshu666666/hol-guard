@@ -16,6 +16,7 @@ from scripts.native_slo_contract import MAX_READINESS_P95_MS
 from scripts.native_slo_expiry import _authenticated_readback, _readback_matches, expire_acknowledged_authority
 from scripts.native_slo_failure import failure_evidence
 from scripts.native_slo_mixed_witness import ReceiptWitness, writer_drained
+from scripts.native_slo_workspace_lifecycle_clocks import LifecycleClocks
 from scripts.native_slo_workspace_lifecycle_faults import (
     FirstAdmissionReplyFault,
     LostMetadataHints,
@@ -132,6 +133,7 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
     if scenario not in LIFECYCLE_SCENARIOS:
         raise ValueError("workspace lifecycle scenario unsupported")
     require_owned_paths(session, workspaces)
+    clocks = LifecycleClocks()
     count = len(workspaces)
     publisher = session.daemon._server.hook_worker.policy_snapshot_publisher
     result: dict[str, Any] = {
@@ -164,6 +166,7 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             fault = lifetime.enter_context(FirstAdmissionReplyFault(current))
         register_scopes(current, workspaces)
         accepted = time.monotonic()
+        clocks.mark("cold_registrations_return")
         result["acceptance_boundary"] = "cold_provider_all_workspace_registrations_returned"
 
     try:
@@ -180,11 +183,16 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             workspace=workspaces[-1],
             deadline=time.monotonic() + MAX_READINESS_P95_MS / 1000,
         )
+        clocks.mark("setup_ack_return")
         if scenario in {"first_admission_fault", "service_restart"}:
-            result["service_replacement"] = replace_service(session, workspaces, prepare=prepare_service)
+            clocks.mark("replacement_enter")
+            result["service_replacement"] = replace_service(session, workspaces, prepare=prepare_service, clocks=clocks)
+            clocks.mark("replacement_return")
             publisher = session.daemon._server.hook_worker.policy_snapshot_publisher
         elif scenario == "expiry_fault":
+            clocks.mark("expiry_enter")
             expiry = expire_acknowledged_authority(session)
+            clocks.mark("expiry_return")
             result["expiry"] = expiry
             if not all(
                 expiry.get(key) is True
@@ -223,15 +231,21 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             if scenario == "expiry_fault":
                 register_scopes(publisher, workspaces)
                 accepted = time.monotonic()
+                clocks.mark("cold_registrations_return")
                 result["acceptance_boundary"] = "cold_provider_all_workspace_registrations_returned"
+                clocks.mark("publisher_start_enter")
                 publisher.start()
+                clocks.mark("publisher_start_return")
             else:
+                clocks.mark("daemon_start_enter")
                 session.daemon.start()
+                clocks.mark("daemon_start_return")
             minimum = int(before["generation"])
         if accepted is None:
             raise RuntimeError("workspace lifecycle acceptance was not observed")
         deadline = accepted + MAX_READINESS_P95_MS / 1000
         result["accepted_ms"] = (accepted - observer.started) * 1000
+        clocks.mark("recovered_ack_enter")
         snapshot = await_ack(
             session,
             minimum=minimum,
@@ -240,6 +254,7 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
             workspace=workspaces[-1],
             deadline=deadline,
         )
+        clocks.mark("recovered_ack_return")
         result["accept_to_ack_ms"] = (time.monotonic() - accepted) * 1000
         result["binding"] = public_binding(snapshot)
         result["publication_chain"] = _chain(observer, snapshot, accepted, deadline)
@@ -284,6 +299,7 @@ def run_lifecycle_cell(session: Any, workspaces: tuple[Any, ...], scenario: str)
     except Exception as error:
         result["failure"] = failure_evidence(error)
     finally:
+        result["lifecycle_clocks"] = clocks.report()
         if fault is not None:
             _cleanup(result, "fault_report", lambda: result.update(fault=fault.report()))
         # End the one-scenario cell before freezing its final publication rows.

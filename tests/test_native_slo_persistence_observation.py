@@ -14,6 +14,7 @@ import pytest
 from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_writer import RuntimeHookEvidenceWriter
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_mixed import run_mixed_scenario
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_mixed_server import MixedScenarioFixture
 from scripts.native_slo_persistence_observation import PersistenceObservationSpec, persistence_observation_checks
 from tests.native_workspace_request_fixtures import receipt, snapshot
@@ -103,7 +104,8 @@ def test_wire_spec_installs_real_sqlite_and_queue_observation_in_mixed_dispatch(
         assert fixture.witness is None and writer._queue_observation is None
         started = fixture.dispatch("mixed_start", {"maximum": 1, "receipt_observation": spec.to_request()})
         assert started["status"] == "completed"
-        assert worker._review_raw_hook_native(payload={"tool_use_id": "mixed-load-0"}) is edge
+        request = fixture_request("claude-code", "PostToolUse", attempt="mixed-load-0")
+        assert worker._review_raw_hook_native(payload=request) is edge
         assert writer.submit_native_decision_receipt(native) is True
         final = fixture.dispatch("mixed_finish", {})
         assert final["status"] == "completed"

@@ -52,7 +52,7 @@ def test_fixture_ids_admit_real_command_evidence_for_both_harnesses_and_all_atte
 
 
 @pytest.mark.parametrize("attempt", ("mixed-load-1", "mixed-policy-0"))
-def test_original_short_native_ids_still_fail_production_admission(tmp_path: Path, attempt: str) -> None:
+def test_diagnostic_labels_do_not_satisfy_native_correlation_admission(tmp_path: Path, attempt: str) -> None:
     writer = RuntimeHookEvidenceWriter(store=GuardStore(tmp_path))
     try:
         assert not writer.submit_command_activity(
@@ -116,9 +116,13 @@ def test_repeated_attempt_labels_receive_independent_opaque_native_ids() -> None
 
 
 @pytest.mark.parametrize("invalid", (None, 1, "private-path", "mixed-load-1000000", "mixed-policy-0\n"))
-def test_invalid_explicit_attempt_does_not_fall_back_to_legacy_native_id(invalid: object) -> None:
+def test_invalid_diagnostic_attempt_cannot_be_replaced_by_native_id(invalid: object) -> None:
     assert request_attempt({"native_slo_attempt": invalid, "tool_use_id": "mixed-load-0"}) is None
-    assert request_attempt({"tool_use_id": "mixed-load-0"}) == "mixed-load-0"
+
+
+@pytest.mark.parametrize("value", (None, [], {}, {"tool_use_id": "mixed-load-0"}, {"tool_call_id": "mixed-load-0"}))
+def test_diagnostic_attempt_requires_its_explicit_field(value: object) -> None:
+    assert request_attempt(value) is None
 
 
 @pytest.mark.parametrize("harness,attempt", (("unknown", "mixed-load-0"), ("codex", "outside-fixture")))

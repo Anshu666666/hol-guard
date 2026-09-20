@@ -125,7 +125,7 @@ _SCOPE_CHECKS = {
     "config_capture_complete",
 }
 _PUBLICATION_FIELDS = {"publication_rows", "publication_observer", "publication_chain", "scope_checks"}
-_FACT_FIELDS = {"service_replacement", "key_change", "expiry", "fault", "fault_request"}
+_FACT_FIELDS = {"service_replacement", "key_change", "expiry", "fault", "fault_request", "lifecycle_clocks"}
 _FAILURE_FIELDS = {"failure", "fixture_cleanup_failure", "cleanup_failures"}
 _PROOF_FIELDS = {"requests"} | _PUBLICATION_FIELDS | _FACT_FIELDS | _FAILURE_FIELDS
 _SERVICE_FLAGS = {

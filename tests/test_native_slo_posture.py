@@ -14,6 +14,7 @@ from codex_plugin_scanner.guard.daemon.runtime_hook_evidence_writer import Runti
 from codex_plugin_scanner.guard.store import GuardStore
 from scripts.native_slo_contract import assert_privacy_safe
 from scripts.native_slo_mixed_load import PrivateLedger
+from scripts.native_slo_mixed_request import fixture_request
 from scripts.native_slo_posture import _pages, run_posture_scenarios
 from scripts.native_slo_posture_witness import (
     POSTURE_ROUTES,
@@ -166,7 +167,7 @@ def test_native_wrapper_preserves_real_result_and_validates_durable_receipt(tmp_
         binding = _context("observe")["binding"]
         assert (
             worker._review_raw_hook_native(
-                payload={"tool_use_id": "mixed-load-0"},
+                payload=fixture_request(case.harness, case.event, attempt="mixed-load-0"),
                 harness=case.harness,
                 event=case.event,
                 policy_snapshot=binding,

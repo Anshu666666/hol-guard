@@ -14,6 +14,14 @@ pub(crate) trait ResidentStream: Read + Write + Send {
     fn set_resident_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;
     fn set_resident_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;
     fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()>;
+    fn read_buffered_after_timeout_error(
+        &mut self,
+        _output: &mut [u8],
+        _error: &io::Error,
+        _deadline: Instant,
+    ) -> Option<io::Result<usize>> {
+        None
+    }
     fn try_read_available(&mut self, output: &mut [u8]) -> io::Result<usize> {
         self.set_resident_nonblocking(true)?;
         let result = self.read(output);
@@ -59,6 +67,42 @@ impl ResidentStream for UnixStream {
 
     fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()> {
         self.set_nonblocking(nonblocking)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn read_buffered_after_timeout_error(
+        &mut self,
+        output: &mut [u8],
+        error: &io::Error,
+        deadline: Instant,
+    ) -> Option<io::Result<usize>> {
+        use nix::errno::Errno;
+        use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
+        use nix::sys::socket::{recv, MsgFlags};
+        use std::os::fd::{AsFd, AsRawFd};
+
+        // Darwin rejects SO_RCVTIMEO after a Unix peer closes, even when its
+        // complete response remains buffered. EINVAL alone is insufficient:
+        // independently require hangup on this same owned descriptor.
+        if error.raw_os_error() != Some(Errno::EINVAL as i32) {
+            return None;
+        }
+        let mut descriptors = [PollFd::new(self.as_fd(), PollFlags::POLLIN)];
+        if poll(&mut descriptors, PollTimeout::ZERO).ok()? != 1 {
+            return None;
+        }
+        let events = descriptors[0].revents()?;
+        if !events.contains(PollFlags::POLLHUP)
+            || events.intersects(PollFlags::POLLERR | PollFlags::POLLNVAL)
+        {
+            return None;
+        }
+        if Instant::now() >= deadline {
+            return Some(Err(io::Error::from(io::ErrorKind::TimedOut)));
+        }
+        // Read only already available bytes or EOF. Do not change socket mode,
+        // reuse an old blocking timeout, or wait for any further peer data.
+        Some(recv(self.as_raw_fd(), output, MsgFlags::MSG_DONTWAIT).map_err(io::Error::from))
     }
 }
 

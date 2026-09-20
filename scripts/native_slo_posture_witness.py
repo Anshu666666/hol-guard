@@ -16,6 +16,7 @@ from dataclasses import replace
 from typing import Any
 from unittest.mock import patch
 
+from scripts.native_slo_mixed_request import request_attempt
 from scripts.native_slo_mixed_witness import ReceiptWitness
 from scripts.native_slo_workloads import (
     QualificationCase,
@@ -117,7 +118,7 @@ class PostureWitness(ReceiptWitness):
         review = worker._review_raw_hook_native
 
         def observed(**kwargs: Any) -> Any:
-            attempt = kwargs.get("payload", {}).get("tool_use_id")
+            attempt = request_attempt(kwargs.get("payload"))
             result = review(**kwargs)
             if not isinstance(attempt, str) or not attempt.startswith("mixed-load-"):
                 return result

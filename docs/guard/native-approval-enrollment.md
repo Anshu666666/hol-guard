@@ -1,5 +1,12 @@
 # Native approval enrollment contract
 
+Scope: this contract describes the external-authority native enrollment and consume
+route. It does not describe every current hook approval continuation or prove that
+a given installed artifact admitted this route. The separate Python pending-review
+and bounded compatibility-reuse path is documented in the
+[RSP-024 technical review](native-runtime-technical-contract-review.md); it does not
+mint an external-authority signature or establish general native-consume qualification.
+
 Native approval signatures come from an external user, device, or Guard Cloud
 authority. The policy-verifier key is not an approval key and cannot mint an
 approval artifact.

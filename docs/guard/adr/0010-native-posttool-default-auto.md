@@ -1,5 +1,7 @@
 # ADR 0010: Default eligible PostToolUse review to bundled Rust
 
+> Current-scope correction: default auto and exclusive supported native evaluation remain in force. The blanket statement below that every unavailable/malformed native result is delivered as a denial is superseded by [the RSP-024 technical review](../native-runtime-technical-contract-review.md). Native evaluation failure, Watch presentation, event-specific availability and delivered harness output are distinct. The historical Evidence paragraph is not proof of current-source installed qualification.
+
 Status: accepted for `main`.
 
 ## Decision

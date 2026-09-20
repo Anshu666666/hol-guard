@@ -798,8 +798,19 @@ def test_daemon_token_and_state_use_atomic_replacement(tmp_path, monkeypatch):
         real_replace(source, destination)
 
     monkeypatch.setattr(daemon_manager_module.os, "replace", recording_replace)
+    if os.name == "nt":
+        from codex_plugin_scanner.guard import windows_atomic_replace
+
+        real_native_replace = windows_atomic_replace.replace_once
+
+        def recording_native_replace(source, destination, expected) -> None:
+            replacements.append((Path(source), Path(destination)))
+            real_native_replace(source, destination, expected)
+
+        monkeypatch.setattr(windows_atomic_replace, "replace_once", recording_native_replace)
 
     daemon_manager_module.write_guard_daemon_state(guard_home, 4781, "secret-token")
+    assert len(replacements) == 2
     destinations = {destination for _temporary_path, destination in replacements}
     assert destinations == {
         daemon_manager_module._auth_token_path(guard_home),

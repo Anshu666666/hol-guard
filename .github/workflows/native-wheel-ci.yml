@@ -18,6 +18,8 @@ jobs:
   linux-x64:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      rule_digest: ${{ steps.native-wheel.outputs.rule_digest }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
@@ -34,7 +36,7 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Run wheel-builder contracts
-        run: uv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py --tb=short
+        run: uv run --no-sync pytest ci/native_runtime/test_native_hol_guard_wheel.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short
       - name: Install pinned Rust toolchain and musl target
         run: |
           rustup toolchain install 1.88.0 --profile minimal
@@ -62,12 +64,14 @@ jobs:
           fi
           "$runtime" self-test --json
       - name: Assemble and install native wheel
+        id: native-wheel
         env:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
           runtime="rust/target/x86_64-unknown-linux-musl/release/hol-guard-runtime"
           RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+          printf 'rule_digest=%s\n' "$RULE_DIGEST" >> "$GITHUB_OUTPUT"
           uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
             --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \
             --runtime "$runtime" \
@@ -197,7 +201,7 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Verify macOS qualification process observation
-        run: uv run --no-sync python -m pytest -q tests/test_native_qualification_process.py
+        run: uv run --no-sync python -m pytest -q tests/test_native_qualification_process.py tests/test_native_policy_snapshot_inactive_namespace.py
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.88.0 --profile minimal
@@ -326,7 +330,20 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra dev --python 3.12
       - name: Verify Windows storage sharing and exclusive recovery
-        run: uv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py --tb=short
+        run: uv run --no-sync python -m pytest tests/test_guard_storage_gate_concurrency.py tests/test_native_policy_snapshot_inactive_namespace.py --tb=short
+      - name: Verify actual Windows private readers and atomic writer
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/test_guard_private_file_io.py
+          tests/test_private_reader_descriptor_guards.py
+          tests/test_windows_replaceable_file.py
+          tests/test_windows_replaceable_reader_process.py
+          tests/test_windows_replaceable_unicode_crt.py
+          tests/test_windows_wtext_acceptance_probe.py
+          tests/test_windows_atomic_replace.py
+          tests/test_windows_atomic_replace_process.py
+          tests/test_guard_daemon_manager.py::test_daemon_token_and_state_use_atomic_replacement
+          --junitxml=windows-private-authority-controls.xml --tb=short
       - name: Install pinned Rust toolchain
         shell: pwsh
         run: |
@@ -418,6 +435,15 @@ jobs:
             native-installed-control-lock.json
           if-no-files-found: error
 
+      - name: Retain Windows private authority control results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-private-authority-controls
+          path: windows-private-authority-controls.xml
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Retain bounded default-auto failure evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -426,3 +452,45 @@ jobs:
           path: native-default-auto-failure.json
           if-no-files-found: warn
           retention-days: 14
+
+  native-artifact-matrix:
+    needs: [linux-x64, macos, windows-x64]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Verify native artifact collection contracts
+        run: uv run --no-sync python -m pytest tests/test_aggregate_native_wheel_artifacts.py tests/test_validate_release_artifacts.py --tb=short
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: hol-guard-native-wheel-*
+          path: native-matrix-input
+          merge-multiple: false
+      - name: Admit all four native targets without a Windows waiver
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          RULE_DIGEST: ${{ needs.linux-x64.outputs.rule_digest }}
+        run: |
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          uv run --no-sync python -m scripts.ci.aggregate_native_wheel_artifacts \
+            --artifacts-dir native-matrix-input \
+            --version "$VERSION" \
+            --source-sha "$SOURCE_SHA" \
+            --rule-digest "$RULE_DIGEST" \
+            --output native-matrix-evidence.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: native-wheel-matrix-admission
+          path: native-matrix-evidence.json
+          if-no-files-found: error

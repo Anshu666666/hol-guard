@@ -66,8 +66,11 @@ def test_hook_data_plane_ownership_v2_has_one_declared_class_per_node() -> None:
         assert isinstance(node["paths"], list) and node["paths"]
 
 
-def test_fail_safe_matrix_never_allows_unreviewed_output() -> None:
+def test_historical_fail_safe_matrix_retains_its_original_declarations() -> None:
     payload = _load("rust-native-fail-safe-matrix.v1.json")
+    assert payload["status"] == "historical_superseded_for_current_delivery"
+    assert payload["superseded_by"] == "../native-runtime-technical-contract-review.md"
+    # Current delivery behavior is exercised by test_native_runtime_delivery_contract.py.
     conditions = payload["conditions"]
     assert isinstance(conditions, dict)
     for condition in conditions.values():

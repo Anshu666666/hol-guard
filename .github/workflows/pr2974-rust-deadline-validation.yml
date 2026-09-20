@@ -1,0 +1,147 @@
+name: PR2974 original Rust deadline validation
+
+on:
+  push:
+    branches: [codex/pr2974-rust-deadline-validation-20260920]
+    paths:
+      - '.github/workflows/pr2974-rust-deadline-validation.yml'
+      - 'ci/pr2974_rust_deadline_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-rust-deadline-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  rust-deadline:
+    name: Original Rust deadline and full runtime units
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-rust-deadline-validation/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-rust-deadline-validation/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '46be9371f45a89a8b92d3a1c1508b32adc27e507',
+                     'source_tree': '4cdff9335fbb3d347ca745db22b7101853f7a0f6',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False,
+                     'headline_timing_eligible': False, 'overall_qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout the immutable additive harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the exact immutable Rust source candidate
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '46be9371f45a89a8b92d3a1c1508b32adc27e507'
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the exact validation Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Validate immutable Rust populations and preserve every outcome
+        id: validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rust_deadline_validation/validate.py"
+      - name: Preserve actual driver and checkout outcomes before retention
+        id: outcomes
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          names = ['HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'DRIVER_OUTCOME']
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in names}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['pre_retention_driver_passed'] = passed
+          value['headline_timing_eligible'] = False
+          value['overall_qualification_complete'] = False
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'pre_retention_driver_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          PY
+      - name: Emit complete checksum-framed reports and failure snapshots
+        id: projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rust_deadline_validation/report_projection.py"
+      - name: Retain original Rust logs, source controls and test results
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rust-deadline-validation-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-rust-deadline-validation/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Gate both finite populations after all retention steps
+        if: always()
+        env:
+          OUTCOME_RETENTION: ${{ steps.outcomes.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.artifact.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          value = json.loads((report / 'job-outcome.json').read_text())
+          rust = json.loads((report / 'rust-validation-summary.json').read_text())
+          retention = {name: os.environ[name] for name in ['OUTCOME_RETENTION', 'PROJECTION_OUTCOME', 'ARTIFACT_OUTCOME']}
+          passed = (value.get('status') == 'finished' and value.get('passed') is True
+                    and value.get('pre_retention_driver_passed') is True
+                    and value.get('headline_timing_eligible') is False
+                    and value.get('overall_qualification_complete') is False
+                    and value.get('all_original_owned_groups_retired') is True
+                    and rust.get('required_cohorts_complete') is True
+                    and rust.get('observer_controls', {}).get('ordinary_child_reap') is True
+                    and all(outcome == 'success' for outcome in retention.values()))
+          print(json.dumps({'finite_workflow_gate_passed': passed, 'retention_outcomes': retention,
+                            'headline_timing_eligible': False, 'qualification_complete': False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

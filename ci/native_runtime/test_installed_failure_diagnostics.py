@@ -10,9 +10,16 @@ from typing import Literal, cast
 import pytest
 
 from ci.native_runtime import installed_hook_failure_diagnostic as diagnostic
+from ci.native_runtime import probe_installed_native_extensions as extension_probe
 from ci.native_runtime import probe_installed_scoped_policy as probe
+from codex_plugin_scanner.guard import native_resident_client as client_module
+from codex_plugin_scanner.guard.daemon.hook_worker import HookWorker
+from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
 from codex_plugin_scanner.guard.native_policy_snapshot_publisher import NativePolicySnapshotPublisher
+from codex_plugin_scanner.guard.store import GuardStore
+from scripts import native_publication_diagnostic as publication_diagnostic
 from scripts.native_publication_diagnostic import PublicationObservation
+from tests.native_policy_snapshot_test_fixtures import _ack, _status
 
 
 def test_timeout_keeps_original_exception_and_call_count_without_private_output(
@@ -248,3 +255,141 @@ def test_late_ack_cannot_satisfy_the_original_initial_readiness_budget(
     with pytest.raises(probe.ProbeError, match=r"^readiness_deadline$"):
         probe.require_initial_readiness(cast(NativePolicySnapshotPublisher, cast(object, publisher)), tmp_path)
     assert calls == ["register", "start", ("wait", 100.4)]
+
+
+def test_extension_readiness_refusal_observes_the_actual_preexisting_publisher(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    entered, release = threading.Event(), threading.Event()
+    calls: list[str] = []
+
+    def transport(**kwargs):
+        # The real publisher has already captured this controlled transport
+        # before the extension ready() observation begins. No native claim.
+        calls.append("synthetic-private-extension-transport-canary")
+        entered.set()
+        assert release.wait(10)
+        return _ack(kwargs["payload"])
+
+    monkeypatch.setattr(client_module, "native_resident_client_request", transport)
+    publisher = NativePolicySnapshotPublisher(store=GuardStore(tmp_path), status_provider=_status)
+    worker = object.__new__(HookWorker)
+    worker._publish_native_policy = True
+    worker.policy_snapshot_publisher = publisher
+    daemon = cast(GuardDaemonServer, cast(object, SimpleNamespace(_server=SimpleNamespace(hook_worker=worker))))
+    try:
+        publisher.start()
+        assert entered.wait(5)
+        assert publisher._thread is not None and publisher._thread.is_alive()
+        with pytest.raises(RuntimeError, match=r"^installed_native_extensions_failed:policy_not_ready$"):
+            extension_probe.ready(daemon, tmp_path / "workspace", 0)
+        output = capsys.readouterr()
+        assert json.loads(output.out) == {
+            "schema": "guard.installed-native-extension-readiness-failure.v1",
+            "control_revision": 0,
+            "publisher_error": "missing",
+        }
+        assert "window=after_daemon_construction" in output.err
+        assert "started=0; completed=0" in output.err
+        assert "readiness_wait=not_ready" in output.err
+        assert "current_binding=missing" in output.err
+        assert "worker_thread=alive" in output.err
+        assert "worker_phase=snapshot_transport; worker_stack=matched" in output.err
+        assert "private" not in output.err and "canary" not in output.err and str(tmp_path) not in output.err
+        assert len(calls) == 1
+        assert publisher._client_request is None and "wait_until_ready" not in vars(publisher)
+        assert "_publish_once" not in vars(publisher)
+    finally:
+        release.set()
+        publisher.close(timeout_seconds=2)
+    assert publisher._thread is not None and not publisher._thread.is_alive()
+
+
+@pytest.mark.parametrize("raises", [False, True])
+def test_extension_readiness_success_or_exception_preserves_call_and_methods(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], raises: bool
+) -> None:
+    binding: dict[str, object] = {"generation": 1}
+    failure = RuntimeError("synthetic-private-original-extension-error")
+    calls: list[object] = []
+
+    class Publisher:
+        def __init__(self) -> None:
+            self._client_request = None
+
+        def current_snapshot(self) -> dict[str, object]:
+            calls.append("snapshot")
+            return {"command_extensions": {"revision": 7}}
+
+    publisher = Publisher()
+    original = dict(vars(publisher))
+
+    def prepare(workspace: Path, *, deadline: float) -> dict[str, object]:
+        assert workspace == tmp_path and deadline == 105.0
+        calls.append("prepare")
+        if raises:
+            raise failure
+        return binding
+
+    daemon = cast(
+        GuardDaemonServer,
+        cast(
+            object,
+            SimpleNamespace(
+                _server=SimpleNamespace(
+                    hook_worker=SimpleNamespace(
+                        policy_snapshot_publisher=publisher,
+                        prepare_workspace_policy=prepare,
+                    )
+                )
+            ),
+        ),
+    )
+    monkeypatch.setattr(extension_probe, "time", SimpleNamespace(monotonic=lambda: 100.0))
+    if raises:
+        with pytest.raises(RuntimeError) as caught:
+            extension_probe.ready(daemon, tmp_path, 7)
+        assert caught.value is failure and calls == ["prepare"]
+    else:
+        assert extension_probe.ready(daemon, tmp_path, 7) is binding
+        assert calls == ["prepare", "snapshot"]
+    assert vars(publisher) == original
+    output = capsys.readouterr()
+    assert output.out == output.err == ""
+
+
+def test_extension_publication_diagnostic_output_failure_preserves_original_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def fail_print(*args, **kwargs):
+        raise OSError("synthetic-private-diagnostic-output-error")
+
+    publisher = SimpleNamespace(_client_request=None, last_error=None)
+    calls: list[float] = []
+
+    def prepare(workspace: Path, *, deadline: float) -> None:
+        assert workspace == tmp_path
+        calls.append(deadline)
+
+    daemon = cast(
+        GuardDaemonServer,
+        cast(
+            object,
+            SimpleNamespace(
+                _server=SimpleNamespace(
+                    hook_worker=SimpleNamespace(
+                        policy_snapshot_publisher=publisher,
+                        prepare_workspace_policy=prepare,
+                    )
+                )
+            ),
+        ),
+    )
+    monkeypatch.setattr(extension_probe, "time", SimpleNamespace(monotonic=lambda: 100.0))
+    monkeypatch.setattr(publication_diagnostic, "print", fail_print, raising=False)
+    with pytest.raises(RuntimeError, match=r"^installed_native_extensions_failed:policy_not_ready$"):
+        extension_probe.ready(daemon, tmp_path, 0)
+    assert calls == [105.0] and vars(publisher) == {"_client_request": None, "last_error": None}
+    output = capsys.readouterr()
+    assert json.loads(output.out)["publisher_error"] == "missing"
+    assert output.err == ""

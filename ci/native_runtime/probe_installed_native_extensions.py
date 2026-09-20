@@ -56,6 +56,10 @@ from codex_plugin_scanner.guard.store_base import EncryptedFileSecretStore
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(_ROOT))
 from ci.native_runtime.installed_hook_failure_diagnostic import report_hook_transport_timeout  # noqa: E402
+from scripts.native_publication_diagnostic import (  # noqa: E402
+    observe_publication,
+    report_publication_failure,
+)
 
 _ACTION_RANK = {
     "allow": 0,
@@ -139,7 +143,12 @@ def control(kind: ControlTargetKind, target: str, state: ControlState) -> Extens
 
 def ready(daemon: GuardDaemonServer, workspace: Path, revision: int) -> dict[str, object]:
     worker = daemon._server.hook_worker
-    binding = worker.prepare_workspace_policy(workspace, deadline=time.monotonic() + 5)
+    publisher = worker.policy_snapshot_publisher
+    # Observe future calls only; construction may already have started a publication.
+    with observe_publication(publisher) as observation:
+        binding = worker.prepare_workspace_policy(workspace, deadline=time.monotonic() + 5)
+        if binding is None:
+            report_publication_failure(observation, publisher)
     if binding is None:
         print(
             json.dumps(

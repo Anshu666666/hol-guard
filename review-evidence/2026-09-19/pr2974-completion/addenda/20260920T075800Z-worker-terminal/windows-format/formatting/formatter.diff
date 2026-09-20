@@ -1,0 +1,202 @@
+--- before/src/codex_plugin_scanner/guard/windows_replaceable_file.py
++++ after/src/codex_plugin_scanner/guard/windows_replaceable_file.py
+@@ -33,12 +33,18 @@
+         raise OSError("windows_replaceable_read_unavailable")
+     api = win_dll("kernel32", use_last_error=True)
+     api.CreateFileW.argtypes = [
+-        wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+-        wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
++        wintypes.LPCWSTR,
++        wintypes.DWORD,
++        wintypes.DWORD,
++        ctypes.c_void_p,
++        wintypes.DWORD,
++        wintypes.DWORD,
++        wintypes.HANDLE,
+     ]
+     api.CreateFileW.restype = wintypes.HANDLE
+     api.GetFileInformationByHandle.argtypes = [
+-        wintypes.HANDLE, ctypes.POINTER(_WindowsByHandleFileInformation),
++        wintypes.HANDLE,
++        ctypes.POINTER(_WindowsByHandleFileInformation),
+     ]
+     api.GetFileInformationByHandle.restype = wintypes.BOOL
+     api.GetFileType.argtypes = [wintypes.HANDLE]
+@@ -60,8 +66,11 @@
+     if os.name != "nt":
+         raise OSError("windows_replaceable_read_unavailable")
+     allowed = (
+-        os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOINHERIT", 0)
+-        | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
++        os.O_RDONLY
++        | getattr(os, "O_BINARY", 0)
++        | getattr(os, "O_NOINHERIT", 0)
++        | getattr(os, "O_CLOEXEC", 0)
++        | getattr(os, "O_NOFOLLOW", 0)
+     )
+     if type(flags) is not int or flags < 0 or flags & ~allowed:
+         raise ValueError("replaceable_descriptor_must_be_read_only")
+@@ -77,9 +86,12 @@
+ 
+ def _transfer_descriptor(handle: int) -> int:
+     msvcrt = importlib.import_module("msvcrt")
+-    return int(msvcrt.open_osfhandle(
+-        handle, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOINHERIT", 0),
+-    ))
++    return int(
++        msvcrt.open_osfhandle(
++            handle,
++            os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOINHERIT", 0),
++        )
++    )
+ 
+ 
+ def _require_disk(api: Any, handle: int) -> None:
+@@ -99,8 +111,13 @@
+ def _open_descriptor(name: str) -> int:
+     api = _file_api()
+     handle = api.CreateFileW(
+-        name, _GENERIC_READ, _SHARE_READ_WRITE_DELETE, None,
+-        _OPEN_EXISTING, _OPEN_REPARSE_POINT, None,
++        name,
++        _GENERIC_READ,
++        _SHARE_READ_WRITE_DELETE,
++        None,
++        _OPEN_EXISTING,
++        _OPEN_REPARSE_POINT,
++        None,
+     )
+     if handle in (None, ctypes.c_void_p(-1).value):
+         raise _windows_error()
+--- before/tests/test_windows_replaceable_file.py
++++ after/tests/test_windows_replaceable_file.py
+@@ -35,7 +35,8 @@
+     def GetFileInformationByHandle(self, handle, pointer):
+         self.operations.append(("information", handle))
+         information = ctypes.cast(
+-            pointer, ctypes.POINTER(reader._WindowsByHandleFileInformation),
++            pointer,
++            ctypes.POINTER(reader._WindowsByHandleFileInformation),
+         ).contents
+         information.dwFileAttributes = self.attributes
+         return self.information_success
+@@ -78,7 +79,8 @@
+     assert events == [("open", str(target), None, os.O_RDONLY | 0x80)]
+     assert api.operations == [
+         ("open", (str(target), 0x80000000, 7, None, 3, 0x00200000, None)),
+-        ("information", 41), ("type", 41),
++        ("information", 41),
++        ("type", 41),
+     ]
+     assert transfers == [41]
+ 
+--- before/ci/native_runtime/windows_replaceable_reader_child.py
++++ after/ci/native_runtime/windows_replaceable_reader_child.py
+@@ -94,8 +94,11 @@
+     finally:
+         setattr(manager, "os", original)
+     report = {
+-        "schema": 1, "operation": "writer", "writer_calls": writer_calls,
+-        "writer_locked": locked, "replace_calls": observer.replace_calls,
++        "schema": 1,
++        "operation": "writer",
++        "writer_calls": writer_calls,
++        "writer_locked": locked,
++        "replace_calls": observer.replace_calls,
+         "writer_fd_closed_before_replace": observer.writer_fd_closed,
+         "source_reader_opened": observer.source_reader_opened,
+         "source_reader_closed": observer.source_reader_closed,
+@@ -118,10 +121,7 @@
+     payload = None
+ 
+     def hook(event, arguments):
+-        if (
+-            event == "open" and isinstance(arguments[0], (str, os.PathLike))
+-            and os.fspath(arguments[0]) == str(target)
+-        ):
++        if event == "open" and isinstance(arguments[0], (str, os.PathLike)) and os.fspath(arguments[0]) == str(target):
+             events.append({"mode": arguments[1], "flags": arguments[2]})
+             if args.refuse:
+                 raise refusal
+@@ -143,11 +143,20 @@
+     except BaseException as error:
+         observed = error
+     expected = b"synthetic\r\nvalue\x1a\n" if args.route == "bounded" else "synthetic\nvalue\x1a\n"
+-    print(json.dumps({
+-        "schema": 1, "operation": "audit", "events": events,
+-        "refusal_same_object": observed is refusal,
+-        "result_matches": payload == expected, "error": _code(observed),
+-    }, sort_keys=True), flush=True)
++    print(
++        json.dumps(
++            {
++                "schema": 1,
++                "operation": "audit",
++                "events": events,
++                "refusal_same_object": observed is refusal,
++                "result_matches": payload == expected,
++                "error": _code(observed),
++            },
++            sort_keys=True,
++        ),
++        flush=True,
++    )
+     return 0
+ 
+ 
+--- before/tests/test_windows_replaceable_reader_process.py
++++ after/tests/test_windows_replaceable_reader_process.py
+@@ -26,12 +26,21 @@
+ 
+ def _run_child(target: Path, *arguments: str):
+     command = [
+-        sys.executable, "-I", str(_CHILD), "--source-root", str(_ROOT),
+-        "--target", str(target), *arguments,
++        sys.executable,
++        "-I",
++        str(_CHILD),
++        "--source-root",
++        str(_ROOT),
++        "--target",
++        str(target),
++        *arguments,
+     ]
+     process = subprocess.Popen(
+-        command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+-        stderr=subprocess.PIPE, close_fds=True,
++        command,
++        stdin=subprocess.DEVNULL,
++        stdout=subprocess.PIPE,
++        stderr=subprocess.PIPE,
++        close_fds=True,
+     )
+     failure = None
+     stdout = stderr = b""
+@@ -119,7 +128,11 @@
+ @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+ @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["destination_only", "separate_crt_source"])
+ def test_actual_reader_allows_other_process_replace_without_changing_writer(
+-    tmp_path, monkeypatch, record_property, route, hold_crt_source,
++    tmp_path,
++    monkeypatch,
++    record_property,
++    route,
++    hold_crt_source,
+ ):
+     assert Path(private_file_io.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/private_file_io.py"
+     assert Path(replaceable.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+@@ -213,7 +226,13 @@
+     extra = ["--refuse"] if refuse else []
+     original_code, original = _run_child(target, "--operation", "audit", "--route", route, *extra)
+     candidate_code, candidate = _run_child(
+-        target, "--operation", "audit", "--route", route, "--candidate", *extra,
++        target,
++        "--operation",
++        "audit",
++        "--route",
++        route,
++        "--candidate",
++        *extra,
+     )
+     assert original_code == candidate_code == 0
+     assert candidate == original

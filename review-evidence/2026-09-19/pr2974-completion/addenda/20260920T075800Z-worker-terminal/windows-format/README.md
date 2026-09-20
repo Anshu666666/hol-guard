@@ -1,0 +1,5 @@
+# Windows reader candidate formatting checkpoint
+
+This standalone tree preserves exactly seven original candidate files and their Ruff 0.15.17 formatter afterimages. The wheel was checked against exact4d's frozen uv.lock, its extracted executable was hashed and version checked, and the formatter ran under a 128 MiB address-space limit with one CPU/worker. Four files changed formatting; three remained unchanged. Python 3.13.13 AST dumps are equal for all seven files. No source module was imported, and no lint, typecheck, source test, native build or actual Windows validation ran.
+
+The original candidate remains blocked by the reviewed bounded-reader CRT O_BINARY translation change. Formatting does not address that finding. A separate semantic repair and actual original-observed CRLF/Ctrl-Z parity controls are required. The original source peer remains immutable at tree d533fd6d0c52b94d8bcaa0beb3ad4110395073aa. This tree contains no commit/ref change or workflow dispatch and carries no installed or persistence qualification.

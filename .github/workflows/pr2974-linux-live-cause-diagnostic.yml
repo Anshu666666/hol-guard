@@ -1,0 +1,134 @@
+name: PR2974 Linux live-exchange cause diagnostic formatting correction
+
+on:
+  push:
+    branches: [codex/pr2974-linux-live-cause-format-4d10758]
+    paths:
+      - .github/workflows/pr2974-linux-live-cause-diagnostic.yml
+      - ci/native_runtime/linux_live_cause_diagnostic.py
+      - ci/native_runtime/linux_live_cause_identity.py
+      - ci/native_runtime/native_live_failure_diagnostic.py
+      - ci/native_runtime/test_native_live_failure_diagnostic.py
+      - ci/native_runtime/native_hook_client_support.py
+      - rust/crates/guard-runtime/src/native_client_failure_observation.rs
+      - rust/crates/guard-runtime/src/managed_resident.rs
+      - rust/crates/guard-runtime/src/main.rs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-live-cause-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-two-case-cause-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Preserve committed line endings
+        run: git config --global core.autocrlf false
+      - name: Check out immutable diagnostic source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: validation-src
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Check out unchanged original source for exact patch binding
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 4d10758e2cb44e5afa72a08aa631a02541dad534
+          path: source-src
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - name: Install unchanged frozen dependencies
+        working-directory: validation-src
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Bind every original and diagnostic source file before build
+        env:
+          DIAGNOSTIC_HARNESS_SHA: ${{ github.sha }}
+        run: |
+          validation-src/.venv/bin/python -I validation-src/ci/native_runtime/linux_live_cause_diagnostic.py \
+            --preflight --source-root "$GITHUB_WORKSPACE/source-src" \
+            --harness-root "$GITHUB_WORKSPACE/validation-src" --harness-sha "$DIAGNOSTIC_HARNESS_SHA" \
+            --output "$GITHUB_WORKSPACE/linux-live-cause-evidence"
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt
+          rustup default 1.88.0
+      - name: Check added diagnostic source without modifying it
+        working-directory: validation-src
+        run: |
+          diagnostic_check_status=0
+          if rustfmt --edition 2021 --check rust/crates/guard-runtime/src/native_client_failure_observation.rs > "$GITHUB_WORKSPACE/linux-live-cause-evidence/rustfmt.log" 2>&1; then
+            diagnostic_rustfmt_exit=0
+          else
+            diagnostic_rustfmt_exit=$?
+            diagnostic_check_status=1
+          fi
+          cat "$GITHUB_WORKSPACE/linux-live-cause-evidence/rustfmt.log"
+          if uv run --no-sync python -m ruff check ci/native_runtime/native_live_failure_diagnostic.py ci/native_runtime/test_native_live_failure_diagnostic.py ci/native_runtime/linux_live_cause_diagnostic.py ci/native_runtime/linux_live_cause_identity.py ci/native_runtime/native_hook_client_support.py > "$GITHUB_WORKSPACE/linux-live-cause-evidence/ruff-check.log" 2>&1; then
+            diagnostic_ruff_exit=0
+          else
+            diagnostic_ruff_exit=$?
+            diagnostic_check_status=1
+          fi
+          cat "$GITHUB_WORKSPACE/linux-live-cause-evidence/ruff-check.log"
+          if uv run --no-sync python -m ruff format --check --diff ci/native_runtime/native_live_failure_diagnostic.py ci/native_runtime/test_native_live_failure_diagnostic.py ci/native_runtime/linux_live_cause_diagnostic.py ci/native_runtime/linux_live_cause_identity.py ci/native_runtime/native_hook_client_support.py > "$GITHUB_WORKSPACE/linux-live-cause-evidence/ruff-format.log" 2>&1; then
+            diagnostic_ruff_format_exit=0
+          else
+            diagnostic_ruff_format_exit=$?
+            diagnostic_check_status=1
+          fi
+          cat "$GITHUB_WORKSPACE/linux-live-cause-evidence/ruff-format.log"
+          printf '{"schema":"linux-live-cause-static-preflight.v1","rustfmt_exit":%s,"ruff_check_exit":%s,"ruff_format_exit":%s,"combined_exit":%s}\n' "$diagnostic_rustfmt_exit" "$diagnostic_ruff_exit" "$diagnostic_ruff_format_exit" "$diagnostic_check_status" > "$GITHUB_WORKSPACE/linux-live-cause-evidence/static-preflight.json"
+          cat "$GITHUB_WORKSPACE/linux-live-cause-evidence/static-preflight.json"
+          exit "$diagnostic_check_status"
+      - name: Run fixed default and diagnostic Rust controls
+        working-directory: validation-src
+        run: |
+          cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime native_client_failure_observation
+          cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime --features diagnostic-phases native_client_failure_observation
+      - name: Run closed-record parser and original-sanitizer controls
+        working-directory: validation-src
+        timeout-minutes: 2
+        run: >-
+          uv run --no-sync pytest -q -o addopts= --noconftest
+          ci/native_runtime/test_native_live_failure_diagnostic.py
+          --junitxml="$GITHUB_WORKSPACE/linux-live-cause-evidence/parser-controls.xml"
+      - name: Build the immutable diagnostic runtime
+        working-directory: validation-src
+        env:
+          HOL_GUARD_BUILD_SHA: ${{ github.sha }}
+        run: |
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          export HOL_GUARD_PACKAGE_VERSION="$VERSION"
+          cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime --features diagnostic-phases
+      - name: Run exactly the two original failed selectors once
+        timeout-minutes: 4
+        env:
+          DIAGNOSTIC_HARNESS_SHA: ${{ github.sha }}
+        run: |
+          validation-src/.venv/bin/python -I validation-src/ci/native_runtime/linux_live_cause_diagnostic.py \
+            --source-root "$GITHUB_WORKSPACE/source-src" \
+            --harness-root "$GITHUB_WORKSPACE/validation-src" --harness-sha "$DIAGNOSTIC_HARNESS_SHA" \
+            --output "$GITHUB_WORKSPACE/linux-live-cause-evidence"
+      - name: Retain the original outcomes and source bindings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: linux-live-cause-format-4d10758-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            linux-live-cause-evidence/*.json
+            linux-live-cause-evidence/*.xml
+            linux-live-cause-evidence/*.log
+          if-no-files-found: warn
+          retention-days: 30

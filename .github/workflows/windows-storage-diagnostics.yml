@@ -1,0 +1,112 @@
+name: Windows storage and first-review diagnostics
+run-name: Windows diagnostics - unchanged ed7313 and original installed wheel
+"on":
+  push:
+    branches:
+      - codex/pr2974-windows-storage-diagnostics-20260920
+    paths:
+      - .github/workflows/windows-storage-diagnostics.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: windows-storage-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-storage:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: candidate-src
+    steps:
+      - name: Check out exact independent diagnostic driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver-src
+          persist-credentials: false
+      - name: Check out unchanged product and original default-auto probe
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ed7313dff240292a482c53410a2492f80ba8a220
+          path: candidate-src
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: 0.9.26
+          enable-cache: false
+      - name: Download original normal Windows installed artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: hol-guard-native-wheel-windows-x64
+          run-id: 35481095629
+          github-token: ${{ github.token }}
+          path: original-artifact
+      - name: Verify exact source, driver, and every artifact member before installation
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: >-
+          python ../driver-src/scripts/ci/windows_storage_diagnostics.py binding
+          --candidate . --artifact ../original-artifact --output ../windows-evidence --phase before
+      - name: Install frozen dependencies and exact original native wheel
+        id: install
+        run: |
+          uv sync --frozen --extra dev --python 3.12
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip uninstall --python .venv/Scripts/python.exe hol-guard
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip install --python .venv/Scripts/python.exe --no-deps --force-reinstall ../original-artifact/native-dist/hol_guard-3.0.1-py3-none-win_amd64.whl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .venv/Scripts/python.exe -I ci/native_runtime/probe_installed_runtime_identity.py --json ../windows-evidence/installed-identity.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise real store sharing and exclusive recovery at the existing writer timeout
+        if: steps.install.outcome == 'success'
+        run: >-
+          .venv/Scripts/python.exe ../driver-src/scripts/ci/windows_storage_diagnostics.py gate
+          --candidate . --artifact ../original-artifact --output ../windows-evidence
+      - name: Run unchanged default-auto corpus with failure-only fixed-origin observations
+        if: always() && steps.install.outcome == 'success'
+        run: >-
+          .venv/Scripts/python.exe ../driver-src/scripts/ci/windows_storage_diagnostics.py corpus
+          --candidate . --artifact ../original-artifact --output ../windows-evidence
+      - name: Run separate first-review fixture with original native CI mode and timeouts
+        if: always() && steps.install.outcome == 'success'
+        run: |
+          $runtime = (& .venv/Scripts/python.exe -I -c "from codex_plugin_scanner.guard.native_runtime import native_runtime_status; print(native_runtime_status().identity.path)").Trim()
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:HOL_GUARD_NATIVE = "force"
+          $env:HOL_GUARD_NATIVE_BINARY = $runtime
+          try {
+            .venv/Scripts/python.exe -m pytest --noconftest -c pyproject.toml ../driver-src/ci/native_runtime/test_guard_native_runtime_windows_resident.py::test_windows_abrupt_supervisor_exit_retires_its_serving_child --tb=short --junitxml=../windows-evidence/first-review.xml 2>&1 | Tee-Object ../windows-evidence/first-review.log
+            $result = $LASTEXITCODE
+          } finally {
+            Remove-Item Env:HOL_GUARD_NATIVE -ErrorAction SilentlyContinue
+            Remove-Item Env:HOL_GUARD_NATIVE_BINARY -ErrorAction SilentlyContinue
+          }
+          exit $result
+      - name: Verify all checkouts and original artifact members after every attempt
+        if: always()
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: >-
+          python ../driver-src/scripts/ci/windows_storage_diagnostics.py binding
+          --candidate . --artifact ../original-artifact --output ../windows-evidence --phase after
+      - name: Retain original failures, source bindings, and separate diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-storage-diagnostics-ed7313-attempt-${{ github.run_attempt }}
+          path: |
+            windows-evidence/**
+            original-artifact/**
+          if-no-files-found: error
+          retention-days: 30

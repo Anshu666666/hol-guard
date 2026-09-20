@@ -1,23 +1,31 @@
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import os
 import socket
 import threading
 import time
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
+from unittest.mock import patch
 
 import pytest
 
 import codex_plugin_scanner.guard.native_runtime_resident as resident
+from codex_plugin_scanner.guard import native_runtime
+from codex_plugin_scanner.guard.native_approval_errors import FINITE_FAILURE_CODES
 from codex_plugin_scanner.guard.native_command_model import review_command_model_native
+from codex_plugin_scanner.guard.native_decision_receipt import receipt_matches_edge, validate_native_decision_receipt
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
 from codex_plugin_scanner.guard.native_resident_client import native_resident_client_failure_code
 from codex_plugin_scanner.guard.native_runtime import (
     native_runtime_status,
     review_post_tool_native,
 )
+from codex_plugin_scanner.guard.native_runtime_resilience import native_runtime_health_snapshot
 from codex_plugin_scanner.guard.runtime.hook_review_types import HookReviewRequest
 from codex_plugin_scanner.guard.windows_paths import (
     windows_process_creation_time,
@@ -26,6 +34,76 @@ from codex_plugin_scanner.guard.windows_paths import (
 )
 
 _NATIVE_BINARY = os.environ.get("HOL_GUARD_NATIVE_BINARY")
+
+
+def _failure_code(value: object) -> str | None:
+    if value is None:
+        return None
+    return value if isinstance(value, str) and value in FINITE_FAILURE_CODES else "other"
+
+
+def _review_failure_evidence(
+    request: HookReviewRequest, snapshot: Mapping[str, object], captured: Mapping[str, Any]
+) -> dict[str, object]:
+    """Classify the original failure without another request or raw output."""
+    health = native_runtime_health_snapshot(str(snapshot.get("runtime_identity")), request.guard_home)
+    evidence: dict[str, object] = {
+        "native_client_calls": captured["calls"],
+        "native_client_returned": captured["returned"],
+        "client_failure_code": _failure_code(native_resident_client_failure_code()),
+        "health_reason": _failure_code(health.reason),
+        "resident_failures": health.resident_failures,
+        "overloads": health.overloads,
+        "circuit_open": health.circuit_open,
+    }
+    output = captured.get("output")
+    evidence["response_present"] = output is not None
+    if not isinstance(output, bytes) or len(output) > 2 * 1024 * 1024:
+        evidence["response_shape"] = "none" if output is None else "invalid_type_or_bound"
+        return evidence
+    evidence["response_sha256"] = hashlib.sha256(output).hexdigest()
+    try:
+        payload = json.loads(output)
+    except (ValueError, RecursionError):
+        evidence["response_shape"] = "invalid_json"
+        return evidence
+    if not isinstance(payload, dict):
+        evidence["response_shape"] = "non_object"
+        return evidence
+    evidence["native_error"] = _failure_code(payload.get("error"))
+    edge = payload.get("schema") == "guard-hook-edge-result.v2"
+    evidence["response_shape"] = "hook_edge" if edge else "other_object"
+    if edge:
+        receipt = validate_native_decision_receipt(payload.get("receipt"))
+        evidence["receipt_valid"] = receipt is not None
+        evidence["receipt_matches_edge"] = receipt_matches_edge(payload, receipt)
+        if receipt is not None:
+            evidence["receipt_matches_ack"] = all(
+                receipt.get(field) == snapshot.get(source)
+                for field, source in (
+                    ("policy_generation", "generation"),
+                    ("policy_digest", "policy_digest"),
+                    ("runtime_identity", "runtime_identity"),
+                )
+            )
+    return evidence
+
+
+def _require_initial_allow(request: HookReviewRequest, snapshot: Mapping[str, object]) -> None:
+    original = native_runtime.native_resident_client_request
+    captured: dict[str, Any] = {"calls": 0, "returned": False}
+
+    def observe(**kwargs: Any) -> bytes | None:
+        captured["calls"] += 1
+        output = original(**kwargs)
+        captured.update(returned=True, output=output)
+        return output
+
+    with patch.object(native_runtime, "native_resident_client_request", observe):
+        result = review_post_tool_native(request, observe_mode=False, policy_snapshot=snapshot)
+    # Parse evidence only after the original operation failed. This retains
+    # the original assertion, request budget and single client invocation.
+    assert result is not None and result.decision == "allow", _review_failure_evidence(request, snapshot, captured)
 
 
 def _request(tmp_path: Path, request_id: str) -> HookReviewRequest:
@@ -212,8 +290,7 @@ def test_windows_abrupt_supervisor_exit_retires_its_serving_child(tmp_path: Path
     serving_identity: tuple[int, int] | None = None
     try:
         with native_policy_snapshot(request.guard_home) as snapshot:
-            result = review_post_tool_native(request, observe_mode=False, policy_snapshot=snapshot)
-            assert result is not None and result.decision == "allow", native_resident_client_failure_code()
+            _require_initial_allow(request, snapshot)
             states = list((request.guard_home / "native-runtime").glob("resident-v3-*/generation-*.json"))
             assert len(states) == 1
             state = json.loads(states[0].read_text(encoding="utf-8"))

@@ -16,6 +16,7 @@ import ssl
 import threading
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from itertools import pairwise
 from pathlib import Path
 
 from cryptography import x509
@@ -126,6 +127,43 @@ class SignedPolicyFixture:
 
     def response_for_request(self, path: str, request: dict[str, object]) -> dict[str, object]:
         """Return the bounded synthetic issuer response after authenticated TLS."""
+        if path == "/api/guard/review/v2/events:batch":
+            # Model only the transport acknowledgement used by the real daemon
+            # worker. This fixture does not prove remote event verification.
+            events = request.get("events")
+            if not isinstance(events, list):
+                events = []
+            sequences = [event.get("localStreamSequence") if isinstance(event, dict) else None for event in events]
+            valid_sequences = [sequence for sequence in sequences if type(sequence) is int and sequence > 0]
+            valid = (
+                type(request.get("protocolVersion")) is int
+                and request["protocolVersion"] == 2
+                and bool(events)
+                and all(
+                    isinstance(event, dict) and isinstance(event.get("eventId"), str) and event["eventId"]
+                    for event in events
+                )
+                and len(valid_sequences) == len(events)
+                and all(left < right for left, right in pairwise(valid_sequences))
+                and type(request.get("firstSequence")) is int
+                and type(request.get("lastSequence")) is int
+                and request.get("firstSequence") == valid_sequences[0]
+                and request.get("lastSequence") == valid_sequences[-1]
+            )
+            return {
+                "protocolVersion": 2,
+                "accepted": len(events) if valid else 0,
+                "rejected": 0 if valid else len(events),
+                "acknowledgedThrough": sequences[-1] if valid else 0,
+                "results": [
+                    {
+                        "eventId": event.get("eventId") if isinstance(event, dict) else None,
+                        "status": "accepted" if valid else "rejected",
+                        **({} if valid else {"code": "synthetic_fixture_event_shape_invalid"}),
+                    }
+                    for event in events
+                ],
+            }
         if path == "/api/guard/receipts/sync":
             self.requests += 1
             return {

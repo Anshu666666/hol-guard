@@ -784,6 +784,12 @@ class _GuardDaemonHTTPServer(BoundedThreadingHTTPServer):
             self.connection_capacity.release()
             self._guard_release_request()
 
+    def release_handler_capacity(self, request: socket.socket) -> None:
+        with self.request_capacity_lock:
+            capacity_kind = self.request_capacity_kinds.pop(id(request), None)
+        if capacity_kind is not None:
+            self._request_capacity_for_kind(capacity_kind).release()
+
     def _register_unclassified_connection(self, request: socket.socket) -> None:
         accepted_at = time.monotonic()
         deadline = accepted_at + _DAEMON_REQUEST_READ_TIMEOUT_SECONDS
@@ -2135,6 +2141,14 @@ _GuardDaemonHttpServer = _GuardDaemonHTTPServer
 class _GuardDaemonHandler(BaseHTTPRequestHandler):
     _MAX_BODY_BYTES = 1_000_000
     server: _GuardDaemonHttpServer  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    def handle_one_request(self) -> None:
+        try:
+            super().handle_one_request()
+        finally:
+            # Request work has ended; keep socket admission owned until actual
+            # teardown, including the authenticated challenge's keep-alive wait.
+            self._daemon_server().release_handler_capacity(self.request)
 
     def parse_request(self) -> bool:
         parsed = super().parse_request()

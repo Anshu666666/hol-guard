@@ -83,6 +83,53 @@ def test_actual_auth_resolver_preserves_the_synthetic_enrolled_connection(fixtur
     assert fixture.requests == 0
 
 
+def test_fixture_event_response_uses_the_actual_sender_protocol(
+    fixture: SignedPolicyFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """TLS transport contract only, not remote signed-event ingestion proof."""
+    from codex_plugin_scanner.guard.runtime.cloud_review_event_delivery import post_review_events
+
+    monkeypatch.setenv("SSL_CERT_FILE", str(fixture.ca_file))
+    auth = runner._resolve_guard_sync_auth_context(fixture.store)
+    result = post_review_events(
+        auth,
+        events=[
+            {"eventId": "synthetic-event-first", "localStreamSequence": 7},
+            {"eventId": "synthetic-event-second", "localStreamSequence": 8},
+        ],
+    )
+    assert result == {
+        "accepted": 2,
+        "delivered": 2,
+        "rejected": 0,
+        "perEventResults": [
+            {"index": 0, "accepted": True, "code": None, "error": None},
+            {"index": 1, "accepted": True, "code": None, "error": None},
+        ],
+        "acknowledgedThrough": 8,
+        "protocolVersion": 2,
+    }
+    assert fixture.requests == 0
+
+
+@pytest.mark.parametrize("fault", ["version", "sequence", "boundary"])
+def test_fixture_does_not_acknowledge_malformed_event_transport(fixture: SignedPolicyFixture, fault: str) -> None:
+    event: dict[str, object] = {"eventId": "synthetic-event", "localStreamSequence": 1}
+    body: dict[str, object] = {"protocolVersion": 2, "events": [event], "firstSequence": 1, "lastSequence": 1}
+    if fault == "version":
+        body["protocolVersion"] = 1
+    elif fault == "sequence":
+        event["localStreamSequence"] = True
+    else:
+        body["lastSequence"] = 2
+    response = fixture.response_for_request("/api/guard/review/v2/events:batch", body)
+    assert response["accepted"] == 0 and response["rejected"] == 1
+    assert response["acknowledgedThrough"] == 0
+    assert response["results"] == [
+        {"eventId": "synthetic-event", "status": "rejected", "code": "synthetic_fixture_event_shape_invalid"}
+    ]
+
+
 def test_wrong_hostname_and_credentials_cannot_deliver(fixture: SignedPolicyFixture) -> None:
     context = ssl.create_default_context(cafile=str(fixture.ca_file))
     original = request(fixture)

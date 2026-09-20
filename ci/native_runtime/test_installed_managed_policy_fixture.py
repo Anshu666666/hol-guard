@@ -252,6 +252,62 @@ def test_actual_tls_managed_delivery_binds_fresh_runtime_and_preserves_signature
 
 
 @pytest.mark.parametrize(
+    ("authority_mode", "permission", "expected_reason"),
+    [
+        ("managed-restrictive", PERMISSION, "managed_restrictive_broadening"),
+        ("workspace-shared", "command.guard-self-protection.permission.self-authorization", "immutable_floor"),
+    ],
+)
+def test_actual_tls_signed_enable_refusal_preserves_committed_authority(
+    fixture: ManagedPolicyFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    authority_mode: str,
+    permission: str,
+    expected_reason: str,
+) -> None:
+    """Real receiver and signatures; native acknowledgement remains unexercised."""
+    import copy
+
+    from codex_plugin_scanner.guard.runtime import runner
+
+    _enable_delivery(fixture, monkeypatch)
+    session: dict[str, object] = {"harness": "claude-code", "workspace": str(fixture.workspace)}
+    _ = runner.sync_runtime_session(fixture.store, session=session)
+    fixture.bundle = fixture.signed_managed_bundle(
+        1, controls=[{"targetKind": "permission", "targetId": PERMISSION, "state": "disabled"}]
+    )
+    accepted = runner.sync_receipts(fixture.store)
+    assert accepted["policy_validation_status"] == "accepted"
+    assert accepted["policy_application_status"] == "applied"
+    keys = ("policy_bundle", "policy_bundle_ack", "managed_controls_active", "native_policy_bundle_ack_acceptance")
+    retained = {key: copy.deepcopy(fixture.store.get_sync_payload(key)) for key in keys}
+    assert retained["policy_bundle"] is not None and retained["managed_controls_active"] is not None
+    assert retained["native_policy_bundle_ack_acceptance"] is None
+
+    _ = runner.sync_runtime_session(fixture.store, session=session)
+    fixture.bundle = fixture.signed_managed_bundle(
+        2,
+        controls=[{"targetKind": "permission", "targetId": permission, "state": "enabled"}],
+        authority_mode=authority_mode,
+    )
+    received_before = fixture.requests
+    rejected = runner.sync_receipts(fixture.store)
+    assert fixture.requests > received_before
+    assert rejected["policy_validation_status"] == "rejected"
+    assert rejected["policy_rejection_reason"] == expected_reason
+    assert {key: fixture.store.get_sync_payload(key) for key in keys} == retained
+    _ = runner.sync_runtime_session(fixture.store, session=session)
+    fixture.bundle = fixture.signed_managed_bundle(
+        2, controls=[{"targetKind": "permission", "targetId": PERMISSION, "state": "disabled"}]
+    )
+    fresh = runner.sync_receipts(fixture.store)
+    assert fresh["policy_validation_status"] == "accepted"
+    assert fresh["policy_application_status"] == "applied"
+    assert fixture.store.get_sync_payload("policy_bundle") == fixture.bundle
+    assert fixture.store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
+
+
+@pytest.mark.parametrize(
     "field",
     [
         None,

@@ -57,6 +57,7 @@ from ci.native_runtime.probe_installed_scoped_policy import (  # noqa: E402
 from scripts.native_publication_diagnostic import cleanup_after_failure, cleanup_preserving_failure  # noqa: E402
 
 _PERMISSION = "command.git.permission.force-push"
+_IMMUTABLE_PERMISSION = "command.guard-self-protection.permission.self-authorization"
 
 
 def verify_delivery(
@@ -98,6 +99,9 @@ def verify_delivery(
 
 
 def exercise(root: Path) -> dict[str, object]:
+    # HTTP validates canonical source directories; the direct native control
+    # must bind the same paths even when the temporary root is a symlink.
+    root = root.resolve(strict=True)
     fixture = ManagedPolicyFixture(root)
     previous_ca = os.environ.get("SSL_CERT_FILE")
 
@@ -156,15 +160,23 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             require(publisher.requires_policy_authority and not publisher.requires_scoped_authority, "source_not_bound")
         return binding
 
-    def signed(version: int, *, lockdown: bool = False, enable: bool = False) -> dict[str, Any]:
+    def signed(
+        version: int,
+        *,
+        lockdown: bool = False,
+        enable: bool = False,
+        permission: str = _PERMISSION,
+        authority_mode: str = "managed-restrictive",
+    ) -> dict[str, Any]:
         runner.sync_runtime_session(store, session={"harness": "claude-code", "workspace": str(workspace)})
         fixture.bundle = fixture.signed_managed_bundle(
             version,
             controls=(
-                {"targetKind": "permission", "targetId": _PERMISSION, "state": "enabled" if enable else "disabled"},
+                {"targetKind": "permission", "targetId": permission, "state": "enabled" if enable else "disabled"},
             ),
             lockdown=lockdown,
             defaults={"mode": "enforce", "defaultAction": "allow"},
+            authority_mode=authority_mode,
         )
         before = fixture.requests
         result = runner.sync_receipts(store)
@@ -216,7 +228,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         )
         require(result["decision"] == "deny" and result["minimum_action"] == "block", "native_floor_weakened")
         if reason is not None:
-            require(result["reason_code"] == reason, "native_floor_reason_mismatch")
+            require(result["reason_code"] == reason, f"native_floor_reason_mismatch:{label}")
         extensions = mapping(result.get("command_extensions"), "result_control_binding_missing")
         previous_receipt = copy.deepcopy(daemon._server.hook_worker.last_native_decision_receipt)
         with report_hook_transport_timeout(case=label, completed_cases=len(rows), control_revision=revision):
@@ -272,6 +284,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         retained = copy.deepcopy(store.get_sync_payload("policy_bundle_ack"))
         rejected = signed(2, enable=True)
         require(rejected.get("policy_validation_status") == "rejected", "managed_enable_accepted")
+        require(rejected.get("policy_rejection_reason") == "managed_restrictive_broadening", "managed_enable_reason")
         require(store.get_sync_payload("policy_bundle_ack") == retained, "rejected_enable_replaced_ack")
         case(
             "signed-enable-rejected",
@@ -279,6 +292,21 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             "observe",
             reason="native_command_permission_disabled",
         )
+        retained_source = copy.deepcopy(store.get_sync_payload("policy_bundle"))
+        rejected = signed(2, enable=True, permission=_IMMUTABLE_PERMISSION, authority_mode="workspace-shared")
+        require(rejected.get("policy_validation_status") == "rejected", "immutable_enable_accepted")
+        require(rejected.get("policy_rejection_reason") == "immutable_floor", "immutable_enable_reason")
+        require(store.get_sync_payload("policy_bundle_ack") == retained, "rejected_enable_replaced_ack")
+        require(store.get_sync_payload("policy_bundle") == retained_source, "rejected_enable_replaced_source")
+        for mode in ("enforce", "observe"):
+            set_mode(mode)
+            case(f"immutable-enable-rejected-{mode}", "hol-guard approvals approve synthetic-request", mode)
+            case(
+                f"managed-after-immutable-rejection-{mode}",
+                "git push --force origin main",
+                mode,
+                reason="native_command_permission_disabled",
+            )
         # Obtain one actual action-bound approval through the protected local
         # store API. No simulated native result or prepopulated approval is used.
         set_mode("enforce")
@@ -345,7 +373,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
                 f"recovered-managed-permission-{mode}",
                 "git push --force origin main",
                 mode,
-                reason="native_command_control_authority_block",
+                reason="native_command_permission_disabled",
             )
         return {
             "schema": "guard.installed-managed-floors.v1",

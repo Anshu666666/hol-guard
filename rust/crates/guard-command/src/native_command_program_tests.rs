@@ -211,6 +211,31 @@ fn disabled_permission_and_failed_authority_cannot_become_allow() {
 }
 
 #[test]
+fn matching_disabled_permission_retains_its_reason_during_global_lockdown() {
+    let mut controls = binding(
+        &[(
+            "permission",
+            "command.git.permission.force-push",
+            "disabled",
+        )],
+        true,
+    );
+    controls.layers[0].global_lockdown = true;
+    controls.effective_digest = controls.compute_effective_digest().unwrap();
+    let harmless = decision("pwd", &controls);
+    assert_eq!(harmless.minimum_action, "block");
+    assert_eq!(harmless.decision, "deny");
+    assert_eq!(
+        harmless.reason_code,
+        "native_command_control_authority_block"
+    );
+    let matched = decision("git push --force origin main", &controls);
+    assert_eq!(matched.minimum_action, "block");
+    assert_eq!(matched.decision, "deny");
+    assert_eq!(matched.reason_code, "native_command_permission_disabled");
+}
+
+#[test]
 fn a_previously_reviewable_command_becomes_a_hard_floor_after_permission_disable() {
     let enabled = binding(&[("extension", "command.ollama", "enabled")], false);
     let before = decision("ollama push model", &enabled);

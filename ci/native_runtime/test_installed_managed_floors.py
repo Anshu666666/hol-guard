@@ -11,7 +11,8 @@ from ci.native_runtime import probe_installed_managed_floors as probe
 
 
 @pytest.mark.parametrize(
-    "fault", [None, "http_allow", "approval", "generation", "digest", "controls", "receipt", "stale_receipt"]
+    "fault",
+    [None, "http_allow", "approval", "generation", "digest", "request_digest", "controls", "receipt", "stale_receipt"],
 )
 def test_probe_requires_final_http_floor_and_exact_native_receipt(fault: str | None) -> None:
     response: dict[str, object] = {"hookSpecificOutput": {"permissionDecision": "deny"}, "policy_action": "block"}
@@ -38,6 +39,8 @@ def test_probe_requires_final_http_floor_and_exact_native_receipt(fault: str | N
         receipt["policy_generation"] = 2
     elif fault == "digest":
         receipt["policy_digest"] = "c" * 64
+    elif fault == "request_digest":
+        receipt["request_digest"] = "f" * 64
     elif fault == "controls":
         receipt["command_extensions"] = {"revision": 6}
     elif fault == "receipt":
@@ -53,7 +56,7 @@ def test_probe_requires_final_http_floor_and_exact_native_receipt(fault: str | N
             expected_request_digest="e" * 64,
         )
     else:
-        with pytest.raises(probe.ProbeError):
+        with pytest.raises(probe.ProbeError) as caught:
             probe.verify_delivery(
                 response,
                 binding=binding,
@@ -63,6 +66,70 @@ def test_probe_requires_final_http_floor_and_exact_native_receipt(fault: str | N
                 expected_reason="native_command_permission_disabled",
                 expected_request_digest="e" * 64,
             )
+        if fault == "request_digest":
+            assert str(caught.value) == "receipt_request_mismatch"
+
+
+def test_managed_probe_binds_identical_sources_through_an_owned_directory_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Actual fixture/encoder/path validation; no native readiness or ACK is supplied."""
+    from codex_plugin_scanner.guard.daemon.server import _GuardDaemonHandler
+    from codex_plugin_scanner.guard.native_hook_edge import _encode_hook_envelope
+
+    target = tmp_path / "real"
+    target.mkdir(mode=0o700)
+    alias = tmp_path / "alias"
+    try:
+        alias.symlink_to(target, target_is_directory=True)
+    except OSError:
+        pytest.skip("An owned directory symlink is required for this path-identity control.")
+    root = alias / "fixture"
+    root.mkdir(mode=0o700)
+    seen: list[probe.ManagedPolicyFixture] = []
+
+    def compare_sources(root: Path, fixture: probe.ManagedPolicyFixture) -> dict[str, object]:
+        seen.append(fixture)
+        home, workspace = fixture.store.guard_home, fixture.workspace
+        assert fixture.thread.is_alive()
+        # The HTTP endpoint resolves these directories before calling its worker.
+        # Invoke that same validator with only this owned fixture as an allowed root.
+        handler = object.__new__(_GuardDaemonHandler)
+        http_home = handler._validate_hook_directory_path("home", str(home), roots=(target,))
+        http_workspace = handler._validate_hook_directory_path("workspace", str(workspace), roots=(target,))
+        assert http_home.samefile(home) and http_workspace.samefile(workspace)
+
+        def encode(home_dir: Path, cwd: Path) -> dict[str, object]:
+            encoded = _encode_hook_envelope(
+                payload={"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "pwd"}},
+                harness="claude-code",
+                event="PreToolUse",
+                guard_home=home,
+                home_dir=home_dir,
+                cwd=cwd,
+                source_ref_external_allowed=False,
+                deadline_budget_ms=100,
+                # A serialization input, never installed or advertised as authority.
+                snapshot={"generation": 1, "policy_digest": "a" * 64, "runtime_identity": "b" * 64},
+            )
+            assert encoded is not None
+            value: dict[str, object] = json.loads(encoded)
+            return value
+
+        raw = encode(home, workspace)
+        http = encode(http_home, http_workspace)
+        assert raw == http
+        assert root == root.resolve(strict=True)
+        assert fixture.root == root
+        return {"source_inputs_equal": True}
+
+    monkeypatch.setattr(probe, "_exercise_fixture", compare_sources)
+    try:
+        assert probe.exercise(root) == {"source_inputs_equal": True}
+    finally:
+        for fixture in seen:
+            assert not fixture.thread.is_alive()
+            assert fixture.server.socket.fileno() == -1
 
 
 def test_probe_rejects_uninstalled_source_without_private_output(

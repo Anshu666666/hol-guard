@@ -36,17 +36,16 @@ const LEASE_ACQUIRE_RETRY_MAX_DELAY: Duration = Duration::from_millis(16);
 
 #[cfg(test)]
 thread_local! {
-    static LOCK_BUSY_NOTIFICATION: RefCell<Option<Sender<()>>> = const { RefCell::new(None) };
+    static LOCK_BUSY_CALLBACK: RefCell<Option<Box<dyn FnOnce()>>> = const { RefCell::new(None) };
     static LOCK_RETRY_DEADLINE_NOTIFICATION: RefCell<Option<Sender<()>>> = const { RefCell::new(None) };
 }
 
 #[cfg(test)]
 fn notify_lock_busy_for_test() {
-    LOCK_BUSY_NOTIFICATION.with(|notification| {
-        if let Some(sender) = notification.borrow_mut().take() {
-            let _ = sender.send(());
-        }
-    });
+    let callback = LOCK_BUSY_CALLBACK.with(|callback| callback.borrow_mut().take());
+    if let Some(callback) = callback {
+        callback();
+    }
 }
 
 #[cfg(test)]

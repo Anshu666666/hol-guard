@@ -1,0 +1,137 @@
+name: Native Windows stream contract diagnostics
+run-name: Windows original 2433a8 contract preflight - diagnostic only
+'on':
+  push:
+    branches:
+      - codex/pr2974-stream-diagnostics-20260920-8ffceba4
+    paths:
+      - .github/workflows/native-windows-stream-diagnostics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-windows-stream-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows-stream-contract:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      DIAGNOSTIC_SOURCE_SHA: 8ffceba4f6440caf98fb86f29f7a27c1248502cd
+      DIAGNOSTIC_SOURCE_TREE: 054606497f49b0721aea9332ed4baad9713d441f
+      DIAGNOSTIC_DRIVER_BRANCH: codex/pr2974-stream-diagnostics-20260920-8ffceba4
+    defaults:
+      run:
+        working-directory: diagnostic-src
+        shell: bash
+    steps:
+      - name: Check out exact workflow driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: workflow-src
+          persist-credentials: false
+      - name: Check out exact shared diagnostic source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 8ffceba4f6440caf98fb86f29f7a27c1248502cd
+          path: diagnostic-src
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: 0.9.26
+          enable-cache: false
+      - name: Bind source and driver before build
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          def binding(root):
+              def git(*args):
+                  return subprocess.check_output(['git', '-C', root, *args], text=True).strip()
+              return {'sha': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}'),
+                      'tracked_clean': not git('status', '--porcelain', '--untracked-files=no')}
+          source, driver = binding('.'), binding('../workflow-src')
+          assert source['sha'] == os.environ['DIAGNOSTIC_SOURCE_SHA']
+          assert source['tree'] == os.environ['DIAGNOSTIC_SOURCE_TREE'] and source['tracked_clean']
+          assert driver['sha'] == os.environ['GITHUB_SHA'] and driver['tracked_clean']
+          pathlib.Path('stream-phase-evidence').mkdir()
+          pathlib.Path('stream-phase-evidence/source-before.json').write_text(json.dumps(
+              {'source': source, 'driver': driver, 'original_source_sha': '2433a8ce570f34f5ad3dbf23f3d7367267aad461',
+               'diagnostic_only': True, 'qualification': False}, sort_keys=True) + '\n')
+          PY
+      - run: uv sync --frozen --extra dev --python 3.12
+      - name: Run shared stream and Windows caller controls
+        run: |
+          NATIVE_STREAM_WORKFLOW_PATH=../workflow-src/.github/workflows/native-resident-stream-phase-diagnostics.yml \
+            uv run --no-sync python -m pytest -q \
+            tests/test_native_stream_phase_diagnostic.py tests/test_windows_stream_diagnostics.py
+      - name: Install pinned Windows Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+          rustup target add x86_64-pc-windows-msvc
+      - name: Build and install exact shared diagnostic Windows wheel
+        run: |
+          VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+          export HOL_GUARD_PACKAGE_VERSION="$VERSION"
+          export HOL_GUARD_BUILD_SHA="$DIAGNOSTIC_SOURCE_SHA"
+          cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime --features diagnostic-phases resident_startup_diagnostic -- --test-threads=1
+          cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime --features diagnostic-phases resident_client -- --test-threads=1
+          cargo build --manifest-path rust/Cargo.toml --locked --release --target x86_64-pc-windows-msvc -p hol-guard-runtime --features diagnostic-phases
+          runtime="rust/target/x86_64-pc-windows-msvc/release/hol-guard-runtime.exe"
+          "$runtime" self-test --json
+          RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+          uv run --no-sync python -m build --wheel --outdir pure-dist
+          uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
+            --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" --runtime "$runtime" \
+            --output-dir native-dist --version "$VERSION" --platform-tag win_amd64 \
+            --target x86_64-pc-windows-msvc --source-sha "$DIAGNOSTIC_SOURCE_SHA" --rule-digest "$RULE_DIGEST"
+          uv pip uninstall --python .venv/Scripts/python.exe hol-guard
+          uv pip install --python .venv/Scripts/python.exe --no-deps --force-reinstall native-dist/*.whl
+      - name: Observe original full contract preflight once
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          environment = {key: value for key, value in os.environ.items()
+                         if not key.startswith(('HOL_GUARD_', 'GUARD_', 'PYTEST_')) and key != 'PYTHONPATH'}
+          result = subprocess.run([
+              '.venv/Scripts/python.exe', '-I', 'scripts/ci/windows_stream_diagnostics.py',
+              '--expected-source-sha', os.environ['DIAGNOSTIC_SOURCE_SHA'],
+              '--output', 'stream-phase-evidence/windows-contract.json'], env=environment, check=False)
+          raise SystemExit(result.returncode)
+          PY
+      - name: Verify source and driver remain unchanged
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          def binding(root):
+              def git(*args):
+                  return subprocess.check_output(['git', '-C', root, *args], text=True).strip()
+              return {'sha': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}'),
+                      'tracked_clean': not git('status', '--porcelain', '--untracked-files=no')}
+          source, driver = binding('.'), binding('../workflow-src')
+          pathlib.Path('stream-phase-evidence').mkdir(exist_ok=True)
+          pathlib.Path('stream-phase-evidence/source-after.json').write_text(json.dumps(
+              {'source': source, 'driver': driver, 'diagnostic_only': True, 'qualification': False}, sort_keys=True) + '\n')
+          assert source['sha'] == os.environ['DIAGNOSTIC_SOURCE_SHA']
+          assert source['tree'] == os.environ['DIAGNOSTIC_SOURCE_TREE'] and source['tracked_clean']
+          assert driver['sha'] == os.environ['GITHUB_SHA'] and driver['tracked_clean']
+          PY
+      - name: Retain diagnostic Windows wheel and bounded evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-stream-contract-windows-x64-attempt-${{ github.run_attempt }}
+          path: |
+            diagnostic-src/stream-phase-evidence/**
+            diagnostic-src/native-dist/*.whl
+            diagnostic-src/native-stop-diagnostic.json
+          if-no-files-found: warn
+          retention-days: 30

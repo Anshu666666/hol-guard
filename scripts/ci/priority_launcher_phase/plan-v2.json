@@ -1,0 +1,306 @@
+{
+  "schema": "hol-guard.priority-launcher-phase-plan.v2",
+  "state": "reviewable_plan_only",
+  "created_utc": "2026-09-20",
+  "product_source_sha": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+  "product_source_tree": "c10faac2d156cac06f9f803d63f50d15e3ca82bf",
+  "implementation_prepared": false,
+  "workflow_published": false,
+  "timing_launched": false,
+  "qualification_eligible": false,
+  "task_promotions": [],
+  "question": "For the same real registered launcher call, how much observed work occurs in parent process setup/wait/cleanup and in synchronous daemon admission, policy preparation, native-edge/client exchange, and receipt submission?",
+  "motivation": {
+    "prior_diagnostic_source": "e2a4deca5276e43974c040f595464e03a47fdb13",
+    "prior_driver": "c9066ed8a3d227591f8d630674475db76ab6d6b7",
+    "prior_packet_manifest_sha256": "12ddbdf76213ac063b8f4bdccefdc2faa0e99b8be58542c8e8a8f4c9d0426bed",
+    "actual_completed_launches": 176,
+    "all_original_latency_ceilings_missed": true,
+    "observed_serial_p95_decrease_percent_range": [
+      10.178577,
+      25.953759
+    ],
+    "qualified_benefit": false,
+    "interpretation": "The one fixed-order high-load pair does not attribute remaining elapsed time to imports, Python daemon work, native evaluation or persistence. This plan is a separate diagnostic on8f, not a continuation or rerun of that pair."
+  },
+  "artifact_and_workload": {
+    "platform": "one GitHub macos-15 ARM host",
+    "artifact_count": 1,
+    "build_source": "8f15b37b4a1bd054ef486148610e518b1be05cfc",
+    "default_native_features": true,
+    "noneditable_wheel": true,
+    "new_product_source_changes": [],
+    "producer": "scripts.native_slo_priority_launchers.py:measure_priority_launchers",
+    "producer_invocations": 1,
+    "fixture": "original DaemonFixture(runtime, policy='normal')",
+    "sample_plan": {
+      "priority_per_run": 2,
+      "cold_per_run": 2
+    },
+    "route_order": [
+      [
+        "claude-code",
+        "PreToolUse"
+      ],
+      [
+        "claude-code",
+        "PostToolUse"
+      ],
+      [
+        "codex",
+        "PreToolUse"
+      ],
+      [
+        "codex",
+        "PostToolUse"
+      ]
+    ],
+    "per_route_order": [
+      {
+        "phase": "original_preflight",
+        "cases": [
+          "benign",
+          "block"
+        ],
+        "sample": -1,
+        "count": 2
+      },
+      {
+        "phase": "fresh_launcher_prepared_resident",
+        "samples": [
+          2000000,
+          2000001
+        ],
+        "count": 2
+      },
+      {
+        "phase": "serial",
+        "samples": [
+          0,
+          1
+        ],
+        "count": 2
+      },
+      {
+        "phase": "concurrent",
+        "samples": "1000000 through1000015",
+        "concurrency": 16,
+        "count": 16
+      }
+    ],
+    "expected_launches": 88,
+    "successful_semantic_counts": {
+      "allow": 84,
+      "deny": 4
+    },
+    "original_launch_timeout_seconds": 10,
+    "original_stdout_stderr_shared_byte_limit": 2097152,
+    "original_payloads_argv_and_registered_environment_unchanged": true,
+    "extra_requests_warmup_or_retries": 0,
+    "failed_producer_behavior": "Stop according to the original producer. Preserve all completed/failed/late rows; do not replace its fail-fast behavior or wait=False failure cleanup with a new wait.",
+    "original_route_oracle": "Original isolated batch counter conservation remains authoritative. Per-call daemon/native joins are additional diagnostic evidence.",
+    "original_latency_targets_ms": {
+      "serial_p95": 50,
+      "serial_p99": 100,
+      "c16_p99": 200
+    },
+    "sample_minima_met": false
+  },
+  "capture_design": {
+    "activation": "Only new driver-owned Python context managers in the load generator and private fixture daemon. No production source, native feature, environment override, registered hook command or transport protocol changes.",
+    "fixture_child_entry": "Redirect only the exact source-bound DaemonFixture --serve subprocess to a driver-owned child entrypoint using the same installed interpreter. It calls the original _serve with identical runtime/setup/policy/workspace arguments. The registered launcher argv and its environment remain byte-for-byte unchanged.",
+    "parent_context": "Set a ContextVar in the wrapper around each original observe_priority_launcher call, before that function starts its existing timer. Capture is local to the actual launcher thread.",
+    "parent_stages": [
+      {
+        "stage": "contained_process_call",
+        "binding": "native_slo_priority_launchers.run_isolated_hook_process",
+        "scope": "inclusive original helper call"
+      },
+      {
+        "stage": "spawn",
+        "binding": "codex_hook_launch_runtime._spawn_hook_process",
+        "scope": "actual Popen/session/pipe setup and returned child PID"
+      },
+      {
+        "stage": "io_setup",
+        "binding": "codex_hook_launch_runtime.start_hook_io",
+        "scope": "starts original stdin/stdout/stderr workers; does not mean input completed"
+      },
+      {
+        "stage": "wait_and_reap",
+        "binding": "codex_hook_launch_runtime.wait_for_hook_process",
+        "scope": "original poll/sleep/wait/termination function; includes child execution and scheduler effects"
+      },
+      {
+        "stage": "io_join_and_containment",
+        "binding": "codex_hook_launch_runtime.join_and_cleanup_hook_process",
+        "scope": "original thread joins, containment and stream cleanup"
+      }
+    ],
+    "daemon_context": "Install a per-invocation ContextVar at the actual _GuardDaemonHandler._handle_runtime_hook entry after request_executor's plain socket/address queue transfer. Reset in finally. Patch the live bound class method and require the exact owned server; other calls pass through unchanged.",
+    "daemon_stages": [
+      {
+        "stage": "hook_handler",
+        "binding": "_GuardDaemonHandler._handle_runtime_hook",
+        "scope": "after HTTP body/authentication handling; includes hook path checks, policy admission, scheduler, native review and delivered response write"
+      },
+      {
+        "stage": "admission_policy",
+        "binding": "server.prepare_native_hook_policy",
+        "scope": "actual live facade alias used before scheduler admission"
+      },
+      {
+        "stage": "workspace_policy",
+        "binding": "owned HookWorker.prepare_workspace_policy",
+        "scope": "original calls, retaining separate occurrence indices for admission and native review"
+      },
+      {
+        "stage": "scheduler_acquire",
+        "binding": "owned runtime_hook_scheduler.acquire",
+        "scope": "actual permit admission call under existing deadline; no injected scheduling"
+      },
+      {
+        "stage": "worker_review",
+        "binding": "owned HookWorker.review_http_payload",
+        "scope": "actual synchronous review; independently recheck closed coordinates against handler context"
+      },
+      {
+        "stage": "native_edge",
+        "binding": "owned HookWorker._review_raw_hook_native",
+        "scope": "original edge status, envelope, client, decode and receipt validation"
+      },
+      {
+        "stage": "runtime_status",
+        "binding": "native_hook_edge.native_runtime_status",
+        "scope": "only the status call already made by the original edge; no extra identity/health call"
+      },
+      {
+        "stage": "encode_envelope",
+        "binding": "native_hook_edge._encode_hook_envelope",
+        "scope": "original returned byte count and post-call digest, no reencoding for transport"
+      },
+      {
+        "stage": "native_client_exchange",
+        "binding": "native_hook_edge.native_resident_client_request",
+        "scope": "Python pool selection/lease plus actual persistent Rust call and its original deadline"
+      },
+      {
+        "stage": "native_client_lease",
+        "binding": "native_resident_client._PersistentNativeClientPool._lease",
+        "scope": "nested actual Python client lease; not resident AUTH-queue time"
+      },
+      {
+        "stage": "decode_edge",
+        "binding": "native_hook_edge._decode_edge",
+        "scope": "original schema and receipt-binding validation"
+      },
+      {
+        "stage": "receipt_submit",
+        "binding": "owned RuntimeHookEvidenceWriter.submit_native_decision_receipt",
+        "scope": "actual validation/serialization/condition-lock/queue admission; not SQLite commit"
+      },
+      {
+        "stage": "activity_submit",
+        "binding": "owned RuntimeHookEvidenceWriter.submit_command_activity",
+        "scope": "actual synchronous activity capture/queue admission"
+      }
+    ],
+    "forwarding_contract": [
+      "Every wrapper evaluates the captured original function exactly once with the same positional/keyword objects and absolute deadline.",
+      "Return the same object or re-raise the identical original exception. Guard all observer setup/record/export failures so they cannot replace the original operation result.",
+      "Use start/end monotonic timestamps around the call; retain fixed stage/outcome/count fields. Hash values only after the original function has returned.",
+      "Do not reset the existing native failure ContextVar. If sampled, retain before/after distinction and unchanged-or-stale state.",
+      "Install and restore aliases atomically through ExitStack, unwind partial installation, and verify exact callable restoration.",
+      "Do not patch socket methods, stdlib subprocess behavior, native bytes, bridge code, policy decisions or async writer execution."
+    ]
+  },
+  "join_contract": {
+    "key": [
+      "harness",
+      "event",
+      "declared sample",
+      "declared benign-or-block case",
+      "closed semantic-projection SHA256"
+    ],
+    "parent": "Take harness/event/sample/case from the actual source producer invocation and independently hash its actual synthetic input after the original call.",
+    "daemon": "At the actual handler wrapper entry, validate and freeze a bounded immutable projection of the source-declared synthetic payload using only exact built-in dict/list/scalar types, before the original function can mutate it. Forward the identical original payload object. Hash the immutable projection only after the original call, and match exactly one declared coordinate. Unknown, missing, duplicate or ambiguous observations never change the original operation and remain unjoined.",
+    "known_transformed_fields": [
+      "guard_remaining_ms",
+      "guard_codex_browser_wait_process",
+      "guard_codex_browser_wait_timeout_seconds"
+    ],
+    "transformation_limits": "guard_remaining_ms remains independently range/type checked. Browser fields are admitted only on Codex PreToolUse and must match the existing source-defined shape; never export their values. Do not strip arbitrary metadata.",
+    "repeated_preflight_sample": "Both preflight cases use sample-1, so content projection and case must disambiguate them; completion order is never the join key.",
+    "hash_domains": [
+      "original registered-launcher input",
+      "observed daemon semantic projection",
+      "actual encoded native envelope",
+      "actual native reply"
+    ],
+    "hash_equality_rule": "Do not equate full bytes across known bridge transformations. Envelope/reply digests join only stages observing the same actual bytes.",
+    "native_identity": "Retain only validated-format opaque request and decision identifiers already returned by the original native edge, plus fixed authority/binding result. Do not derive native IDs from harness tool_use_id.",
+    "no_raw_export": [
+      "stdin",
+      "stdout",
+      "stderr",
+      "query strings",
+      "paths",
+      "commands",
+      "tool output",
+      "tokens",
+      "keys",
+      "browser process metadata",
+      "receipt body"
+    ],
+    "complete_only_if": "One declared parent row and one owned handler row per completed call, all available native/receipt stages uniquely bound, zero unmatched/duplicate/lost rows, original producer result and batch route oracle retained. Missing downstream phases after an actual rejection are explicit, not zero-duration.",
+    "mutable_payload_observation": {
+      "entry_projection": "Freeze only a bounded validated built-in tuple/scalar representation; do not retain the original mutable containers or arbitrary field values. Original input_text/envelope/reply bytes are already immutable.",
+      "bounds": {
+        "max_projected_bytes": 32768,
+        "max_depth": 6
+      },
+      "after_return": "Independently compare a second bounded projection after return to the frozen entry projection. Retain only entry/exit projection digests, mutation_detected, and validation state; no raw projection bytes are exported.",
+      "mutation_rule": "If the input changes, preserve both digest domains and the returned native binding; do not silently label post-call content as entry input. Mark an unexplained mutation or inconsistent worker projection as unjoined/incomplete.",
+      "forwarding_rule": "No copying, replacement or normalization of production call arguments. Capture errors and rejected shapes still forward the original call exactly once with its original objects and deadline.",
+      "timing_limit": "The tiny snapshot is observer work and can perturb scheduling within existing budgets. It does not change original clock expressions or request/launcher deadlines, and these samples remain instrumented diagnostic evidence."
+    }
+  },
+  "bounds_and_lifetime": {
+    "maximum_declared_calls": 88,
+    "parent_rows": 88,
+    "daemon_rows": 88,
+    "stage_intervals_per_row": 32,
+    "per_process_evidence_bytes": 1048576,
+    "overflow_and_capture_faults_explicit": true,
+    "late_failure_tail": "Snapshot rows/counts from one locked snapshot; mark final-tail completeness false on producer failure or any in-flight call. Keep original shutdown behavior.",
+    "export": "Write a bounded strict-schema daemon report after original _serve cleanup to an owned driver artifact path; use neither original control stdout nor native stderr for telemetry. Parent always retains it and all original results/failures.",
+    "cleanup": "Preserve original authenticated stop evidence, original fixture close acknowledgement, direct process reaping and original reader termination. Keep primary failure, observer failure and cleanup failure separately; do not claim every historical descendant was covered."
+  },
+  "analysis_rules": [
+    "Report each exact sample's original launcher latency beside its uniquely joined stage durations and inclusive/nested relationships.",
+    "Within one process, use interval unions to avoid double-counting nested phases. Publish unmeasured gaps explicitly.",
+    "Do not subtract cross-process percentile aggregates or invent a common clock origin. Side-by-side elapsed durations do not prove exact residual attribution.",
+    "The handler begins after HTTP body/authentication work. Fresh interpreter startup, remaining bridge imports, discovery/challenge, payload augmentation, loopback transfer and child final output/exit are unresolved in this tranche.",
+    "Native_client_exchange includes the persistent Rust client/resident round trip. It does not isolate Rust authentication, evaluation, control locks, queueing or kernel I/O.",
+    "receipt_submit and activity_submit do not measure async SQLite commit, disk flush or writer contention outside those actual synchronous calls.",
+    "Default product code is unchanged but wrappers run within original elapsed budgets and can perturb concurrency; all timing remains diagnostic and ineligible for qualification or cross-run benefit claims.",
+    "Retain host identity/load before and after, source/wheel/runtime/manifest/installed-file hashes, registered configuration hashes and all actual loss/failure counters."
+  ],
+  "prelaunch_controls": [
+    "Call once, argument/deadline identity, same return and same exception under observer/clock/hash/export failure.",
+    "Partial installation unwinds; concurrent contexts cannot cross calls; exact live aliases restore.",
+    "Real bounded subprocess controls verify parent stages and original input/output/timeout/containment flags without invoking a timed launcher benchmark.",
+    "Handler context installed after queue transfer; synchronous policy/review/receipt nesting and early admission failure leave exact missing downstream phases.",
+    "Two preflight cases with same sample ID, reordered c16 completion, duplicate coordinates, mismatched semantic projection and unexpected transformed field are retained/rejected correctly.",
+    "Nested mutable payload changes during the original call preserve entry and exit digests separately, retain identical argument identity, and cannot falsely join post-call content as original input; invalid/custom/over-bound values only disable observation.",
+    "Full native byte domain and opaque ID joins; no raw data in exported schema; counts and bounds survive overflow and malformed field types.",
+    "Blocked late worker plus producer failure keeps original wait=False behavior and marks incomplete tail.",
+    "Cleanup/report failures cannot replace earlier operational evidence.",
+    "Default wheel import and source identity controls run separately from driver tests in their respective pytest working directories, preserving default pytest import mode.",
+    "Static source, compile/format/type/lint controls and independent peer review of the final concrete source/driver manifest before root publication."
+  ],
+  "next_decision": "Use observed within-process stage facts to choose a separately reviewed repair or diagnostic. If the unexplained child interval remains large, propose a later explicit child import/auth phase observer; do not claim this tranche measured it and do not broaden to a Rust frontdoor rewrite.",
+  "implementation_gate": "Root reviews this plan first. Only then prepare a small new scripts/tests overlay and bound workflow for review; no new timing run is authorized by creation of this plan.",
+  "prior_plan_sha256": "22515ede4db2e044a0dc2a6c46f554d796bd61dae76760af7d46205bd276148a",
+  "revision": "Add explicit bounded immutable entry projection and input-mutation evidence; preserve v1 bytes and all workload/source/timing scope."
+}

@@ -20,13 +20,13 @@ from codex_plugin_scanner.guard.native_policy_snapshot_control import (
     _OBSERVATION_RESPONSE_DOMAIN,
 )
 from codex_plugin_scanner.guard.policy_consumer_readiness_contract import (
-    ConsumerReadinessError,
     PROFILE_ID,
+    ConsumerReadinessError,
     mapping,
     signing_bytes,
     validate_wire,
 )
-from codex_plugin_scanner.guard.policy_document import canonical_json_bytes
+from codex_plugin_scanner.guard.policy_document import JsonValue, canonical_json_bytes
 from tests.test_native_policy_consumer_capture import _fixture
 
 SESSION = "synthetic-readiness-session"
@@ -35,27 +35,30 @@ SESSION = "synthetic-readiness-session"
 def challenge_for(connection, context, *, sequence=1):
     credentials = connection.credentials()
     now = int(time.time() * 1000)
-    return validate_wire({
-        "contractVersion": "guard.consumer-readiness-challenge.v2",
-        "challengeId": "11111111-1111-4111-8111-111111111111",
-        "nonce": "c" * 64,
-        "profileId": PROFILE_ID,
-        "subject": {
-            "workspaceId": credentials["workspace_id"],
-            # This server row UUID deliberately differs from the local Store ID.
-            "installationId": "33333333-3333-4333-8333-333333333333",
-            "machineId": credentials["machine_id"],
-            "oauthGrantId": credentials["grant_id"],
-            "runtimeId": credentials.get("runtime_id"),
-            "runtimeSessionId": SESSION,
+    return validate_wire(
+        {
+            "contractVersion": "guard.consumer-readiness-challenge.v2",
+            "challengeId": "11111111-1111-4111-8111-111111111111",
+            "nonce": "c" * 64,
+            "profileId": PROFILE_ID,
+            "subject": {
+                "workspaceId": credentials["workspace_id"],
+                # This server row UUID deliberately differs from the local Store ID.
+                "installationId": "33333333-3333-4333-8333-333333333333",
+                "machineId": credentials["machine_id"],
+                "oauthGrantId": credentials["grant_id"],
+                "runtimeId": credentials.get("runtime_id"),
+                "runtimeSessionId": SESSION,
+            },
+            "subjectVersion": "55555555-5555-4555-8555-555555555555",
+            "challengeSequence": sequence,
+            "keyThumbprint": credentials["dpop_public_jwk_thumbprint"],
+            "localContext": context,
+            "issuedAtMs": now,
+            "expiresAtMs": now + 60_000,
         },
-        "subjectVersion": "55555555-5555-4555-8555-555555555555",
-        "challengeSequence": sequence,
-        "keyThumbprint": credentials["dpop_public_jwk_thumbprint"],
-        "localContext": context,
-        "issuedAtMs": now,
-        "expiresAtMs": now + 60_000,
-    }, "challenge")
+        "challenge",
+    )
 
 
 def verify_signed(envelope, connection):
@@ -69,7 +72,8 @@ def verify_signed(envelope, connection):
     signature = base64.urlsafe_b64decode(encoded + "==")
     private.public_key().verify(
         encode_dss_signature(int.from_bytes(signature[:32], "big"), int.from_bytes(signature[32:], "big")),
-        signing_bytes(body), ec.ECDSA(hashes.SHA256()),
+        signing_bytes(body),
+        ec.ECDSA(hashes.SHA256()),
     )
     return body
 
@@ -92,13 +96,21 @@ def test_actual_signing_requires_nonce_hmac_and_final_current_sources(tmp_path, 
         assert isinstance(payload, bytes)
         request = json.loads(payload)["request"]
         intent = request["intent"]
-        assert request["mac"] == hmac.new(
-            key, _OBSERVATION_DOMAIN + canonical_json_bytes(intent), hashlib.sha256,
-        ).hexdigest()
+        assert (
+            request["mac"]
+            == hmac.new(
+                key,
+                _OBSERVATION_DOMAIN + canonical_json_bytes(intent),
+                hashlib.sha256,
+            ).hexdigest()
+        )
         calls.append(intent["nonce"])
         snapshot = publisher._snapshot
         assert snapshot is not None
-        response = {
+        generation = snapshot["generation"]
+        policy_digest = snapshot["policy_digest"]
+        assert type(generation) is int and isinstance(policy_digest, str)
+        response: dict[str, JsonValue] = {
             "schema": "guard-policy-snapshot-observation-response.v1",
             "runtime_identity": intent["runtime_identity"],
             "scope_digest": intent["scope_digest"],
@@ -106,13 +118,17 @@ def test_actual_signing_requires_nonce_hmac_and_final_current_sources(tmp_path, 
             "request_sha256": hashlib.sha256(canonical_json_bytes(request)).hexdigest(),
             "resident_generation": 1,
             "authority": {
-                "fingerprint": "e" * 64, "generation_floor": snapshot["generation"],
-                "policy_digest": snapshot["policy_digest"], "usable_snapshot": True,
+                "fingerprint": "e" * 64,
+                "generation_floor": generation,
+                "policy_digest": policy_digest,
+                "usable_snapshot": True,
             },
         }
-        signed = {
+        signed: dict[str, JsonValue] = {
             "response": response,
-            "mac": hmac.new(key, _OBSERVATION_RESPONSE_DOMAIN + canonical_json_bytes(response), hashlib.sha256).hexdigest(),
+            "mac": hmac.new(
+                key, _OBSERVATION_RESPONSE_DOMAIN + canonical_json_bytes(response), hashlib.sha256
+            ).hexdigest(),
         }
         if change == "mac":
             signed["mac"] = "0" * 64

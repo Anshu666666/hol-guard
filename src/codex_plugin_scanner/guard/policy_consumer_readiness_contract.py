@@ -123,8 +123,10 @@ def _semantics(value: dict[str, JsonValue], kind: WireKind) -> None:
             context = mapping(challenge["localContext"])
             authority, snapshot = mapping(value["nativeAuthority"]), mapping(value["publisherSnapshot"])
             for counter in (
-                value["residentGeneration"], authority["generationFloor"],
-                snapshot["generation"], snapshot["residentGeneration"],
+                value["residentGeneration"],
+                authority["generationFloor"],
+                snapshot["generation"],
+                snapshot["residentGeneration"],
             ):
                 _counter(counter)
             if (
@@ -162,8 +164,11 @@ def parse_wire(raw: bytes, kind: WireKind) -> dict[str, JsonValue]:
         if type(raw) is not bytes or not 0 < len(raw) <= MAX_WIRE_BYTES:
             raise ConsumerReadinessError()
         value: object = json.loads(
-            raw.decode("utf-8"), object_pairs_hook=_pairs,
-            parse_int=_integer, parse_float=_reject_number, parse_constant=_reject_number,
+            raw.decode("utf-8"),
+            object_pairs_hook=_pairs,
+            parse_int=_integer,
+            parse_float=_reject_number,
+            parse_constant=_reject_number,
         )
         return validate_wire(value, kind)
     except (ValueError, TypeError, OverflowError, RecursionError):

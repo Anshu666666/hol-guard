@@ -59,8 +59,11 @@ def capture_local_context(
 
 
 def validate_challenge_subject(
-    challenge: dict[str, JsonValue], connection: OAuthConnectionSnapshot,
-    *, session_id: str, expected_context: dict[str, JsonValue] | None,
+    challenge: dict[str, JsonValue],
+    connection: OAuthConnectionSnapshot,
+    *,
+    session_id: str,
+    expected_context: dict[str, JsonValue] | None,
 ) -> None:
     validate_wire(challenge, "challenge")
     credentials = connection.credentials()
@@ -98,46 +101,70 @@ def _sign(body: dict[str, JsonValue], connection: OAuthConnectionSnapshot) -> di
         raise ConsumerReadinessError()
     r, s = decode_dss_signature(key.sign(signing_bytes(body), ec.ECDSA(hashes.SHA256())))
     raw = r.to_bytes(32, "big") + s.to_bytes(32, "big")
-    return validate_wire({
-        "body": body, "signature": base64.urlsafe_b64encode(raw).decode("ascii").rstrip("="),
-    }, "observation")
+    return validate_wire(
+        {
+            "body": body,
+            "signature": base64.urlsafe_b64encode(raw).decode("ascii").rstrip("="),
+        },
+        "observation",
+    )
 
 
 def _ready_body(
-    challenge: dict[str, JsonValue], captured: NativeConsumerCapture, observed: NativeAuthorityObservation,
+    challenge: dict[str, JsonValue],
+    captured: NativeConsumerCapture,
+    observed: NativeAuthorityObservation,
 ) -> dict[str, JsonValue]:
     identity, capabilities = captured.runtime.identity, captured.runtime.capabilities
     authority = observed.authority
     if (
-        identity is None or capabilities is None or authority is None or not authority.usable_snapshot
+        identity is None
+        or capabilities is None
+        or authority is None
+        or not authority.usable_snapshot
         or observed.runtime_identity != identity.sha256
         or observed.resident_generation != captured.resident_generation
         or authority.generation_floor != captured.generation
         or authority.policy_digest != captured.policy_digest
     ):
         raise ConsumerReadinessError()
-    return validate_wire({
-        "contractVersion": "guard.consumer-readiness-observation.v2",
-        "challenge": challenge, "signatureAlgorithm": "ES256", "readiness": "ready_for_delivery",
-        "runtimeIdentity": identity.sha256, "runtimeProtocolVersion": capabilities.protocol_version,
-        "runtimeRuleDigest": capabilities.rule_digest, "nativeScopeDigest": observed.scope_digest,
-        "residentGeneration": str(observed.resident_generation),
-        "nativeAuthority": {
-            "fingerprint": authority.fingerprint, "generationFloor": str(authority.generation_floor),
-            "policyDigest": authority.policy_digest, "usableSnapshot": True,
+    return validate_wire(
+        {
+            "contractVersion": "guard.consumer-readiness-observation.v2",
+            "challenge": challenge,
+            "signatureAlgorithm": "ES256",
+            "readiness": "ready_for_delivery",
+            "runtimeIdentity": identity.sha256,
+            "runtimeProtocolVersion": capabilities.protocol_version,
+            "runtimeRuleDigest": capabilities.rule_digest,
+            "nativeScopeDigest": observed.scope_digest,
+            "residentGeneration": str(observed.resident_generation),
+            "nativeAuthority": {
+                "fingerprint": authority.fingerprint,
+                "generationFloor": str(authority.generation_floor),
+                "policyDigest": authority.policy_digest,
+                "usableSnapshot": True,
+            },
+            "publisherSnapshot": {
+                "schemaVersion": captured.snapshot_version,
+                "generation": str(captured.generation),
+                "policyDigest": captured.policy_digest,
+                "sourceInputDigest": captured.source_input_digest,
+                "residentGeneration": str(captured.resident_generation),
+                "mode": "enforce",
+                "expiresAtMs": captured.expires_at_ms,
+            },
         },
-        "publisherSnapshot": {
-            "schemaVersion": captured.snapshot_version, "generation": str(captured.generation),
-            "policyDigest": captured.policy_digest, "sourceInputDigest": captured.source_input_digest,
-            "residentGeneration": str(captured.resident_generation), "mode": "enforce",
-            "expiresAtMs": captured.expires_at_ms,
-        },
-    }, "ready")
+        "ready",
+    )
 
 
 def _observe_and_sign(
-    publisher: NativePolicySnapshotPublisher, connection: OAuthConnectionSnapshot,
-    challenge: dict[str, JsonValue], cancelled: threading.Event, deadline: float,
+    publisher: NativePolicySnapshotPublisher,
+    connection: OAuthConnectionSnapshot,
+    challenge: dict[str, JsonValue],
+    cancelled: threading.Event,
+    deadline: float,
 ) -> dict[str, JsonValue]:
     with capture_native_consumer(publisher, connection=connection, deadline_monotonic=deadline) as captured:
         _active(cancelled, deadline)
@@ -155,9 +182,12 @@ def _observe_and_sign(
         # Neither key is persisted, returned, logged, or sent to the server.
         del master, material
         observed = observe_native_authority(
-            executable=identity.path, guard_home=publisher.guard_home,
-            runtime_identity=identity.sha256, verifier_key=verifier,
-            deadline_monotonic=deadline, challenge_nonce=nonce,
+            executable=identity.path,
+            guard_home=publisher.guard_home,
+            runtime_identity=identity.sha256,
+            verifier_key=verifier,
+            deadline_monotonic=deadline,
+            challenge_nonce=nonce,
             client=partial(_native_policy_control_request_owned, cancelled=cancelled),
         )
         del verifier
@@ -169,8 +199,10 @@ def _observe_and_sign(
 
 
 def signed_observation(
-    store: GuardStore, publisher: NativePolicySnapshotPublisher | None,
-    connection: OAuthConnectionSnapshot, challenge: dict[str, JsonValue],
+    store: GuardStore,
+    publisher: NativePolicySnapshotPublisher | None,
+    connection: OAuthConnectionSnapshot,
+    challenge: dict[str, JsonValue],
 ) -> dict[str, JsonValue] | None:
     """One bounded local attempt. No native retry and no late signed success."""
     deadline = time.monotonic() + _PUBLISH_TIMEOUT_SECONDS
@@ -192,11 +224,16 @@ def signed_observation(
         # original connection remains selected. Replacement credentials abort.
         with store.hold_oauth_credential_lock(timeout_seconds=_remaining(deadline)):
             store._require_oauth_connection_unlocked(connection)
-            envelope = _sign({
-                "contractVersion": "guard.consumer-readiness-observation.v2",
-                "challenge": challenge, "signatureAlgorithm": "ES256",
-                "readiness": "unavailable", "reason": reason,
-            }, connection)
+            envelope = _sign(
+                {
+                    "contractVersion": "guard.consumer-readiness-observation.v2",
+                    "challenge": challenge,
+                    "signatureAlgorithm": "ES256",
+                    "readiness": "unavailable",
+                    "reason": reason,
+                },
+                connection,
+            )
             store._require_oauth_connection_unlocked(connection)
         _active(cancelled, deadline)
         return envelope

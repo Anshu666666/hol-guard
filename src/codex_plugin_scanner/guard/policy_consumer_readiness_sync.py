@@ -35,8 +35,13 @@ def _require_connection(store: GuardStore, connection: OAuthConnectionSnapshot) 
 
 
 def _post(
-    store: GuardStore, connection: OAuthConnectionSnapshot, auth_context: dict[str, object],
-    *, path: str, body: dict[str, JsonValue], kind: WireKind,
+    store: GuardStore,
+    connection: OAuthConnectionSnapshot,
+    auth_context: dict[str, object],
+    *,
+    path: str,
+    body: dict[str, JsonValue],
+    kind: WireKind,
 ) -> dict[str, JsonValue]:
     # Reuse the existing allowlisted origin and DPoP request signer. This
     # one-use protocol makes no timeout, gateway, rate-limit or nonce retry.
@@ -50,8 +55,11 @@ def _post(
     url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, guard_api_base_path(issuer) + path, "", ""))
     _require_connection(store, connection)
     request = runner._guard_sync_request(
-        auth_context, request_url=url, method="POST",
-        data=canonical_json_bytes(body), extra_headers=None,
+        auth_context,
+        request_url=url,
+        method="POST",
+        data=canonical_json_bytes(body),
+        extra_headers=None,
     )
     _require_connection(store, connection)
     try:
@@ -63,7 +71,9 @@ def _post(
 
 
 def _accepted_ack(
-    ack: dict[str, JsonValue], challenge: dict[str, JsonValue], body: dict[str, JsonValue],
+    ack: dict[str, JsonValue],
+    challenge: dict[str, JsonValue],
+    body: dict[str, JsonValue],
 ) -> dict[str, object]:
     for field in ("challengeId", "subjectVersion", "challengeSequence"):
         if ack[field] != challenge[field]:
@@ -80,7 +90,8 @@ def _accepted_ack(
     if ack["readiness"] == "ready_for_delivery":
         native_expiry = mapping(body["publisherSnapshot"])["expiresAtMs"]
         if (
-            type(until) is not int or type(native_expiry) is not int
+            type(until) is not int
+            or type(native_expiry) is not int
             or not int(time.time() * 1000) < until <= min(expires, native_expiry)
         ):
             raise ConsumerReadinessError()
@@ -94,8 +105,11 @@ def _accepted_ack(
 
 
 def sync_consumer_readiness(
-    store: GuardStore, *, connection: OAuthConnectionSnapshot | None,
-    auth_context: dict[str, object], runtime_summary: dict[str, object],
+    store: GuardStore,
+    *,
+    connection: OAuthConnectionSnapshot | None,
+    auth_context: dict[str, object],
+    runtime_summary: dict[str, object],
 ) -> dict[str, object]:
     """Try the current session once; an unavailable endpoint grants nothing."""
     unavailable: dict[str, object] = {"readiness": "unavailable", "applied_policy": False}
@@ -104,7 +118,8 @@ def sync_consumer_readiness(
     session_id = runtime_summary.get("runtime_session_id")
     key = auth_context.get("dpop_key_material")
     if (
-        not isinstance(session_id, str) or not isinstance(key, GuardDpopKeyMaterial)
+        not isinstance(session_id, str)
+        or not isinstance(key, GuardDpopKeyMaterial)
         or key.public_jwk_thumbprint != connection.credentials().get("dpop_public_jwk_thumbprint")
     ):
         return unavailable
@@ -112,12 +127,22 @@ def sync_consumer_readiness(
         _require_connection(store, connection)
         publisher = find_native_policy_snapshot_publisher(store)
         context = capture_local_context(publisher, connection)
-        issue = validate_wire({
-            "contractVersion": "guard.consumer-readiness-challenge-request.v2",
-            "runtimeSessionId": session_id, "profileId": PROFILE_ID, "localContext": context,
-        }, "issue")
+        issue = validate_wire(
+            {
+                "contractVersion": "guard.consumer-readiness-challenge-request.v2",
+                "runtimeSessionId": session_id,
+                "profileId": PROFILE_ID,
+                "localContext": context,
+            },
+            "issue",
+        )
         challenge = _post(
-            store, connection, auth_context, path=_CHALLENGE_PATH, body=issue, kind="challenge",
+            store,
+            connection,
+            auth_context,
+            path=_CHALLENGE_PATH,
+            body=issue,
+            kind="challenge",
         )
         validate_challenge_subject(challenge, connection, session_id=session_id, expected_context=context)
         envelope = signed_observation(store, publisher, connection, challenge)
@@ -125,7 +150,12 @@ def sync_consumer_readiness(
             return unavailable
         _require_connection(store, connection)
         ack = _post(
-            store, connection, auth_context, path=_OBSERVATION_PATH, body=envelope, kind="ack",
+            store,
+            connection,
+            auth_context,
+            path=_OBSERVATION_PATH,
+            body=envelope,
+            kind="ack",
         )
         _require_connection(store, connection)
         return _accepted_ack(ack, challenge, mapping(envelope["body"]))

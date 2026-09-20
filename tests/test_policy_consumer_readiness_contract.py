@@ -45,7 +45,7 @@ def _public_key() -> ec.EllipticCurvePublicKey:
 @pytest.mark.parametrize("vector", _VECTORS, ids=[_text(v["name"]) for v in _VECTORS])
 def test_shared_signing_bytes_and_actual_p256_verification(vector: dict[str, JsonValue]) -> None:
     body = mapping(vector["body"])
-    envelope = {"body": body, "signature": vector["signature"]}
+    envelope: dict[str, JsonValue] = {"body": body, "signature": vector["signature"]}
     assert parse_wire(canonical_json_bytes(envelope), "observation") == envelope
     assert canonical_json_bytes(body).decode() == vector["canonicalBody"]
     actual = signing_bytes(body)
@@ -61,7 +61,7 @@ def test_shared_signing_bytes_and_actual_p256_verification(vector: dict[str, Jso
 
 @pytest.mark.parametrize("vector", _NEGATIVE, ids=[_text(v["name"]) for v in _NEGATIVE])
 def test_shared_invalid_wire_is_rejected_before_signature(vector: dict[str, JsonValue]) -> None:
-    with pytest.raises(ConsumerReadinessError, match="^guard_consumer_readiness_invalid$"):
+    with pytest.raises(ConsumerReadinessError, match=r"^guard_consumer_readiness_invalid$"):
         parse_wire(_text(vector["text"]).encode(), "observation")
 
 
@@ -94,7 +94,10 @@ def test_exact_byte_limit_and_private_errors() -> None:
     padded = raw + b" " * (MAX_WIRE_BYTES - len(raw))
     assert parse_wire(padded, "challenge") == _DATA["challenge"]
     for invalid in (
-        padded + b" ", b"\xff", b'{"private-canary": NaN}', b'{"private-canary": -0}',
+        padded + b" ",
+        b"\xff",
+        b'{"private-canary": NaN}',
+        b'{"private-canary": -0}',
         b"[" * 2000 + b"0" + b"]" * 2000,
     ):
         with pytest.raises(ConsumerReadinessError) as caught:
@@ -122,6 +125,7 @@ def test_boolean_is_not_integer_and_signature_encoding_is_canonical() -> None:
     noncanonical = signature[:-1] + alphabet[alphabet.index(signature[-1]) ^ 1]
     with pytest.raises(ConsumerReadinessError):
         validate_wire({"body": _VECTORS[0]["body"], "signature": noncanonical}, "observation")
+
 
 def test_fixed_profile_is_exact_three_product_commands_with_distinct_agent_identity() -> None:
     from codex_plugin_scanner.guard.exact_command import exact_command_sha256

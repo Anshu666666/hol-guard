@@ -38,10 +38,14 @@ if TYPE_CHECKING:
 # source inputs, snapshot or positive readiness result is cached here.
 _INSTANCES: WeakKeyDictionary[NativePolicySnapshotPublisher, str] = WeakKeyDictionary()
 _INSTANCE_LOCK = threading.Lock()
-_FEATURES = _REQUIRED_PUBLISH_FEATURES | SCOPED_PUBLISH_FEATURES | {
-    "pre-tool-generic-authority-v1",
-    "policy-snapshot-control-v1",
-}
+_FEATURES = (
+    _REQUIRED_PUBLISH_FEATURES
+    | SCOPED_PUBLISH_FEATURES
+    | {
+        "pre-tool-generic-authority-v1",
+        "policy-snapshot-control-v1",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -112,7 +116,9 @@ def _condition_until(publisher: NativePolicySnapshotPublisher, deadline: float) 
 
 
 def _binding(
-    publisher: NativePolicySnapshotPublisher, runtime: NativeRuntimeStatus, deadline: float,
+    publisher: NativePolicySnapshotPublisher,
+    runtime: NativeRuntimeStatus,
+    deadline: float,
 ) -> NativeConsumerCapture:
     with _condition_until(publisher, deadline):
         publisher._mark_expired_locked()
@@ -158,20 +164,29 @@ def _binding(
             source = inputs.input_digest
             resident = publisher._published_v3_resident_generation
         return NativeConsumerCapture(
-            _instance(publisher), publisher._epoch, version,
-            _positive_counter(snapshot.get("generation")), _digest(snapshot.get("policy_digest")),
-            _digest(source), _positive_counter(resident), _positive_counter(snapshot.get("expires_at_ms")),
-            runtime, snapshot,
+            _instance(publisher),
+            publisher._epoch,
+            version,
+            _positive_counter(snapshot.get("generation")),
+            _digest(snapshot.get("policy_digest")),
+            _digest(source),
+            _positive_counter(resident),
+            _positive_counter(snapshot.get("expires_at_ms")),
+            runtime,
+            snapshot,
         )
 
 
 def _lane(connection: OAuthConnectionSnapshot, observer: sqlite3.Connection) -> None:
     workspace = connection.credentials().get("workspace_id")
     row = observer.execute(
-        "select installation_id from guard_devices where device_key = ?", (_DEVICE_ROW_KEY,),
+        "select installation_id from guard_devices where device_key = ?",
+        (_DEVICE_ROW_KEY,),
     ).fetchone()
-    if row is None or not isinstance(workspace, str) or not canonical_policy_enforcement_enabled(
-        device_id=str(row[0]), workspace_id=workspace
+    if (
+        row is None
+        or not isinstance(workspace, str)
+        or not canonical_policy_enforcement_enabled(device_id=str(row[0]), workspace_id=workspace)
     ):
         raise _refuse()
 
@@ -182,24 +197,34 @@ def _fresh_sources(publisher: NativePolicySnapshotPublisher, expected: NativeCon
     if extensions != expected.snapshot.get("command_extensions", {}):
         raise _refuse()
     config, inputs = compiled_scoped_policy(publisher, command_extensions=extensions)
-    if (
-        inputs.input_digest != expected.source_input_digest
-        or _policy_fingerprint(config) != (expected.snapshot.get("config_digest"), "enforce")
+    if inputs.input_digest != expected.source_input_digest or _policy_fingerprint(config) != (
+        expected.snapshot.get("config_digest"),
+        "enforce",
     ):
         raise _refuse()
     if expected.snapshot_version == 3:
         published = publisher._published_cloud_inputs
-        if not isinstance(published, CapturedV3PublicationInputs) or _v3_inputs_from_capture(
-            publisher, inputs, allow_signed_defaults=published.source_identity is not None,
-            command_extensions=extensions,
-        ) != published:
+        if (
+            not isinstance(published, CapturedV3PublicationInputs)
+            or _v3_inputs_from_capture(
+                publisher,
+                inputs,
+                allow_signed_defaults=published.source_identity is not None,
+                command_extensions=extensions,
+            )
+            != published
+        ):
             raise _refuse()
     else:
         capabilities = expected.runtime.capabilities
         assert capabilities is not None
-        _ = inputs.authority.for_snapshot(NativePolicyAuthorityCapabilities(
-            4, frozenset(capabilities.features), capabilities.extension_catalog_digest,
-        ))
+        _ = inputs.authority.for_snapshot(
+            NativePolicyAuthorityCapabilities(
+                4,
+                frozenset(capabilities.features),
+                capabilities.extension_catalog_digest,
+            )
+        )
     if inputs.expires_at_ms is not None and inputs.expires_at_ms <= int(publisher._wall_clock() * 1000):
         raise _refuse()
 
@@ -219,9 +244,14 @@ def capture_native_consumer(
     only across the yielded IPC/signing interval and the final commit checks.
     """
     store = publisher.store
-    with hold_policy_publication_mutation(
-        publisher.guard_home, timeout_seconds=_remaining(deadline_monotonic),
-    ), managed_policy_cache_read_only(), store._connect() as observer:
+    with (
+        hold_policy_publication_mutation(
+            publisher.guard_home,
+            timeout_seconds=_remaining(deadline_monotonic),
+        ),
+        managed_policy_cache_read_only(),
+        store._connect() as observer,
+    ):
         with store.hold_oauth_credential_lock(timeout_seconds=_remaining(deadline_monotonic)):
             store._require_oauth_connection_unlocked(connection)
         _lane(connection, observer)
@@ -260,7 +290,10 @@ def capture_native_consumer(
         _fresh_sources(publisher, expected)
         current_runtime = _runtime()
         _lane(connection, observer)
-        with store.hold_oauth_credential_lock(timeout_seconds=_remaining(deadline_monotonic)), _condition_until(publisher, deadline_monotonic):
+        with (
+            store.hold_oauth_credential_lock(timeout_seconds=_remaining(deadline_monotonic)),
+            _condition_until(publisher, deadline_monotonic),
+        ):
             store._require_oauth_connection_unlocked(connection)
             # Credential reads may update WAL file metadata without a commit.
             # Sample metadata after them; independent data_version stays bound.
@@ -276,8 +309,12 @@ def capture_native_consumer(
                 or not _capture_metadata_equal(after[0], current[0], str(store.path))
                 or after[1] != current[1]
                 or publisher._confirm_resident_fingerprint(
-                    after[1], current[1], expected.resident_generation, directory,
-                ) is None
+                    after[1],
+                    current[1],
+                    expected.resident_generation,
+                    directory,
+                )
+                is None
                 or not any(path.endswith(generation_file) for path, _, _ in current[1])
                 or publisher._current_input_fingerprint() != current
                 or observer.execute("pragma data_version").fetchone()[0] != version

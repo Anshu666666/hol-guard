@@ -48,8 +48,6 @@ from ..config import VALID_RECEIPT_REDACTION_LEVELS, GuardConfig
 from ..edge_events import build_runtime_session_event
 from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..mdm.network import managed_urlopen
-from ..policy_consumer_readiness_contract import PROTOCOL_CAPABILITY
-from ..policy_consumer_readiness_sync import sync_consumer_readiness
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
 from ..native_policy_authority_command_source import has_canonical_command_expressions
 from ..native_policy_bundle_sync import publish_received_canonical_policy
@@ -97,6 +95,8 @@ from ..policy_canonical_rollout import (
 from ..policy_canonical_rollout import (
     canonical_runtime_posture,
 )
+from ..policy_consumer_readiness_contract import PROTOCOL_CAPABILITY
+from ..policy_consumer_readiness_sync import sync_consumer_readiness
 from ..policy_delivery_outcome import policy_delivery_outcome_fields
 from ..policy_document_io import PolicyCompilationError
 from ..policy_lane_capabilities import source_runtime_lane_observation
@@ -4093,7 +4093,9 @@ def sync_local_guard_cloud_proof(
                 auth_context=resolved_auth_context,
             )
             runtime_summary["consumer_readiness"] = sync_consumer_readiness(
-                store, connection=auth_connection, auth_context=resolved_auth_context,
+                store,
+                connection=auth_connection,
+                auth_context=resolved_auth_context,
                 runtime_summary=runtime_summary,
             )
             receipts_summary = sync_receipts(

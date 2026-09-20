@@ -373,8 +373,13 @@ def test_external_challenge_nonce_is_authenticated_without_changing_deadline(tmp
         return signed(response, domain)
 
     observed = control.observe_native_authority(
-        executable=tmp_path / "synthetic", guard_home=tmp_path, runtime_identity=RUNTIME,
-        verifier_key=KEY, deadline_monotonic=deadline, client=client, challenge_nonce=nonce,
+        executable=tmp_path / "synthetic",
+        guard_home=tmp_path,
+        runtime_identity=RUNTIME,
+        verifier_key=KEY,
+        deadline_monotonic=deadline,
+        client=client,
+        challenge_nonce=nonce,
     )
     assert observed.authority is not None and observed.authority.usable_snapshot
     assert len(calls) == 1
@@ -391,8 +396,12 @@ def test_external_invalid_challenge_nonce_refuses_before_transport(tmp_path, non
 
     with pytest.raises(NativePolicySnapshotError):
         control.observe_native_authority(
-            executable=tmp_path / "synthetic", guard_home=tmp_path, runtime_identity=RUNTIME,
-            verifier_key=KEY, deadline_monotonic=time.monotonic() + 1, client=client,
+            executable=tmp_path / "synthetic",
+            guard_home=tmp_path,
+            runtime_identity=RUNTIME,
+            verifier_key=KEY,
+            deadline_monotonic=time.monotonic() + 1,
+            client=client,
             challenge_nonce=nonce,
         )
     assert not called

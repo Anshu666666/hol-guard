@@ -1,0 +1,174 @@
+name: PR2974 installed provenance and poststart validation
+
+on:
+  push:
+    branches: [codex/pr2974-rsp129-installed-provenance-validation-20260920]
+    paths:
+      - '.github/workflows/pr2974-rsp129-poststart-validation.yml'
+      - 'ci/pr2974_rsp129_poststart_validation/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-rsp129-poststart-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VALIDATION_SOURCE: ${{ github.workspace }}/source
+  VALIDATION_HARNESS: ${{ github.workspace }}/harness
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  native-phases:
+    name: 29 finite, current native receipt gates, then installed poststart diagnostic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Initialize retained outcome
+        env:
+          VALIDATION_REPORT: ${{ runner.temp }}/pr2974-rsp129-poststart-validation/report
+          VALIDATION_SCRATCH: ${{ runner.temp }}/pr2974-rsp129-poststart-validation/scratch
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          report.mkdir(parents=True, exist_ok=True)
+          Path(os.environ['VALIDATION_SCRATCH']).mkdir(mode=0o700, parents=True, exist_ok=True)
+          receipt = {'source_sha': '4d10758e2cb44e5afa72a08aa631a02541dad534',
+                     'source_tree': 'fbc00caa3788eb422158a2263a578e83ac626183',
+                     'harness_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'status': 'not_run',
+                     'passed': False, 'qualification_complete': False,
+                     'headline_timing_eligible': False, 'overall_qualification_complete': False}
+          (report / 'job-outcome.json').write_text(json.dumps(receipt, sort_keys=True) + '\n')
+          with Path(os.environ['GITHUB_ENV']).open('a') as stream:
+              stream.write('VALIDATION_REPORT=' + str(report) + '\n')
+              stream.write('VALIDATION_SCRATCH=' + os.environ['VALIDATION_SCRATCH'] + '\n')
+          PY
+      - name: Checkout the immutable additive harness
+        id: harness
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Checkout the exact immutable corrected source
+        id: source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: '4d10758e2cb44e5afa72a08aa631a02541dad534'
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the exact fresh validation Python
+        id: tool_setup
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12.13'
+      - name: Set up the exact frozen-lock installer
+        id: tool_install
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Validate exact finite and native scopes before the installed diagnostic
+        id: validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VALIDATION_UV="$(command -v uv)"
+          python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rsp129_poststart_validation/validate.py"
+      - name: Preserve actual driver and checkout outcomes before retention
+        id: outcomes
+        if: always()
+        env:
+          HARNESS_CHECKOUT: ${{ steps.harness.outcome }}
+          SOURCE_CHECKOUT: ${{ steps.source.outcome }}
+          TOOL_SETUP: ${{ steps.tool_setup.outcome }}
+          TOOL_INSTALL: ${{ steps.tool_install.outcome }}
+          DRIVER_OUTCOME: ${{ steps.validation.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = Path(os.environ['VALIDATION_REPORT'])
+          path = report / 'job-outcome.json'
+          value = json.loads(path.read_text()) if path.is_file() else {'passed': False, 'status': 'missing'}
+          names = ['HARNESS_CHECKOUT', 'SOURCE_CHECKOUT', 'TOOL_SETUP', 'TOOL_INSTALL', 'DRIVER_OUTCOME']
+          value['workflow_step_outcomes'] = {name: os.environ[name] for name in names}
+          value['qualification_complete'] = False
+          passed = value.get('passed') is True and all(
+              outcome == 'success' for outcome in value['workflow_step_outcomes'].values())
+          value['pre_retention_driver_passed'] = passed
+          value['headline_timing_eligible'] = False
+          value['overall_qualification_complete'] = False
+          path.write_text(json.dumps(value, sort_keys=True, indent=2) + '\n')
+          print(json.dumps({'pre_retention_driver_passed': passed, 'status': value.get('status'),
+                            'workflow_step_outcomes': value['workflow_step_outcomes']}))
+          PY
+      - name: Emit complete checksum-framed reports and failure snapshots
+        id: projection
+        if: always()
+        shell: bash
+        run: python3 -I -B "$VALIDATION_HARNESS/ci/pr2974_rsp129_poststart_validation/report_projection.py"
+      - name: Retain complete original snapshots, JUnit, reports and failure logs
+        id: artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rsp129-poststart-validation-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-rsp129-poststart-validation/report/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain the exact runtime, wheels and installed file archives
+        id: binaries
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rsp129-poststart-artifacts-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2974-rsp129-poststart-validation/scratch/installed-artifacts/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Gate the actual bounded diagnostic after all retention steps
+        if: always()
+        env:
+          OUTCOME_RETENTION: ${{ steps.outcomes.outcome }}
+          PROJECTION_OUTCOME: ${{ steps.projection.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.artifact.outcome }}
+          BINARY_ARTIFACT_OUTCOME: ${{ steps.binaries.outcome }}
+        shell: bash
+        run: |
+          python3 -I -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          value = json.loads((Path(os.environ['VALIDATION_REPORT']) / 'job-outcome.json').read_text())
+          summary = json.loads((Path(os.environ['VALIDATION_REPORT']) / 'poststart-validation-summary.json').read_text())
+          retention = {name: os.environ[name] for name in ['OUTCOME_RETENTION', 'PROJECTION_OUTCOME', 'ARTIFACT_OUTCOME', 'BINARY_ARTIFACT_OUTCOME']}
+          passed = (value.get('status') == 'finished' and value.get('passed') is True
+                    and value.get('pre_retention_driver_passed') is True
+                    and value.get('headline_timing_eligible') is False
+                    and value.get('overall_qualification_complete') is False
+                    and value.get('all_original_owned_groups_retired') is True
+                    and summary.get('all_stages_passed') is True
+                    and summary.get('prerequisite_gate_passed') is True
+                    and summary.get('diagnostic_fixture_started') is True
+                    and summary.get('finite_cases_planned') == 29
+                    and summary.get('native_unit_entries_planned') == 24
+                    and summary.get('native_units_passed') is True
+                    and summary.get('native_consumer_cases_planned') == 3
+                    and summary.get('native_consumers_passed') is True
+                    and summary.get('original_producer_entries_planned') == 1
+                    and summary.get('original_fixture_python_cases_planned') == 6
+                    and summary.get('original_fixture_python_phases_planned') == 18
+                    and summary.get('original_fixture_passed') is True
+                    and all(outcome == 'success' for outcome in retention.values()))
+          print(json.dumps({'bounded_poststart_workflow_gate_passed': passed, 'retention_outcomes': retention,
+                            'headline_timing_eligible': False, 'qualification_complete': False}, sort_keys=True))
+          raise SystemExit(0 if passed else 1)
+          PY

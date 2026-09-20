@@ -1,0 +1,173 @@
+{
+  "anchoring_evidence_commit_prefix": "aba7420f",
+  "base_readbacks": [
+    {
+      "git_blob": "6e1fabee3c4847bffa3c6262039cf2e07595de1f",
+      "path": "src/codex_plugin_scanner/guard/mcp_tool_calls.py"
+    },
+    {
+      "git_blob": "e6d914bc366102f862edd6a6fe016da56f3a59a0",
+      "path": "src/codex_plugin_scanner/guard/proxy/runtime_mcp.py"
+    },
+    {
+      "git_blob": "c439b0d7dd80971b5ec69374cda4b3736fdf1761",
+      "path": "src/codex_plugin_scanner/guard/mcp_authority_binding.py"
+    },
+    {
+      "git_blob": "792be3d454f0b74a756c3770f503ada4cec34df4",
+      "path": "src/codex_plugin_scanner/guard/config.py"
+    },
+    {
+      "git_blob": "3fe2dc06124cb41db07b2ef16fd057c77a4e9654",
+      "path": "src/codex_plugin_scanner/guard/runtime/browser_mcp_intent.py"
+    },
+    {
+      "git_blob": "b61bcc53b04621370b72f842c06144be1a952fd2",
+      "path": "src/codex_plugin_scanner/guard/proxy/tool_call_binding.py"
+    },
+    {
+      "git_blob": "3c129256dca4430495fea571c85e9c9d98393d50",
+      "path": "tests/test_runtime_mcp_authority_callbacks.py"
+    }
+  ],
+  "controls_review": {
+    "collected_or_executed_cases": 0,
+    "existing_cohorts_still_required": [
+      "request-risk-facts",
+      "runtime-authority-callbacks",
+      "tool-call-binding",
+      "browser",
+      "approval parity"
+    ],
+    "historical_fixture_import": "Imports the _session fixture from test_mcp_owned_preparation_pilot but does not call the historical adapter installer in the new test body.",
+    "missing_controls": [
+      "changed existing module attribute",
+      "changed existing class constructor/descriptor",
+      "helper mutation at final authority callback return",
+      "unsupported capture/import fallback",
+      "private consumer replacement signature compatibility",
+      "legacy ToolCallRiskFacts/public API parity",
+      "positive sharing on risky, schema/description and browser shapes"
+    ],
+    "new_test_functions": 9,
+    "scope_warning": "Finite source controls cannot substitute for full approval-summary/receipt integration or measured performance evidence.",
+    "statically_declared_cases": 14,
+    "useful_declared_cases": [
+      "unchanged admitted pair and later invocation",
+      "real stdio request bytes",
+      "replaced public alias original kwargs",
+      "category/schema global replacement",
+      "second policy return replacement",
+      "argument/catalog/policy/artifact change",
+      "exception expiry",
+      "nested resolution",
+      "copied-context other-thread refusal"
+    ]
+  },
+  "coordination": {
+    "findings_sent": true,
+    "owner": "recover_requirements",
+    "owner_preparing_corrected_exact_bytes": true,
+    "this_review_does_not_cover_corrected_bytes": true
+  },
+  "findings": [
+    {
+      "execution_status": "Static source finding; no reproduction executed.",
+      "finding": "The current-consumer branch checks support before authority_check(), then returns cached categories without a post-authority helper check.",
+      "id": "RSP100-PEER-01",
+      "location": "mcp_request_risk.py:163-181",
+      "reason": "The captured proxy authority check invokes callable normalization through its values() closure. A helper change at the final authority-return boundary is invisible to the earlier support check, although an uncached second classification would observe it.",
+      "required_change": "Revalidate supported helper/alias state after the authority callback and immediately before consuming cached facts. Preserve callback exceptions and derive through the original route when unsupported.",
+      "source_demonstration": "A deterministic profiling control can change _tool_call_risk_category_set on return from the captured authority check whose caller is InvocationRiskFacts.categories with consumer=current. The existing category/schema global bindings detect that change only if supported() runs again.",
+      "status": "must_correct_before_supported_reuse_claim"
+    },
+    {
+      "concrete_examples": [
+        "re.search/re.sub and json.dumps may change while the imported module object remains identical.",
+        "GuardBrowserAutomationIntentV1.__init__/__new__ may change in place while the captured class identity remains identical. normalize_browser_mcp_intent constructs it, and the resulting intent/profile fields affect categories.",
+        "The same structural constructor issue applies to _LiteralRiskPattern."
+      ],
+      "correction_caution": "Frozen dataclass-generated constructors have source-default closures. Rejecting every constructor closure can make the positive path unreachable; positive admission/count controls must still pass on intended current source shapes.",
+      "execution_status": "Static source finding; no mutation control executed.",
+      "finding": "The dependency graph binds global object identity and ordinary function code/defaults but misses implementations dispatched through module attributes and class descriptors.",
+      "id": "RSP100-PEER-02",
+      "location": "mcp_request_risk.py:38-55,95-104; base browser_mcp_intent.py:529",
+      "required_change": "Bind the exact reviewed member/constructor descriptors needed by the supported graph, or decline sharing for dependency forms that are not covered. Do not merely relabel identity-only capture as full helper protection.",
+      "status": "must_correct_or_explicitly_exclude_unsupported_dependency_forms"
+    },
+    {
+      "execution_status": "Structural source finding, not a recorded runtime failure.",
+      "finding": "Eager registry construction propagates unsupported closure/default/container failures into module import, instead of marking reuse unsupported. co_names also conflates global loads with attribute names and omits globals in nested code objects.",
+      "id": "RSP100-PEER-03",
+      "location": "mcp_request_risk.py:44-55,95-104; mcp_tool_calls.py:1921",
+      "required_change": "Bound graph capture, distinguish actual global/member dependencies, and turn unsupported capture into a disabled sharing registry without suppressing product authority errors. Keep cold-import and positive-use controls.",
+      "scope_limit": "No current4d import failure was established. The owner independently inspected current globals and did not find a source-proven throw; actual import remains unexecuted.",
+      "status": "import_and_unsupported_fallback_readiness_gap"
+    },
+    {
+      "execution_status": "Unchanged code confirmed against exact4d; no acceptance claim.",
+      "finding": "Approval payload summary still calls tool_call_risk_summary, which derives signals/categories again; the approval-pending receipt still calls tool_call_risk_categories. The new token expires before this route.",
+      "id": "RSP100-PEER-04",
+      "location": "proxy/runtime_mcp.py:3994,4049; mcp_tool_calls.py:1703",
+      "required_change": "Keep the current pair-only scope explicit. Full RSP100 requires separately bound provenance across daemon, browser/launch-target, queue and receipt callbacks; do not reuse stale decision facts across those callbacks.",
+      "status": "full_requirement_still_open"
+    }
+  ],
+  "preserved_behavior_confirmed_by_source": [
+    "Existing ToolCallRiskFacts matching remains separate, with an exact new-token type branch before the old _input_binding matcher.",
+    "Both runtime public hash/evaluate aliases remain called. Replaced aliases receive the original argument set without risk_facts.",
+    "All three preparation calls and both policy resolution callbacks remain, with current policy resolved before current-consumer sharing.",
+    "The forwarding implementation, final preparation/authority check, immutable frame checks and final5ms fence are unchanged.",
+    "Finally closes the token, clears artifact/arguments/categories/check references and resets the ContextVar.",
+    "New facts are not returned inside _ToolCallAuthority and cannot survive an approval wait through this pair.",
+    "Hash/current helper mutations fall back to original derivation when the existing captured binding actually notices them.",
+    "Only imports, the targeted pair-consumer hunks and appended sharing helpers change in the two existing production modules."
+  ],
+  "qualification_complete": false,
+  "review_kind": "Independent source-body review, distinct from the earlier design discussion",
+  "reviewed_proposal_tree": "6bea497f84fb656b05e6198fc290125fb0dfe749",
+  "reviewed_sources": [
+    {
+      "bytes": 8866,
+      "git_blob": "2e9b86ede90326f0a546ce6811c6e7886f020658",
+      "name": "token",
+      "physical_lines": 232,
+      "sha256": "3adf81e8c0f5ede6a213d3ec22fd9ddf40f61969ed5605298deaa7d2425a456c"
+    },
+    {
+      "bytes": 74096,
+      "git_blob": "cfe1d4ccdf3cf0c32c6a6e2cbe6bea129f882f4e",
+      "name": "calls",
+      "physical_lines": 1955,
+      "sha256": "bf687dcaa173422536da42a23cf5bb71c22d10f0cd9163e017e341a12f447fbf"
+    },
+    {
+      "bytes": 189461,
+      "git_blob": "aae16584a7375f67c9ef07ef3b5f8b576e262d96",
+      "name": "runtime",
+      "physical_lines": 4510,
+      "sha256": "cfb70c59e2fb9af18ab16c006207daff62c439a61b4faf583750cdbbd038d42a"
+    },
+    {
+      "bytes": 9227,
+      "git_blob": "e149c5b96ac2fa45d651ef93f9d96f9c8a5cc167",
+      "name": "tests",
+      "physical_lines": 239,
+      "sha256": "28aa050e77a1ce3151304575dc44f0241c3862c533789fd9efd4b3f773927038"
+    }
+  ],
+  "reviewer": "partition_regression",
+  "rsp100_complete": false,
+  "schema": "pr2974-rsp100-original-draft-source-peer.v1",
+  "source_base": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+  "status": "corrections_required_unexecuted_draft_not_ready",
+  "validation": {
+    "branch_or_pr_mutations": false,
+    "code_modifications_by_reviewer": false,
+    "native_installed_benchmarks": false,
+    "python_import_compile_tests": false,
+    "remote_execution": false,
+    "standalone_peer_receipt_only": true
+  }
+}

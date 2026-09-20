@@ -1,0 +1,59 @@
+{
+  "artifact_failure_attribution": "qualification_audit reported actual retirement_snapshot AttributeError at339 after count1 registration/public_policy phases. This peer has not independently read the inner artifact reports.",
+  "finding": {
+    "necessary_regression": "Exercise an actual multiprocessing.Process or a faithful product WorkerProcess shape without a poll method; distinguish live, exited/reaped and unsupported/incomplete observation. A Popen-only fake misses the actual contract.",
+    "observer": {
+      "behavior": "Retains slot.process, then calls process.poll() twice to report returncode and reaped.",
+      "capture_lines": [
+        242,
+        243
+      ],
+      "failure_line": 339,
+      "git_blob": "23d4ae366bcdfcf5aa84f0f4d8cf1b2b52b960ba",
+      "path": "scripts/native_slo_workspace_poststart_session.py"
+    },
+    "original_retirement": "retire_worker_slot joins the worker under retire_lock and sets slot.retired only after its containment criteria; this peer found no evidence changing those product semantics is necessary.",
+    "producer": {
+      "behavior": "Constructs multiprocessing.get_context('spawn').Process and stores it in HookWorkerSlot.process.",
+      "git_blob": "2a317b333cffb7b1794e4f999f1a8b54b0af623b",
+      "lines": [
+        14,
+        30
+      ],
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_process_spawner.py"
+    },
+    "proposed_repair_boundary": "Observe actual multiprocessing alive/exit evidence after the existing stop lifecycle. Preserve all retirement/registry/owned-thread checks and incomplete/failure records. Do not substitute a cleanup action, timeout increase, or unsupported-object success fallback.",
+    "protocol": {
+      "git_blob": "c977b9410d78b87fa3e599df81a9583a9ff09fac",
+      "lines": [
+        19,
+        26
+      ],
+      "methods": [
+        "pid",
+        "is_alive",
+        "join",
+        "terminate",
+        "kill"
+      ],
+      "path": "src/codex_plugin_scanner/guard/daemon/hook_process_worker.py",
+      "poll_method": false
+    },
+    "status": "concrete_fixture_interface_mismatch"
+  },
+  "kind": "read-only source-body review",
+  "limits": {
+    "exact_retirement_success_established": false,
+    "installed_rerun": false,
+    "production_containment_failure_established": false,
+    "qualification_complete": false,
+    "remote_commands": false,
+    "source_edits": false,
+    "source_only": true,
+    "tests_executed": false
+  },
+  "reviewer": "partition_regression",
+  "run": 35493601886,
+  "schema": "pr2974-native-retirement-process-interface-source-peer.v1",
+  "source": "4d10758e2cb44e5afa72a08aa631a02541dad534"
+}

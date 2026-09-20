@@ -1,0 +1,1139 @@
+{
+  "cases": [
+    {
+      "index": 0,
+      "label": "WebFetch",
+      "passed": true,
+      "record_sha256": "ad53fed6caee4903e231173aa020df5636b6a1951c2befe7d31101c1053cc694",
+      "result": {
+        "approval_row": {
+          "action_envelope_json": {
+            "action_id": "3f05da48f95147ba84ba3a07576264b9",
+            "action_type": "network_request",
+            "command": null,
+            "event_name": "PreToolUse",
+            "harness": "cursor",
+            "mcp_server": null,
+            "mcp_tool": null,
+            "native_review_policy_binding": {
+              "action_type": "network",
+              "event_name": "PreToolUse",
+              "harness": "cursor",
+              "operation": "request",
+              "payload_kind": "inline",
+              "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+              "policy_generation": 1,
+              "request_digest": "33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89",
+              "review_scope": "noncommand",
+              "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+              "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema": "guard.native-review-policy-binding.v2",
+              "source_ref_external_allowed": false,
+              "workspace_bound": true
+            },
+            "network_hosts": [
+              "example.com"
+            ],
+            "package_manager": null,
+            "package_name": null,
+            "pre_execution_result": "review",
+            "prompt_excerpt": null,
+            "prompt_text": null,
+            "schema_version": 1,
+            "target_paths": [],
+            "tool_name": "WebFetch",
+            "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+            "workspace_hash": null
+          },
+          "action_explanation": {
+            "action_identity": "act_b29185d4c463a41734bc36d9fe9760e79c6b0f0e33a35e61c29b5da7db655845",
+            "canonical_identity": null,
+            "catalog_digest": null,
+            "confidence": "limited",
+            "everyday": {
+              "actor_label": "cursor",
+              "consequences": [
+                {
+                  "confirmed": false,
+                  "message": "The action may change files, accounts, services, or other resources.",
+                  "message_id": "guard.everyday.unknown_action.consequence.0",
+                  "severity": "high"
+                }
+              ],
+              "headline": "Run an action Guard could not fully explain",
+              "headline_message_id": "guard.everyday.unknown_action.headline",
+              "impact": "The action may change files, accounts, services, or other resources.",
+              "impact_message_id": "guard.everyday.unknown_action.impact",
+              "recommendation": "Stop it unless you expected this action, or review the retained technical details.",
+              "recommendation_message_id": "guard.everyday.unknown_action.recommendation",
+              "safer_alternatives": [
+                {
+                  "kind": "review",
+                  "message": "Stop it unless you expected this action, or review the retained technical details.",
+                  "message_id": "guard.everyday.unknown_action.alternative.0"
+                }
+              ],
+              "summary": "cursor wants to perform an action. Guard could not confirm the exact intent from retained facts.",
+              "summary_message_id": "guard.everyday.unknown_action.summary",
+              "targets": [
+                {
+                  "kind": "network_host",
+                  "label": "the service example.com",
+                  "scope": null,
+                  "sensitivity": "normal"
+                }
+              ],
+              "why_guard_intervened": null,
+              "why_guard_intervened_message_id": null
+            },
+            "explanation_version": "1.0.0",
+            "kind": "unknown_action",
+            "locale": "en-US",
+            "redaction": {
+              "level": "redacted",
+              "omitted_fields": [
+                "technical.command_display",
+                "technical.normalized_command_display",
+                "technical.executable",
+                "technical.arguments_display",
+                "technical.segments"
+              ],
+              "policy_version": "1",
+              "secret_like_values_removed": false,
+              "truncated_fields": []
+            },
+            "renderer_version": "1.0.0",
+            "schema_version": "guard.action-explanation.v1",
+            "technical": {
+              "action_id": "act_b29185d4c463a41734bc36d9fe9760e79c6b0f0e33a35e61c29b5da7db655845",
+              "action_type": "network_request",
+              "arguments_display": null,
+              "available": false,
+              "command_display": null,
+              "dialect": null,
+              "executable": null,
+              "extension_ids": [],
+              "normalized_command_display": null,
+              "parse_confidence": null,
+              "policy_source": null,
+              "proof_level": null,
+              "reason_codes": [
+                "network_direction_unavailable"
+              ],
+              "receipt_id": null,
+              "rule_ids": [],
+              "segments": [],
+              "transport": null,
+              "unavailable_reason": "The exact action was not retained.",
+              "working_scope_display": null,
+              "wrappers": []
+            },
+            "uncertainty_reasons": [
+              "network_direction_unavailable"
+            ]
+          },
+          "action_identity": "17abbb6e64b9edb506e45d324b1d281467391e9434750f2e61761694aca957c9",
+          "allowed_scopes": [
+            "artifact"
+          ],
+          "allowed_scopes_by_action": {
+            "allow": [
+              "artifact"
+            ],
+            "block": [
+              "artifact"
+            ]
+          },
+          "approval_url": "http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9",
+          "artifact_hash": "native-review-v4:33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89:deny:review:review:native_network_review",
+          "artifact_id": "cursor:native-pretool:WebFetch",
+          "artifact_label": null,
+          "artifact_name": "WebFetch",
+          "artifact_type": "tool_call",
+          "browser_intent": null,
+          "changed_fields": [
+            "native_pre_tool"
+          ],
+          "config_path": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+          "continuation_snapshot": {
+            "capability": "unsupported",
+            "correlationId": "gcr_8274ba81-c48a-5d40-8ebd-e0755b308d33",
+            "hookAttached": false,
+            "opaqueTargetId": null,
+            "waitDeadline": null
+          },
+          "created_at": "2026-09-20T06:15:48.608251+00:00",
+          "decision_v2_json": {
+            "action": "ask",
+            "approval_scopes": [
+              "artifact"
+            ],
+            "confidence": "likely",
+            "dashboard_primary_detail": "HOL Guard needs your approval before this action can run.",
+            "guard_action": "review",
+            "harness_message": "HOL Guard needs your approval before this action can run.",
+            "reason": "review",
+            "retry_instruction": "Choose an approval scope, then retry in the harness.",
+            "signals": [],
+            "user_body": "HOL Guard needs your approval before this action can run.",
+            "user_title": "Approval required"
+          },
+          "dedupe_count": 1,
+          "display_status": "pending",
+          "exact_action_persistence_eligible": false,
+          "fallback_cli_command": null,
+          "first_seen_guard_version": null,
+          "guard_version": null,
+          "harness": "cursor",
+          "last_seen_at": "2026-09-20T06:15:48.608251+00:00",
+          "last_seen_guard_version": null,
+          "launch_summary": null,
+          "launch_target": "https://example.com/docs",
+          "normalized_identity_key": "https://example.com/docs",
+          "oauth_source": "default",
+          "policy_action": "review",
+          "publisher": null,
+          "queue_group_id": "approval-group:v1:580929e4c509025188661c6593915d2b2a54dd0f09f07420d840675cde53ff01",
+          "raw_command_text": null,
+          "reason": null,
+          "recommended_scope": "artifact",
+          "recommended_scope_by_action": {
+            "allow": "artifact",
+            "block": "artifact"
+          },
+          "request_id": "3f05da48f95147ba84ba3a07576264b9",
+          "resolution_action": null,
+          "resolution_intent": null,
+          "resolution_scope": null,
+          "resolved_at": null,
+          "review_command": "hol-guard approvals approve 3f05da48f95147ba84ba3a07576264b9",
+          "risk_headline": null,
+          "risk_signals": [],
+          "risk_summary": "HOL Guard requires review before this network action can execute.",
+          "scanner_evidence": [],
+          "scope_contract_digest": "9cdb100f9f14c0a1627799750d6e60dfc0885297fc7fe1eb71872859dbd766ef",
+          "scope_contract_version": "guard.approval-scopes.v6",
+          "scope_restrictions": [
+            "reusable_allow_is_action_bound",
+            "task_capability_not_enabled",
+            "broad_deny_requires_trusted_selector"
+          ],
+          "source_label": null,
+          "source_scope": "project",
+          "status": "pending",
+          "task_capability_eligibility": {
+            "eligible": false,
+            "reason_codes": [
+              "task_capability_not_enabled"
+            ]
+          },
+          "transport": null,
+          "trigger_summary": null,
+          "why_now": null,
+          "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace"
+        },
+        "checks": {
+          "actual_native_edge_receipt_and_v3_request": true,
+          "current_snapshot_explicit_noncommand_v2_domain": true,
+          "missing_or_changed_selected_ack_refused_before_queue": true,
+          "missing_verified_receipt_refused_before_queue": true,
+          "one_use_native_request_retry": true,
+          "real_migration29_scope_sidecar_and_missing_marker_refusal": true,
+          "real_pending_approval_binding": true,
+          "real_receipt_sqlite_roundtrip": true
+        },
+        "edge_bytes": 1684,
+        "edge_sha256": "19e6babd38a720a24cc291558e399f08d267e6cf7ece09c8f9a408854cb5785f",
+        "missing_binding_response": {
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+          },
+          "policy_action": "block",
+          "reason_code": "native_review_policy_binding_invalid"
+        },
+        "missing_or_changed_snapshot_responses": [
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          },
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          }
+        ],
+        "one_use_allow_response": {
+          "approval_reuse_status": "accepted",
+          "continue": true,
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow"
+          },
+          "policy_action": "allow",
+          "reason_code": "native_network_review"
+        },
+        "original_record_unchanged": true,
+        "policy_binding": {
+          "action_type": "network",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "operation": "request",
+          "payload_kind": "inline",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "request_digest": "33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89",
+          "review_scope": "noncommand",
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard.native-review-policy-binding.v2",
+          "source_ref_external_allowed": false,
+          "workspace_bound": true
+        },
+        "receipt": {
+          "authority": "rust",
+          "deadline_budget_ms": 750,
+          "decision": "deny",
+          "decision_id": "fc2925b5c3812583c35e550e60e4208b8cbe414b81d1de3592044773873adbb8",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "model_output_action": "not_applicable",
+          "observe_mode": false,
+          "observed_policy_action": null,
+          "payload_kind": "inline",
+          "policy_action": "review",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "reason_code": "native_network_review",
+          "request_digest": "33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89",
+          "request_id": "sha256:33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89",
+          "review_scope": "noncommand",
+          "reviewed_output_sha256": null,
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard-native-hook-decision-receipt.v1",
+          "source_ref_external_allowed": false,
+          "version": 1,
+          "workspace_bound": true
+        },
+        "replay_review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "5b58db27c5df4fb38b4553da518a88de",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de",
+              "request_id": "5b58db27c5df4fb38b4553da518a88de"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de",
+          "guardApprovalRequestId": "5b58db27c5df4fb38b4553da518a88de",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this network action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "5b58db27c5df4fb38b4553da518a88de",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this network action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/5b58db27c5df4fb38b4553da518a88de.",
+          "reason_code": "native_network_review"
+        },
+        "request_digest": "33f51124a27d0251a2b9a76fbda147b58190a7943a753b1fba8ed6aea9311b89",
+        "review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "3f05da48f95147ba84ba3a07576264b9",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9",
+              "request_id": "3f05da48f95147ba84ba3a07576264b9"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9",
+          "guardApprovalRequestId": "3f05da48f95147ba84ba3a07576264b9",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this network action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "3f05da48f95147ba84ba3a07576264b9",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this network action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/3f05da48f95147ba84ba3a07576264b9.",
+          "reason_code": "native_network_review"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "label": "Read",
+      "passed": true,
+      "record_sha256": "fc23e2ddd4bbab905a7201bc9b7fcdbd2d90d97b6a24b141432f0b5aa04b6a51",
+      "result": {
+        "approval_row": {
+          "action_envelope_json": {
+            "action_id": "6989ad2dfc814a06bac9a9f09ea05b51",
+            "action_type": "mcp_tool",
+            "command": null,
+            "event_name": "PreToolUse",
+            "harness": "cursor",
+            "mcp_server": null,
+            "mcp_tool": null,
+            "native_review_policy_binding": {
+              "action_type": "file_read",
+              "event_name": "PreToolUse",
+              "harness": "cursor",
+              "operation": "read",
+              "payload_kind": "inline",
+              "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+              "policy_generation": 1,
+              "request_digest": "c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17",
+              "review_scope": "noncommand",
+              "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+              "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema": "guard.native-review-policy-binding.v2",
+              "source_ref_external_allowed": false,
+              "workspace_bound": true
+            },
+            "network_hosts": [],
+            "package_manager": null,
+            "package_name": null,
+            "pre_execution_result": "review",
+            "prompt_excerpt": null,
+            "prompt_text": null,
+            "schema_version": 1,
+            "target_paths": [],
+            "tool_name": "Read",
+            "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+            "workspace_hash": null
+          },
+          "action_explanation": {
+            "action_identity": "act_d162a911f9061c609afae396236d1f2fff0b6ca14236e01f12e2d4c5fcad1c27",
+            "canonical_identity": null,
+            "catalog_digest": null,
+            "confidence": "derived",
+            "everyday": {
+              "actor_label": "cursor",
+              "consequences": [
+                {
+                  "confirmed": false,
+                  "message": "The connected tool may act on external accounts, files, or services within its granted capabilities.",
+                  "message_id": "guard.everyday.mcp_tool.consequence.0",
+                  "severity": "medium"
+                }
+              ],
+              "headline": "Use a connected tool",
+              "headline_message_id": "guard.everyday.mcp_tool.headline",
+              "impact": "The connected tool may act on external accounts, files, or services within its granted capabilities.",
+              "impact_message_id": "guard.everyday.mcp_tool.impact",
+              "recommendation": "Confirm the tool and requested action are expected.",
+              "recommendation_message_id": "guard.everyday.mcp_tool.recommendation",
+              "safer_alternatives": [
+                {
+                  "kind": "review",
+                  "message": "Confirm the tool and requested action are expected.",
+                  "message_id": "guard.everyday.mcp_tool.alternative.0"
+                }
+              ],
+              "summary": "cursor wants to use a connected tool.",
+              "summary_message_id": "guard.everyday.mcp_tool.summary",
+              "targets": [
+                {
+                  "kind": "connected_tool",
+                  "label": "a connected tool",
+                  "scope": null,
+                  "sensitivity": "normal"
+                }
+              ],
+              "why_guard_intervened": null,
+              "why_guard_intervened_message_id": null
+            },
+            "explanation_version": "1.0.0",
+            "kind": "mcp_tool",
+            "locale": "en-US",
+            "redaction": {
+              "level": "redacted",
+              "omitted_fields": [
+                "technical.command_display",
+                "technical.normalized_command_display",
+                "technical.executable",
+                "technical.arguments_display",
+                "technical.segments"
+              ],
+              "policy_version": "1",
+              "secret_like_values_removed": false,
+              "truncated_fields": []
+            },
+            "renderer_version": "1.0.0",
+            "schema_version": "guard.action-explanation.v1",
+            "technical": {
+              "action_id": "act_d162a911f9061c609afae396236d1f2fff0b6ca14236e01f12e2d4c5fcad1c27",
+              "action_type": "mcp_tool",
+              "arguments_display": null,
+              "available": false,
+              "command_display": null,
+              "dialect": null,
+              "executable": null,
+              "extension_ids": [],
+              "normalized_command_display": null,
+              "parse_confidence": null,
+              "policy_source": null,
+              "proof_level": null,
+              "reason_codes": [],
+              "receipt_id": null,
+              "rule_ids": [],
+              "segments": [],
+              "transport": null,
+              "unavailable_reason": "The exact action was not retained.",
+              "working_scope_display": null,
+              "wrappers": []
+            },
+            "uncertainty_reasons": []
+          },
+          "action_identity": "7147e1290a368a7318a1ab0b9959550c71d9e6aa5711e8561fb04f5b89a9b487",
+          "allowed_scopes": [
+            "artifact"
+          ],
+          "allowed_scopes_by_action": {
+            "allow": [
+              "artifact"
+            ],
+            "block": [
+              "artifact"
+            ]
+          },
+          "approval_url": "http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51",
+          "artifact_hash": "native-review-v4:c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17:deny:review:review:native_file_read_review",
+          "artifact_id": "cursor:native-pretool:Read",
+          "artifact_label": null,
+          "artifact_name": "Read",
+          "artifact_type": "tool_call",
+          "browser_intent": null,
+          "changed_fields": [
+            "native_pre_tool"
+          ],
+          "config_path": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+          "continuation_snapshot": {
+            "capability": "unsupported",
+            "correlationId": "gcr_104d52fc-c70a-5bec-8e0f-43b5cf34c74a",
+            "hookAttached": false,
+            "opaqueTargetId": null,
+            "waitDeadline": null
+          },
+          "created_at": "2026-09-20T06:15:49.640683+00:00",
+          "decision_v2_json": {
+            "action": "ask",
+            "approval_scopes": [
+              "artifact"
+            ],
+            "confidence": "likely",
+            "dashboard_primary_detail": "HOL Guard needs your approval before this action can run.",
+            "guard_action": "review",
+            "harness_message": "HOL Guard needs your approval before this action can run.",
+            "reason": "review",
+            "retry_instruction": "Choose an approval scope, then retry in the harness.",
+            "signals": [],
+            "user_body": "HOL Guard needs your approval before this action can run.",
+            "user_title": "Approval required"
+          },
+          "dedupe_count": 1,
+          "display_status": "pending",
+          "exact_action_persistence_eligible": false,
+          "fallback_cli_command": null,
+          "first_seen_guard_version": null,
+          "guard_version": null,
+          "harness": "cursor",
+          "last_seen_at": "2026-09-20T06:15:49.640683+00:00",
+          "last_seen_guard_version": null,
+          "launch_summary": null,
+          "launch_target": ".env",
+          "normalized_identity_key": ".env",
+          "oauth_source": "default",
+          "policy_action": "review",
+          "publisher": null,
+          "queue_group_id": "approval-group:v1:4c44875b16d860f29946067de9e64c4edd93fc750955482aeb49878ed03a0df6",
+          "raw_command_text": null,
+          "reason": null,
+          "recommended_scope": "artifact",
+          "recommended_scope_by_action": {
+            "allow": "artifact",
+            "block": "artifact"
+          },
+          "request_id": "6989ad2dfc814a06bac9a9f09ea05b51",
+          "resolution_action": null,
+          "resolution_intent": null,
+          "resolution_scope": null,
+          "resolved_at": null,
+          "review_command": "hol-guard approvals approve 6989ad2dfc814a06bac9a9f09ea05b51",
+          "risk_headline": null,
+          "risk_signals": [],
+          "risk_summary": "HOL Guard requires review before this file action can execute.",
+          "scanner_evidence": [],
+          "scope_contract_digest": "f43036a49b9685ce3f05f7f030d79ee32f21425747f74db70c55aba281c0a216",
+          "scope_contract_version": "guard.approval-scopes.v6",
+          "scope_restrictions": [
+            "reusable_allow_is_action_bound",
+            "task_capability_not_enabled",
+            "broad_deny_requires_trusted_selector"
+          ],
+          "source_label": null,
+          "source_scope": "project",
+          "status": "pending",
+          "task_capability_eligibility": {
+            "eligible": false,
+            "reason_codes": [
+              "task_capability_not_enabled"
+            ]
+          },
+          "transport": null,
+          "trigger_summary": null,
+          "why_now": null,
+          "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace"
+        },
+        "checks": {
+          "actual_native_edge_receipt_and_v3_request": true,
+          "current_snapshot_explicit_noncommand_v2_domain": true,
+          "missing_or_changed_selected_ack_refused_before_queue": true,
+          "missing_verified_receipt_refused_before_queue": true,
+          "one_use_native_request_retry": true,
+          "real_migration29_scope_sidecar_and_missing_marker_refusal": true,
+          "real_pending_approval_binding": true,
+          "real_receipt_sqlite_roundtrip": true
+        },
+        "edge_bytes": 1683,
+        "edge_sha256": "d8eeca41f4da4265ae62f517419a50f32a10342d411d0395b6d97cd8ae081ff4",
+        "missing_binding_response": {
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+          },
+          "policy_action": "block",
+          "reason_code": "native_review_policy_binding_invalid"
+        },
+        "missing_or_changed_snapshot_responses": [
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          },
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          }
+        ],
+        "one_use_allow_response": {
+          "approval_reuse_status": "accepted",
+          "continue": true,
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow"
+          },
+          "policy_action": "allow",
+          "reason_code": "native_file_read_review"
+        },
+        "original_record_unchanged": true,
+        "policy_binding": {
+          "action_type": "file_read",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "operation": "read",
+          "payload_kind": "inline",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "request_digest": "c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17",
+          "review_scope": "noncommand",
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard.native-review-policy-binding.v2",
+          "source_ref_external_allowed": false,
+          "workspace_bound": true
+        },
+        "receipt": {
+          "authority": "rust",
+          "deadline_budget_ms": 750,
+          "decision": "deny",
+          "decision_id": "4c547819852c0f4171c80ff364bf786ab2fafdce5be4ab47c99db1cfa5515489",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "model_output_action": "not_applicable",
+          "observe_mode": false,
+          "observed_policy_action": null,
+          "payload_kind": "inline",
+          "policy_action": "review",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "reason_code": "native_file_read_review",
+          "request_digest": "c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17",
+          "request_id": "sha256:c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17",
+          "review_scope": "noncommand",
+          "reviewed_output_sha256": null,
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard-native-hook-decision-receipt.v1",
+          "source_ref_external_allowed": false,
+          "version": 1,
+          "workspace_bound": true
+        },
+        "replay_review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "0d25fac33f1f42f6a1ecbc402840a6b0",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0",
+              "request_id": "0d25fac33f1f42f6a1ecbc402840a6b0"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0",
+          "guardApprovalRequestId": "0d25fac33f1f42f6a1ecbc402840a6b0",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this file action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "0d25fac33f1f42f6a1ecbc402840a6b0",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this file action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/0d25fac33f1f42f6a1ecbc402840a6b0.",
+          "reason_code": "native_file_read_review"
+        },
+        "request_digest": "c7c148d6749d2a4dbb6175d2a77c237e768924e905e85b892dcd9e26f8ca2f17",
+        "review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "6989ad2dfc814a06bac9a9f09ea05b51",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51",
+              "request_id": "6989ad2dfc814a06bac9a9f09ea05b51"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51",
+          "guardApprovalRequestId": "6989ad2dfc814a06bac9a9f09ea05b51",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this file action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "6989ad2dfc814a06bac9a9f09ea05b51",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this file action can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/6989ad2dfc814a06bac9a9f09ea05b51.",
+          "reason_code": "native_file_read_review"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "label": "MCP",
+      "passed": true,
+      "record_sha256": "05be7c032b5665b9157d2eecf167d0acade44c772ac54f03e3651339e7fe97d2",
+      "result": {
+        "approval_row": {
+          "action_envelope_json": {
+            "action_id": "b757d4fc78d24bcda5fd9387c989292e",
+            "action_type": "mcp_tool",
+            "command": null,
+            "event_name": "PreToolUse",
+            "harness": "cursor",
+            "mcp_server": null,
+            "mcp_tool": null,
+            "native_review_policy_binding": {
+              "action_type": "mcp_tool",
+              "event_name": "PreToolUse",
+              "harness": "cursor",
+              "operation": "call",
+              "payload_kind": "inline",
+              "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+              "policy_generation": 1,
+              "request_digest": "f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397",
+              "review_scope": "noncommand",
+              "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+              "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "schema": "guard.native-review-policy-binding.v2",
+              "source_ref_external_allowed": false,
+              "workspace_bound": true
+            },
+            "network_hosts": [],
+            "package_manager": null,
+            "package_name": null,
+            "pre_execution_result": "review",
+            "prompt_excerpt": null,
+            "prompt_text": null,
+            "schema_version": 1,
+            "target_paths": [],
+            "tool_name": "mcp__filesystem__read",
+            "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+            "workspace_hash": null
+          },
+          "action_explanation": {
+            "action_identity": "act_7e6b4c9fb044da0754b577e498255e3b614f6a235d5a04d2bdbdac98057eda69",
+            "canonical_identity": null,
+            "catalog_digest": null,
+            "confidence": "derived",
+            "everyday": {
+              "actor_label": "cursor",
+              "consequences": [
+                {
+                  "confirmed": false,
+                  "message": "The connected tool may act on external accounts, files, or services within its granted capabilities.",
+                  "message_id": "guard.everyday.mcp_tool.consequence.0",
+                  "severity": "medium"
+                }
+              ],
+              "headline": "Use a connected tool",
+              "headline_message_id": "guard.everyday.mcp_tool.headline",
+              "impact": "The connected tool may act on external accounts, files, or services within its granted capabilities.",
+              "impact_message_id": "guard.everyday.mcp_tool.impact",
+              "recommendation": "Confirm the tool and requested action are expected.",
+              "recommendation_message_id": "guard.everyday.mcp_tool.recommendation",
+              "safer_alternatives": [
+                {
+                  "kind": "review",
+                  "message": "Confirm the tool and requested action are expected.",
+                  "message_id": "guard.everyday.mcp_tool.alternative.0"
+                }
+              ],
+              "summary": "cursor wants to use a connected tool.",
+              "summary_message_id": "guard.everyday.mcp_tool.summary",
+              "targets": [
+                {
+                  "kind": "connected_tool",
+                  "label": "a connected tool",
+                  "scope": null,
+                  "sensitivity": "normal"
+                }
+              ],
+              "why_guard_intervened": null,
+              "why_guard_intervened_message_id": null
+            },
+            "explanation_version": "1.0.0",
+            "kind": "mcp_tool",
+            "locale": "en-US",
+            "redaction": {
+              "level": "redacted",
+              "omitted_fields": [
+                "technical.command_display",
+                "technical.normalized_command_display",
+                "technical.executable",
+                "technical.arguments_display",
+                "technical.segments"
+              ],
+              "policy_version": "1",
+              "secret_like_values_removed": false,
+              "truncated_fields": []
+            },
+            "renderer_version": "1.0.0",
+            "schema_version": "guard.action-explanation.v1",
+            "technical": {
+              "action_id": "act_7e6b4c9fb044da0754b577e498255e3b614f6a235d5a04d2bdbdac98057eda69",
+              "action_type": "mcp_tool",
+              "arguments_display": null,
+              "available": false,
+              "command_display": null,
+              "dialect": null,
+              "executable": null,
+              "extension_ids": [],
+              "normalized_command_display": null,
+              "parse_confidence": null,
+              "policy_source": null,
+              "proof_level": null,
+              "reason_codes": [],
+              "receipt_id": null,
+              "rule_ids": [],
+              "segments": [],
+              "transport": null,
+              "unavailable_reason": "The exact action was not retained.",
+              "working_scope_display": null,
+              "wrappers": []
+            },
+            "uncertainty_reasons": []
+          },
+          "action_identity": "42250e01b48f2a19d62fbd49ea96873e71e00ea866e075c6e6072a3f4bc822a9",
+          "allowed_scopes": [
+            "artifact"
+          ],
+          "allowed_scopes_by_action": {
+            "allow": [
+              "artifact"
+            ],
+            "block": [
+              "artifact"
+            ]
+          },
+          "approval_url": "http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e",
+          "artifact_hash": "native-review-v4:f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397:deny:review:review:native_mcp_tool_review",
+          "artifact_id": "cursor:native-pretool:mcp__filesystem__read",
+          "artifact_label": null,
+          "artifact_name": "mcp__filesystem__read",
+          "artifact_type": "tool_call",
+          "browser_intent": null,
+          "changed_fields": [
+            "native_pre_tool"
+          ],
+          "config_path": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace",
+          "continuation_snapshot": {
+            "capability": "unsupported",
+            "correlationId": "gcr_75d726b1-1345-5443-87a7-50f24f9eb379",
+            "hookAttached": false,
+            "opaqueTargetId": null,
+            "waitDeadline": null
+          },
+          "created_at": "2026-09-20T06:15:49.805033+00:00",
+          "decision_v2_json": {
+            "action": "ask",
+            "approval_scopes": [
+              "artifact"
+            ],
+            "confidence": "likely",
+            "dashboard_primary_detail": "HOL Guard needs your approval before this action can run.",
+            "guard_action": "review",
+            "harness_message": "HOL Guard needs your approval before this action can run.",
+            "reason": "review",
+            "retry_instruction": "Choose an approval scope, then retry in the harness.",
+            "signals": [],
+            "user_body": "HOL Guard needs your approval before this action can run.",
+            "user_title": "Approval required"
+          },
+          "dedupe_count": 1,
+          "display_status": "pending",
+          "exact_action_persistence_eligible": false,
+          "fallback_cli_command": null,
+          "first_seen_guard_version": null,
+          "guard_version": null,
+          "harness": "cursor",
+          "last_seen_at": "2026-09-20T06:15:49.805033+00:00",
+          "last_seen_guard_version": null,
+          "launch_summary": null,
+          "launch_target": "README.md",
+          "normalized_identity_key": "README.md",
+          "oauth_source": "default",
+          "policy_action": "review",
+          "publisher": null,
+          "queue_group_id": "approval-group:v1:b81654edc17d81f173b0cbe06755ee69c20b1488b82d085e7d867a296b82906a",
+          "raw_command_text": null,
+          "reason": null,
+          "recommended_scope": "artifact",
+          "recommended_scope_by_action": {
+            "allow": "artifact",
+            "block": "artifact"
+          },
+          "request_id": "b757d4fc78d24bcda5fd9387c989292e",
+          "resolution_action": null,
+          "resolution_intent": null,
+          "resolution_scope": null,
+          "resolved_at": null,
+          "review_command": "hol-guard approvals approve b757d4fc78d24bcda5fd9387c989292e",
+          "risk_headline": null,
+          "risk_signals": [],
+          "risk_summary": "HOL Guard requires review before this MCP tool can execute.",
+          "scanner_evidence": [],
+          "scope_contract_digest": "12f0dec8cace1dc54fe4fe64660347feca7e29951495495632aabb6d09b270ed",
+          "scope_contract_version": "guard.approval-scopes.v6",
+          "scope_restrictions": [
+            "reusable_allow_is_action_bound",
+            "task_capability_not_enabled",
+            "broad_deny_requires_trusted_selector"
+          ],
+          "source_label": null,
+          "source_scope": "project",
+          "status": "pending",
+          "task_capability_eligibility": {
+            "eligible": false,
+            "reason_codes": [
+              "task_capability_not_enabled"
+            ]
+          },
+          "transport": null,
+          "trigger_summary": null,
+          "why_now": null,
+          "workspace": "/tmp/pr2974-native-phase-tests-yoxnxety/hol-guard-policy-store-noncommand-review-5597-1789884944392/workspace"
+        },
+        "checks": {
+          "actual_native_edge_receipt_and_v3_request": true,
+          "current_snapshot_explicit_noncommand_v2_domain": true,
+          "missing_or_changed_selected_ack_refused_before_queue": true,
+          "missing_verified_receipt_refused_before_queue": true,
+          "one_use_native_request_retry": true,
+          "real_migration29_scope_sidecar_and_missing_marker_refusal": true,
+          "real_pending_approval_binding": true,
+          "real_receipt_sqlite_roundtrip": true
+        },
+        "edge_bytes": 1678,
+        "edge_sha256": "e1b38d42e1610406ebd889e1dc305c8cf9d594a6222e8647252b331e5b6284cf",
+        "missing_binding_response": {
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+          },
+          "policy_action": "block",
+          "reason_code": "native_review_policy_binding_invalid"
+        },
+        "missing_or_changed_snapshot_responses": [
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          },
+          {
+            "hookSpecificOutput": {
+              "hookEventName": "PreToolUse",
+              "permissionDecision": "deny",
+              "permissionDecisionReason": "HOL Guard could not bind this review to its native policy."
+            },
+            "policy_action": "block",
+            "reason_code": "native_review_policy_binding_invalid"
+          }
+        ],
+        "one_use_allow_response": {
+          "approval_reuse_status": "accepted",
+          "continue": true,
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow"
+          },
+          "policy_action": "allow",
+          "reason_code": "native_mcp_tool_review"
+        },
+        "original_record_unchanged": true,
+        "policy_binding": {
+          "action_type": "mcp_tool",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "operation": "call",
+          "payload_kind": "inline",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "request_digest": "f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397",
+          "review_scope": "noncommand",
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard.native-review-policy-binding.v2",
+          "source_ref_external_allowed": false,
+          "workspace_bound": true
+        },
+        "receipt": {
+          "authority": "rust",
+          "deadline_budget_ms": 750,
+          "decision": "deny",
+          "decision_id": "d4e91b6e278503fcb1a9ff6aefdc5ef996b7ce389e3907c1fba7641d42e22699",
+          "event_name": "PreToolUse",
+          "harness": "cursor",
+          "model_output_action": "not_applicable",
+          "observe_mode": false,
+          "observed_policy_action": null,
+          "payload_kind": "inline",
+          "policy_action": "review",
+          "policy_digest": "d7a71ee1affa3537d640ead94a3f3bec89b71b022d29eabd73334fc9b8925aee",
+          "policy_generation": 1,
+          "reason_code": "native_mcp_tool_review",
+          "request_digest": "f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397",
+          "request_id": "sha256:f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397",
+          "review_scope": "noncommand",
+          "reviewed_output_sha256": null,
+          "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+          "runtime_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "schema": "guard-native-hook-decision-receipt.v1",
+          "source_ref_external_allowed": false,
+          "version": 1,
+          "workspace_bound": true
+        },
+        "replay_review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "d8ba417f5f0047c59f399112ed3447f1",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1",
+              "request_id": "d8ba417f5f0047c59f399112ed3447f1"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1",
+          "guardApprovalRequestId": "d8ba417f5f0047c59f399112ed3447f1",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this MCP tool can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "d8ba417f5f0047c59f399112ed3447f1",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this MCP tool can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/d8ba417f5f0047c59f399112ed3447f1.",
+          "reason_code": "native_mcp_tool_review"
+        },
+        "request_digest": "f52f6435d5a6a169dfafdca5651cc3f7b21e9278db7c88d5a42ac584955ce397",
+        "review_response": {
+          "approval_center_url": "http://127.0.0.1:4781",
+          "approval_request_id": "b757d4fc78d24bcda5fd9387c989292e",
+          "approval_requests": [
+            {
+              "approval_url": "http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e",
+              "request_id": "b757d4fc78d24bcda5fd9387c989292e"
+            }
+          ],
+          "approval_url": "http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e",
+          "guardApprovalRequestId": "b757d4fc78d24bcda5fd9387c989292e",
+          "guardApprovalUrl": "http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e",
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": "HOL Guard requires review before this MCP tool can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e."
+          },
+          "policy_action": "review",
+          "primary_approval_request_id": "b757d4fc78d24bcda5fd9387c989292e",
+          "primary_approval_url": "http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e",
+          "prompted": true,
+          "reason": "HOL Guard requires review before this MCP tool can execute. Open HOL Guard to approve or keep this blocked: http://127.0.0.1:4781/requests/b757d4fc78d24bcda5fd9387c989292e.",
+          "reason_code": "native_mcp_tool_review"
+        }
+      }
+    }
+  ],
+  "completed_cases": 3,
+  "declared_cases": [
+    "WebFetch",
+    "Read",
+    "MCP"
+  ],
+  "full_http_worker_exercised": false,
+  "installed_qualification": false,
+  "passed": true,
+  "passed_cases": 3,
+  "records_bytes": 14839,
+  "records_sha256": "4a020d82ba352ecc943339f946e7c66438ac1cb894f8f30c38b4f651de2d59b1",
+  "records_unchanged": true,
+  "schema": "pr2974.native-non-command-python-consumer.v2",
+  "scope": "actual native unit output through typed receipt, SQLite and pause/queue/retry",
+  "status": "completed"
+}

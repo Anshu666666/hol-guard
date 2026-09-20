@@ -1,0 +1,621 @@
+{
+  "schema": "hol-guard.pr2974.native-corrective-original-report-audit.v1",
+  "run": {
+    "id": 35493601886,
+    "job_id": 106032601355,
+    "attempt": 1,
+    "conclusion": "failure",
+    "driver_sha": "0bfdfe115e7ad1b2bf4b3e890f1033c63522720b",
+    "driver_tree": "7d091e17691e729290f1380d0058889f7cb944de",
+    "source_sha": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183"
+  },
+  "readback": {
+    "original_log_commit": "aba7420f54eaa658d0422f09b08767a030317de8",
+    "original_log_bytes": 13281325,
+    "original_log_sha256": "933b9dcaec995c208acf9c8a6b5704cac7e7fbca5d5648b34f248923d6815fd0",
+    "framed_gzip_bytes": 9497492,
+    "framed_gzip_sha256": "8e883c4bb40e11f70222c985d6d24bc28571976a982ff2e61170a1cdc8e7ea84",
+    "framed_parts": 2111,
+    "raw_packet_bytes": 55913684,
+    "raw_packet_sha256": "32f15e3d0473e8e3fcd3d305832e56c30c55a94cd442eafbecd47230b051641f",
+    "member_count": 114,
+    "verified_members": 111,
+    "verified_original_bytes": 18855583,
+    "oversized_unadmitted": [
+      {
+        "packet_offset": 6707903,
+        "packet_value_bytes": 13899325,
+        "packet_value_sha256": "9366b7da71553efa1c9148e177cdb6b257121e406d8527276d7c605ff5f6a48d",
+        "path": "installed-diagnostic-admission.json",
+        "reason": "encoded_member_exceeds_8MiB_selection_limit",
+        "verified": false
+      },
+      {
+        "packet_offset": 20607264,
+        "packet_value_bytes": 10923249,
+        "packet_value_sha256": "079153d3b0c17696b48950c2a666f63b606b741f1ecb5dedb4e5528cc6494c9d",
+        "path": "installed-environment-after.json",
+        "reason": "encoded_member_exceeds_8MiB_selection_limit",
+        "verified": false
+      },
+      {
+        "packet_offset": 31530704,
+        "packet_value_bytes": 10923674,
+        "packet_value_sha256": "11527e7d14375c6eb4e6d176e227fd937ec77a30e840c5b0c0f9df92456e37a1",
+        "path": "installed-environment-before.json",
+        "reason": "encoded_member_exceeds_8MiB_selection_limit",
+        "verified": false
+      }
+    ],
+    "all_member_hashes_verified": false,
+    "original_archives_downloaded_or_verified_by_this_decode": false
+  },
+  "constraints": {
+    "memory_limit_bytes": 99614720,
+    "maximum_observed_rss_bytes": 40288256,
+    "boot_id": "c6aba711-75f6-4cbb-90b1-d991ba91b54e",
+    "sandbox": "asnf",
+    "new_native_test_or_workload_executed": false,
+    "qualification_complete": false
+  },
+  "prerequisites": {
+    "python_cases": 29,
+    "python_phases": 87,
+    "fixture_python_cases": 6,
+    "fixture_python_phases": 18,
+    "ordered_collection_phase_junit_bijections_verified": true,
+    "rust_unit_entries": 24,
+    "rust_modules": {
+      "command_controls": 9,
+      "runtime_noncommand": 3,
+      "runtime_deadlines": 9,
+      "runtime_retry": 3
+    },
+    "rust_ordered_list_run_equal": true,
+    "actual_output_consumer_cases": 3,
+    "actual_output_consumer_labels": [
+      "WebFetch",
+      "Read",
+      "MCP"
+    ],
+    "consumer_all_reported_checks_true": true,
+    "consumer_input_bytes_and_sha256_verified": true,
+    "full_http_worker_exercised": false,
+    "original_single_producer_entries": 1,
+    "original_single_producer_case_count": 6,
+    "single_producer_is_separate_invocation_of_one_previously_tested_entry": true,
+    "aggregate_unique_test_count_not_claimed": true
+  },
+  "installed": {
+    "identity": {
+      "architecture": "x86_64",
+      "build_sha": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+      "installed_package_sha256": "070446ed46b733220392f24d0800d9e2e5dc476a76c2ac546737659ff641f552",
+      "mode": "auto",
+      "package_origin": "installed",
+      "package_record_sha256": "762da0a90f1782399a2344f5a8d296b729bfea5952b8406bf7704bcb96393f10",
+      "package_version": "3.0.1",
+      "protocol_version": 1,
+      "python_version": "3.12.13",
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "runtime_sha256": "1901e58ce11b8b17dbebf30a54c55d9cded57984273ffc99c43f20c4102353eb",
+      "runtime_version": "3.0.1",
+      "system": "Linux",
+      "target": "x86_64-linux"
+    },
+    "hash_locked_install": {
+      "command": {
+        "command": [
+          "/opt/hostedtoolcache/uv/0.9.26/x86_64/uv",
+          "--no-config",
+          "pip",
+          "install",
+          "--python",
+          "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch/poststart-installed-environment/bin/python",
+          "--no-deps",
+          "--require-hashes",
+          "--only-binary",
+          ":all:",
+          "--requirements",
+          "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/report/native-wheel-install-requirements.lock"
+        ],
+        "cwd": "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch",
+        "group_cleanup": {
+          "cleanup_grace_seconds": 10,
+          "direct_child_reaped": true,
+          "direct_child_wait_timeout_seconds": 9.98968162600005,
+          "errors": [],
+          "leader_start_ticks": 28272,
+          "no_live_members_in_original_group": true,
+          "passed": true,
+          "pgid": 5752,
+          "scope": "Only this verified original process group; no complete-descendant claim",
+          "signals": [],
+          "snapshots": [
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            },
+            {
+              "inspection_errors": [],
+              "live": [],
+              "members": []
+            }
+          ],
+          "wall_seconds": 0.019706837999990512
+        },
+        "leader_identity": {
+          "pgrp": 5752,
+          "pid": 5752,
+          "ppid": 2649,
+          "session": 5752,
+          "start_ticks": 28272,
+          "state": "R",
+          "uid": 1001
+        },
+        "log_bytes": 327,
+        "log_sha256": "8a5ed01d1359a53fc9cc25d79ca8cdca4669ac1c3238ac246a272774004ce24d",
+        "name": "installed-native-wheel",
+        "passed": true,
+        "pid": 5752,
+        "returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 180,
+        "wall_seconds": 0.5350381479999555
+      },
+      "passed": true,
+      "qualification_complete": false,
+      "requirements": {
+        "bytes": 240,
+        "mode": "0o644",
+        "relative_path": "native-wheel-install-requirements.lock",
+        "sha256": "a8809b3ecaa1e66c9b96c556a5b7154818028a07ec9a16020bb53672c0423cee",
+        "uid": 1001
+      },
+      "source_sha": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+      "source_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+      "wheel_after": {
+        "bytes": 8834439,
+        "mode": "0o600",
+        "relative_path": "hol_guard-3.0.1-py3-none-linux_x86_64.whl",
+        "sha256": "409baf148a47f7f9e9c6363c59d964af7af95f04cf21906aec97fcd9caa36a4e",
+        "uid": 1001
+      },
+      "wheel_before": {
+        "bytes": 8834439,
+        "mode": "0o600",
+        "relative_path": "hol_guard-3.0.1-py3-none-linux_x86_64.whl",
+        "sha256": "409baf148a47f7f9e9c6363c59d964af7af95f04cf21906aec97fcd9caa36a4e",
+        "uid": 1001
+      }
+    },
+    "harness_reports_installed_package_passed": true,
+    "complete_inventory_independently_admitted": false,
+    "inventory_limitation": "before/after inventory and installed-diagnostic-admission encoded members exceeded the unchanged 8 MiB record bound; no installed RECORD/member completeness is inferred"
+  },
+  "diagnostic": {
+    "declared_counts": [
+      1,
+      10,
+      100
+    ],
+    "visited_counts": [
+      1
+    ],
+    "unvisited_counts": [
+      10,
+      100
+    ],
+    "constructed_services": 1,
+    "unconstructed_replacement_services": 1,
+    "implemented_diagnostic_passed": false,
+    "phases": [
+      {
+        "phase": "poststart_registration",
+        "accepted_to_ack_ms": 112.3057830000107,
+        "readiness_deadline_ms": 400,
+        "passed": true,
+        "declared_requests": 1,
+        "observed_requests": 1,
+        "validated_native_and_committed_receipt_equal": true,
+        "receipt_identity": "1b49b5cec9d791cffc6e076d568b327992c6a3963c3fba6a1213b1ed0390964a",
+        "decision": "allow",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "readback_scope": "caller-side sequential SQL counts and validated getter, not atomic commit time",
+        "receipt_witness": {
+          "binding_mismatches": 0,
+          "committed": 1,
+          "missing": 0,
+          "native_receipts": 1,
+          "observations": {
+            "journal_directory_sync_attempts": 2,
+            "journal_file_fsync_calls": 3,
+            "journal_write_calls": 2,
+            "journal_written_bytes": 2230
+          },
+          "pre_receipts_without_program_binding": 0,
+          "writer_admission_unobserved": 0,
+          "writer_rejected": 0
+        }
+      },
+      {
+        "phase": "public_policy",
+        "accepted_to_ack_ms": 84.15275099997643,
+        "readiness_deadline_ms": 400,
+        "passed": true,
+        "declared_requests": 1,
+        "observed_requests": 1,
+        "validated_native_and_committed_receipt_equal": true,
+        "receipt_identity": "a8ec33127344195d25eba55dc99d5f3b90910c6e95d8846210ba09abd3f91da9",
+        "decision": "deny",
+        "commit_scope": "validated SQLite readback time, not transaction commit time",
+        "readback_scope": "caller-side sequential SQL counts and validated getter, not atomic commit time",
+        "receipt_witness": {
+          "binding_mismatches": 0,
+          "committed": 1,
+          "missing": 0,
+          "native_receipts": 1,
+          "observations": {
+            "journal_directory_sync_attempts": 2,
+            "journal_file_fsync_calls": 3,
+            "journal_write_calls": 2,
+            "journal_written_bytes": 2223
+          },
+          "pre_receipts_without_program_binding": 0,
+          "writer_admission_unobserved": 0,
+          "writer_rejected": 0
+        }
+      }
+    ],
+    "retirement": {
+      "errors": [
+        "retirement_observation:AttributeError"
+      ],
+      "explicit_service_stop_calls": 1,
+      "failures": [
+        {
+          "failure": {
+            "category": "AttributeError",
+            "diagnostic_digest": "86300cf43ad9f091ea35d74d2a0769b649ad4cc158447f5c238e1f161fe879fd",
+            "line": 339,
+            "origin": "native_slo_workspace_poststart_session.retirement_snapshot",
+            "reason": "unclassified_failure",
+            "schema": "hol-guard.native-qualification-failure.v1"
+          },
+          "stage": "retirement_observation"
+        }
+      ],
+      "native_stop_observations": [
+        {
+          "contained": true,
+          "diagnostic": {
+            "acknowledged": "verified",
+            "authenticated": "verified",
+            "endpoint": "verified",
+            "generation_present": "verified",
+            "marker_lock": "verified",
+            "operation": "resident-stop",
+            "owner_lock": "verified",
+            "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+            "serving_shutdown": "verified",
+            "status": "contained"
+          },
+          "stage": "before_service_stop"
+        },
+        {
+          "contained": true,
+          "diagnostic": {
+            "acknowledged": "unknown",
+            "authenticated": "unknown",
+            "endpoint": "unknown",
+            "generation_present": "unknown",
+            "marker_lock": "unknown",
+            "operation": "resident-stop",
+            "owner_lock": "unknown",
+            "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+            "serving_shutdown": "unknown",
+            "status": "already-stopped"
+          },
+          "stage": "after_service_stop"
+        }
+      ],
+      "passed": false,
+      "qualification_complete": false,
+      "status": "observation_incomplete"
+    },
+    "home_cleanup": {
+      "constructed_instances": 1,
+      "construction_failure": null,
+      "contained": false,
+      "instance_retirements": [
+        {
+          "errors": [
+            "retirement_observation:AttributeError"
+          ],
+          "explicit_service_stop_calls": 1,
+          "failures": [
+            {
+              "failure": {
+                "category": "AttributeError",
+                "diagnostic_digest": "86300cf43ad9f091ea35d74d2a0769b649ad4cc158447f5c238e1f161fe879fd",
+                "line": 339,
+                "origin": "native_slo_workspace_poststart_session.retirement_snapshot",
+                "reason": "unclassified_failure",
+                "schema": "hol-guard.native-qualification-failure.v1"
+              },
+              "stage": "retirement_observation"
+            }
+          ],
+          "native_stop_observations": [
+            {
+              "contained": true,
+              "diagnostic": {
+                "acknowledged": "verified",
+                "authenticated": "verified",
+                "endpoint": "verified",
+                "generation_present": "verified",
+                "marker_lock": "verified",
+                "operation": "resident-stop",
+                "owner_lock": "verified",
+                "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+                "serving_shutdown": "verified",
+                "status": "contained"
+              },
+              "stage": "before_service_stop"
+            },
+            {
+              "contained": true,
+              "diagnostic": {
+                "acknowledged": "unknown",
+                "authenticated": "unknown",
+                "endpoint": "unknown",
+                "generation_present": "unknown",
+                "marker_lock": "unknown",
+                "operation": "resident-stop",
+                "owner_lock": "unknown",
+                "schema": "hol-guard.native-resident-stop-diagnostic.v1",
+                "serving_shutdown": "unknown",
+                "status": "already-stopped"
+              },
+              "stage": "after_service_stop"
+            }
+          ],
+          "passed": false,
+          "qualification_complete": false,
+          "status": "observation_incomplete"
+        }
+      ],
+      "qualification_complete": false,
+      "root_removed": false,
+      "same_guard_home_identity_preserved": true,
+      "same_root_identity_preserved": true
+    },
+    "same_process_service_replacement_executed": false,
+    "python_process_restart_tested": false,
+    "automatic_workspace_restore_tested": false,
+    "initial_compilation_observed": false,
+    "headline_timing_eligible": false,
+    "pending": [
+      "full installed sampling and paired baselines",
+      "lost metadata hints",
+      "key rotation",
+      "expiry fault",
+      "first admission fault",
+      "Python process restart",
+      "matched platform hardware"
+    ],
+    "top_level_failure_is_null_but_nested_retirement_failure_remains": true
+  },
+  "ledger": {
+    "bytes": 237078,
+    "sha256": "349a48aea8f1f0f9c66ff56a249d3cba9e92bd826033c6290b336897e0433f3f",
+    "records": 153,
+    "packets": 22,
+    "all_order_lengths_and_payload_hashes_recomputed": true,
+    "terminal_cell_exactly_equals_original_diagnostic_cell": true,
+    "packet_index": [
+      {
+        "packet": 1,
+        "kind": "poststart_matrix_offer",
+        "bytes": 710,
+        "sha256": "1aa1ab9419f37a28e8f29225a55a66ecd03da9b8ee8bc39596a96e9ca450795e"
+      },
+      {
+        "packet": 2,
+        "kind": "poststart_cell_offer",
+        "bytes": 57,
+        "sha256": "7a363e472ecb70e988691fb0fbb8166380e785429ed807fda380bcd1ec4ba715"
+      },
+      {
+        "packet": 3,
+        "kind": "poststart_service_offer",
+        "bytes": 73,
+        "sha256": "efba05f01080b266a501216c4becf259b0b0383d269633cf58b2551c5b90fdcc"
+      },
+      {
+        "packet": 4,
+        "kind": "poststart_phase_offer",
+        "bytes": 104,
+        "sha256": "4c648e0e165cf4596696b8785200ff172d07bc27c901cc3e93f9aeba5a7959d4"
+      },
+      {
+        "packet": 5,
+        "kind": "poststart_phase_terminal",
+        "bytes": 16606,
+        "sha256": "5f1a8b186633772dfbe49b0dd0ca7e3fc264d261b85bb89a3d9cc77b5c5efb02"
+      },
+      {
+        "packet": 6,
+        "kind": "poststart_phase_offer",
+        "bytes": 95,
+        "sha256": "11ce1d9b9bf6456a743fa38987f3a0bd0d7d2316b360baaef1ec5ffefaeb2378"
+      },
+      {
+        "packet": 7,
+        "kind": "poststart_phase_terminal",
+        "bytes": 16558,
+        "sha256": "2a8e65b7251574769e65780f06b89b0559825b1ad13d19f7fabc3b12bdb11ed9"
+      },
+      {
+        "packet": 8,
+        "kind": "poststart_publisher_event",
+        "bytes": 489,
+        "sha256": "e8b5464417a76725ef0000a08cfd3ecc48ed11f2f4e6b810ac9c71271417ea71"
+      },
+      {
+        "packet": 9,
+        "kind": "poststart_publisher_event",
+        "bytes": 435,
+        "sha256": "ae2ab649913198f618e3a64f55b3bab70ec7d9b55570d861821b99841b860289"
+      },
+      {
+        "packet": 10,
+        "kind": "poststart_publisher_event",
+        "bytes": 444,
+        "sha256": "372a4ab08eccd27aef4aaed7353a134f6b2ee02d29a4f0a4af2507cd4a4bf122"
+      },
+      {
+        "packet": 11,
+        "kind": "poststart_publisher_event",
+        "bytes": 436,
+        "sha256": "969d57c4c202ae99ec4f18680c92e41046cf12f87e465060b9980d39ec61b352"
+      },
+      {
+        "packet": 12,
+        "kind": "poststart_publisher_event",
+        "bytes": 491,
+        "sha256": "e5f09e3ec02bae8a0b2785b8e6d006697594e133a846316b3bda4450114a911e"
+      },
+      {
+        "packet": 13,
+        "kind": "poststart_publisher_event",
+        "bytes": 436,
+        "sha256": "c3d872a9bb36d8ca92432082287896b6542c05f24a49df55246f341a8b27294d"
+      },
+      {
+        "packet": 14,
+        "kind": "poststart_publisher_event",
+        "bytes": 445,
+        "sha256": "b24c345ab9406b6b591d41bde2c7acd7f4dc728cd58a53ac655fc917fd3b505c"
+      },
+      {
+        "packet": 15,
+        "kind": "poststart_publisher_event",
+        "bytes": 434,
+        "sha256": "7c1185cb9b2cfddfc8addd004ba5753574a1e2b29b3fb146cdecf24d4ae9cb28"
+      },
+      {
+        "packet": 16,
+        "kind": "poststart_publisher_event",
+        "bytes": 464,
+        "sha256": "fb8501a5c557c573db826daa03f24a46e6e8861714ad10bd776b0a585659b4df"
+      },
+      {
+        "packet": 17,
+        "kind": "poststart_publisher_event",
+        "bytes": 461,
+        "sha256": "e4022c22030f1fa5f04f72a644d37fff9ee6c690963a5e31e45dee8260be160f"
+      },
+      {
+        "packet": 18,
+        "kind": "poststart_publisher_event",
+        "bytes": 436,
+        "sha256": "382ab239ae951dba16787631e38348879698cf225bffcd2d5550558fc9d67d00"
+      },
+      {
+        "packet": 19,
+        "kind": "poststart_publisher_event",
+        "bytes": 445,
+        "sha256": "4e9019c557db5aff236579701323daed5717a6302bc4be7dd08fac514d445edf"
+      },
+      {
+        "packet": 20,
+        "kind": "poststart_publisher_event",
+        "bytes": 434,
+        "sha256": "1c9fdc0f939d9eb9e7366a63ce2efcafad946ac17e77e8a0dcb9152e8eae0e6a"
+      },
+      {
+        "packet": 21,
+        "kind": "poststart_service_terminal",
+        "bytes": 73191,
+        "sha256": "58d321623e552f8f301a8817b3e519f5c26d26584961c5e308de5acb46959349"
+      },
+      {
+        "packet": 22,
+        "kind": "poststart_cell_terminal",
+        "bytes": 74932,
+        "sha256": "ed82f6638ecf4e2adcb3d8877d348000f5c763f2850ab5d66666899b19f78c99"
+      }
+    ]
+  },
+  "process_scope": {
+    "commands": 55,
+    "failed_command": {
+      "command": [
+        "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch/poststart-installed-environment/bin/python",
+        "-I",
+        "-B",
+        "/home/runner/work/hol-guard/hol-guard/harness/ci/pr2974_rsp129_poststart_validation/installed_entry.py"
+      ],
+      "cwd": "/home/runner/work/_temp/pr2974-rsp129-poststart-validation/scratch",
+      "group_cleanup": {
+        "cleanup_grace_seconds": 10,
+        "direct_child_reaped": true,
+        "direct_child_wait_timeout_seconds": 9.990301626000019,
+        "errors": [],
+        "leader_start_ticks": 35002,
+        "no_live_members_in_original_group": true,
+        "passed": true,
+        "pgid": 5808,
+        "scope": "Only this verified original process group; no complete-descendant claim",
+        "signals": [],
+        "snapshots": [
+          {
+            "inspection_errors": [],
+            "live": [],
+            "members": []
+          },
+          {
+            "inspection_errors": [],
+            "live": [],
+            "members": []
+          }
+        ],
+        "wall_seconds": 0.018691547000003084
+      },
+      "leader_identity": {
+        "pgrp": 5808,
+        "pid": 5808,
+        "ppid": 2649,
+        "session": 5808,
+        "start_ticks": 35002,
+        "state": "R",
+        "uid": 1001
+      },
+      "log_bytes": 74,
+      "log_sha256": "3abc03d03ff05817acdcfc24e5b0550621855c092d79faab9e64c7935a3b02f4",
+      "name": "poststart-installed-diagnostic",
+      "passed": false,
+      "pid": 5808,
+      "returncode": 1,
+      "timed_out": false,
+      "timeout_seconds": 300,
+      "wall_seconds": 17.622677613000008
+    },
+    "all_original_command_groups_report_retired": true,
+    "diagnostic_home_contained": false,
+    "complete_escaped_descendant_certificate": false,
+    "distinction": "successful original process-group cleanup does not replace the failed in-process service retirement observation"
+  },
+  "source_cause_peer": {
+    "tree": "5e1cc7683c78f38ed82be4d9a6eff001db71b824",
+    "file": "retirement-process-interface-peer.json",
+    "sha256": "7d39cd27b2e9976b2694099656edd8cfee275d3c9c51f2135974eb2b690cfcec",
+    "finding": "the exact-source fixture calls poll() on a multiprocessing WorkerProcess interface which exposes is_alive/join/terminate/kill instead",
+    "production_containment_failure_proved": false,
+    "replacement_validation_run_already_active": 35496733388,
+    "no_duplicate_repair_or_run_by_this_reader": true
+  }
+}

@@ -1,0 +1,74 @@
+name: PR2974 original workspace 100-scope cause diagnostic
+
+on:
+  push:
+    branches: [codex/pr2974-workspace-cause-8f-20260920]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr2974-workspace-cause-8f-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  original-three-cells:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: "2"
+      RUST_BACKTRACE: "0"
+    steps:
+      - name: Checkout immutable driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: diagnostic-driver
+          persist-credentials: false
+      - name: Checkout exact original source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: 8f15b37b4a1bd054ef486148610e518b1be05cfc
+          path: original-source
+          persist-credentials: false
+      - name: Install original supported Linux Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.14"
+      - name: Install pinned dependency manager
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Install pinned release target
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes musl-tools
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup target add x86_64-unknown-linux-musl --toolchain 1.88.0
+      - name: Validate exact controls then run original three cells once
+        shell: bash
+        run: >-
+          python diagnostic-driver/workspace-diagnostic/validate.py
+          --source "$GITHUB_WORKSPACE/original-source"
+          --driver "$GITHUB_WORKSPACE/diagnostic-driver"
+          --driver-sha "$GITHUB_SHA"
+          --manifest-sha256 "db6e8a3cb30ad72f24cf482a6bf5b5b592465466fb59410b7bbd47f2b7b5c5df"
+          --output "$RUNNER_TEMP/pr2974-workspace-cause"
+      - name: Preserve finite raw log projection
+        if: always()
+        shell: bash
+        run: >-
+          python diagnostic-driver/workspace-diagnostic/retain_results.py
+          --output "$RUNNER_TEMP/pr2974-workspace-cause"
+      - name: Retain original outputs and exact default wheel
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-workspace-cause-8f
+          path: |
+            ${{ runner.temp }}/pr2974-workspace-cause/**
+            original-source/qualification-native/*.whl
+          if-no-files-found: error
+          retention-days: 90

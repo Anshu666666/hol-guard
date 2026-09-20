@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from ci.native_runtime.native_live_failure_diagnostic import retain_diagnostic
 from codex_plugin_scanner.guard.live_process_identity import process_start_token
 from codex_plugin_scanner.guard.native_policy_snapshot import (
     _policy_snapshot_push_bytes_v3,
@@ -215,6 +216,7 @@ def _state_files(state_dir: Path) -> list[Path]:
 
 
 def _native_diagnostic(stderr: bytes) -> str:
+    retain_diagnostic(stderr)
     match = _NATIVE_DIAGNOSTIC_RE.search(stderr[:8192])
     if match is None:
         return "native_client_process_failed"

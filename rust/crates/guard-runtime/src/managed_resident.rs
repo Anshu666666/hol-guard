@@ -14,6 +14,10 @@ use std::time::{Duration, Instant};
 mod client_stream;
 #[path = "managed_resident_containment.rs"]
 mod containment;
+#[path = "managed_resident_deadline.rs"]
+mod deadline;
+pub(crate) use deadline::client_request_at_deadline;
+use deadline::client_request_with_lease;
 #[path = "managed_resident_lease.rs"]
 mod lease;
 #[path = "managed_resident_transport.rs"]
@@ -145,6 +149,8 @@ fn try_home_states(
             continue;
         }
         let token = token_from_state(&state)?;
+        #[cfg(test)]
+        deadline_tests::checkpoint(deadline_tests::Stage::Validated);
         let identity = crate::resident_client::ExpectedProcessIdentity {
             process_id: state.process_id,
             start_marker: &state.process_start_marker,
@@ -169,16 +175,7 @@ fn try_home_states(
     Ok(None)
 }
 
-pub(crate) fn client_request_at_deadline(
-    state_base: &Path,
-    payload: &[u8],
-    deadline: Instant,
-) -> Result<Vec<u8>, String> {
-    let client_lease = lease::acquire(state_base)?;
-    client_request_with_lease(state_base, payload, deadline, &client_lease)
-}
-
-fn client_request_with_lease(
+fn client_request_with_lease_inner(
     state_base: &Path,
     payload: &[u8],
     overall_deadline: Instant,
@@ -492,6 +489,9 @@ pub(crate) fn client_timeout(payload: &[u8]) -> Duration {
 use client_stream::{
     read_frame as read_client_stream_frame, write_frame as write_client_stream_frame,
 };
+#[cfg(test)]
+#[path = "managed_resident_deadline_tests.rs"]
+mod deadline_tests;
 #[cfg(test)]
 #[path = "managed_resident_retry_tests.rs"]
 mod retry_tests;

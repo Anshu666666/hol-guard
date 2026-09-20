@@ -164,9 +164,28 @@ def test_explicitly_disabled_protection_prevents_launch(tmp_path: Path) -> None:
 
     result = coordinator.restart("44444444-4444-4444-8444-444444444444")
 
+    assert coordinator.inspect()["retryAllowed"] is False
     assert result["phase"] == "needs_action"
     assert result["reasonCode"] == "protection_off"
     assert result["protection"] == "off"
+    assert "start" not in calls
+
+
+def test_unknown_protection_posture_prevents_mutation(tmp_path: Path) -> None:
+    calls: list[str] = []
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        posture="unknown",
+        calls=calls,
+        start_process=lambda *_args: calls.append("start") or StartResult(True),
+    )
+
+    result = coordinator.restart("77777777-7777-4777-8777-777777777777")
+
+    assert coordinator.inspect()["retryAllowed"] is False
+    assert result["phase"] == "needs_action"
+    assert result["reasonCode"] == "unknown"
     assert "start" not in calls
 
 

@@ -5,9 +5,17 @@ from __future__ import annotations
 import json
 import sys
 import uuid
+from contextlib import suppress
 from pathlib import Path
 from typing import TextIO
 
+from ..daemon.recovery_diagnostics import (
+    RecoveryDiagnosticsError,
+    build_recovery_diagnostics,
+    load_recovery_diagnostics,
+    persist_recovery_diagnostics,
+    recovery_diagnostics_for_operation,
+)
 from ..daemon.user_recovery import RecoveryHooks, UserRecoveryCoordinator
 from ..daemon.user_recovery_contract import (
     RecoveryContractError,
@@ -31,6 +39,17 @@ def _persist_snapshot(guard_home: Path, snapshot: object) -> None:
     validated = validate_recovery_snapshot(snapshot, allow_inspection=False)
     payload = encode_recovery_event(validated)
     write_private_state(guard_home, _STATE_NAME, payload, _MAX_STATE_BYTES)
+    # Diagnostics are best effort and never change the recovery outcome.  The
+    # report itself is written through the same owner-private atomic helper.
+    try:
+        previous = load_recovery_diagnostics(guard_home)
+        if previous is not None and previous.get("operationId") == validated.get("operationId"):
+            events = [*previous["events"], validated]
+        else:
+            events = [validated]
+        persist_recovery_diagnostics(guard_home, events)
+    except (OSError, RecoveryDiagnosticsError):
+        return
 
 
 def _load_snapshot(guard_home: Path, operation_id: uuid.UUID) -> dict[str, object]:
@@ -45,6 +64,17 @@ def _load_snapshot(guard_home: Path, operation_id: uuid.UUID) -> dict[str, objec
     if snapshot["operationId"] != str(operation_id):
         raise KeyError(str(operation_id))
     return snapshot
+
+
+def _load_diagnostics(guard_home: Path, operation_id: uuid.UUID) -> dict[str, object]:
+    try:
+        return recovery_diagnostics_for_operation(guard_home, str(operation_id))
+    except KeyError:
+        snapshot = _load_snapshot(guard_home, operation_id)
+        report = build_recovery_diagnostics(snapshot)
+        with suppress(OSError, RecoveryDiagnosticsError):
+            persist_recovery_diagnostics(guard_home, [snapshot])
+        return report
 
 
 def _write_json(payload: dict[str, object], stream: TextIO) -> None:
@@ -79,6 +109,7 @@ def dispatch_daemon_recovery(
     *,
     guard_home: Path,
     home_dir: Path | None,
+    lifecycle_authorized: bool = False,
     stdout: TextIO | None = None,
     stderr: TextIO | None = None,
 ) -> int:
@@ -97,11 +128,17 @@ def dispatch_daemon_recovery(
             snapshot = _load_snapshot(guard_home, operation_id)
             _write_json(snapshot, out)
             return 0
+        if command in {"diagnostics", "export"}:
+            operation_id = _uuid(getattr(args, "operation_id", None), field="operation_id")
+            report = _load_diagnostics(guard_home, operation_id)
+            # Keep the export machine-readable and free of human/error text.
+            _write_json(report, out)
+            return 0
         if command == "restart":
             request_value = getattr(args, "request_id", None)
             request_id = _uuid(request_value, field="request_id") if request_value else uuid.uuid4()
             hooks = RecoveryHooks(
-                authorize=lambda *_args: True,
+                authorize=lambda *_args: lifecycle_authorized,
                 persist_snapshot=_persist_snapshot,
             )
             coordinator = UserRecoveryCoordinator(guard_home, home_dir=home_dir, hooks=hooks)
@@ -111,7 +148,7 @@ def dispatch_daemon_recovery(
                 _write_human(snapshot, out)
             return _restart_exit_code(snapshot)
         raise ValueError("daemon_recovery_command_invalid")
-    except (KeyError, OSError, RuntimeError, ValueError, RecoveryContractError) as error:
+    except (KeyError, OSError, RuntimeError, ValueError, RecoveryContractError, RecoveryDiagnosticsError) as error:
         err.write(f"HOL Guard recovery failed: {error}\n")
         err.flush()
         return 2

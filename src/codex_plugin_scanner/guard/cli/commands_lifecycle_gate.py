@@ -13,7 +13,11 @@ from ..approval_gate import ApprovalGateError, public_config, recent_totp_satisf
 from ..config import resolve_guard_home_for_user_home
 from ..harness_disconnect_gate import disconnect_requires_fresh_authenticator
 from ..windows_paths import trusted_windows_user_profile
-from .approval_gate_prompt import consume_desktop_lifecycle_env, prompt_for_approval_gate
+from .approval_gate_prompt import (
+    consume_desktop_lifecycle_env,
+    consume_desktop_lifecycle_stdin,
+    prompt_for_approval_gate,
+)
 
 _ENROLLMENT_NOTICE = (
     "Local Guard approval protection is not enabled. Guard Cloud sign-in and account MFA are separate from this "
@@ -91,11 +95,14 @@ def enforce_lifecycle_gate(
         return
     authority_home = lifecycle_authority_home(guard_home, requirement=requirement)
     gate = public_config(authority_home)
-    desktop_proof = consume_desktop_lifecycle_env(
-        totp_enabled=gate.totp_enabled,
-        use_cooldown=False,
-        cooldown_seconds=gate.cooldown_seconds,
-    )
+    if _bool_attribute(args, "approval_proof_stdin"):
+        desktop_proof = consume_desktop_lifecycle_stdin(totp_enabled=gate.totp_enabled)
+    else:
+        desktop_proof = consume_desktop_lifecycle_env(
+            totp_enabled=gate.totp_enabled,
+            use_cooldown=False,
+            cooldown_seconds=gate.cooldown_seconds,
+        )
     if not gate.enabled:
         print(_ENROLLMENT_NOTICE, file=error_stream or sys.stderr)
         return

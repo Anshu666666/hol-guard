@@ -409,10 +409,19 @@ def _configure_guard_cloud_parsers(
     _add_guard_common_args(recovery_restart_p)
     recovery_restart_p.add_argument("--request-id")
     recovery_restart_p.add_argument("--json-lines", action="store_true")
+    recovery_restart_p.add_argument("--approval-proof-stdin", action="store_true", help=argparse.SUPPRESS)
     recovery_status_p = recovery_subparsers.add_parser("status", help="Show a recovery operation")
     _add_guard_common_args(recovery_status_p)
     recovery_status_p.add_argument("--operation-id", required=True)
     recovery_status_p.add_argument("--json", action="store_true")
+    recovery_diagnostics_p = recovery_subparsers.add_parser(
+        "diagnostics",
+        aliases=["export"],
+        help="Export bounded local recovery diagnostics",
+    )
+    _add_guard_common_args(recovery_diagnostics_p)
+    recovery_diagnostics_p.add_argument("--operation-id", required=True)
+    recovery_diagnostics_p.add_argument("--json", action="store_true")
     status_p = daemon_subparsers.add_parser("status", help="Show local Guard daemon status")
     _add_guard_common_args(status_p)
     status_p.add_argument("--json", action="store_true")

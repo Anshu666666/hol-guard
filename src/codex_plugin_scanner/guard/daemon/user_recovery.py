@@ -445,7 +445,7 @@ class UserRecoveryCoordinator:
             phase="checking",
             active_elapsed_ms=0,
             worker_active=False,
-            retry_allowed=not inspection.update_busy and inspection.protection_posture != "off",
+            retry_allowed=not inspection.update_busy and inspection.protection_posture == "on",
             outcome="pending",
             reason_code=self._inspection_reason(inspection),
             service=inspection.service.service,
@@ -463,6 +463,21 @@ class UserRecoveryCoordinator:
             if operation is None or operation.latest is None:
                 raise KeyError(str(parsed))
             return dict(operation.latest)
+
+    def diagnostics(self, operation_id: str | uuid.UUID) -> dict[str, object]:
+        """Return a bounded privacy-safe report for one known operation."""
+
+        parsed = self._parse_uuid(operation_id, field="operation_id")
+        with _OPERATIONS_LOCK:
+            operation = _ACTIVE_BY_ID.get(str(parsed)) or _COMPLETED_BY_ID.get(str(parsed))
+            if operation is None or operation.latest is None:
+                raise KeyError(str(parsed))
+            events = list(operation.events) or [dict(operation.latest)]
+        from .recovery_diagnostics import build_recovery_diagnostics
+
+        return build_recovery_diagnostics(events)
+
+    export_diagnostics = diagnostics
 
     def restart(self, request_id: str | uuid.UUID | None = None, *, emit: Hook | None = None) -> dict[str, object]:
         parsed_request = self._parse_uuid(request_id, field="request_id") if request_id is not None else uuid.uuid4()
@@ -493,13 +508,13 @@ class UserRecoveryCoordinator:
     def _run(self, operation: _Operation, emit: Hook | None) -> dict[str, object]:
         initial = self._inspect()
         self._emit(operation, emit, phase="checking", inspection=initial, worker_active=True, retry_allowed=False)
-        if initial.protection_posture == "off":
+        if initial.protection_posture != "on":
             return self._finish_action(
                 operation,
                 emit,
                 phase="needs_action",
                 inspection=initial,
-                reason_code="protection_off",
+                reason_code="protection_off" if initial.protection_posture == "off" else "unknown",
                 requires_human_action=True,
             )
         if initial.update_busy:
@@ -544,13 +559,13 @@ class UserRecoveryCoordinator:
                 self._emit(
                     operation, emit, phase="checking", inspection=current, worker_active=True, retry_allowed=False
                 )
-                if current.protection_posture == "off":
+                if current.protection_posture != "on":
                     return self._finish_action(
                         operation,
                         emit,
                         phase="needs_action",
                         inspection=current,
-                        reason_code="protection_off",
+                        reason_code="protection_off" if current.protection_posture == "off" else "unknown",
                         requires_human_action=True,
                     )
                 if current.update_busy:
@@ -722,7 +737,7 @@ class UserRecoveryCoordinator:
         identity = started.identity if started is not None else None
         try:
             ready = self._verify_ready(identity, self._remaining(operation))
-        except (OSError, RuntimeError, TimeoutError):
+        except (ImportError, OSError, RuntimeError, TimeoutError, TypeError, ValueError):
             ready = ReadyResult(False, None, "startup_failed")
         if not ready.ready:
             return self._finish_action(
@@ -1063,6 +1078,28 @@ class UserRecoveryCoordinator:
     def _protection_health(self, identity: ProcessIdentity | None, remaining: float) -> object:
         if self.hooks.protection_health is not None:
             return _call_hook(self.hooks.protection_health, self.guard_home, identity, remaining)
+        if identity is None or remaining <= 0:
+            return ProtectionResult("unknown", "unknown")
+        from ..approvals import _canonical_managed_installs_for_health, _live_hook_verification
+        from ..runtime.protection_health_runtime import build_runtime_protection_health
+        from ..store import GuardStore
+
+        store = GuardStore(self.guard_home, prime_policy_integrity=False)
+        managed_installs = _canonical_managed_installs_for_health(store.list_managed_installs())
+        runtime_state = store.get_runtime_state()
+        health = build_runtime_protection_health(
+            store=store,
+            runtime_state=runtime_state,
+            managed_installs=managed_installs,
+            hook_verification=_live_hook_verification(managed_installs, store),
+            trust_status=store.get_cached_policy_trust_status(),
+            now=_utc_now(),
+        )
+        state = health.get("state")
+        if state == "protected":
+            return ProtectionResult("verified", "healthy")
+        if state in {"partial", "degraded"}:
+            return ProtectionResult("needs_attention", "unknown")
         return ProtectionResult("unknown", "unknown")
 
     def _clock(self) -> float:

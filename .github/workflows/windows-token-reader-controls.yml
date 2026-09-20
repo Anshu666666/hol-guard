@@ -1,0 +1,175 @@
+name: Windows token reader replacement controls
+on:
+  push:
+    branches: ["codex/pr2974-windows-token-reader-controls-20260920"]
+    paths: [".github/workflows/windows-token-reader-controls.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: windows-token-reader-controls-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  held-reader-controls:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      CONTROL_SOURCE: "c460271fb977a2c52cc0ce985a73e431672e1e02"
+      CONTROL_TREE: "024c20eeaa3b9ee7e58e97b419d1110e1fbbc491"
+      PRODUCT_SOURCE: "8f15b37b4a1bd054ef486148610e518b1be05cfc"
+      PRODUCT_TREE: "c10faac2d156cac06f9f803d63f50d15e3ca82bf"
+    steps:
+      - name: Check out bound driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - name: Check out immutable control source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "c460271fb977a2c52cc0ce985a73e431672e1e02"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.8.15"
+      - name: Install frozen source dependencies
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = $null
+          $env:PYTHONHOME = $null
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Bind source and driver before controls
+        shell: pwsh
+        run: |
+          @'
+          import hashlib, json, os, pathlib, platform, subprocess, sys
+          root = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
+          source = root / "candidate"
+          driver = root / "driver"
+          output = root / "token-evidence"
+          output.mkdir(exist_ok=True)
+          def git(where, *args):
+              return subprocess.check_output(["git", "-C", str(where), *args], text=True).strip()
+          expected_files = [
+              "ci/native_runtime/windows_token_reader_control.py",
+              "tests/test_windows_token_reader_control.py",
+          ]
+          source_sha = git(source, "rev-parse", "HEAD")
+          source_tree = git(source, "rev-parse", "HEAD^{tree}")
+          parent_sha = git(source, "rev-parse", "HEAD^")
+          parent_tree = git(source, "rev-parse", f"{parent_sha}^{{tree}}")
+          driver_sha = git(driver, "rev-parse", "HEAD")
+          actual_files = git(source, "diff", "--name-only", parent_sha, source_sha).splitlines()
+          assert source_sha == os.environ["CONTROL_SOURCE"]
+          assert source_tree == os.environ["CONTROL_TREE"]
+          assert parent_sha == os.environ["PRODUCT_SOURCE"]
+          assert parent_tree == os.environ["PRODUCT_TREE"]
+          assert driver_sha == os.environ["GITHUB_SHA"]
+          assert actual_files == expected_files
+          assert not git(source, "status", "--porcelain")
+          assert not git(driver, "status", "--porcelain")
+          assert sys.version_info[:3] == (3, 12, 10) and sys.platform == "win32"
+          records = []
+          for name in expected_files:
+              raw = (source / name).read_bytes()
+              git_blob = subprocess.check_output(["git", "-C", str(source), "show", f"HEAD:{name}"])
+              assert raw.replace(b"\r\n", b"\n") == git_blob
+              records.append({"path": name, "checkout_sha256": hashlib.sha256(raw).hexdigest(),
+                              "git_blob_sha256": hashlib.sha256(git_blob).hexdigest()})
+          from codex_plugin_scanner.guard import private_file_io
+          from codex_plugin_scanner.guard.adapters import codex_daemon_hook_auth
+          from codex_plugin_scanner.guard.daemon import manager, manager_pending_launch
+          for module in (private_file_io, codex_daemon_hook_auth, manager, manager_pending_launch):
+              relative = pathlib.Path(*module.__name__.split(".")).with_suffix(".py")
+              assert pathlib.Path(module.__file__).resolve() == (source / "src" / relative).resolve()
+          report = {"schema": 1, "phase": sys.argv[1], "source_sha": source_sha,
+                    "source_tree": source_tree, "product_sha": parent_sha, "product_tree": parent_tree,
+                    "driver_sha": driver_sha, "driver_tree": git(driver, "rev-parse", "HEAD^{tree}"),
+                    "source_clean": True, "driver_clean": True, "only_two_test_files_added": True,
+                    "imports_from_pinned_source": True, "source_controls": records,
+                    "python": platform.python_version(), "platform": platform.system(),
+                    "workflow_run": os.environ["GITHUB_RUN_ID"],
+                    "workflow_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+                    "installed_artifact_qualification": False}
+          (output / f"source-{sys.argv[1]}.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")
+          '@ | Set-Content -Encoding utf8 token-binding.py
+          & candidate/.venv/Scripts/python.exe token-binding.py before
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run each declared reader replacement case once
+        shell: pwsh
+        run: |
+          @'
+          import hashlib, json, os, pathlib, subprocess, sys
+          root = pathlib.Path(os.environ["GITHUB_WORKSPACE"])
+          source = root / "candidate"
+          output = root / "token-evidence"
+          environment = dict(os.environ)
+          environment.pop("PYTHONPATH", None)
+          environment.pop("PYTHONHOME", None)
+          argv = [str(source / ".venv/Scripts/python.exe"), "-m",
+                  "ci.native_runtime.windows_token_reader_control",
+                  "--output", str(output / "token-result.json")]
+          timed_out = False
+          return_code = None
+          try:
+              result = subprocess.run(argv, cwd=source, env=environment, capture_output=True, timeout=180)
+              stdout, stderr, return_code = result.stdout, result.stderr, result.returncode
+          except subprocess.TimeoutExpired as error:
+              timed_out = True
+              stdout, stderr = error.stdout or b"", error.stderr or b""
+          valid_capture = len(stdout) <= 65536
+          if valid_capture:
+              try:
+                  rows = [json.loads(line) for line in stdout.splitlines()]
+                  valid_capture = len(rows) <= 6 and all(isinstance(row, dict) for row in rows)
+              except (ValueError, UnicodeDecodeError):
+                  valid_capture = False
+          if valid_capture:
+              (output / "controls.log").write_bytes(stdout)
+          process = {"schema": 1, "return_code": return_code, "timed_out": timed_out,
+                     "stdout_bytes": len(stdout), "stdout_sha256": hashlib.sha256(stdout).hexdigest(),
+                     "stderr_bytes": len(stderr), "stderr_sha256": hashlib.sha256(stderr).hexdigest(),
+                     "stdout_capture_valid": valid_capture, "stderr_content_retained": False,
+                     "child_attempt_count": 1, "source_controls_only": True}
+          (output / "process-result.json").write_text(json.dumps(process, indent=2)+"\n", encoding="utf-8")
+          if timed_out or return_code != 0 or not valid_capture:
+              raise SystemExit(1)
+          report = json.loads((output / "token-result.json").read_text(encoding="utf-8"))
+          expected = [(route, phase) for route in ("bounded_manager", "codex_path_read_text")
+                      for phase in ("no_reader", "held_reader", "released_reader")]
+          assert [(case["route"], case["phase"]) for case in report["cases"]] == expected
+          assert report["case_count"] == report["declared_case_count"] == 6
+          assert report["control_complete"] is True
+          assert all(case["control_complete"] for case in report["cases"])
+          assert all(case["writer_calls"] == case["replace_calls"] == 1 for case in report["cases"])
+          assert report["observed_replace_failure_count"] == 2
+          assert report["compatibility_failure_observed"] is True
+          assert report["actual_failed_job_handle_attributed"] is False
+          assert report["installed_artifact_qualification"] is False
+          assert report["runtime_deadlines_or_retries_changed"] is False
+          print("Six source controls completed; two original held-reader sharing failures retained.")
+          '@ | & candidate/.venv/Scripts/python.exe -
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify source and driver after the attempt
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path token-binding.py) {
+            & candidate/.venv/Scripts/python.exe token-binding.py after
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            throw "source_binding_not_created"
+          }
+      - name: Retain original outcomes and cleanup records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: windows-token-reader-controls-${{ github.run_attempt }}
+          path: token-evidence/
+          if-no-files-found: error

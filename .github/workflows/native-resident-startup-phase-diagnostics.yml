@@ -1,0 +1,142 @@
+name: Native resident startup phase diagnostics
+run-name: Mac startup I/O stages - diagnostic only, original 3780 behavior
+'on':
+  push:
+    branches:
+    - codex/pr2974-mac-startup-io-20260920-0bf2452e
+    paths:
+    - .github/workflows/native-resident-startup-phase-diagnostics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-resident-startup-phase-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  macos-startup-phase:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - runner: macos-15-intel
+          platform_tag: macosx_13_0_x86_64
+          target: x86_64-apple-darwin
+          deployment_target: '13.0'
+        - runner: macos-15
+          platform_tag: macosx_11_0_arm64
+          target: aarch64-apple-darwin
+          deployment_target: '11.0'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      DIAGNOSTIC_SOURCE_SHA: 0bf2452e74e58e1e41b9160b55290e33d1bf26ef
+      DIAGNOSTIC_SOURCE_TREE: f472f8f04eeda458f166dd6840af6a2047888cdc
+      DIAGNOSTIC_DRIVER_BRANCH: codex/pr2974-mac-startup-io-20260920-0bf2452e
+    defaults:
+      run:
+        working-directory: diagnostic-src
+    steps:
+    - name: Check out exact workflow driver for its static control
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: ${{ github.sha }}
+        path: workflow-src
+        persist-credentials: false
+    - name: Check out exact diagnostic source
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      with:
+        ref: 0bf2452e74e58e1e41b9160b55290e33d1bf26ef
+        path: diagnostic-src
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22'
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      with:
+        python-version: '3.12'
+    - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+      with:
+        version: 0.9.26
+        enable-cache: false
+    - name: Bind diagnostic checkout before build
+      run: |
+        python - <<'PY'
+        import json, os, pathlib, subprocess
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+        clean = not subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], text=True).strip()
+        assert head == os.environ['DIAGNOSTIC_SOURCE_SHA']
+        assert tree == os.environ['DIAGNOSTIC_SOURCE_TREE'] and clean
+        pathlib.Path('startup-phase-evidence').mkdir()
+        pathlib.Path('startup-phase-evidence/source-before.json').write_text(json.dumps(
+            {'source_sha': head, 'source_tree': tree, 'tracked_clean': clean,
+             'base_source_sha': '3780ad899ad6c42c91049b2a15fef138e911443f',
+             'parent_diagnostic_sha': '71f24e16f52c0851d45cbb2585bf3309769ce0f8',
+             'qualification': False}, sort_keys=True) + '\n')
+        PY
+    - run: uv sync --frozen --extra dev --python 3.12
+    - name: Run focused Python driver controls
+      run: |
+        NATIVE_STARTUP_WORKFLOW_PATH=../workflow-src/.github/workflows/native-resident-startup-phase-diagnostics.yml \
+          PYTHONPATH=src:. uv run --no-sync python -m pytest -q tests/test_native_startup_phase_diagnostic.py
+    - name: Install pinned Rust toolchain
+      run: |
+        rustup toolchain install 1.88.0 --profile minimal
+        rustup default 1.88.0
+    - name: Build diagnostic wheel and verify native controls
+      env:
+        MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+        PLATFORM_TAG: ${{ matrix.platform_tag }}
+        TARGET: ${{ matrix.target }}
+      run: |
+        VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+        export HOL_GUARD_PACKAGE_VERSION="$VERSION"
+        export HOL_GUARD_BUILD_SHA="$DIAGNOSTIC_SOURCE_SHA"
+        cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime --features diagnostic-phases resident_startup_diagnostic
+        cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime --features diagnostic-phases
+        runtime="rust/target/release/hol-guard-runtime"
+        "$runtime" self-test --json
+        RULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')
+        uv run --no-sync python -m build --wheel --outdir pure-dist
+        uv run --no-sync python scripts/build_native_hol_guard_wheel.py \
+          --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" --runtime "$runtime" \
+          --output-dir native-dist --version "$VERSION" --platform-tag "$PLATFORM_TAG" \
+          --target "$TARGET" --source-sha "$DIAGNOSTIC_SOURCE_SHA" --rule-digest "$RULE_DIGEST"
+        uv pip uninstall --python .venv/bin/python hol-guard
+        uv pip install --python .venv/bin/python --no-deps --force-reinstall native-dist/*.whl
+    - name: Observe one original-budget cold policy push
+      run: |
+        python - <<'PY'
+        import os, subprocess
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith(('HOL_GUARD_', 'GUARD_', 'PYTEST_')) and key != 'PYTHONPATH'}
+        result = subprocess.run([
+            '.venv/bin/python', '-I', 'scripts/ci/run_native_startup_phase_diagnostic.py',
+            '--expected-source-sha', os.environ['DIAGNOSTIC_SOURCE_SHA'],
+            '--output', 'startup-phase-evidence/diagnostic.json'], env=environment, check=False)
+        raise SystemExit(result.returncode)
+        PY
+    - name: Verify diagnostic source remains unchanged
+      if: always()
+      run: |
+        python - <<'PY'
+        import json, os, pathlib, subprocess
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+        clean = not subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], text=True).strip()
+        pathlib.Path('startup-phase-evidence').mkdir(exist_ok=True)
+        pathlib.Path('startup-phase-evidence/source-after.json').write_text(json.dumps(
+            {'source_sha': head, 'source_tree': tree, 'tracked_clean': clean, 'qualification': False}, sort_keys=True) + '\n')
+        assert head == os.environ['DIAGNOSTIC_SOURCE_SHA']
+        assert tree == os.environ['DIAGNOSTIC_SOURCE_TREE'] and clean
+        PY
+    - name: Retain diagnostic artifact and bounded evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: native-startup-phases-${{ matrix.target }}-attempt-${{ github.run_attempt }}
+        path: |
+          diagnostic-src/startup-phase-evidence/**
+          diagnostic-src/native-dist/*.whl
+        if-no-files-found: warn
+        retention-days: 30

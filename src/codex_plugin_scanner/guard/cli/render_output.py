@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .protect_output import _restore_ephemeral_signed_approval_output
+
 if TYPE_CHECKING:
     from .render import Console, PayloadDict
     from .render_context import RenderContext
@@ -19,6 +21,7 @@ def emit_guard_payload(view: RenderContext, command: str, payload: PayloadDict, 
         return
 
     redacted_payload = view._coerce_object_dict(view._sanitize_payload_for_output(payload, command=command))
+    _restore_ephemeral_signed_approval_output(payload, redacted_payload, command=command)
     if not view._RICH_AVAILABLE:
         plain_renderer = view._PLAIN_TEXT_RENDERERS.get(command)
         if plain_renderer is None:

@@ -45,6 +45,7 @@ sys.path.append(str(_ROOT))
 from ci.native_runtime.installed_hook_client import installed_hook_request  # noqa: E402
 from ci.native_runtime.installed_hook_failure_diagnostic import report_hook_transport_timeout  # noqa: E402
 from ci.native_runtime.installed_managed_policy_fixture import ManagedPolicyFixture  # noqa: E402
+from ci.native_runtime.installed_managed_recovery import repair_local_authority  # noqa: E402
 from ci.native_runtime.probe_installed_native_extensions import commit_controls, control, provision, ready  # noqa: E402
 from ci.native_runtime.probe_installed_scoped_policy import (  # noqa: E402
     ProbeError,
@@ -156,6 +157,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
         return binding
 
     def signed(version: int, *, lockdown: bool = False, enable: bool = False) -> dict[str, Any]:
+        runner.sync_runtime_session(store, session={"harness": "claude-code", "workspace": str(workspace)})
         fixture.bundle = fixture.signed_managed_bundle(
             version,
             controls=(
@@ -335,6 +337,16 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
                     (request_id, "native-review.once-consumed"),
                 ).fetchone()
             require(spent is not None and spent[0] == 0, "block_consumed_approval")
+        revision = repair_local_authority(daemon, store, password)
+        for mode in ("enforce", "observe"):
+            set_mode(mode)
+            case(f"recovered-lockdown-{mode}", "pwd", mode, reason="native_command_control_authority_block")
+            case(
+                f"recovered-managed-permission-{mode}",
+                "git push --force origin main",
+                mode,
+                reason="native_command_control_authority_block",
+            )
         return {
             "schema": "guard.installed-managed-floors.v1",
             "cases": rows,
@@ -344,7 +356,7 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             "builder_ceremony_exercised": False,
             "target_commands_executed": 0,
             "dependency_edges_exercised": 0,
-            "trusted_recovery_exercised": False,
+            "trusted_recovery_exercised": True,
         }
 
 

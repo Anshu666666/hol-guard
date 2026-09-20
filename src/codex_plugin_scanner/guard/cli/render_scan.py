@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .protect_output import _protect_harness_message_for_render
+
 if TYPE_CHECKING:
     from .render import Console, Table, Text
     from .render_context import RenderContext
@@ -286,6 +288,7 @@ def _render_protect(view: RenderContext, console: Console, payload: dict[str, ob
         if isinstance(user_copy, dict):
             harness_message = str(user_copy.get("harness_message") or "").strip()
             if harness_message:
+                harness_message, signed_approval_url = _protect_harness_message_for_render(payload, harness_message)
                 console.print(
                     view.Panel(
                         view.Text(harness_message, no_wrap=False, overflow="fold"),
@@ -293,6 +296,8 @@ def _render_protect(view: RenderContext, console: Console, payload: dict[str, ob
                         border_style="magenta",
                     )
                 )
+                if isinstance(signed_approval_url, str) and signed_approval_url:
+                    console.print(view.Text(signed_approval_url), soft_wrap=True)
     supply_chain = payload.get("supply_chain")
     if isinstance(supply_chain, dict):
         console.print(view._build_supply_chain_posture_panel(supply_chain))

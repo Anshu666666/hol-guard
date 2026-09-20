@@ -168,7 +168,18 @@ def test_managed_negotiation_requires_actual_runtime_session_delivery(
         fixture.store, session={"harness": "claude-code", "workspace": str(fixture.workspace)}
     )
     assert isinstance(summary["runtime_session_synced_at"], str)
+    assert summary["extension_catalog_sync_status"] == "uploaded"
+    assert fixture.catalog_uploads == 1
+    assert fixture.catalog_digest == summary["extensionCatalogDigest"]
+    capabilities = summary["managedControlsCapabilities"]
+    assert isinstance(capabilities, list)
+    assert frozenset(capabilities) == PARSER_CAPABILITIES | {"extension-catalog.v1"}
     assert frozenset(fixture.negotiated_capabilities) == PARSER_CAPABILITIES
+    again = runner.sync_runtime_session(
+        fixture.store, session={"harness": "claude-code", "workspace": str(fixture.workspace)}
+    )
+    assert again["extension_catalog_sync_status"] == "already_known"
+    assert fixture.catalog_uploads == 1
     assert fixture.store.get_sync_payload("policy_bundle") is None
     assert fixture.store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
 
@@ -188,3 +199,106 @@ def test_unprotected_runtime_cannot_negotiate_managed_authority(
     monkeypatch.setenv("SSL_CERT_FILE", str(fixture.ca_file))
     runner.sync_runtime_session(fixture.store, session={"harness": "claude-code"})
     assert fixture.negotiated_capabilities == ()
+
+
+def _enable_delivery(fixture: ManagedPolicyFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    from ci.native_runtime.probe_installed_native_extensions import provision
+
+    for key in (
+        "GUARD_EXTENSION_CATALOG_SYNC_V1",
+        "GUARD_POLICY_EXTENSION_TARGETS_V1",
+        "GUARD_MANAGED_EXTENSION_CONTROLS_V1",
+        "GUARD_MANAGED_CONTROLS_ATOMIC_APPLY_V1",
+        "GUARD_CANONICAL_POLICY_BUNDLE_V2",
+    ):
+        monkeypatch.setenv(key, "true")
+    monkeypatch.setenv("SSL_CERT_FILE", str(fixture.ca_file))
+    provision(fixture.store)
+
+
+def test_actual_tls_managed_delivery_binds_fresh_runtime_and_preserves_signature(
+    fixture: ManagedPolicyFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Real receiver application; no native publisher/ACK or installed claim."""
+    from codex_plugin_scanner.guard.runtime import runner
+
+    _enable_delivery(fixture, monkeypatch)
+    deliveries: list[dict[str, object]] = []
+    for version in (1, 2):
+        summary = runner.sync_runtime_session(
+            fixture.store, session={"harness": "claude-code", "workspace": str(fixture.workspace)}
+        )
+        fixture.bundle = fixture.signed_managed_bundle(
+            version, controls=[{"targetKind": "permission", "targetId": PERMISSION, "state": "disabled"}]
+        )
+        delivered = fixture.response_for_request("/api/guard/receipts/sync", {})["policyBundleDelivery"]
+        assert is_mapping(delivered)
+        assert delivered["runtimeSessionId"] == summary["runtime_session_id"]
+        assert delivered["deviceId"] == summary["runtime_device_id"]
+        for field in ("extensionAuthorityRevision", "effectiveProjectionDigest", "catalogDigest"):
+            assert delivered[field] == summary["extensionCatalogDigest" if field == "catalogDigest" else field]
+        result = runner.sync_receipts(fixture.store)
+        assert result["policy_validation_status"] == "accepted"
+        assert result["policy_application_status"] == "applied"
+        assert result.get("policy_rejection_reason") is None
+        active = fixture.store.get_sync_payload("policy_bundle")
+        assert active == fixture.bundle
+        assert fixture.store.get_sync_payload("managed_controls_active") is not None
+        assert fixture.store.get_sync_payload("native_policy_bundle_ack_acceptance") is None
+        deliveries.append(delivered)
+    assert deliveries[0]["deliveryId"] != deliveries[1]["deliveryId"]
+    assert deliveries[0]["effectiveProjectionDigest"] != deliveries[1]["effectiveProjectionDigest"]
+    assert fixture.catalog_uploads == 1
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        None,
+        "runtimeSessionId",
+        "deviceId",
+        "catalogDigest",
+        "extensionAuthorityRevision",
+        "effectiveProjectionDigest",
+        "extensionProjectionDigest",
+    ],
+)
+def test_actual_tls_receiver_refuses_missing_or_mismatched_managed_delivery(
+    fixture: ManagedPolicyFixture, monkeypatch: pytest.MonkeyPatch, field: str | None
+) -> None:
+    from codex_plugin_scanner.guard.runtime import runner
+
+    _enable_delivery(fixture, monkeypatch)
+    runner.sync_runtime_session(fixture.store, session={"harness": "claude-code"})
+    fixture.bundle = fixture.signed_managed_bundle(
+        1, controls=[{"targetKind": "permission", "targetId": PERMISSION, "state": "disabled"}]
+    )
+    original = fixture.response_for_request
+
+    def altered_response(path: str, request: dict[str, object]) -> dict[str, object]:
+        response = original(path, request)
+        if path == "/api/guard/receipts/sync":
+            delivery = response.pop("policyBundleDelivery")
+            if field is not None:
+                assert is_mapping(delivery)
+                value = delivery[field]
+                if field == "extensionAuthorityRevision":
+                    assert isinstance(value, int)
+                    delivery[field] = value + 1
+                elif field in {"catalogDigest", "effectiveProjectionDigest", "extensionProjectionDigest"}:
+                    assert isinstance(value, str)
+                    delivery[field] = value[:-1] + ("0" if value[-1] != "0" else "1")
+                else:
+                    delivery[field] = "different-session-or-device"
+                response["policyBundleDelivery"] = delivery
+        return response
+
+    monkeypatch.setattr(fixture, "response_for_request", altered_response)
+    result = runner.sync_receipts(fixture.store)
+    assert result["policy_validation_status"] == "rejected"
+    assert result["policy_rejection_reason"] == (
+        "missing_policy_bundle_delivery" if field is None else "policy_bundle_delivery_mismatch"
+    )
+    assert fixture.store.get_sync_payload("policy_bundle") is None
+    assert fixture.store.get_sync_payload("managed_controls_active") is None
+    assert fixture.store.get_sync_payload("native_policy_bundle_ack_acceptance") is None

@@ -35,6 +35,10 @@ _MAX_THREADS = 64
 _MAX_FRAMES = 48
 _CASES = frozenset(
     {
+        "recovered-lockdown-enforce",
+        "recovered-lockdown-observe",
+        "recovered-managed-permission-enforce",
+        "recovered-managed-permission-observe",
         "managed-permission-enforce",
         "managed-permission-observe",
         "intrinsic-enforce",

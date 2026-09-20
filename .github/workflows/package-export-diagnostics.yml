@@ -1,0 +1,151 @@
+name: Installed package export diagnostic
+
+on:
+  push:
+    branches: [codex/pr2974-package-export-diagnostics-20260920-e2a4deca]
+    paths: [.github/workflows/package-export-diagnostics.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-export-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mac-arm:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BASELINE_SHA: 017f1244f1861bc4a74620a669557b78beb6d176
+      BASELINE_TREE: 29404d410dcedd48b01d7e19e1af2e5581b6306a
+      CANDIDATE_SHA: e2a4deca5276e43974c040f595464e03a47fdb13
+      CANDIDATE_TREE: 5dc17baa4bafac2086b6ebfd9fd4c26902dabf63
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Bind the one product file comparison before building
+        shell: bash
+        run: |
+          mkdir -p package-export-evidence
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          rows = {}
+          for label in ('baseline', 'candidate', 'driver'):
+              root = pathlib.Path(label)
+              call = lambda *args: subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
+              rows[label] = {'sha': call('rev-parse', 'HEAD'), 'tree': call('rev-parse', 'HEAD^{tree}'), 'clean': not call('status', '--porcelain', '--untracked-files=no')}
+              assert rows[label]['clean']
+          assert rows['baseline']['sha'] == os.environ['BASELINE_SHA']
+          assert rows['baseline']['tree'] == os.environ['BASELINE_TREE']
+          assert rows['candidate']['sha'] == os.environ['CANDIDATE_SHA']
+          assert rows['candidate']['tree'] == os.environ['CANDIDATE_TREE']
+          assert rows['driver']['sha'] == os.environ['GITHUB_SHA']
+          parent = subprocess.check_output(['git', '-C', 'candidate', 'rev-parse', 'HEAD^'], text=True).strip()
+          assert parent == os.environ['BASELINE_SHA']
+          changed = subprocess.check_output(['git', '-C', 'candidate', 'diff', '--name-only', 'HEAD^', 'HEAD'], text=True).splitlines()
+          assert changed == ['src/codex_plugin_scanner/__init__.py', 'tests/test_package_lazy_scan_export.py']
+          plan = pathlib.Path('driver/scripts/ci/package-export-diagnostic-plan.json').read_bytes()
+          assert hashlib.sha256(plan).hexdigest() == '2fe1e299ec30f0b49e0efd0eadd9f24e746f5a1c34dcbd7b920d02e9d2384c86'
+          pathlib.Path('package-export-evidence/source-before.json').write_text(json.dumps(rows, indent=2) + '\n')
+          pathlib.Path('package-export-evidence/declared-plan.json').write_bytes(plan)
+          pathlib.Path('package-export-evidence/driver-plan.json').write_bytes(pathlib.Path('driver/scripts/ci/package-export-driver-plan.json').read_bytes())
+          PY
+      - name: Install pinned default Rust toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Build and install both exact default native wheels
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          sys.path.insert(0, str(pathlib.Path('candidate').resolve()))
+          from scripts.build_native_qualification_artifacts import _build
+          evidence = pathlib.Path('package-export-evidence')
+          for label in ('baseline', 'candidate'):
+              python, wheel, metadata = _build(pathlib.Path(label), target='aarch64-apple-darwin', platform_tag='macosx_11_0_arm64', deployment_target='11.0')
+              metadata.update(python_executable=str(python), wheel_path=str(wheel), diagnostic_runtime_features=False)
+              (evidence / (label + '-build.json')).write_text(json.dumps(metadata, indent=2) + '\n')
+          PY
+      - name: Verify untimed driver and public export controls
+        working-directory: candidate
+        run: .venv/bin/python -m pytest -q tests/test_package_lazy_scan_export.py ../driver/tests/test_package_export_diagnostic.py
+      - name: Prepare owned interpreter invocations without changing shared bytes
+        run: |
+          candidate/.venv/bin/python candidate/scripts/provision_native_qualification_interpreters.py \
+            --baseline-python "$GITHUB_WORKSPACE/baseline/.venv/bin/python" \
+            --candidate-python "$GITHUB_WORKSPACE/candidate/.venv/bin/python" \
+            --json "$GITHUB_WORKSPACE/package-export-evidence/interpreter-provision.json"
+      - name: Run the two predeclared blocks once in fixed order
+        shell: bash
+        run: |
+          unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+          unset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC
+          unset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY
+          unset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE
+          unset HOL_GUARD_PYTHON_ORACLE HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON
+          unset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE
+          unset GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW
+          unset GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE
+          unset GUARD_DIAGNOSTIC GUARD_TEST_MODE GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON
+          unset GUARD_PYTEST_DURATION_OUTPUT PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH
+          failed=0
+          for label in baseline candidate; do
+            if [ "$label" = baseline ]; then
+              artifact=017f_baseline
+              source_sha="$BASELINE_SHA"
+              source_tree="$BASELINE_TREE"
+            else
+              artifact=lazy_export_child
+              source_sha="$CANDIDATE_SHA"
+              source_tree="$CANDIDATE_TREE"
+            fi
+            wheels=("$GITHUB_WORKSPACE/$label/qualification-native/"*.whl)
+            test "${#wheels[@]}" -eq 1
+            if "$GITHUB_WORKSPACE/$label/.venv/bin/python" -I \
+              "$GITHUB_WORKSPACE/driver/scripts/ci/package_export_diagnostic.py" \
+              --artifact "$artifact" --source-root "$GITHUB_WORKSPACE/$label" \
+              --expected-source-sha "$source_sha" --expected-source-tree "$source_tree" \
+              --driver-root "$GITHUB_WORKSPACE/driver" --expected-driver-sha "$GITHUB_SHA" \
+              --plan "$GITHUB_WORKSPACE/driver/scripts/ci/package-export-diagnostic-plan.json" \
+              --wheel "${wheels[0]}" --output "$GITHUB_WORKSPACE/package-export-evidence/$label.json"; then
+              printf '%s\n' "$label completed its declared block" >> package-export-evidence/block-exits.log
+            else
+              failed=1
+              printf '%s\n' "$label failed its declared block; no retry" >> package-export-evidence/block-exits.log
+            fi
+          done
+          exit "$failed"
+      - name: Preserve exact wheels and all successful or failed observations
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: package-export-mac-arm-${{ github.run_id }}
+          path: |
+            package-export-evidence/
+            baseline/qualification-native/*.whl
+            candidate/qualification-native/*.whl
+          if-no-files-found: error
+          retention-days: 30

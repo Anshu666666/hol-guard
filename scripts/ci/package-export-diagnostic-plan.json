@@ -1,0 +1,67 @@
+{
+  "schema": "hol-guard.package-export-diagnostic-plan.v1",
+  "status": "prepared_for_review_not_executed",
+  "purpose": "Assess only the lazy public scanner export in a bounded installed launcher diagnostic.",
+  "baseline_source_sha": "017f1244f1861bc4a74620a669557b78beb6d176",
+  "baseline_source_tree": "29404d410dcedd48b01d7e19e1af2e5581b6306a",
+  "candidate_source_sha": "PENDING_REVIEWED_LAZY_EXPORT_SOURCE",
+  "candidate_source_tree": "PENDING_REVIEWED_LAZY_EXPORT_TREE",
+  "allowed_product_delta": ["src/codex_plugin_scanner/__init__.py"],
+  "test_delta": ["tests/test_package_lazy_scan_export.py"],
+  "diagnostic_driver_sha": "PENDING_REVIEWED_DRIVER",
+  "original_prd_baseline_replaced": false,
+  "qualification_eligible": false,
+  "platform": "macos-15_arm64_initial_bounded_diagnostic",
+  "execution": {
+    "host_jobs": 1,
+    "artifact_order": ["017f_baseline", "lazy_export_child"],
+    "independent_blocks_per_artifact": 1,
+    "separate_private_home_and_daemon_per_artifact": true,
+    "native_default_features_only": true,
+    "native_runtime_and_launcher_overrides": false,
+    "installed_noneditable_package": true,
+    "fixture": "DaemonFixture(installed_runtime, policy='normal')",
+    "producer": "measure_priority_launchers(session, {'priority_per_run': 2, 'cold_per_run': 2})",
+    "route_order": [
+      "claude-code.PreToolUse",
+      "claude-code.PostToolUse",
+      "codex.PreToolUse",
+      "codex.PostToolUse"
+    ],
+    "per_route_order": [
+      "original_benign_preflight",
+      "original_block_preflight",
+      "original_fresh_launcher_samples_2",
+      "original_serial_samples_2",
+      "original_concurrency16_batch_16"
+    ],
+    "launches_per_route": 22,
+    "launches_per_artifact": 88,
+    "launches_total": 176,
+    "sample_payloads_and_offsets": "unchanged_original_measure_priority_launchers",
+    "registered_argv_and_environment": "actual_adapter_install_readback_unchanged",
+    "timer": "original_before_run_isolated_hook_process_through_its_return",
+    "launcher_timeout_seconds": 10.0,
+    "original_deadlines_authentication_and_policy_barriers": "unchanged",
+    "additional_warmup_or_retry": false,
+    "on_first_failure": "retain_original_failure_partial_observations_and_cleanup_no_replay"
+  },
+  "required_binding": [
+    "source SHA and tree before and after",
+    "unchanged producer and payload-source file hashes",
+    "Python version and installed package RECORD digest",
+    "native wheel and runtime hashes and default feature provenance",
+    "actual registered argv/environment digest and adapter readback",
+    "runner OS architecture CPU identity and observed resource limits",
+    "complete original stdout exit semantics and batch route conservation",
+    "ordinary authenticated resident stop and owned child cleanup outcome"
+  ],
+  "interpretation": [
+    "One small diagnostic block cannot qualify the original sample minima or establish stable confidence bounds.",
+    "The standalone prepared fixture does not reproduce the preceding full qualification corpus history.",
+    "All fresh Python startup and parent containment overhead stays inside the original launcher timer.",
+    "No internal import or native duration is inferred by subtracting independent aggregate percentiles.",
+    "The same-host fixed artifact order permits order and host-load effects; retain both outcomes without choosing a preferred rerun.",
+    "Further attribution requires a separately reviewed bounded joined phase collector, not a transport or deadline change."
+  ]
+}

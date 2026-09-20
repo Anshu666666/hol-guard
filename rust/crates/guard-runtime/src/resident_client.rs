@@ -173,6 +173,9 @@ fn connect_unix_with_digest(
         .map_err(|_| "native_client_connect_failed".to_owned())?;
     fcntl(&descriptor, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC))
         .map_err(|_| "native_client_connect_failed".to_owned())?;
+    #[cfg(test)]
+    connect_deadline_tests::checkpoint();
+    let _ = connect_remaining(deadline)?;
     match connect(descriptor.as_raw_fd(), &address) {
         Ok(()) | Err(Errno::EISCONN) => {}
         Err(Errno::EINPROGRESS) => {
@@ -327,9 +330,20 @@ pub(crate) fn send_request_for_digest_detailed(
     let deadline = Instant::now()
         .checked_add(timeout)
         .ok_or_else(|| ResidentClientError::fatal("native_client_deadline_invalid".to_owned()))?;
-    if timeout.is_zero() {
-        return Err("native_client_deadline_exceeded".to_owned().into());
-    }
+    send_request_for_digest_at_deadline_detailed(
+        transport, endpoint, token, payload, deadline, identity,
+    )
+}
+
+pub(crate) fn send_request_for_digest_at_deadline_detailed(
+    transport: &str,
+    endpoint: &str,
+    token: &[u8],
+    payload: &[u8],
+    deadline: Instant,
+    identity: &ExpectedProcessIdentity<'_>,
+) -> Result<Vec<u8>, ResidentClientError> {
+    let _ = connect_remaining(deadline)?;
     let mut stream = crate::observe_native_phase!(
         ClientConnect,
         connect(transport, endpoint, deadline, identity)
@@ -402,3 +416,7 @@ mod tests;
 #[cfg(test)]
 #[path = "resident_client_deadline_tests.rs"]
 mod deadline_tests;
+
+#[cfg(all(test, unix))]
+#[path = "resident_client_connect_deadline_tests.rs"]
+mod connect_deadline_tests;

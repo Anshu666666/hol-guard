@@ -1,0 +1,78 @@
+name: PR2974 deadline rustfmt preparation
+
+on:
+  push:
+    branches:
+      - "codex/pr2974-deadline-rustfmt-preparation-20260920"
+
+permissions:
+  contents: read
+
+jobs:
+  rustfmt-preparation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      FORMAT_SOURCE_SHA: "ed6f38ce3ad1c0ea95e24f565aa1fb02386a6694"
+      FORMAT_SOURCE_TREE: "b75e86f8c3e50c3b938f6711b193cfa0a520e55d"
+      FORMAT_MANIFEST_SHA256: "4d0a83b5604c6a073449623ee30e5dbf543554add1e430feafaccfbc78cba808"
+    steps:
+      - name: Checkout immutable driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout exact source packet
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "ed6f38ce3ad1c0ea95e24f565aa1fb02386a6694"
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.14"
+
+      - name: Install pinned formatter and its official runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt \
+            2>&1 | tee "$RUNNER_TEMP/deadline-rustfmt-install.log"
+
+      - name: Format isolated source images and retain returned bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python source/deadline-format-prep/format_source.py \
+            --source-root "$GITHUB_WORKSPACE/source" \
+            --source-sha "$FORMAT_SOURCE_SHA" \
+            --source-tree "$FORMAT_SOURCE_TREE" \
+            --driver-root "$GITHUB_WORKSPACE/driver" \
+            --driver-sha "$GITHUB_SHA" \
+            --manifest-sha256 "$FORMAT_MANIFEST_SHA256" \
+            --output "$RUNNER_TEMP/deadline-rustfmt-output"
+
+      - name: Preserve bounded source and error bytes in the job log
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python source/deadline-format-prep/project_format_log.py \
+            --output "$RUNNER_TEMP/deadline-rustfmt-output"
+
+      - name: Retain formatter evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-deadline-rustfmt-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/deadline-rustfmt-install.log
+            ${{ runner.temp }}/deadline-rustfmt-output/

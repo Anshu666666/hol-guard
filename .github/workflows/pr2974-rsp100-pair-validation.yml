@@ -1,0 +1,43 @@
+name: PR2974 RSP100 bounded pair validation
+
+on:
+  push:
+    branches: [codex/pr2974-rsp100-pair-validation-20260920-v6]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python312:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RSP100_EVIDENCE_DIR: rsp100-pair-evidence
+      UV_NO_PROGRESS: "1"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 3
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Verify bound source before dependency installation
+        run: python scripts/ci/validate_pr2974_rsp100_pair.py --bind-only
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          enable-cache: false
+      - name: Install frozen development dependencies
+        timeout-minutes: 10
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Import, prove positive admission, and run bounded controls
+        if: always()
+        run: python scripts/ci/validate_pr2974_rsp100_pair.py
+      - name: Preserve all source, result and failure records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr2974-rsp100-pair-python312
+          path: rsp100-pair-evidence/
+          if-no-files-found: error

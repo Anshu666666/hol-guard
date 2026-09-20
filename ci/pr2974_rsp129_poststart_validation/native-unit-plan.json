@@ -1,0 +1,220 @@
+{
+  "schema": "pr2974.native-noncommand-unit-gate.v1",
+  "source_binding": "final immutable source manifest and whole-tree before/after witness",
+  "compiler": "same freshly installed exact Rust 1.88.0 toolchain and full before/after seven-program inventory",
+  "total_test_entries": 24,
+  "python_consumer_cases": 3,
+  "compile_timeout_seconds": 600,
+  "list_timeout_seconds": 30,
+  "module_timeout_seconds": 60,
+  "consumer_timeout_seconds": 60,
+  "separate_from_poststart29": true,
+  "default_features_unchanged": true,
+  "qualification_complete": false,
+  "binaries": {
+    "command": {
+      "package": "guard-command",
+      "target_name": "guard_command",
+      "kind": [
+        "lib"
+      ],
+      "target_args": [
+        "--lib"
+      ],
+      "manifest": "rust/crates/guard-command/Cargo.toml",
+      "src_path": "rust/crates/guard-command/src/lib.rs",
+      "features": []
+    },
+    "runtime": {
+      "package": "hol-guard-runtime",
+      "target_name": "hol-guard-runtime",
+      "kind": [
+        "bin"
+      ],
+      "target_args": [
+        "--bin",
+        "hol-guard-runtime"
+      ],
+      "manifest": "rust/crates/guard-runtime/Cargo.toml",
+      "src_path": "rust/crates/guard-runtime/src/main.rs",
+      "features": [
+        "default"
+      ]
+    }
+  },
+  "modules": [
+    {
+      "name": "command-controls",
+      "binary": "command",
+      "filter": "native_command_program::tests::",
+      "source_path": "rust/crates/guard-command/src/native_command_program_tests.rs",
+      "source_git_blob": "b88c2682f902e9ab400301753029eeb29af1aa6c",
+      "source_sha256": "9e61b90a1c0840194e50408e4213a41cd55c27067c62b1e49d97a36052611664",
+      "expected_tests": [
+        "native_command_program::tests::a_previously_reviewable_command_becomes_a_hard_floor_after_permission_disable",
+        "native_command_program::tests::admission_rejects_tampered_unknown_and_invalid_nodes",
+        "native_command_program::tests::compatibility_safe_commands_and_ruleless_permissions_obey_controls",
+        "native_command_program::tests::complete_observations_match_independent_python_reference_models",
+        "native_command_program::tests::controls_are_bound_to_program_and_both_independent_revisions",
+        "native_command_program::tests::disabled_permission_and_failed_authority_cannot_become_allow",
+        "native_command_program::tests::graph_depth_proof_cannot_be_bypassed_by_memoized_shared_children",
+        "native_command_program::tests::local_opt_in_selects_ollama_and_safe_evidence_stays_on_its_own_segment",
+        "native_command_program::tests::packaged_program_is_admitted_once_and_exposes_explicit_coverage"
+      ]
+    },
+    {
+      "name": "runtime-noncommand",
+      "binary": "runtime",
+      "filter": "policy_store::tests::fixture_tests::noncommand_review_tests::",
+      "source_path": "rust/crates/guard-runtime/src/policy_store_noncommand_review_tests.rs",
+      "source_git_blob": "dc177b5a6a64f9d73bd6fd9baa64c2cf292ab1ad",
+      "source_sha256": "dc9d9db3cdbb06688b2f69b0bf7990d0ca9b5d0806013e63e30a8008b2527636",
+      "expected_tests": [
+        "policy_store::tests::fixture_tests::noncommand_review_tests::current_signed_noncommand_reviews_have_distinct_receipt_scope",
+        "policy_store::tests::fixture_tests::noncommand_review_tests::malformed_and_present_commands_without_controls_do_not_claim_noncommand_scope",
+        "policy_store::tests::fixture_tests::noncommand_review_tests::noncommand_scope_preserves_nontrivial_command_floors_and_intrinsic_blocks"
+      ]
+    },
+    {
+      "name": "runtime-deadlines",
+      "binary": "runtime",
+      "filter": "resident_client::deadline_tests::",
+      "source_path": "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+      "source_git_blob": "676fa271a894d9369e34be93a5e482fd9faa1735",
+      "source_sha256": "a2cc1328e7aa909c4574e5646d4a0db0bc3b67dab50c37808de7e5d39b233fd0",
+      "expected_tests": [
+        "resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read",
+        "resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget",
+        "resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget",
+        "resident_client::deadline_tests::progressing_backpressured_request_write_remains_bounded_and_nonretryable",
+        "resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads",
+        "resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged",
+        "resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error",
+        "resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading",
+        "resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access"
+      ]
+    },
+    {
+      "name": "runtime-retry",
+      "binary": "runtime",
+      "filter": "managed_resident::retry_tests::",
+      "source_path": "rust/crates/guard-runtime/src/managed_resident_retry_tests.rs",
+      "source_git_blob": "601f114500cb4c2296ccf07df51e975db7647635",
+      "source_sha256": "d3e6bb56c0d0c43b111f7bf77985f3da440eeae355d28a6303898245e30decf1",
+      "expected_tests": [
+        "managed_resident::retry_tests::managed_restart_preserves_fatal_exchange_failures_after_owner_exit",
+        "managed_resident::retry_tests::managed_restart_still_allows_connection_unavailable_before_exchange",
+        "managed_resident::retry_tests::managed_retry_owner_child"
+      ]
+    }
+  ],
+  "evidence": {
+    "tag": "HOL_GUARD_NATIVE_NONCOMMAND_EVIDENCE_V1 ",
+    "schema": "pr2974.native-non-command-review-evidence.v1",
+    "records": 3,
+    "labels": [
+      "WebFetch",
+      "Read",
+      "MCP"
+    ],
+    "fields": [
+      "schema",
+      "label",
+      "envelope",
+      "active_snapshot",
+      "edge_json"
+    ],
+    "per_record_utf8_limit_bytes": 65536,
+    "retention": "The incoming signed-store scope test emits the exact encoded native edge response after actual current snapshot admission, six-case result/scope assertions and an independent active snapshot read. Three tagged JSON payload records are retained byte for byte. Explicit noncommand scope and selected current snapshot acknowledgement are consumed separately by Python.",
+    "emitting_test": "policy_store::tests::fixture_tests::noncommand_review_tests::current_signed_noncommand_reviews_have_distinct_receipt_scope",
+    "permitted_first_line_prefix": "test policy_store::tests::fixture_tests::noncommand_review_tests::current_signed_noncommand_reviews_have_distinct_receipt_scope ... ",
+    "records_filename": "native-noncommand-records.original.jsonl",
+    "index_filename": "native-noncommand-records-index.json"
+  },
+  "libtest_protocol_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/rust-lang/rust/1.88.0/library/test/src/formatters/pretty.rs",
+      "sha256": "8b6b783a683c0f49814591f916b6fed8a3d9c128d0998a071afa35a33132563c"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/rust-lang/rust/1.88.0/library/test/src/console.rs",
+      "sha256": "015e5a0a5244401ef7c5773cd8934fb731b4d67f66131e9aa463610ee775bb3b"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/rust-lang/rust/1.88.0/library/test/src/lib.rs",
+      "sha256": "1672e7f7526fdd2f3777d06da736ab80a77c15004c771966e7668f3906481d8f"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/rust-lang/rust/1.88.0/library/test/src/types.rs",
+      "sha256": "ecc2bac12cfebdfe7bd9c8a2fba2e7f33320fb384e57d5e11a08b1d6d49d8b8f"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/rust-lang/rust/1.88.0/compiler/rustc_builtin_macros/src/test_harness.rs",
+      "sha256": "51c60bed4cf44da477c05e49e4e24e466231d7f10117af7754e56f1866b40961"
+    }
+  ],
+  "superseded_unexecuted_plan": {
+    "owner": "517ae42a3707441800700e833f7f3da7c239df82",
+    "total_test_entries": 28,
+    "reason": "Canonical ed731 introduces extraction-proved noncommand receipt scope and selected-ACK Python v2 binding; old empty-command-domain architecture was never run and is superseded."
+  },
+  "separate_original_producer_fixture": {
+    "native_test_entries": 1,
+    "native_timeout_seconds": 60,
+    "python_cases": 6,
+    "python_phases": 18,
+    "python_collection_timeout_seconds": 60,
+    "python_body_timeout_seconds": 60,
+    "original_marker": "HOL_GUARD_NONCOMMAND_RECEIPTS=",
+    "case_names": [
+      "network",
+      "network_url",
+      "ollama",
+      "read",
+      "mcp",
+      "mcp_command"
+    ],
+    "runtime_credit": false,
+    "python_selectors": [
+      "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[network]",
+      "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[network_url]",
+      "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[read]",
+      "tests/test_native_noncommand_review_rust.py::test_actual_rust_review_queues_consumes_once_and_roundtrips_full_receipt[mcp]",
+      "tests/test_native_noncommand_review_rust.py::test_actual_rust_command_receipt_cannot_be_reused_as_unmarked_noncommand",
+      "tests/test_installed_ollama_legacy_retry.py::test_actual_signed_ollama_review_cannot_reuse_resolved_legacy_approval"
+    ],
+    "main24_parser_and_three_consumer_unchanged": true
+  },
+  "unrun_native_resident_scope": {
+    "selector": "ci/native_runtime/test_native_hook_client.py::test_current_resident_noncommand_review_reaches_exact_once_approval",
+    "cases": 3,
+    "status": "separate resident fixture not selected by this gate; no pass or installed qualification credit",
+    "reason": "The original fixture consumes HOL_GUARD_NATIVE_BINARY, while the existing native collector expects default plus diagnostic binaries; it suppresses resident-stop stdout/stderr and ignores that exit status. A separate binary/cleanup adapter is required for truthful retirement evidence and is not included in this bounded gate."
+  },
+  "superseded_unexecuted_22_entry_plan": {
+    "source": "6024c4124d8794b3203de290832f603cbf9cd6e5",
+    "harness": "0a3ebeb56793ccfd0546170a3343bbc75e22acdb",
+    "owner": "98e765c8a3d177fd239f7961a14f3beecb5040c8",
+    "total_test_entries": 22,
+    "status": "UNEXECUTED; superseded by the current source's two additional portable deadline controls",
+    "original22_names_preserved": true,
+    "no_historical_pass_or_failure_transferred": true
+  },
+  "unrun_macos_deadline_scope": {
+    "source_path": "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+    "source_git_blob": "676fa271a894d9369e34be93a5e482fd9faa1735",
+    "source_sha256": "a2cc1328e7aa909c4574e5646d4a0db0bc3b67dab50c37808de7e5d39b233fd0",
+    "configuration": "#[cfg(target_os = \"macos\")]",
+    "test_entries": 5,
+    "expected_tests": [
+      "resident_client::deadline_tests::macos_closed_peer::complete_bound_response_survives_peer_close_without_changing_socket_mode",
+      "resident_client::deadline_tests::macos_closed_peer::completed_write_can_flush_after_peer_close_without_replaying_request",
+      "resident_client::deadline_tests::macos_closed_peer::expired_deadline_leaves_buffered_response_unread",
+      "resident_client::deadline_tests::macos_closed_peer::fallback_requires_exact_setter_error_and_actual_peer_hangup",
+      "resident_client::deadline_tests::macos_closed_peer::malformed_or_partial_buffered_responses_remain_fatal"
+    ],
+    "status": "UNRUN by this Linux harness; the target_os conditional excludes these five tests",
+    "linux_gate_credit": false,
+    "platform_qualification_credit": false
+  }
+}

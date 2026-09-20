@@ -58,6 +58,7 @@ from ..mcp_tool_calls import (
     ApprovalReuseClaimDisposition,
     ToolCallDecision,
     _normalized_tool_call_workspace,
+    _tool_call_risk_pair,
     allow_tool_call,
     block_tool_call,
     build_tool_call_artifact,
@@ -1342,31 +1343,61 @@ class RuntimeMcpGuardProxy:
     def _evaluate_tool_call_authority(
         self, *, artifact: GuardArtifact, arguments: object, config: GuardConfig
     ) -> tuple[GuardArtifact, str, ToolCallDecision]:
-        """Retain the measured Python default; optional pilots override privately."""
+        """Share pure categories within one already bound authority evaluation."""
 
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        artifact_hash = build_tool_call_hash(
-            artifact,
-            arguments,
-            workspace=self.context.workspace_dir or Path.cwd(),
-            config=config,
+        binding = current_tool_call_binding()
+        owned_params = binding.owned_message.get("params") if binding is not None else None
+        admitted = (
+            inside_proxy_authority_scope()
+            and (arguments is None or type(arguments) is dict)
+            and type(owned_params) is dict
+            and arguments is owned_params.get("arguments")
         )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        decision = self._disable_saved_allow_without_complete_catalog(
-            evaluate_tool_call(
-                store=self.store,
-                config=config,
-                artifact=artifact,
-                artifact_hash=artifact_hash,
-                arguments=arguments,
-                claim_saved_approval=False,
-            )
-        )
-        self._check_tool_call_preparation()
-        check_current_mcp_authority()
-        return artifact, artifact_hash, decision
+        with _tool_call_risk_pair(
+            artifact=artifact, arguments=arguments, config=config, aliases=globals(), admitted=admitted
+        ) as facts:
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            if facts is not None and facts.supported():
+                artifact_hash = build_tool_call_hash(
+                    artifact,
+                    arguments,
+                    workspace=self.context.workspace_dir or Path.cwd(),
+                    config=config,
+                    risk_facts=facts,
+                )
+            else:
+                artifact_hash = build_tool_call_hash(
+                    artifact,
+                    arguments,
+                    workspace=self.context.workspace_dir or Path.cwd(),
+                    config=config,
+                )
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            if facts is not None and facts.supported():
+                current_decision = evaluate_tool_call(
+                    store=self.store,
+                    config=config,
+                    artifact=artifact,
+                    artifact_hash=artifact_hash,
+                    arguments=arguments,
+                    claim_saved_approval=False,
+                    risk_facts=facts,
+                )
+            else:
+                current_decision = evaluate_tool_call(
+                    store=self.store,
+                    config=config,
+                    artifact=artifact,
+                    artifact_hash=artifact_hash,
+                    arguments=arguments,
+                    claim_saved_approval=False,
+                )
+            decision = self._disable_saved_allow_without_complete_catalog(current_decision)
+            self._check_tool_call_preparation()
+            check_current_mcp_authority()
+            return artifact, artifact_hash, decision
 
     def _handle_message(
         self,

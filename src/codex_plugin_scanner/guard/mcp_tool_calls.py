@@ -6,6 +6,7 @@ import json
 import math
 import re
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, field, fields, replace
 from functools import lru_cache
 from hashlib import sha256
@@ -18,7 +19,18 @@ from .approval_gate import ApprovalGateGrant
 from .collections_support import dedupe_preserving_order
 from .config import DEFAULT_SECURITY_LEVEL, GuardConfig, resolve_risk_action
 from .local_cli_trust import apply_local_mcp_extension_decision
-from .mcp_authority_binding import AuthorityCheck, check_current_mcp_authority, use_mcp_authority_check
+from .mcp_authority_binding import (
+    AuthorityCheck,
+    check_current_mcp_authority,
+    current_mcp_authority_check,
+    use_mcp_authority_check,
+)
+from .mcp_request_risk import (
+    InvocationRiskFacts,
+    ReviewedRiskHelpers,
+    invocation_categories,
+    invocation_risk_facts,
+)
 from .models import GuardAction, GuardArtifact, GuardReceipt, PolicyDecision
 from .receipts import build_receipt
 from .runtime.approval_context import (
@@ -401,17 +413,29 @@ def build_tool_call_hash(
     *,
     workspace: Path | str | None = None,
     config: GuardConfig | None = None,
-    risk_facts: ToolCallRiskFacts | None = None,
+    risk_facts: ToolCallRiskFacts | InvocationRiskFacts | None = None,
 ) -> str:
-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
+    invocation = cast(InvocationRiskFacts, risk_facts) if type(risk_facts) is InvocationRiskFacts else None
+    legacy_facts = None if invocation is not None else cast(ToolCallRiskFacts | None, risk_facts)
+    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, legacy_facts)
     if matching_snapshot is not None:
         artifact, arguments = matching_snapshot
+    risk_categories = legacy_facts.categories if matching_snapshot is not None and legacy_facts is not None else None
+    if invocation is not None and invocation.supported():
+        return _build_tool_call_hash_for_categories(
+            artifact,
+            arguments,
+            workspace=workspace,
+            config=config,
+            risk_categories=risk_categories,
+            invocation_facts=invocation,
+        )
     return _build_tool_call_hash_for_categories(
         artifact,
         arguments,
         workspace=workspace,
         config=config,
-        risk_categories=risk_facts.categories if matching_snapshot is not None and risk_facts is not None else None,
+        risk_categories=risk_categories,
     )
 
 
@@ -422,6 +446,7 @@ def _build_tool_call_hash_for_categories(
     workspace: Path | str | None,
     config: GuardConfig | None,
     risk_categories: tuple[str, ...] | None,
+    invocation_facts: InvocationRiskFacts | None = None,
 ) -> str:
     """Private kernel; the caller owns any supplied facts and their inputs."""
 
@@ -507,7 +532,9 @@ def _build_tool_call_hash_for_categories(
         content=content_hash,
         capabilities={
             "risk_categories": list(
-                risk_categories if risk_categories is not None else tool_call_risk_categories(artifact, arguments)
+                risk_categories
+                if risk_categories is not None
+                else _invocation_tool_call_risk_categories(invocation_facts, artifact, arguments, consumer="hash")
             ),
             "server_identity": artifact.metadata.get("mcp_server_identity"),
             "tool_catalog_fingerprint": tool_catalog_fingerprint,
@@ -583,7 +610,7 @@ def evaluate_tool_call(
     arguments: object,
     claim_saved_approval: bool = True,
     fresh_authority_provider: (Callable[[], tuple[GuardConfig, GuardArtifact, str, object] | None] | None) = None,
-    risk_facts: ToolCallRiskFacts | None = None,
+    risk_facts: ToolCallRiskFacts | InvocationRiskFacts | None = None,
 ) -> ToolCallDecision:
     check_current_mcp_authority()
     current = _evaluate_current_tool_call(
@@ -963,7 +990,7 @@ def _evaluate_current_tool_call(
     config: GuardConfig,
     artifact: GuardArtifact,
     arguments: object,
-    risk_facts: ToolCallRiskFacts | None = None,
+    risk_facts: ToolCallRiskFacts | InvocationRiskFacts | None = None,
 ) -> ToolCallDecision:
     """Evaluate current configuration and call shape without saved state."""
 
@@ -976,12 +1003,14 @@ def _evaluate_current_tool_call(
     current_config_action = configured_override if configured_override is not None else config.default_action
 
     # Resolve current policy before the public matching/owned-copy boundary.
-    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, risk_facts)
-    if matching_snapshot is not None and risk_facts is not None:
+    invocation = cast(InvocationRiskFacts, risk_facts) if type(risk_facts) is InvocationRiskFacts else None
+    legacy_facts = None if invocation is not None else cast(ToolCallRiskFacts | None, risk_facts)
+    matching_snapshot = _matching_tool_call_risk_snapshot(artifact, arguments, legacy_facts)
+    if matching_snapshot is not None and legacy_facts is not None:
         artifact, arguments = matching_snapshot
-        risk_categories = risk_facts.categories
+        risk_categories = legacy_facts.categories
     else:
-        risk_categories = tool_call_risk_categories(artifact, arguments)
+        risk_categories = _invocation_tool_call_risk_categories(invocation, artifact, arguments, consumer="current")
     return _evaluate_current_tool_call_for_categories(
         config=config,
         artifact=artifact,
@@ -1869,3 +1898,52 @@ def _camel_token_normalized(value: str) -> str:
     if value.islower():
         return value
     return re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", value)
+
+
+def _invocation_tool_call_risk_categories(
+    facts: InvocationRiskFacts | None,
+    artifact: GuardArtifact,
+    arguments: object,
+    *,
+    consumer: str,
+) -> tuple[str, ...]:
+    shared = invocation_categories(facts, artifact, arguments, consumer=consumer, derive=tool_call_risk_categories)
+    return shared if shared is not None else tool_call_risk_categories(artifact, arguments)
+
+
+# Capture source-default implementations at import, never during a callback.
+_RISK_PAIR_HELPERS = ReviewedRiskHelpers(
+    namespace=globals(),
+    pure_roots=("tool_call_risk_categories", "_tool_call_risk_signals_for_categories"),
+    consumers=(
+        "build_tool_call_hash",
+        "evaluate_tool_call",
+        "_build_tool_call_hash_for_categories",
+        "_evaluate_current_tool_call",
+        "_evaluate_current_tool_call_for_categories",
+        "_matching_tool_call_risk_snapshot",
+        "_invocation_tool_call_risk_categories",
+        "_tool_call_policy_context",
+        "_configured_risk_action",
+        "resolve_risk_action",
+    ),
+    policy_type=GuardConfig,
+    policy_methods=("resolve_action_override", "resolve_artifact_or_publisher_action_override"),
+)
+
+
+def _tool_call_risk_pair(
+    *,
+    artifact: GuardArtifact,
+    arguments: object,
+    config: GuardConfig,
+    aliases: Mapping[str, object],
+    admitted: bool,
+) -> AbstractContextManager[InvocationRiskFacts | None]:
+    return invocation_risk_facts(
+        artifact=artifact,
+        arguments=arguments,
+        authority_check=current_mcp_authority_check(),
+        support_check=lambda: type(config) is GuardConfig and _RISK_PAIR_HELPERS.unchanged(config, aliases),
+        admitted=admitted,
+    )

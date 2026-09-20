@@ -1,0 +1,1342 @@
+﻿2026-09-20T08:57:05.8001630Z Current runner version: '2.337.0'
+2026-09-20T08:57:05.8018690Z ##[group]Runner Image Provisioner
+2026-09-20T08:57:05.8019270Z Hosted Compute Agent
+2026-09-20T08:57:05.8019720Z Version: 20260828.587
+2026-09-20T08:57:05.8020140Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T08:57:05.8020700Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T08:57:05.8021150Z Worker ID: {a0e5b6da-1ede-4388-b4c7-2c391c7c5bfa}
+2026-09-20T08:57:05.8021640Z Azure Region: westus
+2026-09-20T08:57:05.8022020Z ##[endgroup]
+2026-09-20T08:57:05.8023100Z ##[group]Operating System
+2026-09-20T08:57:05.8023610Z macOS
+2026-09-20T08:57:05.8023970Z 15.7.9
+2026-09-20T08:57:05.8024320Z 24G830
+2026-09-20T08:57:05.8024760Z ##[endgroup]
+2026-09-20T08:57:05.8025200Z ##[group]Runner Image
+2026-09-20T08:57:05.8025600Z Image: macos-15-arm64
+2026-09-20T08:57:05.8025990Z Version: 20260907.0337.1
+2026-09-20T08:57:05.8027050Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+2026-09-20T08:57:05.8028140Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+2026-09-20T08:57:05.8028830Z ##[endgroup]
+2026-09-20T08:57:05.8029590Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T08:57:05.8030840Z Contents: read
+2026-09-20T08:57:05.8031310Z Metadata: read
+2026-09-20T08:57:05.8031690Z ##[endgroup]
+2026-09-20T08:57:05.8033130Z Secret source: Actions
+2026-09-20T08:57:05.8033800Z Cache mode: write
+2026-09-20T08:57:05.8034510Z Prepare workflow directory
+2026-09-20T08:57:05.8364740Z Prepare all required actions
+2026-09-20T08:57:05.8400510Z Getting action download info
+2026-09-20T08:57:06.1688840Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T08:57:06.6054640Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-20T08:57:06.8078360Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T08:57:06.9297390Z Download action repository 'astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39' (SHA:fac544c07dec837d0ccb6301d7b5580bf5edae39)
+2026-09-20T08:57:07.8359610Z Download action repository 'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6' (SHA:6323deb102c322ba6fcbdcafc7e3dddab59af2b6)
+2026-09-20T08:57:08.6400410Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T08:57:08.8456480Z Complete job name: macos (macos-15, macosx_11_0_arm64, aarch64-apple-darwin, 11.0)
+2026-09-20T08:57:08.9124650Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T08:57:08.9125720Z with:
+2026-09-20T08:57:08.9126310Z   persist-credentials: false
+2026-09-20T08:57:08.9126990Z   repository: hashgraph-online/hol-guard
+2026-09-20T08:57:08.9133350Z   token: ***
+2026-09-20T08:57:08.9133920Z   ssh-strict: true
+2026-09-20T08:57:08.9134470Z   ssh-user: git
+2026-09-20T08:57:08.9135000Z   clean: true
+2026-09-20T08:57:08.9135590Z   sparse-checkout-cone-mode: true
+2026-09-20T08:57:08.9136250Z   fetch-depth: 1
+2026-09-20T08:57:08.9136810Z   fetch-tags: false
+2026-09-20T08:57:08.9137370Z   show-progress: true
+2026-09-20T08:57:08.9138070Z   lfs: false
+2026-09-20T08:57:08.9138610Z   submodules: false
+2026-09-20T08:57:08.9139180Z   set-safe-directory: true
+2026-09-20T08:57:08.9139930Z ##[endgroup]
+2026-09-20T08:57:09.1913810Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T08:57:09.1915690Z ##[group]Getting Git version info
+2026-09-20T08:57:09.1916650Z Working directory is '/Users/runner/work/hol-guard/hol-guard'
+2026-09-20T08:57:09.2051760Z [command]/opt/homebrew/bin/git version
+2026-09-20T08:57:09.2519420Z git version 2.55.0
+2026-09-20T08:57:09.2532850Z ##[endgroup]
+2026-09-20T08:57:09.2538320Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/982a4f0e-542f-4590-9a3d-f8c7984c9033/.gitconfig'
+2026-09-20T08:57:09.2544450Z Temporarily overriding HOME='/Users/runner/work/_temp/982a4f0e-542f-4590-9a3d-f8c7984c9033' before making global git config changes
+2026-09-20T08:57:09.2546180Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:57:09.2547660Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:57:09.2644300Z Deleting the contents of '/Users/runner/work/hol-guard/hol-guard'
+2026-09-20T08:57:09.2648000Z ##[group]Determining repository object format
+2026-09-20T08:57:09.2649300Z ##[endgroup]
+2026-09-20T08:57:09.2650330Z ##[group]Initializing the repository
+2026-09-20T08:57:09.2652050Z [command]/opt/homebrew/bin/git init /Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:57:09.3233350Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-20T08:57:09.3237010Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-20T08:57:09.3240360Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-20T08:57:09.3242910Z hint: call:
+2026-09-20T08:57:09.3244260Z hint:
+2026-09-20T08:57:09.3246170Z hint: 	git config --global init.defaultBranch <name>
+2026-09-20T08:57:09.3248230Z hint:
+2026-09-20T08:57:09.3250230Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-20T08:57:09.3252960Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-20T08:57:09.3254080Z hint:
+2026-09-20T08:57:09.3254700Z hint: 	git branch -m <name>
+2026-09-20T08:57:09.3255360Z hint:
+2026-09-20T08:57:09.3256260Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-20T08:57:09.3257690Z Initialized empty Git repository in /Users/runner/work/hol-guard/hol-guard/.git/
+2026-09-20T08:57:09.3265380Z [command]/opt/homebrew/bin/git remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:57:09.3365830Z ##[endgroup]
+2026-09-20T08:57:09.3367480Z ##[group]Disabling automatic garbage collection
+2026-09-20T08:57:09.3375390Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-20T08:57:09.3527160Z ##[endgroup]
+2026-09-20T08:57:09.3530220Z ##[group]Setting up auth
+2026-09-20T08:57:09.3532550Z Removing SSH command configuration
+2026-09-20T08:57:09.3535970Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:57:09.3627430Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T08:57:09.4850540Z Removing HTTP extra header
+2026-09-20T08:57:09.4853960Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:57:09.4924660Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T08:57:09.5844120Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:57:09.5847570Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:57:09.5918810Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T08:57:09.7853790Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-20T08:57:09.7856210Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:09.7858100Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:09.7860280Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:09.7900850Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:09.7959780Z ##[endgroup]
+2026-09-20T08:57:09.7960360Z ##[group]Fetching the repository
+2026-09-20T08:57:09.7965170Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c:refs/remotes/pull/2974/merge
+2026-09-20T08:57:10.6710310Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:57:10.6711230Z  * [new ref]         6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c -> pull/2974/merge
+2026-09-20T08:57:10.6715500Z ##[endgroup]
+2026-09-20T08:57:10.6716720Z ##[group]Determining the checkout info
+2026-09-20T08:57:10.6719650Z ##[endgroup]
+2026-09-20T08:57:10.6724600Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-20T08:57:10.7071230Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-20T08:57:10.7146030Z ##[group]Checking out the ref
+2026-09-20T08:57:10.7150990Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/2974/merge
+2026-09-20T08:57:11.7798150Z Updating files:  72% (3432/4753)
+2026-09-20T08:57:11.7852170Z Updating files:  73% (3470/4753)
+2026-09-20T08:57:11.7904990Z Updating files:  74% (3518/4753)
+2026-09-20T08:57:11.7971060Z Updating files:  75% (3565/4753)
+2026-09-20T08:57:11.8039870Z Updating files:  76% (3613/4753)
+2026-09-20T08:57:11.8091420Z Updating files:  77% (3660/4753)
+2026-09-20T08:57:11.8487850Z Updating files:  78% (3708/4753)
+2026-09-20T08:57:11.8539730Z Updating files:  79% (3755/4753)
+2026-09-20T08:57:11.8582320Z Updating files:  80% (3803/4753)
+2026-09-20T08:57:11.8631230Z Updating files:  81% (3850/4753)
+2026-09-20T08:57:11.8698840Z Updating files:  82% (3898/4753)
+2026-09-20T08:57:11.8770900Z Updating files:  83% (3945/4753)
+2026-09-20T08:57:11.9171920Z Updating files:  84% (3993/4753)
+2026-09-20T08:57:11.9223010Z Updating files:  85% (4041/4753)
+2026-09-20T08:57:11.9276680Z Updating files:  86% (4088/4753)
+2026-09-20T08:57:11.9323290Z Updating files:  87% (4136/4753)
+2026-09-20T08:57:11.9371760Z Updating files:  88% (4183/4753)
+2026-09-20T08:57:11.9416400Z Updating files:  89% (4231/4753)
+2026-09-20T08:57:11.9467670Z Updating files:  90% (4278/4753)
+2026-09-20T08:57:11.9829690Z Updating files:  91% (4326/4753)
+2026-09-20T08:57:11.9873890Z Updating files:  92% (4373/4753)
+2026-09-20T08:57:11.9915190Z Updating files:  93% (4421/4753)
+2026-09-20T08:57:11.9958760Z Updating files:  94% (4468/4753)
+2026-09-20T08:57:12.0005380Z Updating files:  95% (4516/4753)
+2026-09-20T08:57:12.0045260Z Updating files:  96% (4563/4753)
+2026-09-20T08:57:12.0436070Z Updating files:  97% (4611/4753)
+2026-09-20T08:57:12.0487460Z Updating files:  98% (4658/4753)
+2026-09-20T08:57:12.0557440Z Updating files:  99% (4706/4753)
+2026-09-20T08:57:12.0575390Z Updating files: 100% (4753/4753)
+2026-09-20T08:57:12.0576810Z Updating files: 100% (4753/4753), done.
+2026-09-20T08:57:12.0646310Z HEAD is now at 6e63c52 Merge 4afa20cf014ccba918bf2fa61552dafe66767930 into 4b89e0d2d496a85f04922b2e019a4aea15326bb9
+2026-09-20T08:57:12.0660900Z ##[endgroup]
+2026-09-20T08:57:12.0788940Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-20T08:57:12.0866500Z 6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c
+2026-09-20T08:57:12.0880630Z ##[group]Removing auth
+2026-09-20T08:57:12.0881800Z Removing SSH command configuration
+2026-09-20T08:57:12.0884220Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:57:12.0952570Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T08:57:12.1826870Z Removing HTTP extra header
+2026-09-20T08:57:12.1829240Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:57:12.1990620Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T08:57:12.3660220Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:57:12.3669880Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:57:12.3677610Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T08:57:12.3681740Z includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T08:57:12.3692720Z includeif.gitdir:/github/workspace/.git.path
+2026-09-20T08:57:12.3702970Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T08:57:12.3737120Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path
+2026-09-20T08:57:12.3760350Z /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3783330Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git.path /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3785130Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path
+2026-09-20T08:57:12.3785930Z /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3787490Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/hol-guard/hol-guard/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3811700Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-20T08:57:12.3869940Z /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3875790Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3938260Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-20T08:57:12.3990860Z /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.3994400Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config
+2026-09-20T08:57:12.4059570Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T08:57:12.4790700Z Removing credentials config '/Users/runner/work/_temp/git-credentials-caed130f-f81c-4240-95a4-9f6591f9ed05.config'
+2026-09-20T08:57:12.4800500Z ##[endgroup]
+2026-09-20T08:57:12.5070280Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-20T08:57:12.5071500Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+2026-09-20T08:57:12.5071770Z with:
+2026-09-20T08:57:12.5071900Z   node-version: 22
+2026-09-20T08:57:12.5072040Z   always-auth: false
+2026-09-20T08:57:12.5072370Z   check-latest: false
+2026-09-20T08:57:12.5074270Z   token: ***
+2026-09-20T08:57:12.5074400Z ##[endgroup]
+2026-09-20T08:57:12.6511070Z Found in cache @ /Users/runner/hostedtoolcache/node/22.23.2/arm64
+2026-09-20T08:57:12.6512770Z (node:7061) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-20T08:57:12.6514150Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T08:57:12.6514730Z ##[group]Environment details
+2026-09-20T08:57:13.2739760Z node: v22.23.2
+2026-09-20T08:57:13.2798850Z npm: 10.9.8
+2026-09-20T08:57:13.2799680Z yarn: 1.22.22
+2026-09-20T08:57:13.2801180Z ##[endgroup]
+2026-09-20T08:57:13.2905420Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T08:57:13.2905820Z with:
+2026-09-20T08:57:13.2905970Z   python-version: 3.12
+2026-09-20T08:57:13.2906160Z   check-latest: false
+2026-09-20T08:57:13.2908150Z   token: ***
+2026-09-20T08:57:13.2908310Z   update-environment: true
+2026-09-20T08:57:13.2908650Z   allow-prereleases: false
+2026-09-20T08:57:13.2908900Z   freethreaded: false
+2026-09-20T08:57:13.2909310Z ##[endgroup]
+2026-09-20T08:57:13.4610290Z ##[group]Installed versions
+2026-09-20T08:57:13.4745820Z Successfully set up CPython (3.12.10)
+2026-09-20T08:57:13.4747340Z ##[endgroup]
+2026-09-20T08:57:13.4902390Z ##[group]Run astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+2026-09-20T08:57:13.4902740Z with:
+2026-09-20T08:57:13.4902900Z   version: 0.9.26
+2026-09-20T08:57:13.4903070Z   enable-cache: true
+2026-09-20T08:57:13.4903280Z   activate-environment: false
+2026-09-20T08:57:13.4903490Z   no-project: false
+2026-09-20T08:57:13.4903740Z   working-directory: /Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:57:13.4906030Z   github-token: ***
+2026-09-20T08:57:13.4906510Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-20T08:57:13.4907700Z   restore-cache: true
+2026-09-20T08:57:13.4907880Z   save-cache: true
+2026-09-20T08:57:13.4908110Z   prune-cache: true
+2026-09-20T08:57:13.4908300Z   cache-python: false
+2026-09-20T08:57:13.4908500Z   ignore-nothing-to-cache: false
+2026-09-20T08:57:13.4908710Z   ignore-empty-workdir: false
+2026-09-20T08:57:13.4909030Z   download-from-astral-mirror: true
+2026-09-20T08:57:13.4909270Z   add-problem-matchers: true
+2026-09-20T08:57:13.4909450Z   quiet: false
+2026-09-20T08:57:13.4909640Z   resolution-strategy: highest
+2026-09-20T08:57:13.4909830Z env:
+2026-09-20T08:57:13.4910080Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:13.4910500Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:13.4910930Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:13.4911300Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:13.4911690Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:13.4911990Z ##[endgroup]
+2026-09-20T08:57:13.6285120Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-20T08:57:13.7582650Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.9.26/uv-aarch64-apple-darwin.tar.gz" ...
+2026-09-20T08:57:14.0965450Z [command]/usr/bin/tar xz -C /Users/runner/work/_temp/d0938ba5-07c2-4750-8836-9b9d74106c8e -f /Users/runner/work/_temp/43109b6e-6c82-496d-a99f-6e5262f40773
+2026-09-20T08:57:14.3066330Z Added /Users/runner/.local/bin to the path
+2026-09-20T08:57:14.3073340Z Added /Users/runner/hostedtoolcache/uv/0.9.26/aarch64 to the path
+2026-09-20T08:57:14.3082150Z Set UV_PYTHON_INSTALL_DIR to /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:14.3082660Z Added /Users/runner/work/_temp/uv-python-dir to the path
+2026-09-20T08:57:14.3105100Z Set UV_CACHE_DIR to /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:14.3105520Z Successfully installed uv version 0.9.26
+2026-09-20T08:57:14.8023960Z Searching files using cache dependency glob: /Users/runner/work/hol-guard/hol-guard/**/*requirements*.txt,/Users/runner/work/hol-guard/hol-guard/**/*requirements*.in,/Users/runner/work/hol-guard/hol-guard/**/*constraints*.txt,/Users/runner/work/hol-guard/hol-guard/**/*constraints*.in,/Users/runner/work/hol-guard/hol-guard/**/pyproject.toml,/Users/runner/work/hol-guard/hol-guard/**/uv.lock,/Users/runner/work/hol-guard/hol-guard/**/*.py.lock
+2026-09-20T08:57:14.8119130Z /Users/runner/work/hol-guard/hol-guard/.clusterfuzzlite/requirements-atheris.txt
+2026-09-20T08:57:14.8261260Z /Users/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.in
+2026-09-20T08:57:14.8272310Z /Users/runner/work/hol-guard/hol-guard/action/pypi-attestations-requirements.txt
+2026-09-20T08:57:14.8287070Z /Users/runner/work/hol-guard/hol-guard/action/scanner-cisco-runtime-requirements.txt
+2026-09-20T08:57:14.8298870Z /Users/runner/work/hol-guard/hol-guard/action/scanner-runtime-requirements.txt
+2026-09-20T08:57:14.8893560Z /Users/runner/work/hol-guard/hol-guard/distributions/mcpb/pyproject.toml
+2026-09-20T08:57:14.8899490Z /Users/runner/work/hol-guard/hol-guard/docker-requirements.txt
+2026-09-20T08:57:14.9065790Z /Users/runner/work/hol-guard/hol-guard/pyproject.toml
+2026-09-20T08:57:14.9087080Z /Users/runner/work/hol-guard/hol-guard/requirements.txt
+2026-09-20T08:57:15.1963090Z /Users/runner/work/hol-guard/hol-guard/uv.lock
+2026-09-20T08:57:15.2065080Z Found 10 files to hash.
+2026-09-20T08:57:15.2131480Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-aarch64-apple-darwin-macos-15-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T08:57:15.3681070Z Cache hit for: setup-uv-2-aarch64-apple-darwin-macos-15-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T08:57:15.8668510Z Received 432553 of 432553 (100.0%), 1.2 MBs/sec
+2026-09-20T08:57:15.8668970Z Cache Size: ~0 MB (432553 B)
+2026-09-20T08:57:15.8694500Z [command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/bf7d371d-6dc7-4a55-a443-8f5e58940307/cache.tzst -P -C /Users/runner/work/hol-guard/hol-guard --delay-directory-restore --use-compress-program unzstd
+2026-09-20T08:57:15.8875460Z Cache restored successfully
+2026-09-20T08:57:15.8880300Z cache restored from GitHub Actions cache with key: setup-uv-2-aarch64-apple-darwin-macos-15-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d
+2026-09-20T08:57:16.0166820Z ##[group]Run uv sync --frozen --extra dev --python 3.12
+2026-09-20T08:57:16.0167300Z [36;1muv sync --frozen --extra dev --python 3.12[0m
+2026-09-20T08:57:16.0267040Z shell: /bin/bash -e {0}
+2026-09-20T08:57:16.0267390Z env:
+2026-09-20T08:57:16.0267750Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:16.0268230Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:16.0269630Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:16.0270310Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:16.0271020Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:16.0271560Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:16.0271980Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:16.0272320Z ##[endgroup]
+2026-09-20T08:57:16.1124570Z Using CPython 3.12.10 interpreter at: /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+2026-09-20T08:57:16.1125580Z Creating virtual environment at: .venv
+2026-09-20T08:57:16.1409230Z    Building hol-guard @ file:///Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:57:16.2315220Z Downloading pygments (1.2MiB)
+2026-09-20T08:57:16.2352620Z Downloading cryptography (3.8MiB)
+2026-09-20T08:57:16.2366570Z Downloading nodejs-wheel-binaries (53.1MiB)
+2026-09-20T08:57:16.2372670Z Downloading ruff (10.1MiB)
+2026-09-20T08:57:16.2377260Z Downloading pydantic-core (1.8MiB)
+2026-09-20T08:57:16.2378480Z Downloading libcst (1.9MiB)
+2026-09-20T08:57:16.2379550Z Downloading basedpyright (12.6MiB)
+2026-09-20T08:57:16.9852590Z  Downloaded pydantic-core
+2026-09-20T08:57:17.4217930Z  Downloaded ruff
+2026-09-20T08:57:18.0973340Z  Downloaded cryptography
+2026-09-20T08:57:18.6292660Z  Downloaded pygments
+2026-09-20T08:57:18.6539070Z  Downloaded libcst
+2026-09-20T08:57:19.0388400Z       Built hol-guard @ file:///Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:57:21.9380220Z  Downloaded nodejs-wheel-binaries
+2026-09-20T08:57:21.9602980Z  Downloaded basedpyright
+2026-09-20T08:57:21.9662480Z Prepared 67 packages in 5.83s
+2026-09-20T08:57:22.2687910Z Installed 67 packages in 301ms
+2026-09-20T08:57:22.2688440Z  + annotated-types==0.7.0
+2026-09-20T08:57:22.2688930Z  + anyio==4.14.2
+2026-09-20T08:57:22.2689220Z  + attrs==26.1.0
+2026-09-20T08:57:22.2690730Z  + basedpyright==1.39.8
+2026-09-20T08:57:22.2691610Z  + build==1.5.0
+2026-09-20T08:57:22.2692320Z  + certifi==2026.2.25
+2026-09-20T08:57:22.2693110Z  + cffi==2.0.0
+2026-09-20T08:57:22.2693750Z  + charset-normalizer==3.4.7
+2026-09-20T08:57:22.2694580Z  + click==8.4.1
+2026-09-20T08:57:22.2695220Z  + coverage==7.13.5
+2026-09-20T08:57:22.2695800Z  + cryptography==50.0.0
+2026-09-20T08:57:22.2696540Z  + h11==0.16.0
+2026-09-20T08:57:22.2697770Z  + hol-guard==3.0.1 (from file:///Users/runner/work/hol-guard/hol-guard)
+2026-09-20T08:57:22.2699010Z  + httpcore==1.0.9
+2026-09-20T08:57:22.2699870Z  + httpx==0.28.1
+2026-09-20T08:57:22.2700430Z  + httpx-sse==0.4.3
+2026-09-20T08:57:22.2701120Z  + idna==3.15
+2026-09-20T08:57:22.2701870Z  + importlib-metadata==8.9.0
+2026-09-20T08:57:22.2702740Z  + iniconfig==2.3.0
+2026-09-20T08:57:22.2704530Z  + jaraco-classes==3.4.0
+2026-09-20T08:57:22.2705330Z  + jaraco-context==6.1.2
+2026-09-20T08:57:22.2706230Z  + jaraco-functools==4.4.0
+2026-09-20T08:57:22.2707010Z  + jsonschema==4.26.0
+2026-09-20T08:57:22.2707840Z  + jsonschema-specifications==2025.9.1
+2026-09-20T08:57:22.2708850Z  + keyring==25.7.0
+2026-09-20T08:57:22.2709910Z  + libcst==1.9.0
+2026-09-20T08:57:22.2710590Z  + linkify-it-py==2.1.0
+2026-09-20T08:57:22.2711520Z  + markdown-it-py==4.0.0
+2026-09-20T08:57:22.2712420Z  + mcp==1.28.1
+2026-09-20T08:57:22.2713110Z  + mdit-py-plugins==0.5.0
+2026-09-20T08:57:22.2713930Z  + mdurl==0.1.2
+2026-09-20T08:57:22.2714900Z  + more-itertools==11.0.1
+2026-09-20T08:57:22.2715520Z  + mutmut==3.7.0
+2026-09-20T08:57:22.2716210Z  + nodejs-wheel-binaries==24.16.0
+2026-09-20T08:57:22.2719100Z  + packaging==26.0
+2026-09-20T08:57:22.2719680Z  + platformdirs==4.9.4
+2026-09-20T08:57:22.2720250Z  + pluggy==1.6.0
+2026-09-20T08:57:22.2720740Z  + psutil==7.2.2
+2026-09-20T08:57:22.2721460Z  + publicsuffixlist==1.0.2.20260726
+2026-09-20T08:57:22.2859030Z  + pycparser==3.0
+2026-09-20T08:57:22.2859230Z  + pydantic==2.12.5
+2026-09-20T08:57:22.2859490Z  + pydantic-core==2.41.5
+2026-09-20T08:57:22.2859780Z  + pydantic-settings==2.14.1
+2026-09-20T08:57:22.2860260Z  + pygments==2.20.0
+2026-09-20T08:57:22.2860740Z  + pyjwt==2.13.0
+2026-09-20T08:57:22.2861070Z  + pyproject-hooks==1.2.0
+2026-09-20T08:57:22.2861750Z  + pytest==9.0.3
+2026-09-20T08:57:22.2861950Z  + pytest-cov==7.1.0
+2026-09-20T08:57:22.2862180Z  + python-dotenv==1.2.2
+2026-09-20T08:57:22.2862450Z  + python-multipart==0.0.32
+2026-09-20T08:57:22.2862700Z  + pyyaml==6.0.3
+2026-09-20T08:57:22.2862880Z  + referencing==0.37.0
+2026-09-20T08:57:22.2863110Z  + regex==2026.4.4
+2026-09-20T08:57:22.2863290Z  + requests==2.33.1
+2026-09-20T08:57:22.2863500Z  + rich==14.2.0
+2026-09-20T08:57:22.2863700Z  + rpds-py==0.30.0
+2026-09-20T08:57:22.2863990Z  + ruff==0.15.17
+2026-09-20T08:57:22.2864230Z  + setproctitle==1.3.7
+2026-09-20T08:57:22.2864450Z  + sse-starlette==3.4.4
+2026-09-20T08:57:22.2864750Z  + starlette==1.3.1
+2026-09-20T08:57:22.2865080Z  + textual==7.5.0
+2026-09-20T08:57:22.2865390Z  + typing-extensions==4.15.0
+2026-09-20T08:57:22.2865720Z  + typing-inspection==0.4.2
+2026-09-20T08:57:22.2866000Z  + uc-micro-py==2.0.0
+2026-09-20T08:57:22.2866500Z  + urllib3==2.7.0
+2026-09-20T08:57:22.3094550Z  + uvicorn==0.40.0
+2026-09-20T08:57:22.3094730Z  + zipp==3.23.0
+2026-09-20T08:57:22.3407960Z ##[group]Run uv run --no-sync python -m pytest -q tests/test_native_qualification_process.py
+2026-09-20T08:57:22.3409960Z [36;1muv run --no-sync python -m pytest -q tests/test_native_qualification_process.py[0m
+2026-09-20T08:57:22.3454650Z shell: /bin/bash -e {0}
+2026-09-20T08:57:22.3455080Z env:
+2026-09-20T08:57:22.3455410Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:22.3455880Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:22.3456340Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:22.3456790Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:22.3457210Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:22.3457570Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:22.3457910Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:22.3458270Z ##[endgroup]
+2026-09-20T08:57:28.8970710Z .........                                                                [100%]
+2026-09-20T08:57:28.8971740Z 9 passed in 0.34s
+2026-09-20T08:57:29.1263530Z ##[group]Run rustup toolchain install 1.88.0 --profile minimal
+2026-09-20T08:57:29.1264060Z [36;1mrustup toolchain install 1.88.0 --profile minimal[0m
+2026-09-20T08:57:29.1264490Z [36;1mrustup default 1.88.0[0m
+2026-09-20T08:57:29.1307840Z shell: /bin/bash -e {0}
+2026-09-20T08:57:29.1308050Z env:
+2026-09-20T08:57:29.1308340Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:29.1308980Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:29.1309430Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:29.1309810Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:29.1310290Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:29.1310640Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:29.1310980Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:29.1311350Z ##[endgroup]
+2026-09-20T08:57:29.2193870Z info: syncing channel updates for 1.88.0-aarch64-apple-darwin
+2026-09-20T08:57:29.5088200Z info: latest update on 2025-06-26 for version 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T08:57:29.5093590Z info: downloading 3 components
+2026-09-20T08:57:36.6331380Z 
+2026-09-20T08:57:36.8165640Z   1.88.0-aarch64-apple-darwin installed - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T08:57:36.8167010Z info: self-update is disabled for this build of rustup
+2026-09-20T08:57:36.8167670Z 
+2026-09-20T08:57:36.8168270Z info: any updates to rustup will need to be fetched with your system package manager
+2026-09-20T08:57:36.8434480Z info: using existing install for 1.88.0-aarch64-apple-darwin
+2026-09-20T08:57:36.8455610Z info: default toolchain set to 1.88.0-aarch64-apple-darwin
+2026-09-20T08:57:36.8455850Z 
+2026-09-20T08:57:36.8565270Z   1.88.0-aarch64-apple-darwin unchanged - rustc 1.88.0 (6b00bc388 2025-06-23)
+2026-09-20T08:57:36.8567330Z 
+2026-09-20T08:57:36.8750410Z ##[group]Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+2026-09-20T08:57:36.8750860Z with:
+2026-09-20T08:57:36.8751190Z   workspaces: rust
+2026-09-20T08:57:36.8751520Z   shared-key: native-wheel
+2026-09-20T08:57:36.8751880Z   save-if: false
+2026-09-20T08:57:36.8752190Z   prefix-key: v0-rust
+2026-09-20T08:57:36.8752430Z   add-job-id-key: true
+2026-09-20T08:57:36.8752800Z   add-rust-environment-hash-key: true
+2026-09-20T08:57:36.8753110Z   cache-targets: true
+2026-09-20T08:57:36.8753390Z   cache-all-crates: false
+2026-09-20T08:57:36.8753720Z   cache-workspace-crates: false
+2026-09-20T08:57:36.8754020Z   cache-provider: github
+2026-09-20T08:57:36.8754420Z   cache-bin: true
+2026-09-20T08:57:36.8757970Z   lookup-only: false
+2026-09-20T08:57:36.8758310Z   cmd-format: {0}
+2026-09-20T08:57:36.8758560Z env:
+2026-09-20T08:57:36.8758840Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:36.8759530Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:36.8760010Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:36.8760490Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:36.8760970Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:36.8761480Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:36.8761950Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:36.8762290Z ##[endgroup]
+2026-09-20T08:57:38.9274190Z ##[group]Cache Configuration
+2026-09-20T08:57:38.9274970Z Cache Provider:
+2026-09-20T08:57:38.9275370Z     github
+2026-09-20T08:57:38.9275730Z Workspaces:
+2026-09-20T08:57:38.9276240Z     /Users/runner/work/hol-guard/hol-guard/rust
+2026-09-20T08:57:38.9276720Z Cache Paths:
+2026-09-20T08:57:38.9277150Z     /Users/runner/.cargo/bin
+2026-09-20T08:57:38.9277570Z     /Users/runner/.cargo/.crates.toml
+2026-09-20T08:57:38.9278010Z     /Users/runner/.cargo/.crates2.json
+2026-09-20T08:57:38.9278470Z     /Users/runner/.cargo/registry
+2026-09-20T08:57:38.9278810Z     /Users/runner/.cargo/git
+2026-09-20T08:57:38.9279310Z     /Users/runner/work/hol-guard/hol-guard/rust/target
+2026-09-20T08:57:38.9280000Z Restore Key:
+2026-09-20T08:57:38.9280360Z     v0-rust-native-wheel-Darwin-arm64-4a5a2a97
+2026-09-20T08:57:38.9280980Z Cache Key:
+2026-09-20T08:57:38.9281490Z     v0-rust-native-wheel-Darwin-arm64-4a5a2a97-35b4366a
+2026-09-20T08:57:38.9281990Z .. Prefix:
+2026-09-20T08:57:38.9282430Z   - v0-rust-native-wheel-Darwin-arm64
+2026-09-20T08:57:38.9283050Z .. Environment considered:
+2026-09-20T08:57:38.9283780Z   - Rust Versions:
+2026-09-20T08:57:38.9284340Z     - 1.88.0 aarch64-apple-darwin 6b00bc3880198600130e1cf62b8f8a93494488cc
+2026-09-20T08:57:38.9285170Z     - 1.98.1 aarch64-apple-darwin 48a229ceaefd4985c50990b14116b6d856af0985
+2026-09-20T08:57:38.9285780Z   - CARGO_INCREMENTAL
+2026-09-20T08:57:38.9286130Z .. Lockfiles considered:
+2026-09-20T08:57:38.9286640Z   - /Users/runner/work/hol-guard/hol-guard/rust/Cargo.lock
+2026-09-20T08:57:38.9287370Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command/Cargo.toml
+2026-09-20T08:57:38.9288060Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts/Cargo.toml
+2026-09-20T08:57:38.9288700Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core/Cargo.toml
+2026-09-20T08:57:38.9289470Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-offline-regex-pilot/Cargo.toml
+2026-09-20T08:57:38.9290300Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot/Cargo.toml
+2026-09-20T08:57:38.9291050Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract/Cargo.toml
+2026-09-20T08:57:38.9291700Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules/Cargo.toml
+2026-09-20T08:57:38.9292340Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process/Cargo.toml
+2026-09-20T08:57:38.9294000Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime/Cargo.toml
+2026-09-20T08:57:38.9294830Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner/Cargo.toml
+2026-09-20T08:57:38.9295420Z   - /Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs/Cargo.toml
+2026-09-20T08:57:38.9309330Z   - /Users/runner/work/hol-guard/hol-guard/rust/rust-toolchain.toml
+2026-09-20T08:57:38.9309890Z ##[endgroup]
+2026-09-20T08:57:38.9310000Z 
+2026-09-20T08:57:38.9310110Z ... Restoring cache ...
+2026-09-20T08:57:39.1707350Z Cache hit for restore-key: v0-rust-native-wheel-Darwin-arm64-4a5a2a97-ae6329eb
+2026-09-20T08:57:40.2748740Z Received 46137344 of 105196343 (43.9%), 44.0 MBs/sec
+2026-09-20T08:57:40.6519110Z Received 105196343 of 105196343 (100.0%), 72.7 MBs/sec
+2026-09-20T08:57:40.6543770Z Cache Size: ~100 MB (105196343 B)
+2026-09-20T08:57:40.6629870Z [command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/df4ab30f-2017-4ef4-b245-789a8121216c/cache.tzst -P -C /Users/runner/work/hol-guard/hol-guard --delay-directory-restore --use-compress-program unzstd
+2026-09-20T08:57:41.6051120Z Cache restored successfully
+2026-09-20T08:57:41.6094270Z Restored from cache key "v0-rust-native-wheel-Darwin-arm64-4a5a2a97-ae6329eb" full match: false.
+2026-09-20T08:57:41.6230350Z ##[group]Run cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime resident_client -- --nocapture --test-threads=1
+2026-09-20T08:57:41.6231160Z [36;1mcargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime resident_client -- --nocapture --test-threads=1[0m
+2026-09-20T08:57:41.6278160Z shell: /bin/bash -e {0}
+2026-09-20T08:57:41.6278380Z env:
+2026-09-20T08:57:41.6278660Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:41.6279140Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:57:41.6279620Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:41.6280400Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:41.6280820Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:57:41.6281200Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:57:41.6281670Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:57:41.6281980Z   CACHE_ON_FAILURE: false
+2026-09-20T08:57:41.6282180Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:57:41.6282350Z ##[endgroup]
+2026-09-20T08:57:41.8214400Z     Updating crates.io index
+2026-09-20T08:57:42.8802420Z    Compiling libc v0.2.189
+2026-09-20T08:57:42.8812050Z    Compiling cfg-if v1.0.4
+2026-09-20T08:57:42.8824110Z    Compiling proc-macro2 v1.0.107
+2026-09-20T08:57:43.1876900Z    Compiling quote v1.0.47
+2026-09-20T08:57:45.6037840Z    Compiling unicode-ident v1.0.24
+2026-09-20T08:57:45.7076400Z    Compiling version_check v0.9.5
+2026-09-20T08:57:45.9408930Z    Compiling generic-array v0.14.7
+2026-09-20T08:57:46.2417230Z    Compiling typenum v1.20.1
+2026-09-20T08:57:46.2746970Z    Compiling syn v3.0.3
+2026-09-20T08:57:46.4678380Z    Compiling memchr v2.8.3
+2026-09-20T08:57:46.9379120Z    Compiling cpufeatures v0.2.17
+2026-09-20T08:57:46.9751980Z    Compiling serde_core v1.0.229
+2026-09-20T08:57:47.2011280Z    Compiling glob v0.3.4
+2026-09-20T08:57:47.2822980Z    Compiling crypto-common v0.1.7
+2026-09-20T08:57:47.3349070Z    Compiling block-buffer v0.10.4
+2026-09-20T08:57:47.4050900Z    Compiling digest v0.10.7
+2026-09-20T08:57:47.4732100Z    Compiling bitflags v2.13.1
+2026-09-20T08:57:47.5108200Z    Compiling sha2 v0.10.9
+2026-09-20T08:57:47.6502120Z    Compiling hex v0.4.3
+2026-09-20T08:57:47.6846490Z    Compiling clang-sys v1.9.1
+2026-09-20T08:57:47.9540350Z    Compiling serde v1.0.229
+2026-09-20T08:57:48.1551210Z    Compiling autocfg v1.5.1
+2026-09-20T08:57:48.4136770Z    Compiling zmij v1.0.23
+2026-09-20T08:57:48.6467400Z    Compiling serde_derive v1.0.229
+2026-09-20T08:57:48.7757920Z    Compiling memoffset v0.9.1
+2026-09-20T08:57:48.9537760Z    Compiling thiserror v2.0.20
+2026-09-20T08:57:49.1873530Z    Compiling regex-syntax v0.8.11
+2026-09-20T08:57:49.8562060Z    Compiling serde_json v1.0.151
+2026-09-20T08:57:49.9822520Z    Compiling minimal-lexical v0.2.1
+2026-09-20T08:57:50.5012800Z    Compiling cfg_aliases v0.2.2
+2026-09-20T08:57:50.5391490Z    Compiling nix v0.31.3
+2026-09-20T08:57:50.7273210Z    Compiling nom v7.1.3
+2026-09-20T08:57:50.8144050Z    Compiling regex-automata v0.4.18
+2026-09-20T08:57:52.1529200Z    Compiling thiserror-impl v2.0.20
+2026-09-20T08:57:52.3012330Z    Compiling libloading v0.8.9
+2026-09-20T08:57:52.4139500Z    Compiling bindgen v0.72.1
+2026-09-20T08:57:52.5517340Z    Compiling either v1.18.0
+2026-09-20T08:57:52.6609690Z    Compiling itoa v1.0.18
+2026-09-20T08:57:52.6809150Z    Compiling itertools v0.13.0
+2026-09-20T08:57:53.5498140Z    Compiling regex v1.13.1
+2026-09-20T08:57:53.8429200Z    Compiling cexpr v0.6.0
+2026-09-20T08:57:53.9065150Z    Compiling guard-rules v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T08:57:54.0132070Z    Compiling aho-corasick v1.1.5
+2026-09-20T08:57:54.5649830Z    Compiling syn v2.0.119
+2026-09-20T08:57:56.1451990Z    Compiling shlex v1.3.0
+2026-09-20T08:57:56.2621290Z    Compiling find-msvc-tools v0.1.11
+2026-09-20T08:57:56.5242260Z    Compiling shlex v2.0.1
+2026-09-20T08:57:56.7543170Z    Compiling rustc-hash v2.1.3
+2026-09-20T08:57:56.8103110Z    Compiling cc v1.4.4
+2026-09-20T08:58:00.7847570Z    Compiling guard-contracts v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T08:58:01.3508670Z    Compiling core-foundation-sys v0.8.7
+2026-09-20T08:58:01.5233870Z    Compiling guard-secure-fs v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T08:58:02.1562600Z    Compiling ring v0.17.14
+2026-09-20T08:58:02.4957480Z    Compiling objc2-core-foundation v0.3.2
+2026-09-20T08:58:02.9597290Z    Compiling getrandom v0.3.4
+2026-09-20T08:58:03.0685560Z    Compiling objc2-io-kit v0.3.2
+2026-09-20T08:58:03.2341690Z    Compiling libproc v0.14.11
+2026-09-20T08:58:03.3695370Z    Compiling guard-scanner v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T08:58:03.7582460Z    Compiling core-foundation v0.10.1
+2026-09-20T08:58:04.1449900Z    Compiling security-framework-sys v2.17.0
+2026-09-20T08:58:04.3262410Z    Compiling errno v0.3.14
+2026-09-20T08:58:04.4211970Z    Compiling getrandom v0.2.17
+2026-09-20T08:58:04.5317840Z    Compiling untrusted v0.9.0
+2026-09-20T08:58:04.6000970Z    Compiling security-framework v3.7.0
+2026-09-20T08:58:06.5834760Z    Compiling guard-hook-core v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T08:58:06.8390230Z    Compiling sysinfo v0.37.2
+2026-09-20T08:58:06.9574890Z    Compiling guard-policy-snapshot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T08:58:07.6611560Z    Compiling guard-command v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T08:58:08.0190480Z    Compiling guard-rule-contract v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T08:58:08.1924730Z    Compiling fs2 v0.4.3
+2026-09-20T08:58:08.2668380Z    Compiling guard-runtime-windows-process v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T08:58:11.2223740Z    Compiling hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T08:58:16.4232130Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 34.70s
+2026-09-20T08:58:16.4353410Z      Running unittests src/main.rs (rust/target/debug/deps/hol_guard_runtime-fde2845977722970)
+2026-09-20T08:58:16.4418450Z 
+2026-09-20T08:58:16.4422440Z running 22 tests
+2026-09-20T08:58:16.7000430Z test resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read ... ok
+2026-09-20T08:58:16.9655560Z test resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget ... ok
+2026-09-20T08:58:17.4578080Z test resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget ... ok
+2026-09-20T08:58:17.4579620Z test resident_client::deadline_tests::macos_closed_peer::complete_bound_response_survives_peer_close_without_changing_socket_mode ... ok
+2026-09-20T08:58:17.4580940Z test resident_client::deadline_tests::macos_closed_peer::completed_write_can_flush_after_peer_close_without_replaying_request ... ok
+2026-09-20T08:58:17.4582410Z test resident_client::deadline_tests::macos_closed_peer::expired_deadline_leaves_buffered_response_unread ... ok
+2026-09-20T08:58:17.4583600Z test resident_client::deadline_tests::macos_closed_peer::fallback_requires_exact_setter_error_and_actual_peer_hangup ... ok
+2026-09-20T08:58:17.4592360Z test resident_client::deadline_tests::macos_closed_peer::malformed_or_partial_buffered_responses_remain_fatal ... ok
+2026-09-20T08:58:17.6867820Z test resident_client::deadline_tests::progressing_backpressured_request_write_remains_bounded_and_nonretryable ... ok
+2026-09-20T08:58:18.0840590Z test resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads ... ok
+2026-09-20T08:58:18.0855210Z test resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged ... ok
+2026-09-20T08:58:18.0856440Z test resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error ... ok
+2026-09-20T08:58:18.0857300Z test resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading ... ok
+2026-09-20T08:58:18.0858140Z test resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access ... ok
+2026-09-20T08:58:18.0859110Z test resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence ... ok
+2026-09-20T08:58:18.0859910Z test resident_client::tests::partial_or_flush_request_write_is_never_retryable ... ok
+2026-09-20T08:58:18.0860600Z test resident_client::tests::rejects_non_loopback_tcp_endpoint ... ok
+2026-09-20T08:58:18.0861280Z test resident_client::tests::rejects_response_bound_to_another_request ... ok
+2026-09-20T08:58:18.0861960Z test resident_client::tests::rejects_response_digest_mismatch ... ok
+2026-09-20T08:58:18.0862710Z test resident_client::tests::response_eof_and_reset_are_never_retryable ... ok
+2026-09-20T08:58:18.0863610Z test resident_client::tests::response_teardown_after_flushed_request_is_never_retryable ... ok
+2026-09-20T08:58:18.0864570Z test resident_client::tests::truncated_server_proof_is_never_retryable ... ok
+2026-09-20T08:58:18.0865000Z 
+2026-09-20T08:58:18.0868360Z test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 163 filtered out; finished in 1.64s
+2026-09-20T08:58:18.0869170Z 
+2026-09-20T08:58:18.0981510Z ##[group]Run uv run --no-sync python -m build --wheel --outdir pure-dist
+2026-09-20T08:58:18.0982310Z [36;1muv run --no-sync python -m build --wheel --outdir pure-dist[0m
+2026-09-20T08:58:18.1039730Z shell: /bin/bash -e {0}
+2026-09-20T08:58:18.1039930Z env:
+2026-09-20T08:58:18.1040190Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:18.1040660Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:58:18.1041100Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:18.1041550Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:18.1042020Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:18.1042520Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:58:18.1042920Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:58:18.1043520Z   CACHE_ON_FAILURE: false
+2026-09-20T08:58:18.1043800Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:58:18.1044140Z ##[endgroup]
+2026-09-20T08:58:18.4864520Z * Creating isolated environment: venv+pip...
+2026-09-20T08:58:20.3001470Z * Installing packages in isolated environment:
+2026-09-20T08:58:20.3002130Z   - hatchling<1.31
+2026-09-20T08:58:21.3562360Z * Getting build dependencies for wheel...
+2026-09-20T08:58:21.5014760Z * Building wheel...
+2026-09-20T08:58:22.5930240Z Successfully built hol_guard-3.0.1-py3-none-any.whl
+2026-09-20T08:58:22.6105470Z ##[group]Run VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+2026-09-20T08:58:22.6106100Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T08:58:22.6106510Z [36;1mexport HOL_GUARD_PACKAGE_VERSION="$VERSION"[0m
+2026-09-20T08:58:22.6107040Z [36;1mcargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime[0m
+2026-09-20T08:58:22.6107610Z [36;1mrust/target/release/hol-guard-runtime self-test --json[0m
+2026-09-20T08:58:22.6145720Z shell: /bin/bash -e {0}
+2026-09-20T08:58:22.6145940Z env:
+2026-09-20T08:58:22.6146300Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:22.6146890Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:58:22.6147430Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:22.6147960Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:22.6148430Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:22.6148840Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:58:22.6149170Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:58:22.6149550Z   CACHE_ON_FAILURE: false
+2026-09-20T08:58:22.6149800Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:58:22.6150120Z   HOL_GUARD_BUILD_SHA: 6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c
+2026-09-20T08:58:22.6150500Z   MACOSX_DEPLOYMENT_TARGET: 11.0
+2026-09-20T08:58:22.6150950Z ##[endgroup]
+2026-09-20T08:58:22.9349240Z    Compiling nix v0.31.3
+2026-09-20T08:58:22.9355650Z    Compiling guard-rules v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rules)
+2026-09-20T08:58:22.9358000Z    Compiling guard-contracts v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-contracts)
+2026-09-20T08:58:23.4626500Z    Compiling guard-scanner v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-scanner)
+2026-09-20T08:58:24.4283240Z    Compiling guard-rule-contract v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-rule-contract)
+2026-09-20T08:58:24.8000280Z    Compiling guard-secure-fs v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-secure-fs)
+2026-09-20T08:58:25.8887020Z    Compiling guard-command v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-command)
+2026-09-20T08:58:26.0209180Z    Compiling guard-hook-core v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-hook-core)
+2026-09-20T08:58:26.4860510Z    Compiling guard-policy-snapshot v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-policy-snapshot)
+2026-09-20T08:58:27.3086950Z    Compiling guard-runtime-windows-process v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime-windows-process)
+2026-09-20T08:58:35.7531890Z    Compiling hol-guard-runtime v0.1.0 (/Users/runner/work/hol-guard/hol-guard/rust/crates/guard-runtime)
+2026-09-20T08:58:52.0896950Z     Finished `release` profile [optimized] target(s) in 29.31s
+2026-09-20T08:58:52.1261620Z {"capabilities":{"build_sha":"6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c","features":["post-tool-inline-v1","post-tool-source-read-v1","oneshot-v1","framed-serve-v1","resident-protocol-v2","bounded-admission-v2","overload-signal-v1","panic-containment-v1","rule-contract-v2","pre-tool-command-model-shadow-v1","resident-command-model-shadow-v1","pre-tool-command-authority-v1","pre-tool-generic-authority-v1","native-command-program-v1","native-command-control-fence-v1","policy-snapshot-v3","policy-snapshot-push-v1","policy-snapshot-resident-generation-v1","native-approval-artifact-v3","native-approval-challenge-v3","native-approval-validation-v3","native-approval-consume-v3","native-approval-webauthn-v4","native-approval-challenge-v4","native-approval-validation-v4","native-approval-consume-v4","native-approval-replay-memory-v1","native-policy-in-memory-v1","hook-envelope-v2","native-resident-client-v1","native-resident-lifecycle-v1","authenticated-unix-resident-v1"],"protocol_version":1,"rule_digest":"e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a","runtime_version":"3.0.1","target":"aarch64-macos"},"ok":true}
+2026-09-20T08:58:52.1486240Z ##[group]Run VERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)
+2026-09-20T08:58:52.1487140Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T08:58:52.1487680Z [36;1mruntime="rust/target/release/hol-guard-runtime"[0m
+2026-09-20T08:58:52.1488740Z [36;1mRULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')[0m
+2026-09-20T08:58:52.1489450Z [36;1muv run --no-sync python scripts/build_native_hol_guard_wheel.py \[0m
+2026-09-20T08:58:52.1489980Z [36;1m  --wheel "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" \[0m
+2026-09-20T08:58:52.1491300Z [36;1m  --runtime "$runtime" \[0m
+2026-09-20T08:58:52.1491680Z [36;1m  --output-dir native-dist \[0m
+2026-09-20T08:58:52.1492050Z [36;1m  --version "$VERSION" \[0m
+2026-09-20T08:58:52.1492440Z [36;1m  --platform-tag "$PLATFORM_TAG" \[0m
+2026-09-20T08:58:52.1492770Z [36;1m  --target "$TARGET" \[0m
+2026-09-20T08:58:52.1493210Z [36;1m  --source-sha "$SOURCE_SHA" \[0m
+2026-09-20T08:58:52.1493580Z [36;1m  --rule-digest "$RULE_DIGEST"[0m
+2026-09-20T08:58:52.1493920Z [36;1muv pip uninstall --python .venv/bin/python hol-guard[0m
+2026-09-20T08:58:52.1494540Z [36;1muv pip install --python .venv/bin/python --no-deps --force-reinstall native-dist/*.whl[0m
+2026-09-20T08:58:52.1495200Z [36;1munset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH[0m
+2026-09-20T08:58:52.1495770Z [36;1munset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T08:58:52.1496340Z [36;1munset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY[0m
+2026-09-20T08:58:52.1497020Z [36;1munset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE[0m
+2026-09-20T08:58:52.1497660Z [36;1munset HOL_GUARD_PYTHON_ORACLE[0m
+2026-09-20T08:58:52.1498060Z [36;1munset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON[0m
+2026-09-20T08:58:52.1498550Z [36;1munset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST[0m
+2026-09-20T08:58:52.1499160Z [36;1munset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T08:58:52.1499920Z [36;1munset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY[0m
+2026-09-20T08:58:52.1500490Z [36;1munset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE[0m
+2026-09-20T08:58:52.1501150Z [36;1munset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT[0m
+2026-09-20T08:58:52.1501770Z [36;1munset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH[0m
+2026-09-20T08:58:52.1502460Z [36;1m.venv/bin/python -I ci/native_runtime/probe_installed_runtime_identity.py --json native-installed-identity.json[0m
+2026-09-20T08:58:52.1503140Z [36;1m.venv/bin/python ci/native_runtime/probe_native_default_auto.py --json native-default-auto.json[0m
+2026-09-20T08:58:52.1503860Z [36;1m.venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json[0m
+2026-09-20T08:58:52.1556620Z shell: /bin/bash -e {0}
+2026-09-20T08:58:52.1556990Z env:
+2026-09-20T08:58:52.1557320Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:52.1557920Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:58:52.1558620Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:52.1559090Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:52.1559640Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:58:52.1560200Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:58:52.1561960Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:58:52.1565110Z   CACHE_ON_FAILURE: false
+2026-09-20T08:58:52.1566370Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:58:52.1569130Z   SOURCE_SHA: 6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c
+2026-09-20T08:58:52.1569670Z   PLATFORM_TAG: macosx_11_0_arm64
+2026-09-20T08:58:52.1570060Z   TARGET: aarch64-apple-darwin
+2026-09-20T08:58:52.1570900Z ##[endgroup]
+2026-09-20T08:58:53.4855020Z native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl
+2026-09-20T08:58:53.5836720Z Uninstalled 1 package in 39ms
+2026-09-20T08:58:53.5847030Z  - hol-guard==3.0.1 (from file:///Users/runner/work/hol-guard/hol-guard)
+2026-09-20T08:58:53.7104220Z Resolved 1 package in 21ms
+2026-09-20T08:58:53.8655060Z Prepared 1 package in 154ms
+2026-09-20T08:58:53.8857670Z Installed 1 package in 20ms
+2026-09-20T08:58:53.8865750Z  + hol-guard==3.0.1 (from file:///Users/runner/work/hol-guard/hol-guard/native-dist/hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl)
+2026-09-20T08:58:54.4581950Z {
+2026-09-20T08:58:54.4582710Z   "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+2026-09-20T08:58:54.4583150Z   "cases": [
+2026-09-20T08:58:54.4583370Z     {
+2026-09-20T08:58:54.4583770Z       "case": "steady_without_client",
+2026-09-20T08:58:54.4584260Z       "hashed_bytes": 32404992,
+2026-09-20T08:58:54.4584660Z       "result": "passed",
+2026-09-20T08:58:54.4585070Z       "validation_calls": 3
+2026-09-20T08:58:54.4585450Z     },
+2026-09-20T08:58:54.4585780Z     {
+2026-09-20T08:58:54.4586010Z       "case": "fresh_child",
+2026-09-20T08:58:54.4586360Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4586740Z       "result": "passed",
+2026-09-20T08:58:54.4587110Z       "validation_calls": 0
+2026-09-20T08:58:54.4587420Z     },
+2026-09-20T08:58:54.4588080Z     {
+2026-09-20T08:58:54.4603140Z       "case": "steady_with_client",
+2026-09-20T08:58:54.4603740Z       "hashed_bytes": 32404992,
+2026-09-20T08:58:54.4604090Z       "result": "passed",
+2026-09-20T08:58:54.4604360Z       "validation_calls": 3
+2026-09-20T08:58:54.4604570Z     },
+2026-09-20T08:58:54.4604730Z     {
+2026-09-20T08:58:54.4604950Z       "case": "death_before_restart",
+2026-09-20T08:58:54.4605230Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4605600Z       "result": "passed",
+2026-09-20T08:58:54.4605970Z       "validation_calls": 0
+2026-09-20T08:58:54.4606290Z     },
+2026-09-20T08:58:54.4606500Z     {
+2026-09-20T08:58:54.4606750Z       "case": "live_replacement",
+2026-09-20T08:58:54.4606980Z       "result": "replaced"
+2026-09-20T08:58:54.4607190Z     },
+2026-09-20T08:58:54.4607500Z     {
+2026-09-20T08:58:54.4607760Z       "case": "replacement_first_status",
+2026-09-20T08:58:54.4608240Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4608610Z       "result": "passed",
+2026-09-20T08:58:54.4608860Z       "validation_calls": 1
+2026-09-20T08:58:54.4609090Z     },
+2026-09-20T08:58:54.4609330Z     {
+2026-09-20T08:58:54.4609530Z       "case": "replacement_fresh_child",
+2026-09-20T08:58:54.4609760Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4610060Z       "result": "passed",
+2026-09-20T08:58:54.4610360Z       "validation_calls": 0
+2026-09-20T08:58:54.4610600Z     },
+2026-09-20T08:58:54.4610800Z     {
+2026-09-20T08:58:54.4611060Z       "case": "source_sha_mismatch",
+2026-09-20T08:58:54.4611320Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4611580Z       "result": "passed",
+2026-09-20T08:58:54.4611860Z       "validation_calls": 1
+2026-09-20T08:58:54.4612110Z     },
+2026-09-20T08:58:54.4612320Z     {
+2026-09-20T08:58:54.4612550Z       "case": "source_sha_restoration",
+2026-09-20T08:58:54.4612940Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4613240Z       "result": "passed",
+2026-09-20T08:58:54.4613570Z       "validation_calls": 1
+2026-09-20T08:58:54.4613800Z     },
+2026-09-20T08:58:54.4614080Z     {
+2026-09-20T08:58:54.4614360Z       "case": "source_sha_restoration_child",
+2026-09-20T08:58:54.4614740Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4615080Z       "result": "passed",
+2026-09-20T08:58:54.4615410Z       "validation_calls": 0
+2026-09-20T08:58:54.4615740Z     },
+2026-09-20T08:58:54.4615940Z     {
+2026-09-20T08:58:54.4616310Z       "case": "package_version_mismatch",
+2026-09-20T08:58:54.4617410Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4617650Z       "result": "passed",
+2026-09-20T08:58:54.4618030Z       "validation_calls": 1
+2026-09-20T08:58:54.4618310Z     },
+2026-09-20T08:58:54.4618550Z     {
+2026-09-20T08:58:54.4618790Z       "case": "package_version_restoration",
+2026-09-20T08:58:54.4619090Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4619540Z       "result": "passed",
+2026-09-20T08:58:54.4619780Z       "validation_calls": 1
+2026-09-20T08:58:54.4620010Z     },
+2026-09-20T08:58:54.4620160Z     {
+2026-09-20T08:58:54.4620390Z       "case": "package_version_restoration_child",
+2026-09-20T08:58:54.4620630Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4620810Z       "result": "passed",
+2026-09-20T08:58:54.4621100Z       "validation_calls": 0
+2026-09-20T08:58:54.4621300Z     },
+2026-09-20T08:58:54.4621430Z     {
+2026-09-20T08:58:54.4621690Z       "case": "same_size_restored_mtime_corruption",
+2026-09-20T08:58:54.4622060Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4622280Z       "result": "passed",
+2026-09-20T08:58:54.4622480Z       "validation_calls": 1
+2026-09-20T08:58:54.4622680Z     },
+2026-09-20T08:58:54.4622850Z     {
+2026-09-20T08:58:54.4623100Z       "case": "original_artifact_restoration",
+2026-09-20T08:58:54.4623410Z       "hashed_bytes": 10801664,
+2026-09-20T08:58:54.4623610Z       "result": "passed",
+2026-09-20T08:58:54.4623820Z       "validation_calls": 1
+2026-09-20T08:58:54.4624000Z     },
+2026-09-20T08:58:54.4624140Z     {
+2026-09-20T08:58:54.4624340Z       "case": "restoration_fresh_child",
+2026-09-20T08:58:54.4624570Z       "hashed_bytes": 0,
+2026-09-20T08:58:54.4624800Z       "result": "passed",
+2026-09-20T08:58:54.4625060Z       "validation_calls": 0
+2026-09-20T08:58:54.4625280Z     },
+2026-09-20T08:58:54.4625430Z     {
+2026-09-20T08:58:54.4625640Z       "case": "retired_client_status",
+2026-09-20T08:58:54.4625900Z       "hashed_bytes": 32404992,
+2026-09-20T08:58:54.4626110Z       "result": "passed",
+2026-09-20T08:58:54.4626320Z       "validation_calls": 3
+2026-09-20T08:58:54.4626510Z     }
+2026-09-20T08:58:54.4626670Z   ],
+2026-09-20T08:58:54.4626900Z   "cross_release_upgrade_rollback": "not_exercised",
+2026-09-20T08:58:54.4627430Z   "identity_module_sha256": "c5d4dbd104038d66b9d75197ca186d4fd55fd1bcca52b66eaa61142dbc0774fe",
+2026-09-20T08:58:54.4627840Z   "machine": "arm64",
+2026-09-20T08:58:54.4628240Z   "manifest_sha256": "608cb9ca7dd2aa69a746bc0595b7472b4eadd466e6075245edd77c30c000a126",
+2026-09-20T08:58:54.4628620Z   "package_version": "3.0.1",
+2026-09-20T08:58:54.4628840Z   "platform": "darwin",
+2026-09-20T08:58:54.4629240Z   "runtime_module_sha256": "a2307e3ff183ecfdb61d73dd04e8dc39e04b7a3ca426de5b59d2c4964edf1d55",
+2026-09-20T08:58:54.4629850Z   "runtime_sha256": "0f104127ed9ee44fcfe8105daa262feb7bc7062fbcc852360e7d894a7123bc18",
+2026-09-20T08:58:54.4630260Z   "runtime_size": 10801664,
+2026-09-20T08:58:54.4630550Z   "schema": "hol-guard.installed-runtime-identity.v1",
+2026-09-20T08:58:54.4630880Z   "scope": "installed_status_and_real_stdio_child",
+2026-09-20T08:58:54.4631180Z   "signing_qualification": "not_exercised"
+2026-09-20T08:58:54.4631430Z }
+2026-09-20T08:59:04.7505980Z {"command_authority_fixture": {"enrollment_flow": "not_exercised", "provisioning": "isolated_ci_generated_key_empty_authority", "verified_health": "protected"}, "corpus_decisions": 21, "corpus_scope": "normalized_daemon_ingress", "default_mode": "auto", "evidence_failure_diagnostics": {"all_evidence": {}, "native_receipts": {}}, "fail_safe_decisions": 0, "fast_path": "enabled", "mode_invariants": {"off": {"decision": null, "python_oracle": false, "reason_code": "native_hook_disabled"}, "shadow": {"decision": null, "python_oracle": false, "reason_code": "native_shadow_diagnostic_disabled"}}, "oneshot_decisions": 0, "python_semantic_decisions": 0, "reason_code_counts": {"native_policy_warning": 15}, "receipt_metrics": {"accepted": 21, "deduped": 0, "dropped": 0, "durable_pending": 0, "failures": 0, "processed": 21}, "resident_decisions": 21, "resident_share": 1.0, "rollback": "off", "route_receipts": [{"event": "PreToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PostToolUse", "harness": "claude-code", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cline", "route": "native_resident"}, {"event": "PreToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PostToolUse", "harness": "codex", "route": "native_resident"}, {"event": "PreToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PostToolUse", "harness": "copilot", "route": "native_resident"}, {"event": "PreToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PostToolUse", "harness": "cursor", "route": "native_resident"}, {"event": "PreToolUse", "harness": "grok", "route": "native_resident"}, {"event": "PreToolUse", "harness": "hermes", "route": "native_resident"}, {"event": "PreToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "kimi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PostToolUse", "harness": "omp", "route": "native_resident"}, {"event": "PreToolUse", "harness": "openclaw", "route": "native_resident"}, {"event": "PreToolUse", "harness": "opencode", "route": "native_resident"}, {"event": "PreToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PostToolUse", "harness": "pi", "route": "native_resident"}, {"event": "PreToolUse", "harness": "zcode", "route": "native_resident"}], "runtime_reason": "native_ready", "schema": "hol-guard.native-default-installed-receipt.v1", "target": "aarch64-macos"}
+2026-09-20T08:59:11.0657120Z {"cleanup": "authenticated_daemon_stop_then_native_resident_stop", "daemon": "scoped-installed-GuardDaemonServer", "execution_path": "unmodified-generated-extension-via-scoped-installed-daemon-native-resident", "generated_extension": {"harness": "omp", "malformed_result_cases": {"negative-empty": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-malformed": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-mismatch-proof": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-missing-decision": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-missing-proof": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-nonzero-allow": {"cli_invocations": 1, "is_error": true, "observe_mode": null, "preserved": false}, "negative-observe": {"cli_invocations": 1, "is_error": false, "observe_mode": true, "preserved": true}}, "real_cases": {"empty": {"chars": 0, "daemon_response": {"case_id": "empty", "chars": 0, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "status": 200}, "excerpt_chars": 0, "input_content_unchanged": true, "preserved": true, "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}, "large-nonsource": {"chars": 15000, "daemon_response": {"case_id": "large-nonsource", "chars": 15000, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506", "sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506", "status": 200}, "excerpt_chars": 12000, "input_content_unchanged": true, "preserved": true, "sha256": "46c1ad0c0e118fce3100ca08c8502dc618838adf369c90057736a082fd20d506"}, "multiblock-crlf-unicode": {"chars": 27, "daemon_response": {"case_id": "multiblock-crlf-unicode", "chars": 27, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f", "sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f", "status": 200}, "excerpt_chars": 27, "input_content_unchanged": true, "preserved": true, "sha256": "1b14971c5461779d630b747e81d6b5ca91a7697239b49a344045ba7294534c9f"}, "small": {"chars": 18, "daemon_response": {"case_id": "small", "chars": 18, "decision": "allow", "method": "POST", "model_output_action": "allow_original", "pathname": "/v1/hooks/omp", "preserved": true, "reviewed_output_sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3", "sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3", "status": 200}, "excerpt_chars": 18, "input_content_unchanged": true, "preserved": true, "sha256": "75884cb89878f8c291a656516abe968b76ce5dcaa19c9504a1e688190312cbf3"}}}, "native_prerequisite": "default-auto-status-checked", "native_route_metrics": {"native_resident": 4}, "package_origin_kind": "non-editable-distribution-manifest", "package_version": "3.0.1", "runtime": {"build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c", "mode": "auto", "reason": "native_ready", "runtime_sha256": "0f104127ed9ee44fcfe8105daa262feb7bc7062fbcc852360e7d894a7123bc18", "runtime_version": "3.0.1", "target": "aarch64-macos"}, "schema": "hol-guard.installed-pi-native-output.v1", "source_checkout_import": false, "source_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c", "workflow_order": "after-native-default-auto-probe"}
+2026-09-20T08:59:11.2401850Z ##[group]Run unset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH
+2026-09-20T08:59:11.2403760Z [36;1munset HOL_GUARD_NATIVE HOL_GUARD_NATIVE_BINARY HOL_GUARD_HOOK_FAST_PATH[0m
+2026-09-20T08:59:11.2405230Z [36;1munset HOL_GUARD_NATIVE_MODE HOL_GUARD_NATIVE_ORACLE HOL_GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T08:59:11.2406740Z [36;1munset HOL_GUARD_HOOK_FAST_PATH_SHADOW HOL_GUARD_HOOK_SOURCE_REF HOL_GUARD_HOOK_BINARY[0m
+2026-09-20T08:59:11.2408650Z [36;1munset HOL_GUARD_FAST_PATH HOL_GUARD_BINARY HOL_GUARD_ORACLE HOL_GUARD_DIAGNOSTIC HOL_GUARD_TEST_MODE[0m
+2026-09-20T08:59:11.2410420Z [36;1munset HOL_GUARD_TEST_KEYRING_FILE HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON[0m
+2026-09-20T08:59:11.2411580Z [36;1munset HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST[0m
+2026-09-20T08:59:11.2413040Z [36;1munset GUARD_NATIVE GUARD_NATIVE_BINARY GUARD_NATIVE_MODE GUARD_NATIVE_ORACLE GUARD_NATIVE_DIAGNOSTIC[0m
+2026-09-20T08:59:11.2415020Z [36;1munset GUARD_HOOK_FAST_PATH GUARD_HOOK_FAST_PATH_SHADOW GUARD_HOOK_SOURCE_REF GUARD_HOOK_BINARY[0m
+2026-09-20T08:59:11.2416650Z [36;1munset GUARD_FAST_PATH GUARD_BINARY GUARD_ORACLE GUARD_DIAGNOSTIC GUARD_TEST_MODE[0m
+2026-09-20T08:59:11.2418140Z [36;1munset GUARD_TEST_KEYRING_FILE GUARD_TEST_SYNC_AUTH_CONTEXT_JSON GUARD_PYTEST_DURATION_OUTPUT[0m
+2026-09-20T08:59:11.2419620Z [36;1munset PYTEST_CURRENT_TEST PYTEST_ADDOPTS PYTEST_PLUGINS PYTHONPATH[0m
+2026-09-20T08:59:11.2422320Z [36;1mruntime=$(.venv/bin/python -c 'from codex_plugin_scanner.guard.native_runtime import native_runtime_status; status = native_runtime_status(); assert status.identity is not None; print(status.identity.path)')[0m
+2026-09-20T08:59:11.2424720Z [36;1m.venv/bin/python scripts/bench_guard_native_installed_slo.py \[0m
+2026-09-20T08:59:11.2425650Z [36;1m  --runtime "$runtime" \[0m
+2026-09-20T08:59:11.2426540Z [36;1m  --warm-iterations 2 \[0m
+2026-09-20T08:59:11.2427270Z [36;1m  --cold-iterations 2 \[0m
+2026-09-20T08:59:11.2428000Z [36;1m  --recovery-iterations 2 \[0m
+2026-09-20T08:59:11.2428960Z [36;1m  --readiness-samples 2 \[0m
+2026-09-20T08:59:11.2429850Z [36;1m  --json native-installed-slo.json \[0m
+2026-09-20T08:59:11.2430640Z [36;1m  --enforce[0m
+2026-09-20T08:59:11.2431570Z [36;1mVERSION=$(uv run --no-sync python scripts/sync_repo_version.py --check)[0m
+2026-09-20T08:59:11.2432780Z [36;1mcp "pure-dist/hol_guard-${VERSION}-py3-none-any.whl" native-dist/[0m
+2026-09-20T08:59:11.2434290Z [36;1mSOURCE_SHA="${GITHUB_SHA:?missing GitHub source SHA}"[0m
+2026-09-20T08:59:11.2435340Z [36;1mruntime="rust/target/release/hol-guard-runtime"[0m
+2026-09-20T08:59:11.2436740Z [36;1mRULE_DIGEST=$("$runtime" capabilities --json | python -c 'import json,sys; print(json.load(sys.stdin)["rule_digest"])')[0m
+2026-09-20T08:59:11.2438930Z [36;1muv run --no-sync python scripts/ci/validate_release_artifacts.py \[0m
+2026-09-20T08:59:11.2441070Z [36;1m  --dist-dir native-dist \[0m
+2026-09-20T08:59:11.2442020Z [36;1m  --version "$VERSION" \[0m
+2026-09-20T08:59:11.2442740Z [36;1m  --source-sha "$SOURCE_SHA" \[0m
+2026-09-20T08:59:11.2443760Z [36;1m  --rule-digest "$RULE_DIGEST" \[0m
+2026-09-20T08:59:11.2445230Z [36;1m  --platform "$PLATFORM_TAG" \[0m
+2026-09-20T08:59:11.2446440Z [36;1m  --windows-waiver "validated by the platform matrix" \[0m
+2026-09-20T08:59:11.2447000Z [36;1m  --output native-artifact-evidence.json[0m
+2026-09-20T08:59:11.2491280Z shell: /bin/bash -e {0}
+2026-09-20T08:59:11.2491590Z env:
+2026-09-20T08:59:11.2492360Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:11.2493010Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:59:11.2493530Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:11.2493970Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:11.2494540Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:11.2495490Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:59:11.2495950Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:59:11.2496310Z   CACHE_ON_FAILURE: false
+2026-09-20T08:59:11.2496600Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:59:11.2496900Z   MACOSX_DEPLOYMENT_TARGET: 11.0
+2026-09-20T08:59:11.2497160Z   PLATFORM_TAG: macosx_11_0_arm64
+2026-09-20T08:59:11.2497540Z   NATIVE_STOP_DIAGNOSTIC_PATH: native-stop-diagnostic.json
+2026-09-20T08:59:11.2497920Z ##[endgroup]
+2026-09-20T08:59:42.8967540Z {
+2026-09-20T08:59:42.8968180Z   "concurrency": {
+2026-09-20T08:59:42.8968570Z     "sixteen": {
+2026-09-20T08:59:42.8968950Z       "deadline_ms": 1000.0,
+2026-09-20T08:59:42.8969260Z       "errors": 0,
+2026-09-20T08:59:42.8969610Z       "latency": {
+2026-09-20T08:59:42.8969920Z         "count": 16,
+2026-09-20T08:59:42.8970510Z         "max_ms": 418.547,
+2026-09-20T08:59:42.8970900Z         "p50_ms": 251.27,
+2026-09-20T08:59:42.8971260Z         "p95_ms": 418.547,
+2026-09-20T08:59:42.8971750Z         "p99_ms": 418.547
+2026-09-20T08:59:42.8972150Z       },
+2026-09-20T08:59:42.8972620Z       "native_overloads": 0,
+2026-09-20T08:59:42.8973050Z       "overloaded": 0,
+2026-09-20T08:59:42.8973620Z       "route_attribution": "isolated_batch_counter_conservation",
+2026-09-20T08:59:42.8974160Z       "routes": {
+2026-09-20T08:59:42.8974620Z         "native_resident": 16
+2026-09-20T08:59:42.8974940Z       }
+2026-09-20T08:59:42.8975310Z     },
+2026-09-20T08:59:42.8975660Z     "sixty_four": {
+2026-09-20T08:59:42.8975970Z       "bounded": true,
+2026-09-20T08:59:42.8976390Z       "errors": 0,
+2026-09-20T08:59:42.8976690Z       "fail_safe": 0,
+2026-09-20T08:59:42.8977110Z       "latency": {
+2026-09-20T08:59:42.8977430Z         "count": 64,
+2026-09-20T08:59:42.8977760Z         "max_ms": 515.843,
+2026-09-20T08:59:42.8978130Z         "p50_ms": 235.422,
+2026-09-20T08:59:42.8978410Z         "p95_ms": 483.552,
+2026-09-20T08:59:42.8978810Z         "p99_ms": 515.843
+2026-09-20T08:59:42.8979170Z       },
+2026-09-20T08:59:42.8979570Z       "latency_ceiling_ms": null,
+2026-09-20T08:59:42.8979910Z       "native_overloads": 0,
+2026-09-20T08:59:42.8980270Z       "overloaded": 28,
+2026-09-20T08:59:42.8980760Z       "route_attribution": "isolated_batch_counter_conservation",
+2026-09-20T08:59:42.8981200Z       "routes": {
+2026-09-20T08:59:42.8981530Z         "engine_bypassed": 28,
+2026-09-20T08:59:42.8981930Z         "native_resident": 36
+2026-09-20T08:59:42.8982320Z       }
+2026-09-20T08:59:42.8982560Z     }
+2026-09-20T08:59:42.8982890Z   },
+2026-09-20T08:59:42.8983240Z   "corpus": {
+2026-09-20T08:59:42.8983720Z     "corpus_origin": "installed_wheel_ownership_contract",
+2026-09-20T08:59:42.8984150Z     "fail_safe_decisions": 0,
+2026-09-20T08:59:42.8984570Z     "fail_safe_rate": 0.0,
+2026-09-20T08:59:42.8984980Z     "harnesses": 13,
+2026-09-20T08:59:42.8985280Z     "installed": {
+2026-09-20T08:59:42.8994150Z       "fail_safe": 0,
+2026-09-20T08:59:42.8994520Z       "oneshot": 0,
+2026-09-20T08:59:42.8994890Z       "python_semantic": 0,
+2026-09-20T08:59:42.8995260Z       "python_semantic_decisions": 0,
+2026-09-20T08:59:42.8995660Z       "resident": 21,
+2026-09-20T08:59:42.8996100Z       "routes": 21
+2026-09-20T08:59:42.8996460Z     },
+2026-09-20T08:59:42.8996710Z     "observations": 146,
+2026-09-20T08:59:42.8997120Z     "oneshot_decisions": 0,
+2026-09-20T08:59:42.8997610Z     "python_fallback_decisions": 0,
+2026-09-20T08:59:42.8998010Z     "python_semantic_decisions": 0,
+2026-09-20T08:59:42.8998530Z     "resident_share": 1.0,
+2026-09-20T08:59:42.8998880Z     "route_corpus": "installed_routes",
+2026-09-20T08:59:42.8999250Z     "routes": 21,
+2026-09-20T08:59:42.8999690Z     "rss_baseline_bytes": 663453696,
+2026-09-20T08:59:42.9000120Z     "rss_growth": 0.010471,
+2026-09-20T08:59:42.9000600Z     "rss_peak_bytes": 670400512,
+2026-09-20T08:59:42.9001020Z     "safe_failure_rate": 0.0,
+2026-09-20T08:59:42.9001350Z     "safe_failures": 0,
+2026-09-20T08:59:42.9001760Z     "safe_failures_by_size": {},
+2026-09-20T08:59:42.9002190Z     "security_denials": 28,
+2026-09-20T08:59:42.9006500Z     "security_denials_by_size": {
+2026-09-20T08:59:42.9007120Z       "1k": 28
+2026-09-20T08:59:42.9007500Z     },
+2026-09-20T08:59:42.9007880Z     "warm_failures": 0
+2026-09-20T08:59:42.9008230Z   },
+2026-09-20T08:59:42.9008590Z   "errors_16": 0,
+2026-09-20T08:59:42.9008990Z   "errors_64": 0,
+2026-09-20T08:59:42.9009320Z   "evidence_class": "smoke",
+2026-09-20T08:59:42.9009720Z   "gates": {
+2026-09-20T08:59:42.9010100Z     "1m_latency": true,
+2026-09-20T08:59:42.9010520Z     "250k_latency": true,
+2026-09-20T08:59:42.9010850Z     "5m_latency": true,
+2026-09-20T08:59:42.9011260Z     "cold_latency": true,
+2026-09-20T08:59:42.9011710Z     "concurrency": true,
+2026-09-20T08:59:42.9012180Z     "concurrency_64_bounded": true,
+2026-09-20T08:59:42.9012530Z     "installed_corpus": true,
+2026-09-20T08:59:42.9012940Z     "python_fallback": true,
+2026-09-20T08:59:42.9013360Z     "readiness": true,
+2026-09-20T08:59:42.9013780Z     "recovery_latency": true,
+2026-09-20T08:59:42.9014200Z     "resident_share": true,
+2026-09-20T08:59:42.9014580Z     "rss": true,
+2026-09-20T08:59:42.9014960Z     "safe_corpus": true,
+2026-09-20T08:59:42.9015320Z     "warm_latency": true
+2026-09-20T08:59:42.9015750Z   },
+2026-09-20T08:59:42.9016130Z   "installed_launcher": {
+2026-09-20T08:59:42.9016510Z     "boundary": "INSTALLED_LAUNCHER",
+2026-09-20T08:59:42.9016980Z     "cases_validated": [
+2026-09-20T08:59:42.9017530Z       "benign",
+2026-09-20T08:59:42.9017880Z       "redacted"
+2026-09-20T08:59:42.9018120Z     ],
+2026-09-20T08:59:42.9018460Z     "configuration": "registered_argv",
+2026-09-20T08:59:42.9018860Z     "event": "PostToolUse",
+2026-09-20T08:59:42.9019330Z     "evidence_class": "smoke",
+2026-09-20T08:59:42.9019660Z     "harness": "claude-code",
+2026-09-20T08:59:42.9020070Z     "latency": {
+2026-09-20T08:59:42.9020500Z       "count": 2,
+2026-09-20T08:59:42.9020780Z       "max_ms": 298.961,
+2026-09-20T08:59:42.9021310Z       "p50_ms": 237.551,
+2026-09-20T08:59:42.9021700Z       "p95_ms": 298.961,
+2026-09-20T08:59:42.9022150Z       "p99_ms": 298.961
+2026-09-20T08:59:42.9022430Z     },
+2026-09-20T08:59:42.9022840Z     "process_startup_included": true,
+2026-09-20T08:59:42.9023300Z     "qualification_complete": false,
+2026-09-20T08:59:42.9023700Z     "remaining_routes": "not_measured",
+2026-09-20T08:59:42.9024200Z     "stdout_and_exit_checked": true
+2026-09-20T08:59:42.9024620Z   },
+2026-09-20T08:59:42.9025000Z   "latency": {
+2026-09-20T08:59:42.9025320Z     "boundary": "DAEMON_INGRESS",
+2026-09-20T08:59:42.9025750Z     "cold_native_oneshot": {
+2026-09-20T08:59:42.9026130Z       "count": 2,
+2026-09-20T08:59:42.9026590Z       "max_ms": 19.644,
+2026-09-20T08:59:42.9026910Z       "p50_ms": 16.79,
+2026-09-20T08:59:42.9027350Z       "p95_ms": 19.644,
+2026-09-20T08:59:42.9027710Z       "p99_ms": 19.644
+2026-09-20T08:59:42.9028010Z     },
+2026-09-20T08:59:42.9028770Z     "readiness": {
+2026-09-20T08:59:42.9029120Z       "count": 2,
+2026-09-20T08:59:42.9029490Z       "max_ms": 0.041,
+2026-09-20T08:59:42.9029780Z       "p50_ms": 0.04,
+2026-09-20T08:59:42.9030170Z       "p95_ms": 0.041,
+2026-09-20T08:59:42.9030570Z       "p99_ms": 0.041
+2026-09-20T08:59:42.9030870Z     },
+2026-09-20T08:59:42.9031260Z     "resident_recovery": {
+2026-09-20T08:59:42.9031790Z       "count": 2,
+2026-09-20T08:59:42.9032170Z       "max_ms": 291.87,
+2026-09-20T08:59:42.9032570Z       "p50_ms": 286.492,
+2026-09-20T08:59:42.9032960Z       "p95_ms": 291.87,
+2026-09-20T08:59:42.9033330Z       "p99_ms": 291.87
+2026-09-20T08:59:42.9033610Z     },
+2026-09-20T08:59:42.9033980Z     "size_classes": {
+2026-09-20T08:59:42.9034350Z       "1k": {
+2026-09-20T08:59:42.9034630Z         "count": 122,
+2026-09-20T08:59:42.9035000Z         "max_ms": 515.843,
+2026-09-20T08:59:42.9035420Z         "p50_ms": 204.341,
+2026-09-20T08:59:42.9035780Z         "p95_ms": 473.14,
+2026-09-20T08:59:42.9036060Z         "p99_ms": 514.695
+2026-09-20T08:59:42.9036410Z       },
+2026-09-20T08:59:42.9036720Z       "1m": {
+2026-09-20T08:59:42.9037100Z         "count": 8,
+2026-09-20T08:59:42.9037740Z         "max_ms": 76.52,
+2026-09-20T08:59:42.9038200Z         "p50_ms": 58.864,
+2026-09-20T08:59:42.9038570Z         "p95_ms": 76.52,
+2026-09-20T08:59:42.9038850Z         "p99_ms": 76.52
+2026-09-20T08:59:42.9039230Z       },
+2026-09-20T08:59:42.9039540Z       "250k": {
+2026-09-20T08:59:42.9039910Z         "count": 8,
+2026-09-20T08:59:42.9040170Z         "max_ms": 89.469,
+2026-09-20T08:59:42.9040530Z         "p50_ms": 67.5,
+2026-09-20T08:59:42.9040890Z         "p95_ms": 89.469,
+2026-09-20T08:59:42.9041190Z         "p99_ms": 89.469
+2026-09-20T08:59:42.9041550Z       },
+2026-09-20T08:59:42.9041890Z       "5m": {
+2026-09-20T08:59:42.9042290Z         "count": 8,
+2026-09-20T08:59:42.9042590Z         "max_ms": 206.477,
+2026-09-20T08:59:42.9042960Z         "p50_ms": 156.917,
+2026-09-20T08:59:42.9043340Z         "p95_ms": 206.477,
+2026-09-20T08:59:42.9043720Z         "p99_ms": 206.477
+2026-09-20T08:59:42.9043980Z       }
+2026-09-20T08:59:42.9044290Z     },
+2026-09-20T08:59:42.9044670Z     "warm_all_harnesses": {
+2026-09-20T08:59:42.9044990Z       "count": 42,
+2026-09-20T08:59:42.9045340Z       "max_ms": 80.344,
+2026-09-20T08:59:42.9045710Z       "p50_ms": 44.162,
+2026-09-20T08:59:42.9046100Z       "p95_ms": 74.982,
+2026-09-20T08:59:42.9046410Z       "p99_ms": 80.344
+2026-09-20T08:59:42.9046760Z     },
+2026-09-20T08:59:42.9047110Z     "warm_by_event": {
+2026-09-20T08:59:42.9047410Z       "PostToolUse": {
+2026-09-20T08:59:42.9047790Z         "count": 16,
+2026-09-20T08:59:42.9048140Z         "max_ms": 80.344,
+2026-09-20T08:59:42.9048550Z         "p50_ms": 46.842,
+2026-09-20T08:59:42.9048880Z         "p95_ms": 80.344,
+2026-09-20T08:59:42.9049270Z         "p99_ms": 80.344
+2026-09-20T08:59:42.9049620Z       },
+2026-09-20T08:59:42.9049990Z       "PreToolUse": {
+2026-09-20T08:59:42.9080930Z         "count": 26,
+2026-09-20T08:59:42.9081390Z         "max_ms": 75.439,
+2026-09-20T08:59:42.9081900Z         "p50_ms": 42.874,
+2026-09-20T08:59:42.9082220Z         "p95_ms": 74.982,
+2026-09-20T08:59:42.9082630Z         "p99_ms": 75.439
+2026-09-20T08:59:42.9082930Z       }
+2026-09-20T08:59:42.9083090Z     },
+2026-09-20T08:59:42.9083280Z     "warm_by_route": {
+2026-09-20T08:59:42.9083530Z       "claude-code.PostToolUse": {
+2026-09-20T08:59:42.9083830Z         "count": 2,
+2026-09-20T08:59:42.9084200Z         "max_ms": 80.344,
+2026-09-20T08:59:42.9084490Z         "p50_ms": 55.868,
+2026-09-20T08:59:42.9084710Z         "p95_ms": 80.344,
+2026-09-20T08:59:42.9085160Z         "p99_ms": 80.344
+2026-09-20T08:59:42.9085450Z       },
+2026-09-20T08:59:42.9085860Z       "claude-code.PreToolUse": {
+2026-09-20T08:59:42.9086200Z         "count": 2,
+2026-09-20T08:59:42.9086520Z         "max_ms": 69.595,
+2026-09-20T08:59:42.9086730Z         "p50_ms": 47.783,
+2026-09-20T08:59:42.9087010Z         "p95_ms": 69.595,
+2026-09-20T08:59:42.9087340Z         "p99_ms": 69.595
+2026-09-20T08:59:42.9088140Z       },
+2026-09-20T08:59:42.9088410Z       "cline.PostToolUse": {
+2026-09-20T08:59:42.9088650Z         "count": 2,
+2026-09-20T08:59:42.9088910Z         "max_ms": 47.037,
+2026-09-20T08:59:42.9089130Z         "p50_ms": 40.917,
+2026-09-20T08:59:42.9089400Z         "p95_ms": 47.037,
+2026-09-20T08:59:42.9089720Z         "p99_ms": 47.037
+2026-09-20T08:59:42.9090000Z       },
+2026-09-20T08:59:42.9090250Z       "cline.PreToolUse": {
+2026-09-20T08:59:42.9090530Z         "count": 2,
+2026-09-20T08:59:42.9090770Z         "max_ms": 64.409,
+2026-09-20T08:59:42.9090980Z         "p50_ms": 47.873,
+2026-09-20T08:59:42.9091190Z         "p95_ms": 64.409,
+2026-09-20T08:59:42.9091390Z         "p99_ms": 64.409
+2026-09-20T08:59:42.9091590Z       },
+2026-09-20T08:59:42.9091770Z       "codex.PostToolUse": {
+2026-09-20T08:59:42.9092010Z         "count": 2,
+2026-09-20T08:59:42.9092220Z         "max_ms": 54.386,
+2026-09-20T08:59:42.9092430Z         "p50_ms": 51.514,
+2026-09-20T08:59:42.9092640Z         "p95_ms": 54.386,
+2026-09-20T08:59:42.9092870Z         "p99_ms": 54.386
+2026-09-20T08:59:42.9093090Z       },
+2026-09-20T08:59:42.9093280Z       "codex.PreToolUse": {
+2026-09-20T08:59:42.9093810Z         "count": 2,
+2026-09-20T08:59:42.9094030Z         "max_ms": 75.439,
+2026-09-20T08:59:42.9094250Z         "p50_ms": 55.909,
+2026-09-20T08:59:42.9094470Z         "p95_ms": 75.439,
+2026-09-20T08:59:42.9094670Z         "p99_ms": 75.439
+2026-09-20T08:59:42.9094880Z       },
+2026-09-20T08:59:42.9095110Z       "copilot.PostToolUse": {
+2026-09-20T08:59:42.9095360Z         "count": 2,
+2026-09-20T08:59:42.9095560Z         "max_ms": 60.51,
+2026-09-20T08:59:42.9095770Z         "p50_ms": 54.593,
+2026-09-20T08:59:42.9095970Z         "p95_ms": 60.51,
+2026-09-20T08:59:42.9096190Z         "p99_ms": 60.51
+2026-09-20T08:59:42.9096390Z       },
+2026-09-20T08:59:42.9096580Z       "copilot.PreToolUse": {
+2026-09-20T08:59:42.9096810Z         "count": 2,
+2026-09-20T08:59:42.9097000Z         "max_ms": 51.607,
+2026-09-20T08:59:42.9097200Z         "p50_ms": 49.791,
+2026-09-20T08:59:42.9097410Z         "p95_ms": 51.607,
+2026-09-20T08:59:42.9097700Z         "p99_ms": 51.607
+2026-09-20T08:59:42.9097910Z       },
+2026-09-20T08:59:42.9098090Z       "cursor.PostToolUse": {
+2026-09-20T08:59:42.9098330Z         "count": 2,
+2026-09-20T08:59:42.9098540Z         "max_ms": 58.914,
+2026-09-20T08:59:42.9098760Z         "p50_ms": 40.295,
+2026-09-20T08:59:42.9098960Z         "p95_ms": 58.914,
+2026-09-20T08:59:42.9099140Z         "p99_ms": 58.914
+2026-09-20T08:59:42.9099320Z       },
+2026-09-20T08:59:42.9099510Z       "cursor.PreToolUse": {
+2026-09-20T08:59:42.9099740Z         "count": 2,
+2026-09-20T08:59:42.9099910Z         "max_ms": 46.501,
+2026-09-20T08:59:42.9100140Z         "p50_ms": 43.143,
+2026-09-20T08:59:42.9100370Z         "p95_ms": 46.501,
+2026-09-20T08:59:42.9100550Z         "p99_ms": 46.501
+2026-09-20T08:59:42.9100720Z       },
+2026-09-20T08:59:42.9100870Z       "grok.PreToolUse": {
+2026-09-20T08:59:42.9101050Z         "count": 2,
+2026-09-20T08:59:42.9101260Z         "max_ms": 46.694,
+2026-09-20T08:59:42.9101480Z         "p50_ms": 45.757,
+2026-09-20T08:59:42.9101690Z         "p95_ms": 46.694,
+2026-09-20T08:59:42.9101920Z         "p99_ms": 46.694
+2026-09-20T08:59:42.9102110Z       },
+2026-09-20T08:59:42.9102310Z       "hermes.PreToolUse": {
+2026-09-20T08:59:42.9102530Z         "count": 2,
+2026-09-20T08:59:42.9102720Z         "max_ms": 43.849,
+2026-09-20T08:59:42.9102930Z         "p50_ms": 42.167,
+2026-09-20T08:59:42.9103140Z         "p95_ms": 43.849,
+2026-09-20T08:59:42.9103360Z         "p99_ms": 43.849
+2026-09-20T08:59:42.9103560Z       },
+2026-09-20T08:59:42.9103750Z       "kimi.PostToolUse": {
+2026-09-20T08:59:42.9103970Z         "count": 2,
+2026-09-20T08:59:42.9104180Z         "max_ms": 58.362,
+2026-09-20T08:59:42.9104390Z         "p50_ms": 52.505,
+2026-09-20T08:59:42.9104610Z         "p95_ms": 58.362,
+2026-09-20T08:59:42.9104980Z         "p99_ms": 58.362
+2026-09-20T08:59:42.9105170Z       },
+2026-09-20T08:59:42.9105360Z       "kimi.PreToolUse": {
+2026-09-20T08:59:42.9105780Z         "count": 2,
+2026-09-20T08:59:42.9105980Z         "max_ms": 74.982,
+2026-09-20T08:59:42.9106160Z         "p50_ms": 56.174,
+2026-09-20T08:59:42.9106380Z         "p95_ms": 74.982,
+2026-09-20T08:59:42.9106560Z         "p99_ms": 74.982
+2026-09-20T08:59:42.9106760Z       },
+2026-09-20T08:59:42.9106950Z       "omp.PostToolUse": {
+2026-09-20T08:59:42.9107160Z         "count": 2,
+2026-09-20T08:59:42.9107370Z         "max_ms": 40.742,
+2026-09-20T08:59:42.9107580Z         "p50_ms": 39.214,
+2026-09-20T08:59:42.9107800Z         "p95_ms": 40.742,
+2026-09-20T08:59:42.9108010Z         "p99_ms": 40.742
+2026-09-20T08:59:42.9108210Z       },
+2026-09-20T08:59:42.9108380Z       "omp.PreToolUse": {
+2026-09-20T08:59:42.9108610Z         "count": 2,
+2026-09-20T08:59:42.9108800Z         "max_ms": 37.624,
+2026-09-20T08:59:42.9109000Z         "p50_ms": 36.431,
+2026-09-20T08:59:42.9109200Z         "p95_ms": 37.624,
+2026-09-20T08:59:42.9109390Z         "p99_ms": 37.624
+2026-09-20T08:59:42.9109580Z       },
+2026-09-20T08:59:42.9109800Z       "openclaw.PreToolUse": {
+2026-09-20T08:59:42.9110020Z         "count": 2,
+2026-09-20T08:59:42.9110210Z         "max_ms": 40.126,
+2026-09-20T08:59:42.9110840Z         "p50_ms": 37.225,
+2026-09-20T08:59:42.9111090Z         "p95_ms": 40.126,
+2026-09-20T08:59:42.9111300Z         "p99_ms": 40.126
+2026-09-20T08:59:42.9111500Z       },
+2026-09-20T08:59:42.9111700Z       "opencode.PreToolUse": {
+2026-09-20T08:59:42.9111990Z         "count": 2,
+2026-09-20T08:59:42.9112360Z         "max_ms": 50.241,
+2026-09-20T08:59:42.9112660Z         "p50_ms": 46.07,
+2026-09-20T08:59:42.9112910Z         "p95_ms": 50.241,
+2026-09-20T08:59:42.9113180Z         "p99_ms": 50.241
+2026-09-20T08:59:42.9113370Z       },
+2026-09-20T08:59:42.9113550Z       "pi.PostToolUse": {
+2026-09-20T08:59:42.9113750Z         "count": 2,
+2026-09-20T08:59:42.9113950Z         "max_ms": 39.377,
+2026-09-20T08:59:42.9114170Z         "p50_ms": 38.307,
+2026-09-20T08:59:42.9114380Z         "p95_ms": 39.377,
+2026-09-20T08:59:42.9114600Z         "p99_ms": 39.377
+2026-09-20T08:59:42.9114820Z       },
+2026-09-20T08:59:42.9115010Z       "pi.PreToolUse": {
+2026-09-20T08:59:42.9115230Z         "count": 2,
+2026-09-20T08:59:42.9115440Z         "max_ms": 44.475,
+2026-09-20T08:59:42.9115660Z         "p50_ms": 43.051,
+2026-09-20T08:59:42.9115880Z         "p95_ms": 44.475,
+2026-09-20T08:59:42.9116090Z         "p99_ms": 44.475
+2026-09-20T08:59:42.9116300Z       },
+2026-09-20T08:59:42.9116500Z       "zcode.PreToolUse": {
+2026-09-20T08:59:42.9116720Z         "count": 2,
+2026-09-20T08:59:42.9116930Z         "max_ms": 52.966,
+2026-09-20T08:59:42.9117140Z         "p50_ms": 46.11,
+2026-09-20T08:59:42.9117360Z         "p95_ms": 52.966,
+2026-09-20T08:59:42.9117570Z         "p99_ms": 52.966
+2026-09-20T08:59:42.9117780Z       }
+2026-09-20T08:59:42.9117950Z     }
+2026-09-20T08:59:42.9118110Z   },
+2026-09-20T08:59:42.9118290Z   "passed": true,
+2026-09-20T08:59:42.9118550Z   "python_semantic_decisions": 0,
+2026-09-20T08:59:42.9118830Z   "qualification_complete": false,
+2026-09-20T08:59:42.9119100Z   "reference_review": {
+2026-09-20T08:59:42.9119360Z     "full_review_qualified": true,
+2026-09-20T08:59:42.9119620Z     "missing_scopes": [],
+2026-09-20T08:59:42.9119880Z     "platform_denial_cases": [],
+2026-09-20T08:59:42.9120190Z     "platform_denial_timing_eligible": false
+2026-09-20T08:59:42.9120430Z   },
+2026-09-20T08:59:42.9120590Z   "routes": {
+2026-09-20T08:59:42.9120840Z     "engine_bypassed": 28,
+2026-09-20T08:59:42.9121100Z     "native_resident": 118
+2026-09-20T08:59:42.9121320Z   },
+2026-09-20T08:59:42.9121500Z   "runtime": {
+2026-09-20T08:59:42.9121730Z     "architecture": "arm64",
+2026-09-20T08:59:42.9122090Z     "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+2026-09-20T08:59:42.9122690Z     "installed_package_sha256": "bc6b8b5ed8c919dfc4b5a8a530fcad9844c29efae1d08d9599cb1e0d2d4bb72c",
+2026-09-20T08:59:42.9123130Z     "mode": "auto",
+2026-09-20T08:59:42.9123370Z     "package_origin": "installed",
+2026-09-20T08:59:42.9123850Z     "package_record_sha256": "a9ca0663a234e23fc87aaaba71f7490ac30cb98e8cf0732d14d49928d0152a5b",
+2026-09-20T08:59:42.9124530Z     "package_version": "3.0.1",
+2026-09-20T08:59:42.9124800Z     "protocol_version": 1,
+2026-09-20T08:59:42.9125090Z     "python_version": "3.12.10",
+2026-09-20T08:59:42.9125550Z     "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+2026-09-20T08:59:42.9126160Z     "runtime_sha256": "0f104127ed9ee44fcfe8105daa262feb7bc7062fbcc852360e7d894a7123bc18",
+2026-09-20T08:59:42.9126610Z     "runtime_version": "3.0.1",
+2026-09-20T08:59:42.9126870Z     "system": "Darwin",
+2026-09-20T08:59:42.9127100Z     "target": "aarch64-macos"
+2026-09-20T08:59:42.9127340Z   },
+2026-09-20T08:59:42.9127610Z   "schema": "hol-guard.native-installed-slo.v1",
+2026-09-20T08:59:42.9128020Z   "scope": "daemon_ingress_and_registered_launcher",
+2026-09-20T08:59:42.9128310Z   "thresholds": {
+2026-09-20T08:59:42.9128570Z     "direct_cold_p95_ms": 150.0,
+2026-09-20T08:59:42.9128900Z     "installed_adapter_concurrent_p99_ms": 1000.0,
+2026-09-20T08:59:42.9129240Z     "installed_adapter_p95_ms": 1000.0,
+2026-09-20T08:59:42.9129520Z     "readiness_p95_ms": 400.0
+2026-09-20T08:59:42.9129750Z   },
+2026-09-20T08:59:42.9130220Z   "timing_boundaries": {
+2026-09-20T08:59:42.9130580Z     "DAEMON_INGRESS": "normalized_http_to_harness_decision",
+2026-09-20T08:59:42.9130970Z     "INSTALLED_LAUNCHER": "registered_argv",
+2026-09-20T08:59:42.9131250Z     "KERNEL": "not_measured",
+2026-09-20T08:59:42.9131540Z     "NATIVE_CLIENT": "cold_native_process"
+2026-09-20T08:59:42.9131820Z   }
+2026-09-20T08:59:42.9132060Z }
+2026-09-20T08:59:43.4611530Z {
+2026-09-20T08:59:43.4612370Z   "artifacts": [
+2026-09-20T08:59:43.4612940Z     {
+2026-09-20T08:59:43.4613640Z       "name": "hol_guard-3.0.1-py3-none-any.whl",
+2026-09-20T08:59:43.4614450Z       "role": "python-wheel",
+2026-09-20T08:59:43.4615810Z       "sha256": "39351ae2ef684da49d9f1c4db943db6af1b3ff1d382c80296ffdbd8c88299870",
+2026-09-20T08:59:43.4616840Z       "size": 5156408
+2026-09-20T08:59:43.4617390Z     },
+2026-09-20T08:59:43.4617920Z     {
+2026-09-20T08:59:43.4618680Z       "name": "hol_guard-3.0.1-py3-none-macosx_11_0_arm64.whl",
+2026-09-20T08:59:43.4619680Z       "platform": "macosx_11_0_arm64",
+2026-09-20T08:59:43.4620390Z       "role": "native-wheel",
+2026-09-20T08:59:43.4621450Z       "sha256": "f1e3a213c426b34e506e6562d16fa2bd213d963117441cf022417ec7c7545e3c",
+2026-09-20T08:59:43.4622470Z       "size": 8461331,
+2026-09-20T08:59:43.4623460Z       "target": "aarch64-apple-darwin"
+2026-09-20T08:59:43.4624240Z     }
+2026-09-20T08:59:43.4634770Z   ],
+2026-09-20T08:59:43.4634990Z   "package_version": "3.0.1",
+2026-09-20T08:59:43.4635730Z   "platforms": [
+2026-09-20T08:59:43.4636180Z     "macosx_11_0_arm64"
+2026-09-20T08:59:43.4636370Z   ],
+2026-09-20T08:59:43.4636720Z   "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+2026-09-20T08:59:43.4637190Z   "schema": "hol-guard-release-artifact-evidence.v1",
+2026-09-20T08:59:43.4638360Z   "source_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+2026-09-20T08:59:43.4638800Z   "windows_waiver": "validated by the platform matrix"
+2026-09-20T08:59:43.4639120Z }
+2026-09-20T08:59:43.4810010Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T08:59:43.4810350Z with:
+2026-09-20T08:59:43.4810540Z   name: hol-guard-native-wheel-aarch64-apple-darwin
+2026-09-20T08:59:43.4811430Z   path: native-dist/*.whl
+native-default-auto.json
+native-default-auto-failure.json
+native-installed-identity.json
+installed-pi-output.json
+native-installed-slo.json
+native-artifact-evidence.json
+native-stop-diagnostic.json
+
+2026-09-20T08:59:43.4812210Z   if-no-files-found: warn
+2026-09-20T08:59:43.4812380Z   compression-level: 6
+2026-09-20T08:59:43.4812540Z   overwrite: false
+2026-09-20T08:59:43.4812710Z   include-hidden-files: false
+2026-09-20T08:59:43.4812890Z   archive: true
+2026-09-20T08:59:43.4813030Z env:
+2026-09-20T08:59:43.4813250Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:43.4813920Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.12.10/arm64/lib/pkgconfig
+2026-09-20T08:59:43.4814360Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:43.4814820Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:43.4815260Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.12.10/arm64
+2026-09-20T08:59:43.4815620Z   UV_PYTHON_INSTALL_DIR: /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:59:43.4815930Z   UV_CACHE_DIR: /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:59:43.4816180Z   CACHE_ON_FAILURE: false
+2026-09-20T08:59:43.4816350Z   CARGO_INCREMENTAL: 0
+2026-09-20T08:59:43.4816510Z ##[endgroup]
+2026-09-20T08:59:43.8575690Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T08:59:43.8580420Z The least common ancestor is /Users/runner/work/hol-guard/hol-guard. This will be the root directory of the artifact
+2026-09-20T08:59:43.8581680Z With the provided path, there will be 8 files uploaded
+2026-09-20T08:59:43.8582250Z Artifact name is valid!
+2026-09-20T08:59:43.8582640Z Root directory input is valid!
+2026-09-20T08:59:44.1488940Z Uploading artifact: hol-guard-native-wheel-aarch64-apple-darwin.zip
+2026-09-20T08:59:44.1490690Z Beginning upload of artifact content to blob storage
+2026-09-20T08:59:45.0297250Z Uploaded bytes 8388608
+2026-09-20T08:59:45.1920700Z Uploaded bytes 13224607
+2026-09-20T08:59:45.2383390Z Finished uploading artifact content to blob storage!
+2026-09-20T08:59:45.2388160Z SHA256 digest of uploaded artifact is d145468e2ec5cee0a892c2b1760a28631f073a08b92f8d8888ec2de7d76231a8
+2026-09-20T08:59:45.2388870Z Finalizing artifact upload
+2026-09-20T08:59:45.5270870Z Artifact hol-guard-native-wheel-aarch64-apple-darwin successfully finalized. Artifact ID 10601992639
+2026-09-20T08:59:45.5273290Z Artifact hol-guard-native-wheel-aarch64-apple-darwin has been successfully uploaded! Final size is 13224607 bytes. Artifact ID is 10601992639
+2026-09-20T08:59:45.5275340Z Artifact download URL: https://github.com/hashgraph-online/hol-guard/actions/runs/35500952093/artifacts/10601992639
+2026-09-20T08:59:45.5469970Z Post job cleanup.
+2026-09-20T08:59:45.6971700Z Post job cleanup.
+2026-09-20T08:59:45.8237460Z UV_CACHE_DIR is already set to /Users/runner/work/_temp/setup-uv-cache
+2026-09-20T08:59:45.8241420Z UV_PYTHON_INSTALL_DIR is already set to /Users/runner/work/_temp/uv-python-dir
+2026-09-20T08:59:45.8244370Z Cache hit occurred on key setup-uv-2-aarch64-apple-darwin-macos-15-3.12.10-pruned-2fd4fd0497fe10b3d0724b3304328ca0fafb8ccb7165bb292e9228222dda9a9d, not saving cache.
+2026-09-20T08:59:45.9477690Z Post job cleanup.
+2026-09-20T08:59:46.0759070Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-20T08:59:46.0760140Z Post job cleanup.
+2026-09-20T08:59:46.2118320Z (node:11830) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-20T08:59:46.2120280Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-20T08:59:46.2275840Z Post job cleanup.
+2026-09-20T08:59:46.3239690Z [command]/opt/homebrew/bin/git version
+2026-09-20T08:59:46.3434650Z git version 2.55.0
+2026-09-20T08:59:46.3457920Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/1624e78a-000d-4d4d-aeb8-7afa8322a25f/.gitconfig'
+2026-09-20T08:59:46.3466240Z Temporarily overriding HOME='/Users/runner/work/_temp/1624e78a-000d-4d4d-aeb8-7afa8322a25f' before making global git config changes
+2026-09-20T08:59:46.3467160Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:59:46.3469190Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/hol-guard/hol-guard
+2026-09-20T08:59:46.3582420Z Removing SSH command configuration
+2026-09-20T08:59:46.3583230Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:59:46.3640180Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-20T08:59:46.4818810Z Removing HTTP extra header
+2026-09-20T08:59:46.4823420Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:59:46.4893410Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-20T08:59:46.5794600Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:59:46.5800350Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:59:46.5873230Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-20T08:59:46.7490250Z Cleaning up orphan processes
+2026-09-20T08:59:48.1631370Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,23 @@
+{
+  "actual_process_returncode": 0,
+  "command": [
+    "/home/runner/work/hol-guard/hol-guard/.venv/bin/python",
+    "-c",
+    "\nimport json, sys\nevents = []\ndef trace(frame, event, value):\n    if event == \"exception\" and frame.f_code.co_filename.endswith(\"/mcp_risk_dependencies.py\"):\n        if len(events) < 48:\n            events.append({\n                \"function\": frame.f_code.co_name, \"line\": frame.f_lineno,\n                \"exception_type\": value[0].__name__,\n            })\n    return trace\nsys.settrace(trace)\ntry:\n    from codex_plugin_scanner.guard import mcp_tool_calls as calls\n    result = {\"available\": calls._RISK_PAIR_HELPERS.available,\n              \"refusal_reason\": calls._RISK_PAIR_HELPERS.refusal_reason}\nexcept BaseException as error:\n    result = {\"import_exception_type\": type(error).__name__}\nfinally:\n    sys.settrace(None)\nresult.update({\"classification\": \"diagnostic_only_traced_import\", \"events\": events})\nprint(json.dumps(result, sort_keys=True, allow_nan=False))\n"
+  ],
+  "configured_timeout_s": 180,
+  "containment_scope": "driver_process_group_only",
+  "effective_timeout_s": 180,
+  "elapsed_s": 3.094563,
+  "escaped_descendant_containment_proven": false,
+  "exit_code": 0,
+  "group_signal": null,
+  "name": "diagnostic-import-trace",
+  "process_group_retired": true,
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 1467,
+  "stdout_sha256": "71a2ba6abba5097ea38d9afe05b76b9916593cc79aae9195ce69142222060d79",
+  "timed_out": false,
+  "validation_budget_exhausted": false
+}

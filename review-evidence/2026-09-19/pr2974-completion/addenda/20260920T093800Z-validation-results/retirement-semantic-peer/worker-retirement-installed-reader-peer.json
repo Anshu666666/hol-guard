@@ -1,0 +1,52 @@
+{
+  "schema": "pr2974-worker-retirement-installed-independent-peer-read.v1",
+  "reader": {
+    "git_blob": "2a0fe866441b95f95d83538b968e66154f0acb3d",
+    "sha256": "50e825c0ae179ece645e4f6dd1b5305dc0ddcb04e93f9694422dc632ab0b3d86"
+  },
+  "result": {
+    "git_blob": "e3378a4ef0477007f1922fec065335ddbf59db6b",
+    "sha256": "08df3af74a69e48120907eb12f1593f10f10cd01ee80f787d2a66da9a505bfab"
+  },
+  "originals": {
+    "report": {
+      "git_blob": "4502f0d349bc3466164f7a9b65e96c576ad26715",
+      "sha256": "881eb853c31bb4f8d8fd37f69d50690844d9c4f3b31d08a87a30f8b17bb3d61d",
+      "bytes": 385376
+    },
+    "ledger": {
+      "git_blob": "301283776062801f8921f7bd82666a5d931b7844",
+      "sha256": "adcfd7e219569557f7b1c8c6b46a8fdc1664e82552ce5f3fca61f2cf487bfa86",
+      "bytes": 1150147
+    }
+  },
+  "independently_reconstructed": {
+    "records": 707,
+    "packets": 93,
+    "all_packet_hashes_order_and_content_lengths_verified": true,
+    "full_cell_terminal_equal": true,
+    "all_nine_phase_terminals_equal": true,
+    "all_nine_native_sql_receipt_objects_equal": true,
+    "retirement_instances": 6,
+    "retained_direct_workers": 12,
+    "retained_workers_all_reaped_minus9": true,
+    "complete_descendant_claim": false
+  },
+  "scope": "Read-only source and retained data review in JavaScript; no original workload, Python parser, native runtime or installer executed. Independent recount covers the full small ledger and direct report/receipt joins; it is not a repeat of every ancillary consumer/source-inventory predicate.",
+  "qualification_complete": false,
+  "verdict": "No blocking finding in the bounded installed-reader and result scope.",
+  "reviewed_boundaries": [
+    "The reader admits hash-checked regular members with an unchanged 8 MiB value cap and 95 MiB address-space cap. It creates a new output directory and uses exclusive output creation; it neither imports product code nor reruns the workload.",
+    "The packet reader enforces ordered begin/part/end records, exact shared metadata, original 8 KiB line bounds, cumulative payload bounds, canonical payload identity and SHA-256/length joins. Independent review reconstructed all 707 records and 93 packets and matched every complete cell and all nine phase terminals.",
+    "Each selected phase retains exactly one returned request and one native receipt equal to the committed SQL getter receipt, with declared attempt, workspace, generation/policy/runtime and before/after authority joins. The reader preserves SQLite readback-time versus commit-time and wrapper-time versus native-time limits.",
+    "Six actual service retirements retain twelve unique direct workers; the actual report says every one was reaped with exit code -9. This is forced exit/reaping evidence, not graceful retirement or a complete escaped-descendant certificate.",
+    "The three oversized installed inventory members remain excluded. Wheel/native bodies are not independently downloaded by this readback; the retained installer hash-lock, source/member metadata and actual reported identities are joined without promoting them to a new binary-byte verification.",
+    "Initial construction/compilation, Python process restart, automatic workspace restoration, other fault scenarios, physical persistence metrics, four-platform qualification and formal approval remain outside this bounded Linux run."
+  ],
+  "result_file_limit_scope": "Source review checks that a failure remains failed and output creation is exclusive. The observed successful record is hash-bound; no speculative parser hardening or changed gates were introduced.",
+  "current_source_scope": "This evidence belongs to source 2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd and driver 869856a68204fe4662fbbc87414f492d8306ef7b, not current 4afa product validation.",
+  "audit": {
+    "git_blob": "6e5828bd9c5dabbe4ee4a65b7feb49a12de2f691",
+    "sha256": "38dbdaab79e12f685a0f0a504db3c1efef10965e03028856f0152163f3fd9976"
+  }
+}

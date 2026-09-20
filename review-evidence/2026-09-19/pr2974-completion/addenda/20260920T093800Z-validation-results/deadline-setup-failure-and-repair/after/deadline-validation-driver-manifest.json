@@ -1,0 +1,99 @@
+{
+  "schema": "pr2974.deadline-validation-platform-setup-repair.v1",
+  "base_commit": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+  "before_tree": "6b475533a908af127c1ada892e8cd50a00a3157a",
+  "candidate_tree": "86d2a8b585e76bc87f0ecfa815fbf3ef2743607d",
+  "members": [
+    {
+      "path": "ci/pr2974_deadline_validation/run.py",
+      "bytes": 18626,
+      "lines": 341,
+      "sha256": "375350cdec402154ba88005c125ad50ed856128289e2e329ae36799be3a75c2c",
+      "git_blob": "a937358d622761722b8461617b7b963afe428c7f"
+    },
+    {
+      "path": "ci/pr2974_deadline_validation/verify_control_output.py",
+      "bytes": 6590,
+      "lines": 151,
+      "sha256": "4b74c51de63d127ff44cbfb8826312e985e376ee7452e28aeb73b9c483596938",
+      "git_blob": "c0f0e23290100478ab117bed94e1daf3cbfeb661"
+    },
+    {
+      "path": "ci/pr2974_deadline_validation/expected-controls.json",
+      "bytes": 6696,
+      "lines": 200,
+      "sha256": "77338e96885f13d3dc79a5e899c3cd6f5a7c9591430779403947d4cbff42e8b9",
+      "git_blob": "b3cbe28cc5e4c5803feb965ac1752aed5879b0a4"
+    },
+    {
+      "path": "ci/pr2974_deadline_validation/source-trees.json",
+      "bytes": 3520,
+      "lines": 74,
+      "sha256": "92197bd26123e5beb3b11a7bb494fa1668caba63e69831a591f28b6669047de8",
+      "git_blob": "4db39a1afc3a707e93a84ccd9f7ae7d617ed7c95"
+    },
+    {
+      "path": "ci/pr2974_deadline_validation/README.md",
+      "bytes": 4394,
+      "lines": 17,
+      "sha256": "e69dcbbb5a2ceca552c559b9e0fce1888496a878abb7894c2614b02c52003703",
+      "git_blob": "fa2bc2d5841145552a6f9f021b061928627d5866"
+    },
+    {
+      "path": ".github/workflows/pr2974-absolute-deadline-validation.yml",
+      "bytes": 3475,
+      "lines": 98,
+      "sha256": "f0184c416be966db7b30f051673789ce62216e9814f661d0a4432da2282d89cb",
+      "git_blob": "4d7d24066c055186482c14c4448c3566a09d98d7"
+    }
+  ],
+  "placeholder_occurrences": {
+    "__DEADLINE_BEFORE_SHA__": 2,
+    "__DEADLINE_CANDIDATE_SHA__": 2,
+    "__DEADLINE_VALIDATION_BRANCH__": 1
+  },
+  "reference_workflows": [
+    {
+      "path": ".github/workflows/rust-runtime.yml",
+      "blob": "ba892459281d26c8b3bec79550403637d061058b"
+    },
+    {
+      "path": ".github/workflows/rust-daemon-edge-hardening.yml",
+      "blob": "605a930d3b2a038d340b33ad5321b7974256d83f"
+    },
+    {
+      "path": ".github/workflows/native-wheel-ci.yml",
+      "blob": "cae400ef9a00fb8983d50f96086e490689618515"
+    }
+  ],
+  "local_python_execution": false,
+  "native_compilation": false,
+  "native_controls": false,
+  "workloads": false,
+  "dispatched": false,
+  "preparation_tree": "90cdde3f32095f440f22728dce4fd54f99a09209",
+  "bindings": {
+    "__DEADLINE_VALIDATION_BRANCH__": "codex/pr2974-absolute-deadline-validation-20260920-v2",
+    "__DEADLINE_BEFORE_SHA__": "a8297fe9868322616c92084d9a2fbb712a0907d0",
+    "__DEADLINE_CANDIDATE_SHA__": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee"
+  },
+  "driver_parents": [
+    "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826"
+  ],
+  "placeholder_occurrences_after_binding": 0,
+  "supersedes_driver": "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826",
+  "first_run": 35500586815,
+  "selected_platforms": [
+    "macos-x86_64",
+    "macos-arm64",
+    "windows-x86_64"
+  ],
+  "python_version": "3.12.10",
+  "availability_manifest": {
+    "repository": "actions/python-versions",
+    "git_blob": "9a26f094b8b111d3297e3c6a370ff8f576784974",
+    "sha256": "fbfbfe5d1edb027242bbbfa2ca9601e3a63144e986bdcc0477c0ea2e2ad95d16"
+  },
+  "repair_scope": "Workflow setup only; original before/candidate source, runner, expectations and verifier bytes unchanged. Linux remains solely in first run.",
+  "prior_run_status_at_preparation": "Three Python setup failures; Linux validation in progress. No native controls executed on the three selected platforms."
+}

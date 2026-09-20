@@ -1,0 +1,84 @@
+{
+  "correction_tree": "b9a0f6ac1587a6842a49ca21ba013e1000b9a0ed",
+  "driver_additions": [
+    {
+      "after": "e765b3c189fa640ac0e9ae9f42a1f2b4f65ef24c",
+      "bytes": 1454,
+      "path": ".github/workflows/pr2974-rsp100-pair-validation.yml"
+    },
+    {
+      "after": "35798f039fe758508ecac0ea7595c97e6fbb8b48",
+      "bytes": 19104,
+      "path": "scripts/ci/validate_pr2974_rsp100_pair.py"
+    }
+  ],
+  "driver_tree": "708163a1bb1f410472eff665fea9b1b18525a6c3",
+  "findings": [
+    {
+      "finding": "Direct positional and keyword FunctionType defaults bind the exact function identity and its code/default/closure state. Ordinary values keep the existing plain-data digest; no callable is executed for capture. Source-owned default helpers traverse the existing reviewed globals graph even when the caller reaches them only through a default.",
+      "topic": "Callable default provenance"
+    },
+    {
+      "finding": "A shared4096-item budget propagates through function defaults, closure state, class members and nested plain values; the24-depth limit remains. Top-level tuple/dict lengths are checked before eager tuple allocation. Callable cycles, opaque values, nested callable containers and unknown external closures remain unsupported. External helper globals still fall under the previously declared finite stdlib boundary, not an interpreter-wide deep freeze.",
+      "topic": "Refusal and bounds"
+    },
+    {
+      "finding": "Twelve added cases cover actual urllib.urlencode positive behavior, positional/keyword function replacement, code/default/source-global mutation through a default-only helper, no capture-time invocation, and five refusal shapes. They require available capture where appropriate; none are claimed executed.",
+      "topic": "Controls"
+    },
+    {
+      "finding": "Complete recursive trees are untruncated. Only the two declared helper/test paths differ fromfe65. Driver adds exactly its workflow and script; relative tov7 its bodies change only those two expected blob/size pairs, correction reference and exactv8 branch. Interpreter, positive/XML/cohort, timeout, containment and source-after gates remain unchanged.",
+      "topic": "Driver and source identity"
+    },
+    {
+      "finding": "Read original formatter report03e8d451 from99f95a: both pair afterimages match the reviewed blobs and recorded sizes/hashes, formatter AST equality is true, eight-file lint and format checks exit0. This is record readback, not an independent rerun. Product imports, pytest and types remain unexecuted.",
+      "topic": "Recorded formatting"
+    }
+  ],
+  "format_evidence_tree": "99f95a235f2ff9cdb632f49cbeba66a342167859",
+  "operations": {
+    "commits": false,
+    "refs": false,
+    "remote_execution": false,
+    "source_edits": false,
+    "source_imports": false,
+    "standalone_receipt_only": true,
+    "tests": false
+  },
+  "prior_actual_failure": {
+    "independently_decoded_and_hash_verified": true,
+    "job": 106054375308,
+    "observation": "Registry remains unavailable. Trace names urlencode at capture/capture_import and records function-state line104 entering plain tuple digest before unsupported visit59. This directly identifies the function-default capture boundary; no later test success is implied.",
+    "run": 35501660276,
+    "trace_decoded_bytes": 2819,
+    "trace_original_blob": "746ca30ecce250dea6eaed98675bb29981a6ccff",
+    "trace_sha256": "7b450f1d2f44516eca90ceac6d645fd842ff1b32ac8b8eece592f460d74cf24e",
+    "tree": "b6b7440bbcdc2e21f1d6da6caee17f9491c784e1"
+  },
+  "remaining_requirements": [
+    "Require actual exact-source Python3.12 default-graph admission; refusal everywhere cannot satisfy once-only computation.",
+    "Run all original8cohorts plus the new12cases, preserve five positive shape cases/XML and unchanged source checks, and run types.",
+    "Do not mix approval projection bytes into this pair-only admission or transfer prior results to the combined proposal.",
+    "Preserve concurrent product4afa changes separately on integration; this is the2ac-based isolated candidate.",
+    "No installed/native or performance qualification, cross-version completion or fullRSP100 acceptance is claimed."
+  ],
+  "result": "no_new_blocker_in_exact_source_driver_delta; actual_admission_and_tests_pending",
+  "reviewer": "partition_regression",
+  "schema": "pr2974-rsp100-callable-default-source-driver-peer.v1",
+  "source_after_tree": "d56ffdc06315f6367376dae0589975915cdce3f5",
+  "source_before_tree": "fe65b8da4bd85b17f5673997b37ba0e280cbc1ae",
+  "source_tree_delta": [
+    {
+      "after": "5eb69097f7b1d2f3f20d02e34963a0099dcd6090",
+      "before": "f6968525ef099b0d7606ffd6099fa17683d19bad",
+      "bytes": 20445,
+      "path": "src/codex_plugin_scanner/guard/mcp_risk_dependencies.py"
+    },
+    {
+      "after": "382aeaab44fee3eec2d33ffae9a2cb6be7829cc3",
+      "before": "2390f86c9dff7648b999f16e1b12c8e9f54b1880",
+      "bytes": 15147,
+      "path": "tests/test_mcp_risk_dependencies.py"
+    }
+  ]
+}

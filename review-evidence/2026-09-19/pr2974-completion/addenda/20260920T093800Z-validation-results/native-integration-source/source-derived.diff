@@ -1,0 +1,283 @@
+--- 4afa/rust/crates/guard-runtime/src/resident_client.rs
++++ candidate/rust/crates/guard-runtime/src/resident_client.rs
+...
+     fcntl(&descriptor, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC))
+         .map_err(|_| "native_client_connect_failed".to_owned())?;
++    #[cfg(test)]
++    connect_deadline_tests::checkpoint();
++    let _ = connect_remaining(deadline)?;
+     match connect(descriptor.as_raw_fd(), &address) {
+         Ok(()) | Err(Errno::EISCONN) => {}
+...
+ mod deadline_tests;
+ 
++#[cfg(all(test, unix))]
++#[path = "resident_client_connect_deadline_tests.rs"]
++mod connect_deadline_tests;
++
+
+
+--- 4afa/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs
++++ candidate/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs
+...
+     Bound,
+     WrongProof,
++    CommittedEof,
+ }
+ 
+...
+         &Sha256::digest(&body)[..]
+     );
++    if matches!(reply, Reply::CommittedEof) {
++        // The complete authenticated request arrived; no reply follows.
++        return Ok(true);
++    }
+     let mut response = Vec::new();
+     response.extend_from_slice(crate::RESPONSE_MAGIC);
+...
+                 }
+             }
++            // The owned client has joined before finish requests shutdown.
++            // Count every connection it queued before returning.
++            loop {
++                match listener.accept() {
++                    Ok((_stream, _)) => accepted += 1,
++                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => break,
++                    Err(error) => return Err(error),
++                }
++            }
+             Ok((accepted, completed))
+         });
+...
+     reply: Reply,
+ ) -> (Result<Vec<u8>, String>, (usize, usize)) {
++    let case = match (call, stage, expire, reply) {
++        (Call::Discovered, Stage::Validated, true, Reply::Bound) => {
++            "validation_delay_does_not_admit_expired_request"
++        }
++        (Call::Discovered, Stage::Validated, false, Reply::Bound) => {
++            "validated_request_completes_authenticated_bound_exchange_once"
++        }
++        (Call::Leased, Stage::Returned, true, Reply::Bound) => {
++            "leased_request_does_not_return_late_bound_success"
++        }
++        (Call::OneShot, Stage::LeaseCleanup, true, Reply::Bound) => {
++            "lease_cleanup_does_not_return_late_bound_success"
++        }
++        (Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound) => {
++            "lease_cleanup_returns_timely_bound_success"
++        }
++        (Call::OneShot, Stage::LeaseCleanup, true, Reply::WrongProof) => {
++            "late_lease_cleanup_preserves_fatal_authentication_error"
++        }
++        (Call::OneShot, Stage::LeaseCleanup, true, Reply::CommittedEof) => {
++            "late_lease_cleanup_preserves_committed_response_error"
++        }
++        _ => panic!("unsupported managed deadline fixture"),
++    };
+     let home = Home::new();
+     let digest = runtime_digest().unwrap();
+...
+         assert!(Instant::now() >= deadline);
+     }
++    let expired_on_release = Instant::now() >= deadline;
+     let result = client.finish();
+     let counts = peer.finish();
++    fs::remove_dir_all(&home.0).unwrap();
++    assert!(!home.0.exists(), "owned deadline fixture was not removed");
++    let outcome = match &result {
++        Ok(bytes) if bytes.as_slice() == RESPONSE => "bound_response",
++        Err(error) if error == "native_client_deadline_exceeded" => "deadline",
++        Err(error) if error == "native_resident_live_request_failed" => "live_request_failed",
++        _ => "unexpected",
++    };
++    // Emit fixed evidence only after the real call, both joins and cleanup.
++    eprintln!(
++        "HOL_GUARD_DEADLINE_CONTROL {}",
++        serde_json::json!({
++            "case": case,
++            "result": outcome,
++            "connections": counts.0,
++            "requests": counts.1,
++            "expired_on_release": expired_on_release,
++            "owned_cleanup": true,
++        })
++    );
+     (result, counts)
+ }
+...
+ }
+ 
++#[test]
++fn lease_cleanup_returns_timely_bound_success() {
++    let (result, counts) =
++        controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);
++    assert_eq!(result, Ok(RESPONSE.to_vec()));
++    assert_eq!(counts, (1, 1));
++}
++
++#[test]
++fn late_lease_cleanup_preserves_committed_response_error() {
++    let (result, counts) =
++        controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::CommittedEof);
++    assert_eq!(
++        counts,
++        (1, 1),
++        "an ambiguous committed request was replayed"
++    );
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
++}
++
+
+
+--- 4afa/rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs
++++ candidate/rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs
+...
++use super::*;
++use std::cell::RefCell;
++use std::fs;
++use std::os::unix::fs::DirBuilderExt;
++use std::os::unix::net::UnixListener;
++use std::path::PathBuf;
++use std::sync::mpsc::{self, Receiver, Sender};
++use std::thread;
++use std::time::{SystemTime, UNIX_EPOCH};
+ 
++const CONTROL_WAIT: Duration = Duration::from_secs(4);
++
++struct Pause {
++    entered: Sender<()>,
++    release: Receiver<()>,
++}
++
++thread_local! {
++    static PAUSE: RefCell<Option<Pause>> = const { RefCell::new(None) };
++}
++
++pub(super) fn checkpoint() {
++    PAUSE.with(|slot| {
++        if let Some(pause) = slot.borrow_mut().take() {
++            pause.entered.send(()).unwrap();
++            pause.release.recv_timeout(CONTROL_WAIT).unwrap();
++        }
++    });
++}
++
++struct Home(PathBuf);
++
++impl Home {
++    fn new() -> Self {
++        // Keep the socket path below both Linux and macOS sockaddr bounds.
++        let path = PathBuf::from("/tmp").join(format!(
++            "hg-deadline-{}-{}",
++            std::process::id(),
++            SystemTime::now()
++                .duration_since(UNIX_EPOCH)
++                .unwrap()
++                .as_nanos()
++        ));
++        fs::DirBuilder::new().mode(0o700).create(&path).unwrap();
++        Self(path)
++    }
++}
++
++impl Drop for Home {
++    fn drop(&mut self) {
++        let _ = fs::remove_dir_all(&self.0);
++    }
++}
++
++fn controlled_connect(expire: bool) -> (Result<(), String>, bool) {
++    let home = Home::new();
++    let endpoint = home.0.join("resident.sock");
++    let listener = UnixListener::bind(&endpoint).unwrap();
++    listener.set_nonblocking(true).unwrap();
++    let marker = crate::resident_state::process_start_marker(std::process::id()).unwrap();
++    let (entered, observed) = mpsc::channel();
++    let (release, released) = mpsc::channel();
++    let deadline = Instant::now() + Duration::from_secs(2);
++    let (result, expired_on_release) = thread::scope(|scope| {
++        let worker = scope.spawn(move || {
++            PAUSE.with(|slot| {
++                *slot.borrow_mut() = Some(Pause {
++                    entered,
++                    release: released,
++                });
++            });
++            let identity = ExpectedProcessIdentity {
++                process_id: std::process::id(),
++                start_marker: &marker,
++                digest: None,
++            };
++            connect_unix_with_digest(endpoint.to_str().unwrap(), deadline, &identity).map(drop)
++        });
++        observed.recv_timeout(CONTROL_WAIT).unwrap();
++        assert!(
++            Instant::now() < deadline,
++            "fixture missed socket setup boundary"
++        );
++        if expire {
++            thread::sleep(
++                deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(5),
++            );
++            assert!(Instant::now() >= deadline);
++        }
++        let expired_on_release = Instant::now() >= deadline;
++        release.send(()).unwrap();
++        (worker.join().unwrap(), expired_on_release)
++    });
++    let connected = match listener.accept() {
++        Ok((_stream, _)) => true,
++        Err(error) if error.kind() == io::ErrorKind::WouldBlock => false,
++        Err(error) => panic!("owned Unix listener acceptance failed: {error}"),
++    };
++    drop(listener);
++    fs::remove_dir_all(&home.0).unwrap();
++    assert!(!home.0.exists(), "owned Unix fixture was not removed");
++    let case = if expire {
++        "unix_socket_setup_cannot_admit_after_original_deadline"
++    } else {
++        "unix_socket_setup_retains_in_budget_connection"
++    };
++    let outcome = match &result {
++        Ok(()) => "connected",
++        Err(error) if error == "native_client_deadline_exceeded" => "deadline",
++        _ => "unexpected",
++    };
++    eprintln!(
++        "HOL_GUARD_DEADLINE_CONTROL {}",
++        serde_json::json!({
++            "case": case,
++            "result": outcome,
++            "connected": connected,
++            "expired_on_release": expired_on_release,
++            "owned_cleanup": true,
++        })
++    );
++    (result, connected)
++}
++
++#[test]
++fn unix_socket_setup_cannot_admit_after_original_deadline() {
++    let (result, connected) = controlled_connect(true);
++    assert!(
++        !connected,
++        "expired socket setup admitted a real Unix connection"
++    );
++    assert_eq!(result, Err("native_client_deadline_exceeded".to_owned()));
++}
++
++#[test]
++fn unix_socket_setup_retains_in_budget_connection() {
++    let (result, connected) = controlled_connect(false);
++    assert_eq!(result, Ok(()));
++    assert!(
++        connected,
++        "in-budget request did not reach the owned Unix listener"
++    );
++}
++
+

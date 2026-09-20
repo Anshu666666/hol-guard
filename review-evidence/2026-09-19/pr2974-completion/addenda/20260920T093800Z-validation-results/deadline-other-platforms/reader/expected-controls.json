@@ -1,0 +1,200 @@
+{
+  "schema": "pr2974.deadline-control-expectations.v1",
+  "rows": [
+    {
+      "name": "validation_delay_does_not_admit_expired_request",
+      "group": "managed",
+      "before": {
+        "case": "validation_delay_does_not_admit_expired_request",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "after": {
+        "case": "validation_delay_does_not_admit_expired_request",
+        "result": "live_request_failed",
+        "connections": 0,
+        "requests": 0,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": true,
+      "full_name": "managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request"
+    },
+    {
+      "name": "validated_request_completes_authenticated_bound_exchange_once",
+      "group": "managed",
+      "before": {
+        "case": "validated_request_completes_authenticated_bound_exchange_once",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      },
+      "fails_before": false,
+      "full_name": "managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once",
+      "after": {
+        "case": "validated_request_completes_authenticated_bound_exchange_once",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      }
+    },
+    {
+      "name": "leased_request_does_not_return_late_bound_success",
+      "group": "managed",
+      "before": {
+        "case": "leased_request_does_not_return_late_bound_success",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "after": {
+        "case": "leased_request_does_not_return_late_bound_success",
+        "result": "deadline",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": true,
+      "full_name": "managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success"
+    },
+    {
+      "name": "lease_cleanup_does_not_return_late_bound_success",
+      "group": "managed",
+      "before": {
+        "case": "lease_cleanup_does_not_return_late_bound_success",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "after": {
+        "case": "lease_cleanup_does_not_return_late_bound_success",
+        "result": "deadline",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": true,
+      "full_name": "managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success"
+    },
+    {
+      "name": "lease_cleanup_returns_timely_bound_success",
+      "group": "managed",
+      "before": {
+        "case": "lease_cleanup_returns_timely_bound_success",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      },
+      "fails_before": false,
+      "full_name": "managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success",
+      "after": {
+        "case": "lease_cleanup_returns_timely_bound_success",
+        "result": "bound_response",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      }
+    },
+    {
+      "name": "late_lease_cleanup_preserves_fatal_authentication_error",
+      "group": "managed",
+      "before": {
+        "case": "late_lease_cleanup_preserves_fatal_authentication_error",
+        "result": "live_request_failed",
+        "connections": 1,
+        "requests": 0,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": false,
+      "full_name": "managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error",
+      "after": {
+        "case": "late_lease_cleanup_preserves_fatal_authentication_error",
+        "result": "live_request_failed",
+        "connections": 1,
+        "requests": 0,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      }
+    },
+    {
+      "name": "late_lease_cleanup_preserves_committed_response_error",
+      "group": "managed",
+      "before": {
+        "case": "late_lease_cleanup_preserves_committed_response_error",
+        "result": "live_request_failed",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": false,
+      "full_name": "managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error",
+      "after": {
+        "case": "late_lease_cleanup_preserves_committed_response_error",
+        "result": "live_request_failed",
+        "connections": 1,
+        "requests": 1,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      }
+    },
+    {
+      "name": "unix_socket_setup_cannot_admit_after_original_deadline",
+      "group": "unix",
+      "before": {
+        "case": "unix_socket_setup_cannot_admit_after_original_deadline",
+        "result": "deadline",
+        "connected": true,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "after": {
+        "case": "unix_socket_setup_cannot_admit_after_original_deadline",
+        "result": "deadline",
+        "connected": false,
+        "expired_on_release": true,
+        "owned_cleanup": true
+      },
+      "fails_before": true,
+      "full_name": "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline"
+    },
+    {
+      "name": "unix_socket_setup_retains_in_budget_connection",
+      "group": "unix",
+      "before": {
+        "case": "unix_socket_setup_retains_in_budget_connection",
+        "result": "connected",
+        "connected": true,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      },
+      "fails_before": false,
+      "full_name": "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection",
+      "after": {
+        "case": "unix_socket_setup_retains_in_budget_connection",
+        "result": "connected",
+        "connected": true,
+        "expired_on_release": false,
+        "owned_cleanup": true
+      }
+    }
+  ],
+  "generated_expectations_not_observed_results": true
+}

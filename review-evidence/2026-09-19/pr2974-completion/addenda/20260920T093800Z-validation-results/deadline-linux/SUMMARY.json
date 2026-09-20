@@ -1,0 +1,324 @@
+{
+  "schema": "pr2974.deadline-matrix-linux-evidence.v1",
+  "run_id": 35500586815,
+  "job_id": 106051538390,
+  "driver": "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826",
+  "before": "a8297fe9868322616c92084d9a2fbb712a0907d0",
+  "candidate": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee",
+  "platform": "ubuntu-24.04 / x86_64-unknown-linux-gnu",
+  "python": "3.12.14",
+  "rust": "1.88.0",
+  "artifact": {
+    "id": 10602725397,
+    "bytes": 64875,
+    "sha256": "f9e23b233865da301c7eae3f801760a3795ca26e27c53ae151b95efa48d2f983",
+    "zip_hash_independently_verified": true,
+    "zip_bytes_not_in_this_tree": true,
+    "original_text_members": 107,
+    "original_text_bytes": 336908
+  },
+  "controls": [
+    {
+      "phase": "before",
+      "group": "managed",
+      "passed": 4,
+      "failed": 3,
+      "exit_code": 101,
+      "exact_records_reconciled": 7
+    },
+    {
+      "phase": "before",
+      "group": "unix",
+      "passed": 1,
+      "failed": 1,
+      "exit_code": 101,
+      "exact_records_reconciled": 2
+    },
+    {
+      "phase": "after",
+      "group": "managed",
+      "passed": 7,
+      "failed": 0,
+      "exit_code": 0,
+      "exact_records_reconciled": 7
+    },
+    {
+      "phase": "after",
+      "group": "unix",
+      "passed": 2,
+      "failed": 0,
+      "exit_code": 0,
+      "exact_records_reconciled": 2
+    }
+  ],
+  "workspace": {
+    "passed": 318,
+    "ignored": 6,
+    "runtime_crate_passed": 194,
+    "runtime_crate_ignored": 2,
+    "includes_focused_nine": true
+  },
+  "commands": 49,
+  "expected_red_commands": 2,
+  "compile_and_collection_preceded_controls": true,
+  "default_and_all_feature_clippy_passed": true,
+  "release_selftest_passed": true,
+  "binary_bytes_not_downloaded_or_published": true,
+  "recorded_binary_hashes": {
+    "before": {
+      "build_sha": "a8297fe9868322616c92084d9a2fbb712a0907d0",
+      "compile_succeeded": true,
+      "controls": [
+        {
+          "binary_sha256": "6e4cdd90ec0ddc0569c765baa1f5911873a7839e43e2e52de5bf617f70251f04",
+          "collection_admitted_before_execution": true,
+          "controls": 7,
+          "exact_collected_names": [
+            "managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error",
+            "managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error",
+            "managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success",
+            "managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success",
+            "managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success",
+            "managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once",
+            "managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request"
+          ],
+          "expected_failures_observed": 3,
+          "group": "managed",
+          "passed": true,
+          "phase": "before",
+          "qualification_complete": false,
+          "records": [
+            {
+              "case": "late_lease_cleanup_preserves_committed_response_error",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "live_request_failed"
+            },
+            {
+              "case": "late_lease_cleanup_preserves_fatal_authentication_error",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 0,
+              "result": "live_request_failed"
+            },
+            {
+              "case": "lease_cleanup_does_not_return_late_bound_success",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "lease_cleanup_returns_timely_bound_success",
+              "connections": 1,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "leased_request_does_not_return_late_bound_success",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "validated_request_completes_authenticated_bound_exchange_once",
+              "connections": 1,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "validation_delay_does_not_admit_expired_request",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            }
+          ],
+          "runtime_test_exit": 101
+        },
+        {
+          "binary_sha256": "6e4cdd90ec0ddc0569c765baa1f5911873a7839e43e2e52de5bf617f70251f04",
+          "collection_admitted_before_execution": true,
+          "controls": 2,
+          "exact_collected_names": [
+            "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline",
+            "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection"
+          ],
+          "expected_failures_observed": 1,
+          "group": "unix",
+          "passed": true,
+          "phase": "before",
+          "qualification_complete": false,
+          "records": [
+            {
+              "case": "unix_socket_setup_cannot_admit_after_original_deadline",
+              "connected": true,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "result": "deadline"
+            },
+            {
+              "case": "unix_socket_setup_retains_in_budget_connection",
+              "connected": true,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "result": "connected"
+            }
+          ],
+          "runtime_test_exit": 101
+        }
+      ],
+      "package_version": "3.0.1",
+      "target_dir": "/home/runner/work/_temp/deadline-validation-targets/before",
+      "test_binary": {
+        "bytes": 74415120,
+        "path": "/home/runner/work/_temp/deadline-validation-targets/before/debug/deps/hol_guard_runtime-9b9bb7fda260c91c",
+        "sha256": "6e4cdd90ec0ddc0569c765baa1f5911873a7839e43e2e52de5bf617f70251f04"
+      }
+    },
+    "candidate": {
+      "build_sha": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee",
+      "compile_succeeded": true,
+      "controls": [
+        {
+          "binary_sha256": "754289d087aa232678d49caa28b67765bdcb6e3c8f234ebd2512a35514aa9807",
+          "collection_admitted_before_execution": true,
+          "controls": 7,
+          "exact_collected_names": [
+            "managed_resident::deadline_tests::late_lease_cleanup_preserves_committed_response_error",
+            "managed_resident::deadline_tests::late_lease_cleanup_preserves_fatal_authentication_error",
+            "managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success",
+            "managed_resident::deadline_tests::lease_cleanup_returns_timely_bound_success",
+            "managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success",
+            "managed_resident::deadline_tests::validated_request_completes_authenticated_bound_exchange_once",
+            "managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request"
+          ],
+          "expected_failures_observed": 0,
+          "group": "managed",
+          "passed": true,
+          "phase": "after",
+          "qualification_complete": false,
+          "records": [
+            {
+              "case": "late_lease_cleanup_preserves_committed_response_error",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "live_request_failed"
+            },
+            {
+              "case": "late_lease_cleanup_preserves_fatal_authentication_error",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 0,
+              "result": "live_request_failed"
+            },
+            {
+              "case": "lease_cleanup_does_not_return_late_bound_success",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "deadline"
+            },
+            {
+              "case": "lease_cleanup_returns_timely_bound_success",
+              "connections": 1,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "leased_request_does_not_return_late_bound_success",
+              "connections": 1,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "deadline"
+            },
+            {
+              "case": "validated_request_completes_authenticated_bound_exchange_once",
+              "connections": 1,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "requests": 1,
+              "result": "bound_response"
+            },
+            {
+              "case": "validation_delay_does_not_admit_expired_request",
+              "connections": 0,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "requests": 0,
+              "result": "live_request_failed"
+            }
+          ],
+          "runtime_test_exit": 0
+        },
+        {
+          "binary_sha256": "754289d087aa232678d49caa28b67765bdcb6e3c8f234ebd2512a35514aa9807",
+          "collection_admitted_before_execution": true,
+          "controls": 2,
+          "exact_collected_names": [
+            "resident_client::connect_deadline_tests::unix_socket_setup_cannot_admit_after_original_deadline",
+            "resident_client::connect_deadline_tests::unix_socket_setup_retains_in_budget_connection"
+          ],
+          "expected_failures_observed": 0,
+          "group": "unix",
+          "passed": true,
+          "phase": "after",
+          "qualification_complete": false,
+          "records": [
+            {
+              "case": "unix_socket_setup_cannot_admit_after_original_deadline",
+              "connected": false,
+              "expired_on_release": true,
+              "owned_cleanup": true,
+              "result": "deadline"
+            },
+            {
+              "case": "unix_socket_setup_retains_in_budget_connection",
+              "connected": true,
+              "expired_on_release": false,
+              "owned_cleanup": true,
+              "result": "connected"
+            }
+          ],
+          "runtime_test_exit": 0
+        }
+      ],
+      "package_version": "3.0.1",
+      "release_binary": {
+        "bytes": 12282128,
+        "path": "/home/runner/work/_temp/deadline-validation-targets/candidate/release/hol-guard-runtime",
+        "sha256": "8c1141f183cc4989032b496f6dcc78a62419943811acd1c3e5d9777f2f22c484"
+      },
+      "target_dir": "/home/runner/work/_temp/deadline-validation-targets/candidate",
+      "test_binary": {
+        "bytes": 74411704,
+        "path": "/home/runner/work/_temp/deadline-validation-targets/candidate/debug/deps/hol_guard_runtime-9b9bb7fda260c91c",
+        "sha256": "754289d087aa232678d49caa28b67765bdcb6e3c8f234ebd2512a35514aa9807"
+      }
+    }
+  },
+  "source_currentness": "This exact54 source is distinct from external4afa and the later7150 integration; results do not validate those later bytes.",
+  "original_three_setup_failures_packet": "a4efd4db7d54fcee155a3c3bfb78272bf9cb4d88",
+  "installed_corpus_executed": false,
+  "performance_qualification": false,
+  "earlier_ubuntu_policy_push_cause_resolved": false,
+  "privacy": "Only owned finite source controls, public runner paths, repository source/build identities and command logs are selected. Signed artifact-download URLs, ZIP/binary bytes, user payloads and credentials are excluded."
+}

@@ -1,0 +1,64 @@
+--- before/tests/test_mcp_risk_dependencies.py
++++ after/tests/test_mcp_risk_dependencies.py
+@@ -308,11 +308,7 @@
+ def test_stdlib_callable_default_is_supported_without_invocation_during_capture():
+     import urllib.parse
+ 
+-    namespace = _namespace(
+-        "def risk(value):\n"
+-        "    from urllib.parse import urlencode\n"
+-        "    return urlencode(value)\n"
+-    )
++    namespace = _namespace("def risk(value):\n    from urllib.parse import urlencode\n    return urlencode(value)\n")
+     helpers = _capture(namespace)
+     assert helpers.available, helpers.refusal_reason
+     assert helpers.unchanged(_config(), namespace)
+@@ -322,10 +318,7 @@
+ @pytest.mark.parametrize("kind", ["positional", "keyword"])
+ def test_callable_default_identity_change_invalidates(kind):
+     signature = "formatter=helper" if kind == "positional" else "*, formatter=helper"
+-    namespace = _namespace(
+-        "def helper(value): return value\n"
+-        f"def risk(value, {signature}): return formatter(value)\n"
+-    )
++    namespace = _namespace(f"def helper(value): return value\ndef risk(value, {signature}): return formatter(value)\n")
+     helpers = _capture(namespace)
+     assert helpers.available, helpers.refusal_reason
+     assert helpers.unchanged(_config(), namespace)
+@@ -350,8 +343,10 @@
+     assert helpers.available, helpers.refusal_reason
+     assert helpers.unchanged(_config(), namespace)
+     if changed == "code":
++
+         def replacement(value, extra=1):
+             return value + extra + 4
++
+         monkeypatch.setattr(helper, "__code__", replacement.__code__)
+     elif changed == "defaults":
+         helper.__defaults__ = (3,)
+@@ -373,8 +368,7 @@
+ @pytest.mark.parametrize("kind", ["cycle", "opaque", "nested_callable", "external_closure", "budget"])
+ def test_unreviewed_callable_default_shapes_refuse(kind):
+     namespace = _namespace(
+-        "def helper(value=None): return value\n"
+-        "def risk(value, formatter=helper): return formatter(value)\n"
++        "def helper(value=None): return value\ndef risk(value, formatter=helper): return formatter(value)\n"
+     )
+     helper = namespace["helper"]
+     if kind == "cycle":
+@@ -384,12 +378,9 @@
+     elif kind == "nested_callable":
+         helper.__defaults__ = ([lambda: None],)
+     elif kind == "external_closure":
+-        namespace.update(_namespace(
+-            "def make(value):\n"
+-            "    def helper(): return value\n"
+-            "    return helper\n"
+-            "helper = make(1)\n"
+-        ))
++        namespace.update(
++            _namespace("def make(value):\n    def helper(): return value\n    return helper\nhelper = make(1)\n")
++        )
+         helper = namespace["helper"]
+         helper.__module__ = "unknown_plugin"
+         namespace["risk"] = _namespace("def risk(value=None): return value\n")["risk"]

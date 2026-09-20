@@ -1,0 +1,217 @@
+.........................................s..........s...sFF............. [ 93%]
+.....                                                                    [100%]
+================================== FAILURES ===================================
+_ test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-bounded_manager] _
+
+tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_actual_reader_allows_othe0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AF8B60D40>
+record_property = <function record_property.<locals>.append_property at 0x0000024AF88A0A40>
+route = 'bounded_manager', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["destination_only", "separate_crt_source"])
+    def test_actual_reader_allows_other_process_replace_without_changing_writer(
+        tmp_path,
+        monkeypatch,
+        record_property,
+        route,
+        hold_crt_source,
+    ):
+        assert Path(private_file_io.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/private_file_io.py"
+        assert Path(replaceable.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        manager._write_private_atomic_text(target, _OLD)
+        before = target.stat()
+        old_identity = before.st_dev, before.st_ino
+        held = _HeldRead()
+        values = queue.Queue(maxsize=1)
+        errors = queue.Queue(maxsize=1)
+    
+        def read():
+            held.owner = threading.get_ident()
+            try:
+                if route == "bounded_manager":
+                    value = manager.load_guard_daemon_auth_token(home)
+                else:
+                    value = codex_daemon_hook_auth._private_file_text(target, label="token")
+                values.put_nowait(value)
+            except BaseException as error:
+                errors.put_nowait(error)
+    
+        def open_text(path, *arguments, **keywords):
+            # The returned handle is owned by the original caller's context manager.
+            handle = builtins.open(path, *arguments, **keywords)  # noqa: SIM115
+            if Path(path) == target and threading.get_ident() == held.owner:
+                return _TextRead(handle, held)
+            return handle
+    
+        thread = threading.Thread(target=read, name="owned-source-reader", daemon=True)
+        report = None
+        code = None
+        held_after_child = False
+        old_handle_after_child = False
+        with monkeypatch.context() as patch:
+            patch.setattr(private_file_io, "os", _ReaderOs(held))
+            patch.setattr(replaceable, "open", open_text, raising=False)
+            thread.start()
+            try:
+                if not held.entered.wait(_CONTROL_SECONDS):
+                    raise TimeoutError("control_reader_ready_timeout")
+                if held.descriptor is None:
+                    raise RuntimeError("control_reader_descriptor_missing")
+                extra = ["--hold-crt-source"] if hold_crt_source else []
+                code, report = _run_child(
+                    target,
+                    "--operation",
+                    "writer",
+                    *extra,
+                    record_property=record_property,
+                    label="writer",
+                )
+                held_after_child = thread.is_alive() and not held.closed.is_set()
+                after = os.fstat(held.descriptor)
+                old_handle_after_child = (after.st_dev, after.st_ino) == old_identity
+            finally:
+                held.release.set()
+                thread.join(_CONTROL_SECONDS)
+                record_property("reader_retired", not thread.is_alive())
+                record_property("reader_descriptor_closed", held.closed.is_set())
+                record_property("writer_is_separate_process", True)
+                record_property("source_crt_negative_control", hold_crt_source)
+                record_property("writer_exit_code", code)
+                record_property("writer_report", json.dumps(report, sort_keys=True))
+        assert not thread.is_alive()
+        assert errors.empty()
+        assert held.closed.is_set()
+        assert held.inheritable is False
+        assert held.identity == old_identity
+        assert held_after_child and old_handle_after_child
+        assert values.get_nowait() == _OLD
+        assert report is not None
+        assert report["writer_calls"] == report["replace_calls"] == 1
+        assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+        assert report["source_reader_opened"] is hold_crt_source
+        assert report["source_reader_closed"] is hold_crt_source
+        assert report["temporary_siblings_removed"]
+        assert report["original_exception_identity_preserved"]
+        if hold_crt_source:
+            assert code == 1
+            assert report["replace_returned"] is False
+            assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 32}
+            assert target.read_text(encoding="utf-8") == _OLD
+        else:
+>           assert code == 0
+E           assert 1 == 0
+
+tests\test_windows_replaceable_reader_process.py:357: AssertionError
+_ test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-codex_text] _
+
+tmp_path = WindowsPath('C:/Users/runneradmin/AppData/Local/Temp/pytest-of-runneradmin/pytest-0/test_actual_reader_allows_othe1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024AF8B7CBC0>
+record_property = <function record_property.<locals>.append_property at 0x0000024AF84C5440>
+route = 'codex_text', hold_crt_source = False
+
+    @pytest.mark.parametrize("route", ["bounded_manager", "codex_text"])
+    @pytest.mark.parametrize("hold_crt_source", [False, True], ids=["destination_only", "separate_crt_source"])
+    def test_actual_reader_allows_other_process_replace_without_changing_writer(
+        tmp_path,
+        monkeypatch,
+        record_property,
+        route,
+        hold_crt_source,
+    ):
+        assert Path(private_file_io.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/private_file_io.py"
+        assert Path(replaceable.__file__).resolve() == _ROOT / "src/codex_plugin_scanner/guard/windows_replaceable_file.py"
+        home = tmp_path / "guard"
+        manager._ensure_private_directory(home)
+        target = home / "daemon-auth-token"
+        manager._write_private_atomic_text(target, _OLD)
+        before = target.stat()
+        old_identity = before.st_dev, before.st_ino
+        held = _HeldRead()
+        values = queue.Queue(maxsize=1)
+        errors = queue.Queue(maxsize=1)
+    
+        def read():
+            held.owner = threading.get_ident()
+            try:
+                if route == "bounded_manager":
+                    value = manager.load_guard_daemon_auth_token(home)
+                else:
+                    value = codex_daemon_hook_auth._private_file_text(target, label="token")
+                values.put_nowait(value)
+            except BaseException as error:
+                errors.put_nowait(error)
+    
+        def open_text(path, *arguments, **keywords):
+            # The returned handle is owned by the original caller's context manager.
+            handle = builtins.open(path, *arguments, **keywords)  # noqa: SIM115
+            if Path(path) == target and threading.get_ident() == held.owner:
+                return _TextRead(handle, held)
+            return handle
+    
+        thread = threading.Thread(target=read, name="owned-source-reader", daemon=True)
+        report = None
+        code = None
+        held_after_child = False
+        old_handle_after_child = False
+        with monkeypatch.context() as patch:
+            patch.setattr(private_file_io, "os", _ReaderOs(held))
+            patch.setattr(replaceable, "open", open_text, raising=False)
+            thread.start()
+            try:
+                if not held.entered.wait(_CONTROL_SECONDS):
+                    raise TimeoutError("control_reader_ready_timeout")
+                if held.descriptor is None:
+                    raise RuntimeError("control_reader_descriptor_missing")
+                extra = ["--hold-crt-source"] if hold_crt_source else []
+                code, report = _run_child(
+                    target,
+                    "--operation",
+                    "writer",
+                    *extra,
+                    record_property=record_property,
+                    label="writer",
+                )
+                held_after_child = thread.is_alive() and not held.closed.is_set()
+                after = os.fstat(held.descriptor)
+                old_handle_after_child = (after.st_dev, after.st_ino) == old_identity
+            finally:
+                held.release.set()
+                thread.join(_CONTROL_SECONDS)
+                record_property("reader_retired", not thread.is_alive())
+                record_property("reader_descriptor_closed", held.closed.is_set())
+                record_property("writer_is_separate_process", True)
+                record_property("source_crt_negative_control", hold_crt_source)
+                record_property("writer_exit_code", code)
+                record_property("writer_report", json.dumps(report, sort_keys=True))
+        assert not thread.is_alive()
+        assert errors.empty()
+        assert held.closed.is_set()
+        assert held.inheritable is False
+        assert held.identity == old_identity
+        assert held_after_child and old_handle_after_child
+        assert values.get_nowait() == _OLD
+        assert report is not None
+        assert report["writer_calls"] == report["replace_calls"] == 1
+        assert report["writer_locked"] and report["writer_fd_closed_before_replace"]
+        assert report["source_reader_opened"] is hold_crt_source
+        assert report["source_reader_closed"] is hold_crt_source
+        assert report["temporary_siblings_removed"]
+        assert report["original_exception_identity_preserved"]
+        if hold_crt_source:
+            assert code == 1
+            assert report["replace_returned"] is False
+            assert report["error"] == {"kind": "PermissionError", "errno": 13, "winerror": 32}
+            assert target.read_text(encoding="utf-8") == _OLD
+        else:
+>           assert code == 0
+E           assert 1 == 0
+
+tests\test_windows_replaceable_reader_process.py:357: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_windows_replaceable_reader_process.py::test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-bounded_manager] - assert 1 == 0
+FAILED tests/test_windows_replaceable_reader_process.py::test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-codex_text] - assert 1 == 0
+2 failed, 72 passed, 3 skipped in 7.00s

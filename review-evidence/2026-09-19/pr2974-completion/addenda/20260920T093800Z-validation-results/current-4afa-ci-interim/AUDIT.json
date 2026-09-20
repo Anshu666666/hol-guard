@@ -1,0 +1,285 @@
+{
+  "schema": "pr2974-current4afa-normal-interim-readback.v1",
+  "observed_at_utc": "2026-09-20 09:31:17 UTC",
+  "source": {
+    "sha": "4afa20cf014ccba918bf2fa61552dafe66767930",
+    "tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+    "branch": "chore/resolve-2797-conflicts",
+    "parent": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+    "base_sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "base_ref": "release/3.2"
+  },
+  "build": {
+    "merge_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+    "tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+    "exact_source_and_build_tree_match": true
+  },
+  "checks": {
+    "count": 187,
+    "states": {
+      "success": 165,
+      "skipped": 19,
+      "failure": 2,
+      "in_progress": 1
+    },
+    "pending": [
+      {
+        "name": "linux-x64",
+        "job_id": 106052498593,
+        "run_id": 35500952093,
+        "stage": "Enforce installed native soak",
+        "status": "in_progress",
+        "completion_not_claimed": true
+      }
+    ],
+    "failures": [
+      {
+        "name": "cross-platform (windows-2025)",
+        "run_id": 35500952136,
+        "job_id": 106052498805,
+        "case": "ci/native_runtime/test_native_hook_client_transport.py::test_native_hook_client_rejects_duplicate_edge_keys_without_fallback",
+        "line": 173,
+        "initial_assertion": "result.returncode == 0",
+        "actual_returncode": 2,
+        "stdout": "",
+        "stderr": "native_resident_start_timeout\n",
+        "cohort": {
+          "passed": 14,
+          "failed": 1,
+          "seconds": 29.51
+        },
+        "native_runtime_unit_block": {
+          "passed": 199,
+          "ignored": 2
+        },
+        "cause": "Unresolved: failure occurs during the initial resident startup, before the duplicate-edge assertions; no inner startup/OS diagnostic leaf is retained."
+      },
+      {
+        "name": "Kilo Code Review",
+        "check_id": 106052497243,
+        "message": "Review failed: Assistant request was rate limited",
+        "code_finding": false
+      }
+    ]
+  },
+  "platforms": {
+    "mac_arm": {
+      "job_id": 106052498600,
+      "conclusion": "success",
+      "source_controls": {
+        "native_deadline_python": 9,
+        "resident_client_rust": 22
+      },
+      "installed_identity_cases": 17,
+      "installed_identity_all_passed": false,
+      "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+      "reported_runtime_sha256": "0f104127ed9ee44fcfe8105daa262feb7bc7062fbcc852360e7d894a7123bc18",
+      "reported_runtime_bytes": 10801664,
+      "default_auto": {
+        "corpus_decisions": 21,
+        "resident_decisions": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "smoke": {
+        "passed": true,
+        "all14_gates_passed": true,
+        "concurrency16_p99_ms": 418.547,
+        "concurrency16_gate_ms": 1000,
+        "recovery_p95_ms": 291.87,
+        "recovery_gate_ms": 1000,
+        "readiness_p95_ms": 0.041,
+        "readiness_gate_ms": 400,
+        "concurrency64": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 515.843,
+            "p50_ms": 235.422,
+            "p95_ms": 483.552,
+            "p99_ms": 515.843
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 28,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 28,
+            "native_resident": 36
+          }
+        },
+        "qualification_complete": false
+      },
+      "scope": "Original normal workflow controls and installed smoke only; signing and full original PRD qualification remain unexercised. Binary and ZIP byte identities are reported by original logs/metadata, not downloaded by this readback."
+    },
+    "mac_intel": {
+      "job_id": 106052498575,
+      "conclusion": "success",
+      "source_controls": {
+        "native_deadline_python": 9,
+        "resident_client_rust": 22
+      },
+      "installed_identity_cases": 17,
+      "installed_identity_all_passed": false,
+      "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+      "reported_runtime_sha256": "c5bcb671ee1b944fdf31ba80186b3829cb24481382ddaebdd75e48d7b9f21753",
+      "reported_runtime_bytes": 11303628,
+      "default_auto": {
+        "corpus_decisions": 21,
+        "resident_decisions": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "smoke": {
+        "passed": true,
+        "all14_gates_passed": true,
+        "concurrency16_p99_ms": 727.142,
+        "concurrency16_gate_ms": 1000,
+        "recovery_p95_ms": 839.537,
+        "recovery_gate_ms": 1000,
+        "readiness_p95_ms": 0.09,
+        "readiness_gate_ms": 400,
+        "concurrency64": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 925.595,
+            "p50_ms": 341.388,
+            "p95_ms": 899.422,
+            "p99_ms": 925.595
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 31,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 31,
+            "native_resident": 33
+          }
+        },
+        "qualification_complete": false
+      },
+      "scope": "Original normal workflow controls and installed smoke only; signing and full original PRD qualification remain unexercised. Binary and ZIP byte identities are reported by original logs/metadata, not downloaded by this readback."
+    },
+    "windows_native": {
+      "job_id": 106052498465,
+      "conclusion": "success",
+      "source_controls": {
+        "storage_python": 13
+      },
+      "installed_identity_cases": 17,
+      "installed_identity_all_passed": false,
+      "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+      "reported_runtime_sha256": "83b2e8f264f16faef7c11602f8960acdedc45545151489c1fcc9519b14c2c515",
+      "reported_runtime_bytes": 11350528,
+      "default_auto": {
+        "corpus_decisions": 21,
+        "resident_decisions": 21,
+        "receipt_metrics": {
+          "accepted": 21,
+          "deduped": 0,
+          "dropped": 0,
+          "durable_pending": 0,
+          "failures": 0,
+          "processed": 21
+        },
+        "evidence_failure_diagnostics": {
+          "all_evidence": {},
+          "native_receipts": {}
+        }
+      },
+      "smoke": null,
+      "scope": "Original normal workflow controls and installed smoke only; signing and full original PRD qualification remain unexercised. Binary and ZIP byte identities are reported by original logs/metadata, not downloaded by this readback."
+    }
+  },
+  "security": {
+    "gitleaks": {
+      "job_id": 106052498779,
+      "run_id": 35500952152,
+      "range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..4afa20cf014ccba918bf2fa61552dafe66767930",
+      "commits_scanned": 1349,
+      "approximate_bytes_scanned": 69179520,
+      "seconds": 28.9,
+      "leaks": 0
+    },
+    "sonar": {
+      "job_id": 106053719748,
+      "check_id": 106054413570,
+      "scm_revision": "4afa20cf014ccba918bf2fa61552dafe66767930",
+      "ce_task_id": "AaC-FneFjMY6tyf6B5ia",
+      "quality_gate": "passed",
+      "new_issues": 0,
+      "accepted_issues": 0,
+      "security_hotspots": 0,
+      "new_coverage_percent": 83.4,
+      "new_duplication_percent": 0,
+      "analysis_id_independently_retrieved": false
+    },
+    "codeql": {
+      "checks": [
+        106053228873,
+        106052563550
+      ],
+      "conclusion": "success",
+      "title": "No new alerts in code changed by this pull request",
+      "individual_historical_alert386_state_rechecked": false
+    }
+  },
+  "review": {
+    "threads": 59,
+    "resolved": 59,
+    "unresolved": 0,
+    "formal_records": 51,
+    "formal_approved": 0,
+    "formal_states": {
+      "COMMENTED": 51
+    },
+    "requested_reviewers": [
+      "deep-purple-boots"
+    ],
+    "mergeable": true,
+    "mergeable_state": "blocked",
+    "required_release_ruleset": 14511015,
+    "required_status_check": "quality",
+    "require_code_owner_review": true,
+    "require_last_push_approval": true,
+    "required_approvals": 1,
+    "stale_approvals_dismissed": true,
+    "required_thread_resolution": true,
+    "default_branch_only_ruleset": 17369060,
+    "default_branch_only_rules_not_misapplied_to_release": true
+  },
+  "limits": [
+    "This is an interim normal-CI snapshot; the current Linux soak is not terminal.",
+    "Current ordinary 1000 ms c16/recovery smoke gates do not substitute for the original PRD c16 200 ms target or full paired sampling. Concurrency64 permits bounded overload bypass and has no latency ceiling.",
+    "Normal native-wheel Windows success does not erase the separate failing Windows edge startup test, old Windows errors or unproven causes.",
+    "Recorded ZIP/runtime hashes and byte counts are original metadata and log observations; binary/archive bodies were not downloaded.",
+    "No CodeQL alert was dismissed and no Sonar/ruleset threshold was changed. Discussion resolution and COMMENTED reviews do not provide the required independent latest-push approval.",
+    "No source publication, branch update, rerun, cancellation, native workload or remote-asnf process was performed by this reader."
+  ],
+  "qualification_complete": false
+}

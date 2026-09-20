@@ -1,0 +1,23 @@
+HOL_GUARD_DEADLINE_CONTROL {"case":"late_lease_cleanup_preserves_committed_response_error","connections":1,"expired_on_release":true,"owned_cleanup":true,"requests":1,"result":"live_request_failed"}
+HOL_GUARD_DEADLINE_CONTROL {"case":"late_lease_cleanup_preserves_fatal_authentication_error","connections":1,"expired_on_release":true,"owned_cleanup":true,"requests":0,"result":"live_request_failed"}
+HOL_GUARD_DEADLINE_CONTROL {"case":"lease_cleanup_does_not_return_late_bound_success","connections":1,"expired_on_release":true,"owned_cleanup":true,"requests":1,"result":"bound_response"}
+
+thread 'managed_resident::deadline_tests::lease_cleanup_does_not_return_late_bound_success' panicked at crates/guard-runtime/src/managed_resident_deadline_tests.rs:361:5:
+assertion `left == right` failed
+  left: Ok([123, 34, 100, 101, 97, 100, 108, 105, 110, 101, 95, 102, 105, 120, 116, 117, 114, 101, 34, 58, 34, 97, 99, 99, 101, 112, 116, 101, 100, 34, 125])
+ right: Err("native_client_deadline_exceeded")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+HOL_GUARD_DEADLINE_CONTROL {"case":"lease_cleanup_returns_timely_bound_success","connections":1,"expired_on_release":false,"owned_cleanup":true,"requests":1,"result":"bound_response"}
+HOL_GUARD_DEADLINE_CONTROL {"case":"leased_request_does_not_return_late_bound_success","connections":1,"expired_on_release":true,"owned_cleanup":true,"requests":1,"result":"bound_response"}
+
+thread 'managed_resident::deadline_tests::leased_request_does_not_return_late_bound_success' panicked at crates/guard-runtime/src/managed_resident_deadline_tests.rs:348:5:
+assertion `left == right` failed
+  left: Ok([123, 34, 100, 101, 97, 100, 108, 105, 110, 101, 95, 102, 105, 120, 116, 117, 114, 101, 34, 58, 34, 97, 99, 99, 101, 112, 116, 101, 100, 34, 125])
+ right: Err("native_client_deadline_exceeded")
+HOL_GUARD_DEADLINE_CONTROL {"case":"validated_request_completes_authenticated_bound_exchange_once","connections":1,"expired_on_release":false,"owned_cleanup":true,"requests":1,"result":"bound_response"}
+HOL_GUARD_DEADLINE_CONTROL {"case":"validation_delay_does_not_admit_expired_request","connections":1,"expired_on_release":true,"owned_cleanup":true,"requests":1,"result":"bound_response"}
+
+thread 'managed_resident::deadline_tests::validation_delay_does_not_admit_expired_request' panicked at crates/guard-runtime/src/managed_resident_deadline_tests.rs:314:5:
+assertion `left == right` failed: expired validation admitted a real connection or request
+  left: (1, 1)
+ right: (0, 0)

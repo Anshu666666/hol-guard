@@ -1,0 +1,19 @@
+...
+                 }
+             }
++            // The owned client has joined before finish requests shutdown.
++            // Count every connection it queued before returning.
++            loop {
++                match listener.accept() {
++                    Ok((_stream, _)) => accepted += 1,
++                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => break,
++                    Err(error) => return Err(error),
++                }
+-            // Count any connection queued before client return even if this
+-            // worker saw the stop flag before accepting it.
+-            match listener.accept() {
+-                Ok((_stream, _)) => accepted += 1,
+-                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {}
+-                Err(error) => return Err(error),
+             }
+             Ok((accepted, completed))

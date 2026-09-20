@@ -1,0 +1,36 @@
+--- prior/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
++++ after/src/codex_plugin_scanner/guard/proxy/runtime_mcp.py
+@@ -21,6 +21,8 @@
+ from typing import IO, Any, Literal, TextIO, cast
+ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+ 
++from .. import mcp_authority_binding as _risk_authority
++from .. import mcp_request_risk as _request_risk
+ from ..action_lattice import (
+     GuardActionNormalization,
+     most_restrictive_guard_action,
+@@ -43,8 +45,6 @@
+     compose_current_package_policy_action,
+     package_request_policy_hash,
+ )
+-from .. import mcp_authority_binding as _risk_authority
+-from .. import mcp_request_risk as _request_risk
+ from ..mcp_approval_risk import ApprovalRiskSourceDefaults, BoundApprovalRiskAnalysis, function_namespace
+ from ..mcp_authority_binding import (
+     AuthorityCheck,
+@@ -94,6 +94,7 @@
+ from ..store import GuardStore
+ from ..tool_decision_evidence import tool_decision_scanner_evidence as _tool_decision_scanner_evidence
+ from . import framing
++from . import tool_call_binding as _risk_request_binding
+ from ._env import _build_scrubbed_env
+ from .framing import (
+     IO_FAILURES,
+@@ -118,7 +119,6 @@
+     _redact_json,
+     _timeout_response,
+ )
+-from . import tool_call_binding as _risk_request_binding
+ from .tool_call_binding import (
+     bind_tool_call,
+     bind_tool_call_write,

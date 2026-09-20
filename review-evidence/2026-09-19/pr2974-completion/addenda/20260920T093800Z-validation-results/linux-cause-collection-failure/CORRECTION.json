@@ -1,0 +1,54 @@
+{
+  "schema": "pr2974-linux-cause-module-entry-correction.v1",
+  "source_parent": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+  "source_parent_tree": "fbc00caa3788eb422158a2263a578e83ac626183",
+  "prior_attempt": {
+    "commit": "633bd3fbb0ecc27c23980b5a233a6a230ad94a93",
+    "tree": "0e817ce3dff78493ed94be1602aa7c56d8f13430",
+    "run_id": 35501446199,
+    "job_id": 106053801625,
+    "conclusion": "failure",
+    "rust_default_passed": 2,
+    "rust_diagnostic_passed": 7,
+    "python_collection_error": "ModuleNotFoundError: No module named 'ci'",
+    "python_executed_controls": 0,
+    "original_selectors_executed": 0,
+    "runtime_release_build_executed": false,
+    "artifact": {
+      "id": 10602950761,
+      "bytes": 743821,
+      "uploader_sha256": "3594c211e32f304f059ceaf156ae24a5450caa1e361f684f58d047540bd3d9c3",
+      "archive_independently_downloaded": false
+    }
+  },
+  "change": {
+    "path": ".github/workflows/pr2974-linux-live-cause-diagnostic.yml",
+    "before_git_blob": "533a0fe0eb2fe465ed081ad439f239fd8dde443d",
+    "after_git_blob": "1e0576ecebed5a002998f811fdfca6a901a06831",
+    "before_sha256": "80b9c8711aae8ef4b72fc07e46734a91c795752a64918a6381681be994933b30",
+    "after_sha256": "aafec9a39887c48334c3d4f6e46c18b39259fa09f6d87b545b931d7da73f2874",
+    "exact_deltas": [
+      [
+        "codex/pr2974-linux-live-cause-lint-4d10758-20260920",
+        "codex/pr2974-linux-live-cause-module-4d10758-20260920"
+      ],
+      [
+        "uv run --no-sync pytest -q -o addopts= --noconftest",
+        "uv run --no-sync python -m pytest -q -o addopts= --noconftest"
+      ]
+    ],
+    "exact_reversal_verified": true,
+    "eight_other_paths_unchanged": true
+  },
+  "reason": "The console pytest entry point did not add the checkout root to Python's import path; the failing module imports the repository ci package. python -m pytest from the existing validation-src working directory adds that root while preserving frozen dependencies, flags and selectors. The separate -I source identity and workload entry points remain unchanged.",
+  "scope": {
+    "workflow_collection_prerequisite_only": true,
+    "no_product_behavior_change": true,
+    "no_test_or_native_execution_of_correction": true,
+    "readiness_and_transport_deadlines_unchanged": true,
+    "both_original_selectors_unchanged": true,
+    "qualification_complete": false,
+    "cause_identified": false,
+    "no_pr_or_branch_mutation": true
+  }
+}

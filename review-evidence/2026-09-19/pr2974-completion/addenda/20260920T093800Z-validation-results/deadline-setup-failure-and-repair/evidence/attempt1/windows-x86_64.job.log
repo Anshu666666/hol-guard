@@ -1,0 +1,509 @@
+﻿2026-09-20T08:48:51.2284543Z Current runner version: '2.337.0'
+2026-09-20T08:48:51.2305693Z ##[group]Runner Image Provisioner
+2026-09-20T08:48:51.2306417Z Hosted Compute Agent
+2026-09-20T08:48:51.2306841Z Version: 20260828.587
+2026-09-20T08:48:51.2307349Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-20T08:48:51.2307901Z Build Date: 2026-08-28T16:44:25Z
+2026-09-20T08:48:51.2308474Z Worker ID: {d1918e94-87d7-4acb-9687-0494574fdec9}
+2026-09-20T08:48:51.2309000Z Azure Region: centralus
+2026-09-20T08:48:51.2309416Z ##[endgroup]
+2026-09-20T08:48:51.2310434Z ##[group]Operating System
+2026-09-20T08:48:51.2310908Z Microsoft Windows Server 2025
+2026-09-20T08:48:51.2311350Z 10.0.26100
+2026-09-20T08:48:51.2311761Z Datacenter
+2026-09-20T08:48:51.2312150Z ##[endgroup]
+2026-09-20T08:48:51.2312557Z ##[group]Runner Image
+2026-09-20T08:48:51.2313002Z Image: windows-2025-vs2026
+2026-09-20T08:48:51.2313485Z Version: 20260907.229.1
+2026-09-20T08:48:51.2315307Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260907.229/images/windows/Windows2025-VS2026-Readme.md
+2026-09-20T08:48:51.2316679Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260907.229
+2026-09-20T08:48:51.2317445Z ##[endgroup]
+2026-09-20T08:48:51.2318279Z ##[group]GITHUB_TOKEN Permissions
+2026-09-20T08:48:51.2319975Z Contents: read
+2026-09-20T08:48:51.2320394Z Metadata: read
+2026-09-20T08:48:51.2320817Z ##[endgroup]
+2026-09-20T08:48:51.2322480Z Secret source: Actions
+2026-09-20T08:48:51.2323176Z Cache mode: write
+2026-09-20T08:48:51.2323715Z Prepare workflow directory
+2026-09-20T08:48:51.2682383Z Prepare all required actions
+2026-09-20T08:48:51.2720493Z Getting action download info
+2026-09-20T08:48:51.5541550Z Download action repository 'actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+2026-09-20T08:48:51.7868868Z Download action repository 'actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+2026-09-20T08:48:51.9001157Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-20T08:48:52.1304300Z Complete job name: deadline-validation (windows-x86_64, windows-2025, x86_64-pc-windows-msvc)
+2026-09-20T08:48:52.2833444Z ##[group]Run git config --global core.autocrlf false
+2026-09-20T08:48:52.2834317Z [36;1mgit config --global core.autocrlf false[0m
+2026-09-20T08:48:52.2849297Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-20T08:48:52.2850099Z env:
+2026-09-20T08:48:52.2850557Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:48:52.2851188Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:48:52.2851697Z ##[endgroup]
+2026-09-20T08:48:54.2011130Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T08:48:54.2012507Z with:
+2026-09-20T08:48:54.2012957Z   ref: bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826
+2026-09-20T08:48:54.2013496Z   path: driver
+2026-09-20T08:48:54.2013887Z   fetch-depth: 2
+2026-09-20T08:48:54.2014302Z   persist-credentials: false
+2026-09-20T08:48:54.2014758Z   repository: hashgraph-online/hol-guard
+2026-09-20T08:48:54.2018034Z   token: ***
+2026-09-20T08:48:54.2018439Z   ssh-strict: true
+2026-09-20T08:48:54.2018832Z   ssh-user: git
+2026-09-20T08:48:54.2019217Z   clean: true
+2026-09-20T08:48:54.2019598Z   sparse-checkout-cone-mode: true
+2026-09-20T08:48:54.2020074Z   fetch-tags: false
+2026-09-20T08:48:54.2020465Z   show-progress: true
+2026-09-20T08:48:54.2020853Z   lfs: false
+2026-09-20T08:48:54.2021242Z   submodules: false
+2026-09-20T08:48:54.2021666Z   set-safe-directory: true
+2026-09-20T08:48:54.2022096Z env:
+2026-09-20T08:48:54.2022614Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:48:54.2023402Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:48:54.2023997Z ##[endgroup]
+2026-09-20T08:48:54.3537714Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T08:48:54.3539446Z ##[group]Getting Git version info
+2026-09-20T08:48:54.3540056Z Working directory is 'D:\a\hol-guard\hol-guard\driver'
+2026-09-20T08:48:54.4234753Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:48:54.6208634Z git version 2.55.0.windows.5
+2026-09-20T08:48:54.6257458Z ##[endgroup]
+2026-09-20T08:48:54.6270804Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\a6dd90be-7517-4d8d-8846-de30b108c7f4\.gitconfig'
+2026-09-20T08:48:54.6291149Z Temporarily overriding HOME='D:\a\_temp\a6dd90be-7517-4d8d-8846-de30b108c7f4' before making global git config changes
+2026-09-20T08:48:54.6292738Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:48:54.6299831Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\driver
+2026-09-20T08:48:54.6539671Z ##[group]Determining repository object format
+2026-09-20T08:48:54.6541889Z ##[endgroup]
+2026-09-20T08:48:54.6542708Z ##[group]Initializing the repository
+2026-09-20T08:48:54.6549171Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\driver
+2026-09-20T08:48:55.0371726Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/driver/.git/
+2026-09-20T08:48:55.0417709Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:48:55.0954370Z ##[endgroup]
+2026-09-20T08:48:55.0955626Z ##[group]Disabling automatic garbage collection
+2026-09-20T08:48:55.0956821Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T08:48:55.1177974Z ##[endgroup]
+2026-09-20T08:48:55.1179109Z ##[group]Setting up auth
+2026-09-20T08:48:55.1180023Z Removing SSH command configuration
+2026-09-20T08:48:55.1187818Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:48:55.1413001Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:48:56.8614516Z Removing HTTP extra header
+2026-09-20T08:48:56.8626408Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:48:56.8863391Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:48:57.3170154Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:48:57.3181057Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:48:57.3403277Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:48:57.7610862Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T08:48:57.7873164Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:48:57.8100487Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:48:57.8366446Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:48:57.8587431Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:48:57.8807207Z ##[endgroup]
+2026-09-20T08:48:57.8807937Z ##[group]Fetching the repository
+2026-09-20T08:48:57.8820330Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826
+2026-09-20T08:49:01.8032425Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:49:01.8033170Z  * branch            bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826 -> FETCH_HEAD
+2026-09-20T08:49:01.8089896Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826^{object}
+2026-09-20T08:49:01.8475512Z bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826
+2026-09-20T08:49:01.8510866Z ##[endgroup]
+2026-09-20T08:49:01.8511462Z ##[group]Determining the checkout info
+2026-09-20T08:49:01.8512293Z ##[endgroup]
+2026-09-20T08:49:01.8520616Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T08:49:01.8877059Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T08:49:01.9114831Z ##[group]Checking out the ref
+2026-09-20T08:49:01.9121412Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826
+2026-09-20T08:49:02.1860757Z Note: switching to 'bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826'.
+2026-09-20T08:49:02.1861250Z 
+2026-09-20T08:49:02.1861552Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T08:49:02.1862080Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T08:49:02.1862709Z state without impacting any branches by switching back to a branch.
+2026-09-20T08:49:02.1862985Z 
+2026-09-20T08:49:02.1863201Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T08:49:02.1863620Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T08:49:02.1863817Z 
+2026-09-20T08:49:02.1864018Z   git switch -c <new-branch-name>
+2026-09-20T08:49:02.1864191Z 
+2026-09-20T08:49:02.1864288Z Or undo this operation with:
+2026-09-20T08:49:02.1864439Z 
+2026-09-20T08:49:02.1864536Z   git switch -
+2026-09-20T08:49:02.1864690Z 
+2026-09-20T08:49:02.1864895Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T08:49:02.1865118Z 
+2026-09-20T08:49:02.1865322Z HEAD is now at bf1df83 ci: validate PR 2974 absolute deadlines on four native platforms
+2026-09-20T08:49:02.1969941Z ##[endgroup]
+2026-09-20T08:49:02.2326367Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T08:49:02.2609455Z bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826
+2026-09-20T08:49:02.2645933Z ##[group]Removing auth
+2026-09-20T08:49:02.2646294Z Removing SSH command configuration
+2026-09-20T08:49:02.2653817Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:02.2888049Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:02.7241120Z Removing HTTP extra header
+2026-09-20T08:49:02.7248641Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:02.7479546Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:03.1678537Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:03.1685495Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:03.1878336Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T08:49:03.1878868Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T08:49:03.1879256Z includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T08:49:03.1879616Z includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T08:49:03.1913291Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T08:49:03.2101887Z D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.2137386Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.2366614Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T08:49:03.2592558Z D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.2629135Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.2866051Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/driver/.git.path
+2026-09-20T08:49:03.3072286Z /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.3104592Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/driver/.git.path /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.3337872Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path
+2026-09-20T08:49:03.3527970Z /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.3560325Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/driver/.git/worktrees/*.path /github/runner_temp/git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:03.3789825Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:03.7793844Z Removing credentials config 'D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config'
+2026-09-20T08:49:03.7807207Z ##[endgroup]
+2026-09-20T08:49:03.8111503Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T08:49:03.8111922Z with:
+2026-09-20T08:49:03.8112185Z   ref: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:03.8112461Z   path: before
+2026-09-20T08:49:03.8112683Z   fetch-depth: 2
+2026-09-20T08:49:03.8112961Z   persist-credentials: false
+2026-09-20T08:49:03.8113230Z   repository: hashgraph-online/hol-guard
+2026-09-20T08:49:03.8115055Z   token: ***
+2026-09-20T08:49:03.8115277Z   ssh-strict: true
+2026-09-20T08:49:03.8115507Z   ssh-user: git
+2026-09-20T08:49:03.8115707Z   clean: true
+2026-09-20T08:49:03.8115987Z   sparse-checkout-cone-mode: true
+2026-09-20T08:49:03.8116251Z   fetch-tags: false
+2026-09-20T08:49:03.8116484Z   show-progress: true
+2026-09-20T08:49:03.8116696Z   lfs: false
+2026-09-20T08:49:03.8116882Z   submodules: false
+2026-09-20T08:49:03.8117118Z   set-safe-directory: true
+2026-09-20T08:49:03.8117351Z env:
+2026-09-20T08:49:03.8117704Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:03.8118072Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:03.8118369Z ##[endgroup]
+2026-09-20T08:49:03.9006246Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T08:49:03.9012687Z ##[group]Getting Git version info
+2026-09-20T08:49:03.9013394Z Working directory is 'D:\a\hol-guard\hol-guard\before'
+2026-09-20T08:49:03.9656217Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:49:03.9865570Z git version 2.55.0.windows.5
+2026-09-20T08:49:03.9901404Z ##[endgroup]
+2026-09-20T08:49:03.9910175Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\e3eca58c-9747-4a08-8450-69f9e51ca455\.gitconfig'
+2026-09-20T08:49:03.9925285Z Temporarily overriding HOME='D:\a\_temp\e3eca58c-9747-4a08-8450-69f9e51ca455' before making global git config changes
+2026-09-20T08:49:03.9926140Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:49:03.9932943Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\before
+2026-09-20T08:49:04.0147880Z ##[group]Determining repository object format
+2026-09-20T08:49:04.0150094Z ##[endgroup]
+2026-09-20T08:49:04.0150514Z ##[group]Initializing the repository
+2026-09-20T08:49:04.0156646Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\before
+2026-09-20T08:49:04.0386362Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/before/.git/
+2026-09-20T08:49:04.0419859Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:49:04.0639056Z ##[endgroup]
+2026-09-20T08:49:04.0639510Z ##[group]Disabling automatic garbage collection
+2026-09-20T08:49:04.0645981Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T08:49:04.0858727Z ##[endgroup]
+2026-09-20T08:49:04.0859161Z ##[group]Setting up auth
+2026-09-20T08:49:04.0859642Z Removing SSH command configuration
+2026-09-20T08:49:04.0867777Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:04.1089064Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:04.5287033Z Removing HTTP extra header
+2026-09-20T08:49:04.5296026Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:04.5518248Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:05.0821881Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:05.0833563Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:05.1057572Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:05.5119120Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T08:49:05.5368088Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/before/.git.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:05.5590615Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:05.5811163Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/before/.git.path /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:05.6029394Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/before/.git/worktrees/*.path /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:05.6243049Z ##[endgroup]
+2026-09-20T08:49:05.6243633Z ##[group]Fetching the repository
+2026-09-20T08:49:05.6252540Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:08.1130181Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:49:08.1130641Z  * branch            a8297fe9868322616c92084d9a2fbb712a0907d0 -> FETCH_HEAD
+2026-09-20T08:49:08.1178867Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet a8297fe9868322616c92084d9a2fbb712a0907d0^{object}
+2026-09-20T08:49:08.1379940Z a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:08.1408119Z ##[endgroup]
+2026-09-20T08:49:08.1408692Z ##[group]Determining the checkout info
+2026-09-20T08:49:08.1409200Z ##[endgroup]
+2026-09-20T08:49:08.1417496Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T08:49:08.1665570Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T08:49:08.1886008Z ##[group]Checking out the ref
+2026-09-20T08:49:08.1892709Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:08.8816775Z Note: switching to 'a8297fe9868322616c92084d9a2fbb712a0907d0'.
+2026-09-20T08:49:08.8817257Z 
+2026-09-20T08:49:08.8817478Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T08:49:08.8817982Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T08:49:08.8818484Z state without impacting any branches by switching back to a branch.
+2026-09-20T08:49:08.8818814Z 
+2026-09-20T08:49:08.8819032Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T08:49:08.8819533Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T08:49:08.8819744Z 
+2026-09-20T08:49:08.8819979Z   git switch -c <new-branch-name>
+2026-09-20T08:49:08.8820185Z 
+2026-09-20T08:49:08.8820317Z Or undo this operation with:
+2026-09-20T08:49:08.8820495Z 
+2026-09-20T08:49:08.8820564Z   git switch -
+2026-09-20T08:49:08.8820725Z 
+2026-09-20T08:49:08.8820890Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T08:49:08.8821158Z 
+2026-09-20T08:49:08.8821407Z HEAD is now at a8297fe test(pr2974): bind original managed deadline behavior to real boundary controls
+2026-09-20T08:49:08.8886810Z ##[endgroup]
+2026-09-20T08:49:08.9140253Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T08:49:08.9339395Z a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:08.9374489Z ##[group]Removing auth
+2026-09-20T08:49:08.9374904Z Removing SSH command configuration
+2026-09-20T08:49:08.9381993Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:08.9609012Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:09.5156102Z Removing HTTP extra header
+2026-09-20T08:49:09.5165335Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:09.5389716Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:10.0290700Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:10.0298438Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:10.0498120Z includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path
+2026-09-20T08:49:10.0498617Z includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path
+2026-09-20T08:49:10.0499659Z includeif.gitdir:/github/workspace/before/.git.path
+2026-09-20T08:49:10.0500034Z includeif.gitdir:/github/workspace/before/.git/worktrees/*.path
+2026-09-20T08:49:10.0532945Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path
+2026-09-20T08:49:10.0730429Z D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.0767316Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.0989829Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path
+2026-09-20T08:49:10.1179701Z D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.1213712Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.1432067Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/before/.git.path
+2026-09-20T08:49:10.1617440Z /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.1649774Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/before/.git.path /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.1876575Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/before/.git/worktrees/*.path
+2026-09-20T08:49:10.2061940Z /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.2093027Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/before/.git/worktrees/*.path /github/runner_temp/git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:10.2320343Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:10.6632124Z Removing credentials config 'D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config'
+2026-09-20T08:49:10.6643287Z ##[endgroup]
+2026-09-20T08:49:10.6916723Z ##[group]Run actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+2026-09-20T08:49:10.6917371Z with:
+2026-09-20T08:49:10.6917670Z   ref: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:10.6918064Z   path: candidate
+2026-09-20T08:49:10.6918555Z   fetch-depth: 2
+2026-09-20T08:49:10.6918813Z   persist-credentials: false
+2026-09-20T08:49:10.6919118Z   repository: hashgraph-online/hol-guard
+2026-09-20T08:49:10.6920992Z   token: ***
+2026-09-20T08:49:10.6921257Z   ssh-strict: true
+2026-09-20T08:49:10.6921463Z   ssh-user: git
+2026-09-20T08:49:10.6921680Z   clean: true
+2026-09-20T08:49:10.6921905Z   sparse-checkout-cone-mode: true
+2026-09-20T08:49:10.6922161Z   fetch-tags: false
+2026-09-20T08:49:10.6922381Z   show-progress: true
+2026-09-20T08:49:10.6922580Z   lfs: false
+2026-09-20T08:49:10.6922807Z   submodules: false
+2026-09-20T08:49:10.6923041Z   set-safe-directory: true
+2026-09-20T08:49:10.6923265Z env:
+2026-09-20T08:49:10.6923636Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:10.6923993Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:10.6924349Z ##[endgroup]
+2026-09-20T08:49:10.7804330Z Syncing repository: hashgraph-online/hol-guard
+2026-09-20T08:49:10.7811210Z ##[group]Getting Git version info
+2026-09-20T08:49:10.7811600Z Working directory is 'D:\a\hol-guard\hol-guard\candidate'
+2026-09-20T08:49:10.8509194Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:49:10.8727091Z git version 2.55.0.windows.5
+2026-09-20T08:49:10.8764400Z ##[endgroup]
+2026-09-20T08:49:10.8773566Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\02be7208-1c63-4e45-8548-923e82747dbf\.gitconfig'
+2026-09-20T08:49:10.8792019Z Temporarily overriding HOME='D:\a\_temp\02be7208-1c63-4e45-8548-923e82747dbf' before making global git config changes
+2026-09-20T08:49:10.8792672Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:49:10.8799364Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\candidate
+2026-09-20T08:49:10.9018338Z ##[group]Determining repository object format
+2026-09-20T08:49:10.9020754Z ##[endgroup]
+2026-09-20T08:49:10.9021157Z ##[group]Initializing the repository
+2026-09-20T08:49:10.9027385Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\hol-guard\hol-guard\candidate
+2026-09-20T08:49:10.9267823Z Initialized empty Git repository in D:/a/hol-guard/hol-guard/candidate/.git/
+2026-09-20T08:49:10.9302385Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:49:10.9526398Z ##[endgroup]
+2026-09-20T08:49:10.9526831Z ##[group]Disabling automatic garbage collection
+2026-09-20T08:49:10.9533242Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-20T08:49:10.9750732Z ##[endgroup]
+2026-09-20T08:49:10.9751388Z ##[group]Setting up auth
+2026-09-20T08:49:10.9751830Z Removing SSH command configuration
+2026-09-20T08:49:10.9759871Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:11.0015035Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:11.5508240Z Removing HTTP extra header
+2026-09-20T08:49:11.5517135Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:11.5748580Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:11.9936786Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:11.9950249Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:12.0195770Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:12.4877401Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-20T08:49:12.5115308Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:12.5335743Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:12.5555546Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:12.5769459Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:12.5979433Z ##[endgroup]
+2026-09-20T08:49:12.5979813Z ##[group]Fetching the repository
+2026-09-20T08:49:12.5988852Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:15.1588131Z From https://github.com/hashgraph-online/hol-guard
+2026-09-20T08:49:15.1589023Z  * branch            54fff0b48d3ce7a7becb03698f91aed63e55c1ee -> FETCH_HEAD
+2026-09-20T08:49:15.1633171Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet 54fff0b48d3ce7a7becb03698f91aed63e55c1ee^{object}
+2026-09-20T08:49:15.1836591Z 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:15.1869152Z ##[endgroup]
+2026-09-20T08:49:15.1869835Z ##[group]Determining the checkout info
+2026-09-20T08:49:15.1870429Z ##[endgroup]
+2026-09-20T08:49:15.1877657Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-20T08:49:15.2139546Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-20T08:49:15.2367434Z ##[group]Checking out the ref
+2026-09-20T08:49:15.2373661Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:15.9427629Z Note: switching to '54fff0b48d3ce7a7becb03698f91aed63e55c1ee'.
+2026-09-20T08:49:15.9428033Z 
+2026-09-20T08:49:15.9428208Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-20T08:49:15.9428614Z changes and commit them, and you can discard any commits you make in this
+2026-09-20T08:49:15.9429355Z state without impacting any branches by switching back to a branch.
+2026-09-20T08:49:15.9429565Z 
+2026-09-20T08:49:15.9429761Z If you want to create a new branch to retain commits you create, you may
+2026-09-20T08:49:15.9430119Z do so (now or later) by using -c with the switch command. Example:
+2026-09-20T08:49:15.9430328Z 
+2026-09-20T08:49:15.9430427Z   git switch -c <new-branch-name>
+2026-09-20T08:49:15.9430610Z 
+2026-09-20T08:49:15.9430691Z Or undo this operation with:
+2026-09-20T08:49:15.9430860Z 
+2026-09-20T08:49:15.9430956Z   git switch -
+2026-09-20T08:49:15.9431060Z 
+2026-09-20T08:49:15.9431255Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-20T08:49:15.9431468Z 
+2026-09-20T08:49:15.9431709Z HEAD is now at 54fff0b fix(runtime): preserve absolute managed deadlines through connect and lease cleanup
+2026-09-20T08:49:15.9504086Z ##[endgroup]
+2026-09-20T08:49:15.9771082Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-20T08:49:15.9980629Z 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:16.0015941Z ##[group]Removing auth
+2026-09-20T08:49:16.0016301Z Removing SSH command configuration
+2026-09-20T08:49:16.0023757Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:16.0258158Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:16.5887321Z Removing HTTP extra header
+2026-09-20T08:49:16.5896927Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:16.6117610Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:17.0796980Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:17.0804287Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:17.0999896Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T08:49:17.1000383Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T08:49:17.1000758Z includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T08:49:17.1001967Z includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T08:49:17.1035163Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T08:49:17.1222607Z D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.1258103Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.1479609Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T08:49:17.1671118Z D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.1704982Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.1920158Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/candidate/.git.path
+2026-09-20T08:49:17.2101022Z /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.2132016Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/candidate/.git.path /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.2359033Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path
+2026-09-20T08:49:17.2547524Z /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.2579416Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/candidate/.git/worktrees/*.path /github/runner_temp/git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:17.2804250Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:17.6973096Z Removing credentials config 'D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config'
+2026-09-20T08:49:17.6983465Z ##[endgroup]
+2026-09-20T08:49:17.7262778Z ##[group]Run actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+2026-09-20T08:49:17.7263229Z with:
+2026-09-20T08:49:17.7263454Z   python-version: 3.12.14
+2026-09-20T08:49:17.7263685Z   check-latest: false
+2026-09-20T08:49:17.7265807Z   token: ***
+2026-09-20T08:49:17.7266044Z   update-environment: true
+2026-09-20T08:49:17.7266338Z   allow-prereleases: false
+2026-09-20T08:49:17.7266565Z   freethreaded: false
+2026-09-20T08:49:17.7266775Z env:
+2026-09-20T08:49:17.7267051Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:17.7267437Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:17.7267758Z ##[endgroup]
+2026-09-20T08:49:17.8475483Z ##[group]Installed versions
+2026-09-20T08:49:17.8487613Z Version 3.12.14 was not found in the local cache
+2026-09-20T08:49:24.3126425Z ##[error]The version '3.12.14' with architecture 'x64' was not found for Windows 2025.
+The list of all available versions can be found here: https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+2026-09-20T08:49:24.3461391Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-20T08:49:24.3461892Z with:
+2026-09-20T08:49:24.3462153Z   name: pr2974-deadline-windows-x86_64-35500586815
+2026-09-20T08:49:24.3462431Z   if-no-files-found: error
+2026-09-20T08:49:24.3462678Z   retention-days: 90
+2026-09-20T08:49:24.3463052Z   path: D:\a\_temp/deadline-validation-rustup.log
+D:\a\_temp/deadline-validation-output/
+
+2026-09-20T08:49:24.3463590Z   compression-level: 6
+2026-09-20T08:49:24.3463832Z   overwrite: false
+2026-09-20T08:49:24.3464057Z   include-hidden-files: false
+2026-09-20T08:49:24.3464334Z   archive: true
+2026-09-20T08:49:24.3464521Z env:
+2026-09-20T08:49:24.3464756Z   DEADLINE_BEFORE_SHA: a8297fe9868322616c92084d9a2fbb712a0907d0
+2026-09-20T08:49:24.3465136Z   DEADLINE_CANDIDATE_SHA: 54fff0b48d3ce7a7becb03698f91aed63e55c1ee
+2026-09-20T08:49:24.3465425Z ##[endgroup]
+2026-09-20T08:49:24.4824200Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-20T08:49:24.4826187Z The least common ancestor is D:\a\_temp. This will be the root directory of the artifact
+2026-09-20T08:49:24.4828271Z ##[error]No files were found with the provided path: D:\a\_temp/deadline-validation-rustup.log
+D:\a\_temp/deadline-validation-output/. No artifacts will be uploaded.
+2026-09-20T08:49:24.5104784Z Post job cleanup.
+2026-09-20T08:49:24.6538359Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:49:24.6780655Z git version 2.55.0.windows.5
+2026-09-20T08:49:24.6836539Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\ef008d5e-15bd-46a6-9093-8babb5b3add6\.gitconfig'
+2026-09-20T08:49:24.6853565Z Temporarily overriding HOME='D:\a\_temp\ef008d5e-15bd-46a6-9093-8babb5b3add6' before making global git config changes
+2026-09-20T08:49:24.6854547Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:49:24.6864678Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\candidate
+2026-09-20T08:49:24.7102521Z Removing SSH command configuration
+2026-09-20T08:49:24.7112301Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:24.7389959Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:25.1626589Z Removing HTTP extra header
+2026-09-20T08:49:25.1636504Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:25.1877989Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:25.6040428Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:25.6051406Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:25.6238466Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T08:49:25.6239214Z includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T08:49:25.6272113Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path
+2026-09-20T08:49:25.6455706Z D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:25.6491159Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:25.6711572Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path
+2026-09-20T08:49:25.6892439Z D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:25.6924464Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/candidate/.git/worktrees/*.path D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config
+2026-09-20T08:49:25.7142427Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:26.1405435Z Removing credentials config 'D:\a\_temp\git-credentials-428ff116-54d8-4c35-808e-6b21420971c7.config'
+2026-09-20T08:49:26.1682001Z Post job cleanup.
+2026-09-20T08:49:26.3120925Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:49:26.3331476Z git version 2.55.0.windows.5
+2026-09-20T08:49:26.3380769Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\10d825a3-05f2-416d-99a0-73c90d1558ad\.gitconfig'
+2026-09-20T08:49:26.3396838Z Temporarily overriding HOME='D:\a\_temp\10d825a3-05f2-416d-99a0-73c90d1558ad' before making global git config changes
+2026-09-20T08:49:26.3397548Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:49:26.3405364Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\before
+2026-09-20T08:49:26.3643316Z Removing SSH command configuration
+2026-09-20T08:49:26.3651492Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:26.3907877Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:26.8095183Z Removing HTTP extra header
+2026-09-20T08:49:26.8104168Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:26.8325072Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:27.2535660Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:27.2547235Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:27.2735607Z includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path
+2026-09-20T08:49:27.2736164Z includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path
+2026-09-20T08:49:27.2773938Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path
+2026-09-20T08:49:27.2976700Z D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:27.3015431Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:27.3254424Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path
+2026-09-20T08:49:27.3454022Z D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:27.3492704Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/before/.git/worktrees/*.path D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config
+2026-09-20T08:49:27.3747095Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:27.8078835Z Removing credentials config 'D:\a\_temp\git-credentials-f707c4b0-5f5f-4f25-81f0-ecbc57ffbe3b.config'
+2026-09-20T08:49:27.8374271Z Post job cleanup.
+2026-09-20T08:49:27.9879960Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-20T08:49:28.0103055Z git version 2.55.0.windows.5
+2026-09-20T08:49:28.0154186Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\b9b85f8a-0423-49f1-b2aa-6b5fb904fa2d\.gitconfig'
+2026-09-20T08:49:28.0170209Z Temporarily overriding HOME='D:\a\_temp\b9b85f8a-0423-49f1-b2aa-6b5fb904fa2d' before making global git config changes
+2026-09-20T08:49:28.0171497Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-20T08:49:28.0179741Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\hol-guard\hol-guard\driver
+2026-09-20T08:49:28.0411719Z Removing SSH command configuration
+2026-09-20T08:49:28.0419382Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-20T08:49:28.0648293Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-20T08:49:28.4728002Z Removing HTTP extra header
+2026-09-20T08:49:28.4737304Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-20T08:49:28.4965461Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-20T08:49:28.9019545Z Removing includeIf entries pointing to credentials config files
+2026-09-20T08:49:28.9030520Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-20T08:49:28.9218327Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T08:49:28.9218959Z includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T08:49:28.9253570Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path
+2026-09-20T08:49:28.9437055Z D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:28.9472588Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:28.9691990Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path
+2026-09-20T08:49:28.9896975Z D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:28.9930289Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/hol-guard/hol-guard/driver/.git/worktrees/*.path D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config
+2026-09-20T08:49:29.0153423Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-20T08:49:29.5954921Z Removing credentials config 'D:\a\_temp\git-credentials-aa06292f-15ca-4dbf-8773-3810a97d9f36.config'
+2026-09-20T08:49:29.6141763Z Cleaning up orphan processes

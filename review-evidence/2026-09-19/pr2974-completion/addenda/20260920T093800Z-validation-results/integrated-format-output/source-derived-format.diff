@@ -1,0 +1,21 @@
+...
+ #[test]
+ fn lease_cleanup_returns_timely_bound_success() {
++    let (result, counts) = controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);
+-    let (result, counts) =
+-        controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);
+     assert_eq!(result, Ok(RESPONSE.to_vec()));
+     assert_eq!(counts, (1, 1));
+...
+ #[test]
+ fn late_lease_cleanup_preserves_committed_response_error() {
++    let (result, counts) = controlled_call(
++        Call::OneShot,
++        Stage::LeaseCleanup,
++        true,
++        Reply::CommittedEof,
++    );
+-    let (result, counts) =
+-        controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::CommittedEof);
+     assert_eq!(
+         counts,

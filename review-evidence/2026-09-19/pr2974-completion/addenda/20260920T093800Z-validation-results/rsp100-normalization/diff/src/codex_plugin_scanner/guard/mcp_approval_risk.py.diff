@@ -1,0 +1,28 @@
+--- prior/src/codex_plugin_scanner/guard/mcp_approval_risk.py
++++ after/src/codex_plugin_scanner/guard/mcp_approval_risk.py
+@@ -7,7 +7,6 @@
+ from __future__ import annotations
+ 
+ import dis
+-
+ from collections.abc import Callable, Mapping
+ from dataclasses import Field, dataclass, field
+ from threading import get_ident
+@@ -15,7 +14,7 @@
+ from typing import cast
+ 
+ from .mcp_authority_binding import AuthorityCheck
+-from .mcp_risk_dependencies import _CAPTURE_ERRORS, _HelperBinding, _codes
++from .mcp_risk_dependencies import _CAPTURE_ERRORS, _codes, _HelperBinding
+ from .models import GuardArtifact
+ 
+ _ISSUER = object()
+@@ -88,7 +87,7 @@
+ ) -> BoundApprovalRiskAnalysis | None:
+     # Import only at the explicit export boundary after both modules exist.
+     # A caller-created object or inactive token cannot supply arbitrary facts.
+-    from .mcp_request_risk import InvocationRiskFacts, _OWNER
++    from .mcp_request_risk import _OWNER, InvocationRiskFacts
+ 
+     if type(owner) is not InvocationRiskFacts or _OWNER.get() is not owner:
+         return None

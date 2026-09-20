@@ -1,0 +1,308 @@
+{
+  "schema": "windows-reader-failure-independent-review.v1",
+  "reviewed_at_utc": "2026-09-20 09:27:07 UTC",
+  "outcome": "READER_ONLY_REPAIR_FAILED; SOURCE_AND_DOCUMENTED_REPLACEMENT_CONTRACT_EXPLAIN_THE_GAP",
+  "run": {
+    "id": 35501374231,
+    "job": 106053608942,
+    "attempt": 1,
+    "source": "60619956b77c7770c0e53c474f948be095340ffb",
+    "source_tree": "375fe06dc5aa6be6191294db38ec4dfba58ec89d",
+    "source_parent": "4d10758e2cb44e5afa72a08aa631a02541dad534",
+    "driver": "634267a7bbe843efbd6c4c9556b79a64543a27e9",
+    "driver_tree": "6b1510f1163a4579ca14950c6197d3a2aeeced7c",
+    "python": "3.12.10"
+  },
+  "evidence_tree": "f7f76d0b1c63be414c3e0701a393afb1f54421f0",
+  "independently_read_originals": [
+    {
+      "path": "controls.xml",
+      "bytes": 93318,
+      "sha256": "92282ce87565de10aeb09b203a0d4f38e09dece1f55098e145d8bd66d0038c1f",
+      "git_blob": "ed5d47c365dc701beeb2fa63961103785996e25f"
+    },
+    {
+      "path": "windows-properties.json",
+      "bytes": 58749,
+      "sha256": "aeed62d042ad2153ed3f3428160b0c6da1332152bcd5beca70a9c20e5272c52f",
+      "git_blob": "0cb0543036851766662ab77275fa2fa4f003cbf2"
+    },
+    {
+      "path": "VERIFIED-RESULT.json",
+      "bytes": 14600,
+      "sha256": "7ccad7160b07585798c38f1afa189f9d335ba49d18ed8e99ad725c5fa651f235",
+      "git_blob": "0eaecbbd916f6ab45f27468531206566fa8e5f9e"
+    }
+  ],
+  "raw_recount": {
+    "scope": "Read-only parsing of original XML, ordered properties and all child stdout; no workload, ZIP or native execution.",
+    "raw_xml": {
+      "bytes": 93318,
+      "sha256": "92282ce87565de10aeb09b203a0d4f38e09dece1f55098e145d8bd66d0038c1f",
+      "git_blob": "ed5d47c365dc701beeb2fa63961103785996e25f"
+    },
+    "cases": 77,
+    "passed": 72,
+    "failed": 2,
+    "skipped": 3,
+    "errors": 0,
+    "windows_cases": 20,
+    "child_frames": 36,
+    "all_children_retired": true,
+    "writer_rows": [
+      {
+        "case": "test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-bounded_manager]",
+        "label": "writer",
+        "bytes": 379,
+        "sha256": "156cfaf3868452129a2c8e3e4634afd86fc9efd499063d0267243eb62672e121",
+        "retired": true,
+        "report": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 5
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      {
+        "case": "test_actual_reader_allows_other_process_replace_without_changing_writer[destination_only-codex_text]",
+        "label": "writer",
+        "bytes": 379,
+        "sha256": "156cfaf3868452129a2c8e3e4634afd86fc9efd499063d0267243eb62672e121",
+        "retired": true,
+        "report": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 5
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": false,
+          "source_reader_opened": false,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      {
+        "case": "test_actual_reader_allows_other_process_replace_without_changing_writer[separate_crt_source-bounded_manager]",
+        "label": "writer",
+        "bytes": 378,
+        "sha256": "5452df92de6bf25386f3a800f1b8a3dd6d364e41257f1a2eb2b4e074febbf2c1",
+        "retired": true,
+        "report": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 32
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": true,
+          "source_reader_opened": true,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      },
+      {
+        "case": "test_actual_reader_allows_other_process_replace_without_changing_writer[separate_crt_source-codex_text]",
+        "label": "writer",
+        "bytes": 378,
+        "sha256": "5452df92de6bf25386f3a800f1b8a3dd6d364e41257f1a2eb2b4e074febbf2c1",
+        "retired": true,
+        "report": {
+          "error": {
+            "errno": 13,
+            "kind": "PermissionError",
+            "winerror": 32
+          },
+          "operation": "writer",
+          "original_exception_identity_preserved": true,
+          "replace_calls": 1,
+          "replace_returned": false,
+          "schema": 1,
+          "source_reader_closed": true,
+          "source_reader_opened": true,
+          "temporary_siblings_removed": true,
+          "writer_calls": 1,
+          "writer_fd_closed_before_replace": true,
+          "writer_locked": true
+        }
+      }
+    ],
+    "audit_cases": 16
+  },
+  "source_bindings": [
+    {
+      "path": "src/codex_plugin_scanner/guard/windows_replaceable_file.py",
+      "bytes": 6745,
+      "sha256": "c3fb2a4b40d58c0deb4c8921d9b5e867bd2693399d4edc17fb40787bced3f4d2",
+      "git_blob": "3bdc3a4f76793b9e0c6b4d7084ca50687f22992d"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/private_file_io.py",
+      "bytes": 5059,
+      "sha256": "222fa0aa777f7826cef9b1f683fc9a3e05dd5cb70ac5e77d9eda82e100b6fbda",
+      "git_blob": "4b90f5ad72772822efa1a62c7a3e0f7f1da7d410"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/adapters/codex_daemon_hook_auth.py",
+      "bytes": 9539,
+      "sha256": "f989759d4c231a8a4800e4505dce48e7eea4bdefab821817cd7260516da21876",
+      "git_blob": "bf31d9a823e214a86a0b84c41a6808dc3903679c"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/manager.py",
+      "bytes": 19973,
+      "sha256": "650a0e649969080580649fa7bef3f488b48e884459a6018c02a649c83fdb6650",
+      "git_blob": "92a846eee8f9879ffd82930ccdec851fbf788d6b"
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/daemon/manager_pending_launch.py",
+      "bytes": 8129,
+      "sha256": "9a1337ca6d37431055afba386d9e371f4dfe7d014fcd1ed1998360ffed774a58",
+      "git_blob": "feb0a1907a024b5fbfd0b7c5ec890d8dc250a0ef"
+    },
+    {
+      "path": "tests/test_windows_replaceable_file.py",
+      "bytes": 16986,
+      "sha256": "2fbdef7b196e09bd4545b36c3d9a0d1f42a57192dd123d89675af3888a2f9935",
+      "git_blob": "ab48d32e6604f7a8296d27b2348a95b96d4b9fe9"
+    },
+    {
+      "path": "tests/test_windows_replaceable_reader_process.py",
+      "bytes": 15342,
+      "sha256": "3de4f2b92b1999bafcb977b0fbb7bd582071d76fb99afa536859e76340f30c35",
+      "git_blob": "840e769097e22a5df76510e8f8c076b273543bdb"
+    },
+    {
+      "path": "ci/native_runtime/windows_replaceable_reader_child.py",
+      "bytes": 9790,
+      "sha256": "f356bb2307010c5cd082ddce45af3dbaefec771071fe336510f16977a5c74cc7",
+      "git_blob": "7048e60fb58ea56771e712a4f336d971d67feb10"
+    }
+  ],
+  "primary_reference_bindings": [
+    {
+      "repo": "python/cpython",
+      "ref": "v3.12.10",
+      "path": "Modules/posixmodule.c",
+      "bytes": 460829,
+      "sha256": "a8f1410ad95326648a473672ee3bf8158a5f744b7c032c0142327fb252688ab4",
+      "git_blob": "c21c6f06c729de2ac1a4598180a394261c86e53b"
+    },
+    {
+      "repo": "python/cpython",
+      "ref": "v3.12.10",
+      "path": "Modules/_io/fileio.c",
+      "bytes": 31814,
+      "sha256": "b2266a58fd78f856f0b8b47ff34b3b166bd4cf4ca80adaaacaa271417fbe9f23",
+      "git_blob": "bab68077a2144aa6fe7f66100a3f22f923abc8be"
+    },
+    {
+      "repo": "microsoft/win32metadata",
+      "ref": "5c5efbc01d4c87f6830ec304d42777991d533154",
+      "path": "generation/WinSDK/RecompiledIdlHeaders/um/WinBase.h",
+      "bytes": 261606,
+      "sha256": "1b8913de810e25f0f6ea8d91f5b736e48888d0e6a2b1003b9ca476f3c2262379",
+      "git_blob": "9afdd4638cc12a0dc9cf672fb8059ee5b3453587"
+    },
+    {
+      "repo": "microsoft/win32metadata",
+      "ref": "5c5efbc01d4c87f6830ec304d42777991d533154",
+      "path": "generation/WinSDK/RecompiledIdlHeaders/um/minwinbase.h",
+      "bytes": 13500,
+      "sha256": "22126bf6a3de1023936c5e17098aad374e8f49d7c88c2907e800dd0b28c5e637",
+      "git_blob": "5618686f073915edfd39b0fb81b754160e6c3ac8"
+    },
+    {
+      "repo": "microsoft/win32metadata",
+      "ref": "5c5efbc01d4c87f6830ec304d42777991d533154",
+      "path": "generation/WinSDK/RecompiledIdlHeaders/um/winnt.h",
+      "bytes": 849622,
+      "sha256": "404019933323ca25f5db8ce14437483e1054398ce454d5c75df2e187cec2ae40",
+      "git_blob": "03d3705f3b16976c87c015df7b93fe17ca642446"
+    }
+  ],
+  "findings": [
+    {
+      "id": "held_destination_actual_failure",
+      "classification": "direct_original_result",
+      "finding": "Both destination-only routes failed the unchanged success assertion after one real writer and one real replace call. The writer's temporary descriptor was closed, no source reader was opened, its original PermissionError(errno13,winerror5) object was preserved, and the old reader data/identity assertions were reached. All four readers and36 children retired; no temporary sibling remained. The separate CRT source handles each produced winerror32."
+    },
+    {
+      "id": "share_delete_is_not_posix_replacement",
+      "classification": "source_and_primary_contract_explanation_not_kernel_trace",
+      "finding": "The candidate opens the destination once with GENERIC_READ and FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE (7), then transfers that same handle to the CRT. No second ordinary reader or write/delete desired access appears in this path. The unchanged writer calls os.replace after closing its temporary descriptor; exact CPython3.12.10 routes this to MoveFileExW with only MOVEFILE_REPLACE_EXISTING. Microsoft separately specifies FileRenameInfoEx POSIX semantics for replacing an already-open destination. Thus the reader-only change does not request the operation semantics required by its claimed old-handle/new-name behavior; the two actual failures are consistent with that contract gap. No NTSTATUS, filesystem filter trace, or complete OS handle census was captured, so those lower-level causes are not independently proved.",
+      "sources": [
+        "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew",
+        "https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw",
+        "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/open-osfhandle?view=msvc-170",
+        "https://github.com/python/cpython/blob/v3.12.10/Modules/posixmodule.c"
+      ]
+    },
+    {
+      "id": "supported_default_mode_narrowed",
+      "classification": "exact_source_plus_documented_acceptance; actual_WTEXT_bytes_unexecuted",
+      "finding": "The original bounded path supplies no translation flag to os.open; CPython adds O_NOINHERIT, emits the original audit event, then calls _wopen. Microsoft documents _set_fmode accepting _O_WTEXT as well as _O_TEXT/_O_BINARY, and Unicode/BOM-sensitive _wopen behavior. The candidate rejects any live default except TEXT/BINARY before CreateFileW. Its fake unicode_bom_unproved rejection test does not establish original rejection. Actual16 audit/CRT cases cover inherited/TEXT/BINARY and audit-triggered switches only. WTEXT original/candidate result/error equivalence is not observed and cannot be waived as an unsupported original mode.",
+      "sources": [
+        "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/set-fmode?view=msvc-170",
+        "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/open-wopen?view=msvc-170",
+        "https://learn.microsoft.com/en-us/cpp/c-runtime-library/fmode?view=msvc-170",
+        "https://github.com/python/cpython/blob/v3.12.10/Modules/posixmodule.c"
+      ]
+    },
+    {
+      "id": "textio_distinct",
+      "classification": "exact_CPython_source",
+      "finding": "FileIO adds O_BINARY before its original open audit/opener callback and explicitly sets binary mode after obtaining its descriptor. TextIO then performs its original UTF8/newline processing. Consequently a global Unicode CRT default is relevant to the unflagged bounded os.open route, while ordinary TextIO already selects binary explicitly. This does not establish all custom Python/CRT compatibility.",
+      "sources": [
+        "https://github.com/python/cpython/blob/v3.12.10/Modules/_io/fileio.c"
+      ]
+    }
+  ],
+  "alternative_review_preconditions": [
+    "Do not relabel the two WinError5 failures as passing, broaden retryable errors, or infer the holder of any older production WinError32 from these synthetic controls.",
+    "A separately reviewed writer alternative may use the documented FileRenameInfoEx/Flags contract once, with appropriate DELETE access on the owned source and original filesystem/ACL enforcement. Reader access must remain read-only; no ignore-readonly, ACL change, delete/recreate interval, copy fallback or mutation retry is justified.",
+    "Use the actual SDK union layout: DWORD Flags shares storage with BOOLEAN ReplaceIfExists; it is followed by HANDLE RootDirectory, DWORD filename length in UTF16 bytes, and the WCHAR tail. The documentation rendering contains an extra ReplaceIfExists line; the independently read SDK header does not.",
+    "The SDK gates FileRenameInfoEx=22 and REPLACE_IF_EXISTS=1/POSIX_SEMANTICS=2 at Windows10RS1. Generic SetFileInformationByHandle availability since Vista does not prove Ex support on older OSes or all filesystems. Unsupported capability must be explicitly preserved as failure or handled by a separately justified single-operation backend choice, not an error5/32 retry.",
+    "Preserve one original os.rename audit event and veto before mutation; preserve source/destination arguments, original error details, source-flush/fsync ordering, handle ownership and cleanup. Add actual held-destination/source and rejection tests without changing the original success requirement.",
+    "Before accepting any replacement reader, compare the actual original bounded and TextIO paths under live WTEXT and valid BOM/no-BOM inputs, retaining original result/error/byte limits/audit timing. No hand-written Unicode reinterpretation or blanket failure claim is validated here."
+  ],
+  "limits": {
+    "archive_downloaded_by_this_reviewer": false,
+    "archive_verification_attributed_to_owner": true,
+    "no_workload_or_native_execution": true,
+    "no_source_or_expected_value_edits": true,
+    "no_qualification_credit": true,
+    "task_promotions": [],
+    "static_owner_reports": {
+      "ruff_passed": true,
+      "format_passed": true,
+      "type_errors": 11,
+      "type_error_scope": "reportOptionalSubscript in the audit test helper"
+    }
+  }
+}

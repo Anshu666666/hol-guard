@@ -1,0 +1,23 @@
+{
+  "actual_process_returncode": 1,
+  "command": [
+    "/opt/hostedtoolcache/Python/3.12.14/x64/bin/python3.12",
+    "-c",
+    "\nimport importlib, json, sys\nfrom pathlib import Path\nexpected = [\n    [\n        \"codex_plugin_scanner.guard.mcp_request_risk\",\n        \"src/codex_plugin_scanner/guard/mcp_request_risk.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_risk_dependencies\",\n        \"src/codex_plugin_scanner/guard/mcp_risk_dependencies.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.mcp_tool_calls\",\n        \"src/codex_plugin_scanner/guard/mcp_tool_calls.py\"\n    ],\n    [\n        \"codex_plugin_scanner.guard.proxy.runtime_mcp\",\n        \"src/codex_plugin_scanner/guard/proxy/runtime_mcp.py\"\n    ]\n]\nloaded = []\nfor name, path in expected:\n    module = importlib.import_module(name)\n    actual = Path(module.__file__).resolve()\n    wanted = Path(path).resolve()\n    loaded.append({\"module\": name, \"actual\": str(actual), \"expected\": str(wanted), \"matches\": actual == wanted})\nfrom codex_plugin_scanner.guard import mcp_tool_calls as calls\nreport = {\n    \"python\": sys.version,\n    \"modules\": loaded,\n    \"all_import_paths_match\": all(item[\"matches\"] for item in loaded),\n    \"available\": calls._RISK_PAIR_HELPERS.available,\n    \"refusal_reason\": calls._RISK_PAIR_HELPERS.refusal_reason,\n    \"binding_count\": len(calls._RISK_PAIR_HELPERS._bindings),\n}\nprint(json.dumps(report, sort_keys=True, allow_nan=False))\nraise SystemExit(0 if report[\"available\"] and report[\"all_import_paths_match\"]\n                 and sys.version_info[:2] == (3, 12) else 1)\n"
+  ],
+  "configured_timeout_s": 180,
+  "containment_scope": "driver_process_group_only",
+  "effective_timeout_s": 180,
+  "elapsed_s": 0.242275,
+  "escaped_descendant_containment_proven": false,
+  "exit_code": 1,
+  "group_signal": null,
+  "name": "import-admission",
+  "process_group_retired": true,
+  "stderr_bytes": 1714,
+  "stderr_sha256": "f066f7a1decf658138d13b85ed68b0ac3f5bc93c9feaa7832f9b17f2e83b260a",
+  "stdout_bytes": 0,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timed_out": false,
+  "validation_budget_exhausted": false
+}

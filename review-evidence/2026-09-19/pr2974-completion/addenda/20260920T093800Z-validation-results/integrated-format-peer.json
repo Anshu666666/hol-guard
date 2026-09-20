@@ -1,0 +1,101 @@
+{
+  "after_tree": "a0c139c4e02535545c5b0e602c240a38affde5fe",
+  "before_tree": "7150f180d28be9df75e6acb726eba155bca81675",
+  "independent_full_tree_delta": [
+    {
+      "after": "176c1f69c0ca3a996dacd07c476b5e8bfef42386",
+      "before": "2ff024327a24c0693f3f55e4d5a6d19773bee14d",
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs",
+      "size": 13300
+    }
+  ],
+  "independent_line_delta": [
+    {
+      "kind": "+",
+      "line": 387,
+      "text": "    let (result, counts) = controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);"
+    },
+    {
+      "kind": "-",
+      "line": 387,
+      "text": "    let (result, counts) ="
+    },
+    {
+      "kind": "-",
+      "line": 388,
+      "text": "        controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);"
+    },
+    {
+      "kind": "+",
+      "line": 394,
+      "text": "    let (result, counts) = controlled_call("
+    },
+    {
+      "kind": "+",
+      "line": 395,
+      "text": "        Call::OneShot,"
+    },
+    {
+      "kind": "+",
+      "line": 396,
+      "text": "        Stage::LeaseCleanup,"
+    },
+    {
+      "kind": "+",
+      "line": 397,
+      "text": "        true,"
+    },
+    {
+      "kind": "+",
+      "line": 398,
+      "text": "        Reply::CommittedEof,"
+    },
+    {
+      "kind": "+",
+      "line": 399,
+      "text": "    );"
+    },
+    {
+      "kind": "-",
+      "line": 395,
+      "text": "    let (result, counts) ="
+    },
+    {
+      "kind": "-",
+      "line": 396,
+      "text": "        controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::CommittedEof);"
+    }
+  ],
+  "interpretation": "Only the two newly added test invocation layouts changed: one joined line, one multiline argument list with optional trailing comma. No expression, argument order, assertion, existing test body, managed production byte, Unix production check, queue-drain, cleanup or record behavior changed.",
+  "job": 106057359918,
+  "operations": {
+    "commits": false,
+    "refs": false,
+    "remote_execution": false,
+    "source_changes": false,
+    "standalone_receipt_only": true
+  },
+  "prior_source_peer_tree": "82a203280a42bcf5f22ec26a98c96710135a7a9b",
+  "recorded_validation": {
+    "all_command_exit_zero": true,
+    "all_five_idempotent": true,
+    "commands": 24,
+    "formatter": {
+      "bytes": 6255008,
+      "git_blob": "a4682f5bf8770f3c45c00a4a1aa46d0c6bff5fb2",
+      "sha256": "cf32a42bb26561ab14c74306b59b2739c5e9a9b20fd00c02f913a8589d77279e",
+      "version": "rustfmt 1.8.0-stable (6b00bc3880 2025-06-23)"
+    },
+    "independent_rerun": false,
+    "native_compilation_executed": false,
+    "native_controls_executed": false,
+    "source_preserved": true,
+    "workloads_executed": false
+  },
+  "remaining": "Exact integrated compile, original seven managed plus two Unix controls (seven on Windows), full required workspace/Clippy/self-test and source binding remain necessary. Earlier source-bound runs are not reassigned.",
+  "result": "format_only_delta_clear; native_execution_pending",
+  "returned_packet_tree": "068a1cffaaa98284eecbc894f7e30e1fd56ee9cf",
+  "reviewer": "partition_regression",
+  "run": 35502764575,
+  "schema": "pr2974-native-deadline-final-format-peer.v1"
+}

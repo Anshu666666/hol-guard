@@ -1,0 +1,120 @@
+{
+  "schema": "pr2974.deadline-platform-setup-repair-plan.v1",
+  "original_run": 35500586815,
+  "original_driver": "bf1df83b515c2da1fb55f28d4d9c6b3f83b5a826",
+  "original_driver_tree": "9778a740e5a3f1958e9879e7cf99cab223883321",
+  "before_commit": "a8297fe9868322616c92084d9a2fbb712a0907d0",
+  "candidate_commit": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee",
+  "scope": "Rerun only the three platforms whose prior jobs stopped at unavailable Python setup, without executing Linux again.",
+  "source_changes": 0,
+  "runner_changes": 0,
+  "expected_control_changes": 0,
+  "verifier_changes": 0,
+  "workflow_changes": [
+    "Remove only the Linux matrix entry.",
+    "Pin Python3.12.10, whose exact macOS/Windows architecture artifacts already exist.",
+    "Use a new branch trigger; keep before/candidate SHA bindings, Rust1.88, locked compile/list/result admission, original deadlines, full candidate Rust gates and artifact retention unchanged."
+  ],
+  "reversal_to_original_workflow": true,
+  "python_availability": {
+    "repository": "actions/python-versions",
+    "manifest_blob": "9a26f094b8b111d3297e3c6a370ff8f576784974",
+    "manifest_sha256": "fbfbfe5d1edb027242bbbfa2ca9601e3a63144e986bdcc0477c0ea2e2ad95d16",
+    "version_31214_platforms": [
+      "linux",
+      "rhel"
+    ],
+    "selected_version": "3.12.10",
+    "release_id": 211154780,
+    "release_tag": "3.12.10-14343898437",
+    "published_at": "2025-04-08T22:50:28Z",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "id": 244701302,
+        "name": "python-3.12.10-darwin-arm64.tar.gz",
+        "size": 45403704,
+        "state": "uploaded",
+        "digest": null,
+        "browser_download_url": "https://github.com/actions/python-versions/releases/download/3.12.10-14343898437/python-3.12.10-darwin-arm64.tar.gz"
+      },
+      {
+        "id": 244701305,
+        "name": "python-3.12.10-darwin-x64.tar.gz",
+        "size": 45403701,
+        "state": "uploaded",
+        "digest": null,
+        "browser_download_url": "https://github.com/actions/python-versions/releases/download/3.12.10-14343898437/python-3.12.10-darwin-x64.tar.gz"
+      },
+      {
+        "id": 244701309,
+        "name": "python-3.12.10-win32-x64.zip",
+        "size": 26672655,
+        "state": "uploaded",
+        "digest": null,
+        "browser_download_url": "https://github.com/actions/python-versions/releases/download/3.12.10-14343898437/python-3.12.10-win32-x64.zip"
+      }
+    ],
+    "archive_downloaded_or_hash_verified": false
+  },
+  "failures": [
+    {
+      "platform": "windows-x86_64",
+      "job_id": 106051538309,
+      "stage": "Set up pinned Python",
+      "conclusion": "failure",
+      "rust_toolchain_install": "skipped",
+      "compile_and_controls": "skipped",
+      "native_controls_executed": 0,
+      "upload": "failed because no files had yet been created",
+      "log": {
+        "path": "evidence/attempt1/windows-x86_64.job.log",
+        "bytes": 52136,
+        "sha256": "cdef4d20b8bfcc2f77e774a203ab4cd459ae34c43b9465b9f55dcd7a2f1f1037",
+        "git_blob": "951fee2e7f441e633348d9ba594488ab42c41ab5"
+      }
+    },
+    {
+      "platform": "macos-arm64",
+      "job_id": 106051538366,
+      "stage": "Set up pinned Python",
+      "conclusion": "failure",
+      "rust_toolchain_install": "skipped",
+      "compile_and_controls": "skipped",
+      "native_controls_executed": 0,
+      "upload": "failed because no files had yet been created",
+      "log": {
+        "path": "evidence/attempt1/macos-arm64.job.log",
+        "bytes": 46491,
+        "sha256": "3f8d31b596f4db328729f44bcff17c3cccbbea82ee42f2dcbde5a2ce898d31a7",
+        "git_blob": "0fe5566f45f88c8731cbc1833ad2801d41d34426"
+      }
+    },
+    {
+      "platform": "macos-x86_64",
+      "job_id": 106051538408,
+      "stage": "Set up pinned Python",
+      "conclusion": "failure",
+      "rust_toolchain_install": "skipped",
+      "compile_and_controls": "skipped",
+      "native_controls_executed": 0,
+      "upload": "failed because no files had yet been created",
+      "log": {
+        "path": "evidence/attempt1/macos-x86_64.job.log",
+        "bytes": 51546,
+        "sha256": "bdfe0d1ba6ae3787072bcbb2fec00c49b045ff3775d1f9134a4f0e09b4f5a2e2",
+        "git_blob": "d7f5cb1d4024b83a2fa6fdfb374aee3b798ea7c5"
+      }
+    }
+  ],
+  "linux": {
+    "job_id": 106051538390,
+    "python": "3.12.14",
+    "last_observed": "native validation step in progress",
+    "successor_included": false
+  },
+  "no_preparation_execution": true,
+  "no_dispatch_by_owner": true,
+  "qualification_complete": false
+}

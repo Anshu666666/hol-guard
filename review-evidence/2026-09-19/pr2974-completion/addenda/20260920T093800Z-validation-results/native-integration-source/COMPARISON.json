@@ -1,0 +1,76 @@
+{
+  "schema": "pr2974.deadline-external4afa-integration-review.v2",
+  "base_commit": "4afa20cf014ccba918bf2fa61552dafe66767930",
+  "base_tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+  "prior_validated_candidate": "54fff0b48d3ce7a7becb03698f91aed63e55c1ee",
+  "candidate_tree": "7150f180d28be9df75e6acb726eba155bca81675",
+  "previous_unpublished_draft_tree": "32f610af920f9538feac0eeb4451d80401d7f1c2",
+  "last_draft_delta": "After the sole owned client has joined, drain the nonblocking peer accept queue to WouldBlock instead of counting at most one queued connection. Other errors still propagate; no deadline or timed wait was added.",
+  "changed_paths": [
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "lines": 422,
+      "bytes": 15405,
+      "sha256": "4414256ab075c91357f11380c54cbc3b4ba9cd9485296f9eeb063d2c48a59a99",
+      "git_blob": "3335e81202562e3ec767543175b1bdd270366c3a"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs",
+      "lines": 406,
+      "bytes": 13277,
+      "sha256": "1cf7d364460127b05d0e6a209c5a4761aa61f4034c72bf4c5b91011deaad791a",
+      "git_blob": "2ff024327a24c0693f3f55e4d5a6d19773bee14d"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs",
+      "lines": 143,
+      "bytes": 4521,
+      "sha256": "588ba3f5ab537b3da4b831048c1b76c42246442fe67508ded80287d23f6c00f2",
+      "git_blob": "aeefcd362da3f2316c681c8c84629154223ef8f1"
+    }
+  ],
+  "preserved_production": [
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "git_blob": "ebec0062c854d508a27bc163beec0d0fcdd547e7",
+      "sha256": "cab28fae45d6ecd1d8e29f4290ef6da48cb778743e54cd4087136c806e07d191",
+      "bytes": 17820
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+      "git_blob": "190f6238a9aba72628b71b1174ecdbbde5b227f8",
+      "sha256": "21209b92c29eaf2649af5dddc61971b532aabe2fb9877df8fdea6074f2c0b1ad",
+      "bytes": 1494
+    }
+  ],
+  "semantic_comparison": [
+    "External4afa already passes the original absolute Instant through real state identity/token validation into the detailed client exchange.",
+    "External finish_before_deadline uses Result::and_then and therefore only rejects late Ok results. Err contents/classification stay unchanged, as in the previously validated54 candidate.",
+    "The external explicit map_err(ResidentClientError::fatal) matches the unchanged From<String> implementation's fatal classification. It is retained.",
+    "The remaining production delta is only a fresh connect_remaining(deadline) after owned Unix socket/fcntl setup, immediately before connect. Original authentication250ms, deadline values, protocol bindings and retry allowlist are unchanged.",
+    "External managed module name/import placement, all five existing test bodies and its actual lease-file cleanup assertion are retained.",
+    "The new managed helper additions drain every queued TCP connection after the sole client joins, exercise a complete authenticated request followed by response EOF, prove timely post-lease success, and emit fixed records only after original result, both joins and asserted owned-home removal.",
+    "Fixed case names derive from seven closed fixture argument combinations; unsupported combinations fail before starting the fixture. Existing five test callsites/bodies do not change.",
+    "The Unix two-control module is byte-identical to the Rust1.88 formatted source exercised by54 on original Linux. Combined-source execution credit is still pending."
+  ],
+  "proof": {
+    "existing_five_test_bodies_byte_identical": true,
+    "existing_lease_file_assertion_byte_identical": true,
+    "external_managed_production_module_and_imports_untouched": true,
+    "client_change_reversal_exact": true,
+    "new_unix_test_module_identical_to_formatted54_source": true,
+    "new_fixed_records_expected_seven_cases": true,
+    "formatted_or_compiled_as_integrated_source": false,
+    "peer_queue_drained_until_would_block_after_client_join": true
+  },
+  "validation": {
+    "integrated_source_formatted": false,
+    "integrated_source_compiled": false,
+    "integrated_controls_executed": false,
+    "prior_linux_result": "54 candidate:9 focused controls; separate full workspace318pass/6ignored includes those controls. Exact4afa integration cannot inherit this as its own execution.",
+    "three_platform_54_followup_run": 35500925728,
+    "required_next": "Freeze/verify formatting on these exact combined bytes, then run candidate-only strict runtime compile and exact7managed+2Unix(or7Windows) collection/result admission, full default workspace/all-target tests, both Clippy scopes, and release self-test on the final source. Previously bound before evidence stays separate.",
+    "performance_qualification": false
+  },
+  "no_PR_or_ref_mutation": true
+}

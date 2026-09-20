@@ -1,0 +1,127 @@
+{
+  "base_commit": "4afa20cf014ccba918bf2fa61552dafe66767930",
+  "base_tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+  "execution_status": {
+    "integrated_candidate_results_available": false,
+    "reviewer_compile": false,
+    "reviewer_format": false,
+    "reviewer_native_build": false,
+    "reviewer_remote_execution": false,
+    "reviewer_source_edits": false,
+    "reviewer_tests": false
+  },
+  "final_candidate_tree": "7150f180d28be9df75e6acb726eba155bca81675",
+  "final_packet_tree": "9dfb65451e77b68135fe475f57c7cae607e0e6c4",
+  "first_candidate_tree": "32f610af920f9538feac0eeb4451d80401d7f1c2",
+  "first_packet_tree": "386039497128aa754307cf33fabdc61cf77b22d9",
+  "full_tree_comparison": {
+    "all_other_base_repository_blobs_preserved": true,
+    "changed_paths_exactly_three": true,
+    "first_to_final_delta": [
+      {
+        "after": "2ff024327a24c0693f3f55e4d5a6d19773bee14d",
+        "before": "78d666dbd4d912779e3cc91a4700871890cb3fa2",
+        "path": "rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs",
+        "size": 13277
+      }
+    ],
+    "truncated": false
+  },
+  "mutations": {
+    "PR": false,
+    "branch": false,
+    "commit": false,
+    "ref": false,
+    "standalone_git_peer_tree_only": true
+  },
+  "preserved_existing_tests": [
+    {
+      "byte_identical": true,
+      "name": "validation_delay_does_not_admit_expired_request"
+    },
+    {
+      "byte_identical": true,
+      "name": "validated_request_completes_authenticated_bound_exchange_once"
+    },
+    {
+      "byte_identical": true,
+      "name": "leased_request_does_not_return_late_bound_success"
+    },
+    {
+      "byte_identical": true,
+      "name": "lease_cleanup_does_not_return_late_bound_success"
+    },
+    {
+      "byte_identical": true,
+      "name": "late_lease_cleanup_preserves_fatal_authentication_error"
+    }
+  ],
+  "preserved_managed_production": [
+    {
+      "git_blob_sha": "ebec0062c854d508a27bc163beec0d0fcdd547e7",
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "unchanged": true
+    },
+    {
+      "git_blob_sha": "190f6238a9aba72628b71b1174ecdbbde5b227f8",
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline.rs",
+      "unchanged": true
+    }
+  ],
+  "real_lease_file_assertion_byte_identical": true,
+  "required_validation": [
+    "Format and compile the exact integrated candidate; rebind and review any resulting source delta.",
+    "Require exact seven managed controls plus two Unix controls on Unix, or seven managed controls on Windows, with original case membership and passed result admission.",
+    "Run required full default workspace/all-target checks, Clippy scopes and release self-test against these final images.",
+    "Keep older54 candidate/Linux or other-platform records source-bound to their originals; they are not execution proof for this4afa integration.",
+    "No deadlines, retry semantics, performance acceptance or task completion may be weakened or inferred from source review."
+  ],
+  "result": "no_source_blocker_in_exact_three_path_integration; format_compile_execution_pending",
+  "reviewed_files": [
+    {
+      "bytes": 15405,
+      "git_blob_sha": "3335e81202562e3ec767543175b1bdd270366c3a",
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "physical_lines": 422,
+      "sha256": "4414256ab075c91357f11380c54cbc3b4ba9cd9485296f9eeb063d2c48a59a99"
+    },
+    {
+      "bytes": 13277,
+      "git_blob_sha": "2ff024327a24c0693f3f55e4d5a6d19773bee14d",
+      "path": "rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs",
+      "physical_lines": 406,
+      "sha256": "1cf7d364460127b05d0e6a209c5a4761aa61f4034c72bf4c5b91011deaad791a"
+    },
+    {
+      "bytes": 4521,
+      "git_blob_sha": "aeefcd362da3f2316c681c8c84629154223ef8f1",
+      "path": "rust/crates/guard-runtime/src/resident_client_connect_deadline_tests.rs",
+      "physical_lines": 143,
+      "sha256": "588ba3f5ab537b3da4b831048c1b76c42246442fe67508ded80287d23f6c00f2"
+    }
+  ],
+  "reviewer": "partition_regression",
+  "schema": "pr2974-deadline-4afa-integration-source-peer.v1",
+  "source_findings": [
+    {
+      "finding": "The only product behavior change is a fresh connect_remaining(deadline) after owned socket creation and both fcntl calls, immediately before connect. The same absolute Instant is used. Early return drops the owned descriptor, and existing authentication, protocol, peer identity and retry classification remain unchanged. A cfg(test) checkpoint plus Unix-only test module declaration supports deterministic observation.",
+      "topic": "Unix setup deadline"
+    },
+    {
+      "finding": "The new positive/expired cases invoke actual connect_unix_with_digest against an owned nonblocking UnixListener with current-process identity. They pause after real socket/fcntl setup, preserve the two-second request deadline, and assert a real queued connection for timely setup versus none for expired setup. They join the worker, close the listener, remove the owned home and then emit fixed evidence.",
+      "topic": "Real Unix controls"
+    },
+    {
+      "finding": "The EOF branch authenticates both proofs, validates request magic, length, complete payload and digest before closing without a reply. The late cleanup control must preserve the fatal live-request error and exactly one committed request. A new timely post-cleanup case requires the bound response, complementing the original late-success rejection. The unchanged lease-file assertion executes after the real lease destructor.",
+      "topic": "Managed committed EOF and timely cleanup"
+    },
+    {
+      "finding": "The first draft accepted only one remaining queued connection, so its fixed count could underreport extra queued attempts. The final one-hunk successor drains the nonblocking listener until WouldBlock after client.finish() joins the sole owned client. Other accept errors still propagate. No extra timeout or retry is introduced.",
+      "topic": "Final queue drain"
+    },
+    {
+      "finding": "Seven managed cases derive labels from a closed match on fixture arguments. Records are emitted after the original result, both worker joins and asserted owned-home removal; actual result/assertions remain authoritative. The two Unix records follow their real connection observation and cleanup. No payload, token, endpoint or owned path is added to these records.",
+      "topic": "Fixed evidence and cleanup"
+    }
+  ]
+}

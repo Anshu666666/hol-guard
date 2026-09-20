@@ -1,0 +1,81 @@
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:262:
+             "owned lease remained at the post-cleanup boundary"
+         );
+     }
+-    assert!(Instant::now() < deadline, "fixture missed its selected boundary");
++    assert!(
++        Instant::now() < deadline,
++        "fixture missed its selected boundary"
++    );
+     if expire {
+         thread::sleep(
+             deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(5),
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:276:
+ 
+ #[test]
+ fn validation_delay_does_not_admit_expired_request() {
+-    let (result, counts) =
+-        controlled_call(Call::Discovered, Stage::Validated, true, Reply::Bound);
++    let (result, counts) = controlled_call(Call::Discovered, Stage::Validated, true, Reply::Bound);
+     assert_eq!(
+         counts,
+         (0, 0),
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:284:
+         "expired validation admitted a real connection or request"
+     );
+-    assert_eq!(result, Err("native_resident_live_request_failed".to_owned()));
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
+ }
+ 
+ #[test]
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:290:
+ fn validated_request_completes_authenticated_bound_exchange_once() {
+-    let (result, counts) =
+-        controlled_call(Call::Discovered, Stage::Validated, false, Reply::Bound);
++    let (result, counts) = controlled_call(Call::Discovered, Stage::Validated, false, Reply::Bound);
+     assert_eq!(result, Ok(RESPONSE.to_vec()));
+     assert_eq!(counts, (1, 1));
+ }
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:296:
+ 
+ #[test]
+ fn leased_request_does_not_return_late_bound_success() {
+-    let (result, counts) =
+-        controlled_call(Call::Leased, Stage::Returned, true, Reply::Bound);
++    let (result, counts) = controlled_call(Call::Leased, Stage::Returned, true, Reply::Bound);
+     assert_eq!(counts, (1, 1), "a committed request was replayed");
+     assert_eq!(result, Err("native_client_deadline_exceeded".to_owned()));
+ }
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:304:
+ 
+ #[test]
+ fn lease_cleanup_does_not_return_late_bound_success() {
+-    let (result, counts) =
+-        controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::Bound);
++    let (result, counts) = controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::Bound);
+     assert_eq!(counts, (1, 1), "a committed request was replayed");
+     assert_eq!(result, Err("native_client_deadline_exceeded".to_owned()));
+ }
+Diff in /home/runner/work/hol-guard/hol-guard/source/rust/crates/guard-runtime/src/managed_resident_deadline_tests.rs:312:
+ 
+ #[test]
+ fn late_lease_cleanup_preserves_fatal_authentication_error() {
+-    let (result, counts) = controlled_call(
+-        Call::OneShot,
+-        Stage::LeaseCleanup,
+-        true,
+-        Reply::WrongProof,
+-    );
++    let (result, counts) =
++        controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::WrongProof);
+     assert_eq!(counts, (1, 0), "an authentication rejection was replayed");
+-    assert_eq!(result, Err("native_resident_live_request_failed".to_owned()));
++    assert_eq!(
++        result,
++        Err("native_resident_live_request_failed".to_owned())
++    );
+ }
+ 

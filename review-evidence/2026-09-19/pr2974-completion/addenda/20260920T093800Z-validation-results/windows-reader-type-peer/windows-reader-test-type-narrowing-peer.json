@@ -1,0 +1,31 @@
+{
+  "schema": "windows-reader-test-type-narrowing-peer.v1",
+  "outcome": "CLEAR_STATIC_ONLY",
+  "source": "60619956b77c7770c0e53c474f948be095340ffb",
+  "proposal_tree": "8a0eb3576c08ff0b6da1eee33ac94487f3fbcade",
+  "path": "tests/test_windows_replaceable_reader_process.py",
+  "before": {
+    "bytes": 15342,
+    "sha256": "3de4f2b92b1999bafcb977b0fbb7bd582071d76fb99afa536859e76340f30c35",
+    "git_blob": "840e769097e22a5df76510e8f8c076b273543bdb"
+  },
+  "after": {
+    "bytes": 15419,
+    "sha256": "21f7400916779dba1db50a76785d6c6e02390abd615e44f909eadc7136c93597",
+    "git_blob": "892db8974406e30ef818198afbb3fd2ac168d29a"
+  },
+  "findings": [
+    "Removing exactly the two added isinstance(..., dict) assertions reproduces the original entire file byte for byte.",
+    "The assertions follow the already recorded original/candidate child reports and zero exit checks, before indexing. They make the runtime/type contract explicit without changing the case population, original report comparisons, held-destination expectations, timers, permissions or cleanup.",
+    "These checks address the observed OptionalSubscript narrowing seam. This review did not execute basedpyright, formatting or tests and does not claim the 11 errors are verified cleared."
+  ],
+  "preserved_failure": {
+    "run": 35501374231,
+    "passed": 72,
+    "failed": 2,
+    "skipped": 3,
+    "held_destination": "Both original WinError5 failures remain failed; no expectation adjustment."
+  },
+  "executed": false,
+  "publication_scope": "Standalone review tree only; no commit/ref/product mutation."
+}

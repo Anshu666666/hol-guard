@@ -1,0 +1,23 @@
+...
+   push:
+     branches:
++      - "codex/pr2974-absolute-deadline-validation-20260920-v2"
+-      - "codex/pr2974-absolute-deadline-validation-20260920"
+ 
+ permissions:
+...
+       matrix:
+         include:
+-          - platform: linux-x86_64
+-            runner: ubuntu-24.04
+-            rust_host: x86_64-unknown-linux-gnu
+           - platform: macos-x86_64
+             runner: macos-15-intel
+...
+         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+         with:
++          python-version: "3.12.10"
+-          python-version: "3.12.14"
+ 
+       - name: Install project Rust toolchain
+

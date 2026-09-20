@@ -1,0 +1,68 @@
+{
+  "binary_sha256": "47d6fd7136c1c4e60ac15fd53058418f6760d1631d6606e229e5d13ed9a8da34",
+  "controls": 7,
+  "expected_failures_observed": 3,
+  "group": "managed",
+  "passed": true,
+  "phase": "before",
+  "qualification_complete": false,
+  "records": [
+    {
+      "case": "late_lease_cleanup_preserves_committed_response_error",
+      "connections": 1,
+      "expired_on_release": true,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "live_request_failed"
+    },
+    {
+      "case": "late_lease_cleanup_preserves_fatal_authentication_error",
+      "connections": 1,
+      "expired_on_release": true,
+      "owned_cleanup": true,
+      "requests": 0,
+      "result": "live_request_failed"
+    },
+    {
+      "case": "lease_cleanup_does_not_return_late_bound_success",
+      "connections": 1,
+      "expired_on_release": true,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "bound_response"
+    },
+    {
+      "case": "lease_cleanup_returns_timely_bound_success",
+      "connections": 1,
+      "expired_on_release": false,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "bound_response"
+    },
+    {
+      "case": "leased_request_does_not_return_late_bound_success",
+      "connections": 1,
+      "expired_on_release": true,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "bound_response"
+    },
+    {
+      "case": "validated_request_completes_authenticated_bound_exchange_once",
+      "connections": 1,
+      "expired_on_release": false,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "bound_response"
+    },
+    {
+      "case": "validation_delay_does_not_admit_expired_request",
+      "connections": 1,
+      "expired_on_release": true,
+      "owned_cleanup": true,
+      "requests": 1,
+      "result": "bound_response"
+    }
+  ],
+  "runtime_test_exit": 101
+}

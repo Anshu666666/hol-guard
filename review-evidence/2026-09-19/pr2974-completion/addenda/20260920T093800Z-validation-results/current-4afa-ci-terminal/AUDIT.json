@@ -1,0 +1,508 @@
+{
+  "schema": "pr2974-normal4afa-terminal-linux-and-census.v1",
+  "observed_at_utc": "2026-09-20T09:47:40Z",
+  "source": {
+    "sha": "4afa20cf014ccba918bf2fa61552dafe66767930",
+    "tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+    "branch": "chore/resolve-2797-conflicts",
+    "parent": "2ac6b1bd84516c75fc169c7d1c849f9aad7b89bd",
+    "base_sha": "4b89e0d2d496a85f04922b2e019a4aea15326bb9",
+    "base_ref": "release/3.2"
+  },
+  "build": {
+    "merge_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+    "tree": "0f924adeb6501adb22f68f82f1c20b9a6e945513",
+    "exact_source_and_build_tree_match": true
+  },
+  "predecessor_interim": {
+    "tree": "facd33c7da0d13f9813f846e6b1cac7fa0b3ac1f",
+    "audit_blob": "73a2a85eef61692982fc867f75b02b3062686f35",
+    "audit_sha256": "153855b854044847f24d368f1ab7bc7907ffaf6665a56e76b564ba6d1fa22ef6",
+    "unchanged": true
+  },
+  "normal_run": {
+    "run_id": 35500952093,
+    "conclusion": "success",
+    "updated_at": "2026-09-20T09:31:29Z",
+    "jobs": [
+      {
+        "id": 106052498465,
+        "name": "windows-x64",
+        "conclusion": "success",
+        "started_at": "2026-09-20T08:56:59Z",
+        "completed_at": "2026-09-20T09:00:32Z"
+      },
+      {
+        "id": 106052498575,
+        "name": "macos (macos-15-intel, macosx_13_0_x86_64, x86_64-apple-darwin, 13.0)",
+        "conclusion": "success",
+        "started_at": "2026-09-20T08:57:02Z",
+        "completed_at": "2026-09-20T09:04:01Z"
+      },
+      {
+        "id": 106052498593,
+        "name": "linux-x64",
+        "conclusion": "success",
+        "started_at": "2026-09-20T08:57:00Z",
+        "completed_at": "2026-09-20T09:31:28Z"
+      },
+      {
+        "id": 106052498600,
+        "name": "macos (macos-15, macosx_11_0_arm64, aarch64-apple-darwin, 11.0)",
+        "conclusion": "success",
+        "started_at": "2026-09-20T08:57:05Z",
+        "completed_at": "2026-09-20T08:59:50Z"
+      }
+    ]
+  },
+  "checks": {
+    "head": "4afa20cf014ccba918bf2fa61552dafe66767930",
+    "count": 187,
+    "counts": {
+      "success": 166,
+      "skipped": 19,
+      "failure": 2
+    },
+    "observed_at": "2026-09-20T09:44:13Z"
+  },
+  "remaining_failures": [
+    {
+      "name": "cross-platform (windows-2025)",
+      "run_id": 35500952136,
+      "job_id": 106052498805,
+      "case": "ci/native_runtime/test_native_hook_client_transport.py::test_native_hook_client_rejects_duplicate_edge_keys_without_fallback",
+      "line": 173,
+      "initial_assertion": "result.returncode == 0",
+      "actual_returncode": 2,
+      "stdout": "",
+      "stderr": "native_resident_start_timeout\n",
+      "cohort": {
+        "passed": 14,
+        "failed": 1,
+        "seconds": 29.51
+      },
+      "native_runtime_unit_block": {
+        "passed": 199,
+        "ignored": 2
+      },
+      "cause": "Unresolved: failure occurs during the initial resident startup, before the duplicate-edge assertions; no inner startup/OS diagnostic leaf is retained."
+    },
+    {
+      "name": "Kilo Code Review",
+      "check_id": 106052497243,
+      "message": "Review failed: Assistant request was rate limited",
+      "code_finding": false
+    }
+  ],
+  "review": {
+    "threads": 59,
+    "resolved": 59,
+    "unresolved": 0,
+    "formal_records": 51,
+    "formal_states": {
+      "COMMENTED": 51
+    },
+    "formal_approved": 0,
+    "required_release_ruleset": 14511015,
+    "required_latest_push_independent_approval_obtained": false
+  },
+  "linux": {
+    "job_id": 106052498593,
+    "python": "3.12.14",
+    "source_python_controls": {
+      "passed": 21,
+      "seconds": 4.99
+    },
+    "installed_identity": {
+      "cases": 17,
+      "result_labels": {
+        "passed": 16,
+        "replaced": 1
+      },
+      "replacement_case": "live_replacement",
+      "build_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+      "runtime_sha256": "6dfff5212724192e9bc1c073f19f4d30476a90cba7d894d1c580fd1b252980d8",
+      "runtime_bytes": 12403496,
+      "signing_qualification": "not_exercised",
+      "cross_release_upgrade_rollback": "not_exercised"
+    },
+    "default_auto": {
+      "command_authority_fixture": {
+        "enrollment_flow": "not_exercised",
+        "provisioning": "isolated_ci_generated_key_empty_authority",
+        "verified_health": "protected"
+      },
+      "corpus_decisions": 21,
+      "corpus_scope": "normalized_daemon_ingress",
+      "default_mode": "auto",
+      "evidence_failure_diagnostics": {
+        "all_evidence": {},
+        "native_receipts": {}
+      },
+      "fail_safe_decisions": 0,
+      "fast_path": "enabled",
+      "mode_invariants": {
+        "off": {
+          "decision": null,
+          "python_oracle": false,
+          "reason_code": "native_hook_disabled"
+        },
+        "shadow": {
+          "decision": null,
+          "python_oracle": false,
+          "reason_code": "native_shadow_diagnostic_disabled"
+        }
+      },
+      "oneshot_decisions": 0,
+      "python_semantic_decisions": 0,
+      "reason_code_counts": {
+        "native_policy_warning": 15
+      },
+      "receipt_metrics": {
+        "accepted": 21,
+        "deduped": 0,
+        "dropped": 0,
+        "durable_pending": 0,
+        "failures": 0,
+        "processed": 21
+      },
+      "resident_decisions": 21,
+      "resident_share": 1,
+      "rollback": "off",
+      "route_receipts": [
+        {
+          "event": "PreToolUse",
+          "harness": "claude-code",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "claude-code",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "cline",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "cline",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "codex",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "codex",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "copilot",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "copilot",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "cursor",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "cursor",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "grok",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "hermes",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "kimi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "kimi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "omp",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "omp",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "openclaw",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "opencode",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "pi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PostToolUse",
+          "harness": "pi",
+          "route": "native_resident"
+        },
+        {
+          "event": "PreToolUse",
+          "harness": "zcode",
+          "route": "native_resident"
+        }
+      ],
+      "runtime_reason": "native_ready",
+      "schema": "hol-guard.native-default-installed-receipt.v1",
+      "target": "x86_64-linux"
+    },
+    "smoke": {
+      "passed": true,
+      "evidence_class": "smoke",
+      "gates": {
+        "1m_latency": true,
+        "250k_latency": true,
+        "5m_latency": true,
+        "cold_latency": true,
+        "concurrency": true,
+        "concurrency_64_bounded": true,
+        "installed_corpus": true,
+        "python_fallback": true,
+        "readiness": true,
+        "recovery_latency": true,
+        "resident_share": true,
+        "rss": true,
+        "safe_corpus": true,
+        "warm_latency": true
+      },
+      "thresholds": {
+        "direct_cold_p95_ms": 150,
+        "installed_adapter_concurrent_p99_ms": 1000,
+        "installed_adapter_p95_ms": 1000,
+        "readiness_p95_ms": 400
+      },
+      "concurrency": {
+        "sixteen": {
+          "deadline_ms": 1000,
+          "errors": 0,
+          "latency": {
+            "count": 16,
+            "max_ms": 507.734,
+            "p50_ms": 466.736,
+            "p95_ms": 507.734,
+            "p99_ms": 507.734
+          },
+          "native_overloads": 0,
+          "overloaded": 0,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "native_resident": 16
+          }
+        },
+        "sixty_four": {
+          "bounded": true,
+          "errors": 0,
+          "fail_safe": 0,
+          "latency": {
+            "count": 64,
+            "max_ms": 623.23,
+            "p50_ms": 412.471,
+            "p95_ms": 606.536,
+            "p99_ms": 623.23
+          },
+          "latency_ceiling_ms": null,
+          "native_overloads": 0,
+          "overloaded": 28,
+          "route_attribution": "isolated_batch_counter_conservation",
+          "routes": {
+            "engine_bypassed": 28,
+            "native_resident": 36
+          }
+        }
+      },
+      "recovery": {
+        "count": 2,
+        "max_ms": 281.482,
+        "p50_ms": 227.017,
+        "p95_ms": 281.482,
+        "p99_ms": 281.482
+      },
+      "readiness": {
+        "count": 2,
+        "max_ms": 0.047,
+        "p50_ms": 0.046,
+        "p95_ms": 0.047,
+        "p99_ms": 0.047
+      },
+      "registered_launcher": {
+        "boundary": "INSTALLED_LAUNCHER",
+        "cases_validated": [
+          "benign",
+          "redacted"
+        ],
+        "configuration": "registered_argv",
+        "event": "PostToolUse",
+        "evidence_class": "smoke",
+        "harness": "claude-code",
+        "latency": {
+          "count": 2,
+          "max_ms": 223.873,
+          "p50_ms": 218.824,
+          "p95_ms": 223.873,
+          "p99_ms": 223.873
+        },
+        "process_startup_included": true,
+        "qualification_complete": false,
+        "remaining_routes": "not_measured",
+        "stdout_and_exit_checked": true
+      },
+      "qualification_complete": false
+    },
+    "soak": {
+      "daemon_process_count": 1,
+      "database_bytes": 179269632,
+      "errors": 0,
+      "health_checks": 21335,
+      "health_failures": 0,
+      "lifecycle_events": [
+        "start_requested",
+        "ready",
+        "stopped"
+      ],
+      "max_file_descriptors": 200,
+      "max_hook_latency_ms": 4500,
+      "max_ms": 677.78,
+      "max_threads": 71,
+      "p95_ms": 562.01,
+      "passed": true,
+      "pid_stable": true,
+      "receipts": 250000,
+      "requests": 100000,
+      "responses": 100000,
+      "rss_baseline_bytes": 612638720,
+      "rss_growth": 0.038049,
+      "rss_peak_bytes": 635949056,
+      "soak_passed": true,
+      "transient_health_failures": 0,
+      "rss_growth_recomputed": 0.03804907401216821
+    },
+    "artifact": {
+      "id": 10602309425,
+      "bytes": 13650499,
+      "sha256": "eaff54ea476ad0713655641ffa3afd79585ec53f7eb5e9b6a8feb7f77ab7846d",
+      "archive_bytes_independently_downloaded": false
+    },
+    "reported_wheels": {
+      "artifacts": [
+        {
+          "name": "hol_guard-3.0.1-py3-none-any.whl",
+          "role": "python-wheel",
+          "sha256": "39351ae2ef684da49d9f1c4db943db6af1b3ff1d382c80296ffdbd8c88299870",
+          "size": 5156408
+        },
+        {
+          "name": "hol_guard-3.0.1-py3-none-manylinux_2_17_x86_64.whl",
+          "platform": "manylinux_2_17_x86_64",
+          "role": "native-wheel",
+          "sha256": "3ef17ba46404c81cb950c12d5dfafb2bfa2c113ad3fcd8d4d3789071915e01f0",
+          "size": 8894251,
+          "target": "x86_64-unknown-linux-musl"
+        }
+      ],
+      "package_version": "3.0.1",
+      "platforms": [
+        "manylinux_2_17_x86_64"
+      ],
+      "rule_digest": "e9d2024f94d91cb5ae1a9d8e8c60a398f24bf1af7767c578e1997f33cc98a32a",
+      "schema": "hol-guard-release-artifact-evidence.v1",
+      "source_sha": "6e63c52a8900c2d4e7d2b7e282c6a18437e3ca7c",
+      "windows_waiver": "validated by the platform matrix"
+    },
+    "stop_evidence_scope": "The original soak result records start_requested, ready and stopped. The separate native-stop-diagnostic.json artifact member was not downloaded by this reader; no full escaped-descendant certificate is asserted."
+  },
+  "interim_identity_interpretation_correction": {
+    "affected_json_paths": [
+      "$.platforms.mac_arm.installed_identity_all_passed",
+      "$.platforms.mac_intel.installed_identity_all_passed",
+      "$.platforms.windows_native.installed_identity_all_passed"
+    ],
+    "old_value": false,
+    "reason": "The derived field required every result label to equal 'passed'; the normal live_replacement case intentionally reports 'replaced'.",
+    "actual_case_distribution_each": {
+      "passed": 16,
+      "replaced": 1
+    },
+    "expected_replacement_case": "live_replacement",
+    "correction": "All three identity stages completed successfully with their original 17-case distributions. The false derived boolean is not evidence of an identity-stage failure.",
+    "original_reports_and_interim_packet_unchanged": true
+  },
+  "security_scope": {
+    "gitleaks": {
+      "job_id": 106052498779,
+      "run_id": 35500952152,
+      "range": "4b89e0d2d496a85f04922b2e019a4aea15326bb9..4afa20cf014ccba918bf2fa61552dafe66767930",
+      "commits_scanned": 1349,
+      "approximate_bytes_scanned": 69179520,
+      "seconds": 28.9,
+      "leaks": 0
+    },
+    "sonar": {
+      "job_id": 106053719748,
+      "check_id": 106054413570,
+      "scm_revision": "4afa20cf014ccba918bf2fa61552dafe66767930",
+      "ce_task_id": "AaC-FneFjMY6tyf6B5ia",
+      "quality_gate": "passed",
+      "new_issues": 0,
+      "accepted_issues": 0,
+      "security_hotspots": 0,
+      "new_coverage_percent": 83.4,
+      "new_duplication_percent": 0,
+      "analysis_id_independently_retrieved": false
+    },
+    "codeql": {
+      "checks": [
+        106053228873,
+        106052563550
+      ],
+      "conclusion": "success",
+      "title": "No new alerts in code changed by this pull request",
+      "individual_historical_alert386_state_rechecked": false
+    },
+    "source_unchanged_since_interim": true
+  },
+  "limits": [
+    "The terminal 187-check census still has two failures; overall CI and merge approval are not green.",
+    "Original ordinary c16 and recovery gates use 1000 ms; the original PRD c16 target is 200 ms and has not been qualified by this smoke.",
+    "Concurrency64 has no latency ceiling and includes 28 bounded engine_bypassed routes; availability continuation is not a native-evaluated allow.",
+    "Only two registered Claude PostToolUse launcher cases were sampled; remaining launcher routes are not measured here.",
+    "Reported wheel/runtime/ZIP digests are bound to original log or metadata; binary/archive bodies were not independently downloaded.",
+    "Linux soak success does not establish the cause or correction of the separate Windows startup timeout.",
+    "This packet performs read-only GitHub/data reconciliation only; no rerun, cancellation, source mutation or remote execution was performed.",
+    "All original baseline, stopped campaign, task status, signing, rollout and full qualification requirements remain unchanged."
+  ],
+  "qualification_complete": false
+}

@@ -82,6 +82,12 @@ fn inner() -> Value {
 fn decrypts_actual_node_aes_gcm_known_answer_and_js_utf16_length() {
     // Produced by Node createCipheriv('aes-256-gcm'), key 0..31, nonce 32..43,
     // append getAuthTag(), then Buffer.toString('base64url'), matching the generator.
+    let key: Vec<u8> = (0..32).collect();
+    let encoded_key = crate::approval::approval_v4_crypto::encode_base64url(&key);
+    assert_eq!(
+        fixed_base64url::<32>(&encoded_key).unwrap().as_slice(),
+        key.as_slice()
+    );
     let ciphertext = hex::decode(concat!(
         "a918ce1f03f3456b6c192cba9e769594b56bd6bed7ef109a3899037e1cf93b2b59ac916be1496ab475900bb0622b4dad",
         "834ecea2b8555e3eab100d723e9030bbb94abe6ebab591f9e406b655de2e490ebbe456268dd9ed70a038ac0a797df81f",
@@ -92,7 +98,7 @@ fn decrypts_actual_node_aes_gcm_known_answer_and_js_utf16_length() {
         "guard_payload_ref":{"version":1,"path":fixture.path,
         "sha256":"23a0a2b48b4dd72e25358802a70db63d6a595e3cd252046b4c768cc5ba5809a9",
         "encoding":"json","encryption":"aes-256-gcm",
-        "key":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+        "key":encoded_key,
         "nonce":"ICEiIyQlJicoKSor","serialized_chars":101}});
     let value = hydrate(&payload, None).unwrap();
     assert_eq!(value["tool_response"], "known café 😀");

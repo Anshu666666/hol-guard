@@ -237,7 +237,7 @@ def test_configured_sync_keeps_original_failure_reports_and_backoff(
     store = GuardStore(tmp_path / "guard", allow_system_keyring=False)
     _seed_credentials(store)
 
-    def fail(_store: GuardStore) -> dict[str, object]:
+    def fail(_store: GuardStore, **_kwargs: object) -> dict[str, object]:
         raise error_type("synthetic synchronization failure")
 
     target = "_resolve_guard_sync_auth_context" if kind == "headless" else "sync_supply_chain_bundle"

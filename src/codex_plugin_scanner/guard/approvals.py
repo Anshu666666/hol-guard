@@ -334,6 +334,7 @@ def queue_blocked_approvals(
     notify: bool = True,
     redaction_level: str = "full",
     continuation_operation: Mapping[str, object] | None = None,
+    live_hook_payload: Mapping[str, object] | None = None,
 ) -> list[dict[str, object]]:
     timestamp = now or _now()
     artifacts_by_id = {artifact.artifact_id: artifact for artifact in detection.artifacts}
@@ -471,7 +472,11 @@ def queue_blocked_approvals(
                 operation=continuation_operation,
             ),
         )
-        persisted_request_id = store.add_approval_request(request, timestamp)
+        persisted_request_id = (
+            store.add_approval_request(request, timestamp, live_hook_payload=live_hook_payload)
+            if live_hook_payload is not None
+            else store.add_approval_request(request, timestamp)
+        )
         created_new_request = persisted_request_id == request.request_id
         if persisted_request_id != request.request_id:
             request = replace(

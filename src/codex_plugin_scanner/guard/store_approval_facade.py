@@ -10,9 +10,11 @@ if TYPE_CHECKING:
     from .store import GuardStore
 
 from .policy_memory_source import bind_persisted_policy_memory_source
+from .store_approvals import _begin_immediate
 
 # ruff: noqa: F403,F405
 from .store_base import *
+from .store_live_hook_binding import persist_live_hook_binding, prepare_live_hook_binding
 from .store_native_review_approvals import consume_native_review_approval as consume_native_retry
 
 
@@ -40,14 +42,42 @@ class StoreApprovalsMixin:
                 now=now,
             )
 
-    def add_approval_request(self, request: GuardApprovalRequest, now: str) -> str:
+    def add_approval_request(
+        self,
+        request: GuardApprovalRequest,
+        now: str,
+        *,
+        live_hook_payload: Mapping[str, object] | None = None,
+    ) -> str:
+        request, live_binding = prepare_live_hook_binding(
+            request, live_hook_payload, guard_home=self.guard_home, now=now
+        )
         with self._connect() as connection:
+            request_preexisted = False
+            if live_binding is not None:
+                _begin_immediate(connection)
+                request_preexisted = (
+                    connection.execute(
+                        "select 1 from approval_requests where request_id = ?", (request.request_id,)
+                    ).fetchone()
+                    is not None
+                )
             request_id = persist_approval_request(
                 connection,
                 request,
                 now,
                 oauth_source=self._guard_source,
             )
+            if live_binding is not None:
+                persist_live_hook_binding(
+                    connection,
+                    request_id=request_id,
+                    request=request,
+                    metadata=live_binding,
+                    oauth_source=self._guard_source,
+                    now=now,
+                    request_was_inserted=not request_preexisted and request_id == request.request_id,
+                )
             bind_persisted_policy_memory_source(cast("GuardStore", self), connection, request, request_id, now)
             bind_review_events_for_request(
                 connection,

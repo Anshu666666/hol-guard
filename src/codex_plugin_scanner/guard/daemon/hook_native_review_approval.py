@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
+from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY
 from ..models import GuardApprovalRequest, format_local_http_origin
 from .hook_native_review_binding import native_review_policy_binding
 from .hook_request_parsing import pre_tool_command
@@ -213,7 +214,12 @@ def queue_native_pre_tool_review(
         ),
     )
     try:
-        persisted_id = persist(request, datetime.now(tz=timezone.utc).isoformat())
+        now = datetime.now(tz=timezone.utc).isoformat()
+        persisted_id = (
+            persist(request, now, live_hook_payload=payload)
+            if harness == "codex" and CODEX_BROWSER_WAIT_PROCESS_KEY in payload
+            else persist(request, now)
+        )
         stored = lookup(persisted_id)
     except (OSError, RuntimeError, TypeError, ValueError, sqlite3.Error):
         return None

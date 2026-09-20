@@ -141,7 +141,7 @@ from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..models import DECISION_SCOPE_VALUES, DecisionScope, PolicyDecision, format_local_http_origin
 from ..native_mode import native_mode_requires_rust as _native_mode_requires_rust
 from ..native_mode import python_oracle_surface_enabled
-from ..oauth_connection_authority import OAuthConnectAttempt
+from ..oauth_connection_authority import OAuthConnectAttempt, OAuthConnectionSnapshot
 from ..package_firewall_action_rate_limit import PackageFirewallActionRateLimiter
 from ..package_firewall_entitlement import (
     package_firewall_action_states,
@@ -203,6 +203,7 @@ from ..runtime.runner import (
     sync_supply_chain_bundle,
 )
 from ..runtime.surface_server import GuardSurfaceRuntime
+from ..runtime.sync_auth_handoff import hold_sync_auth_handoff
 from ..runtime.trust_attestation import trust_attestation_v2_enabled
 from ..runtime_artifact_reconciliation import (
     reconcile_runtime_artifacts,
@@ -1242,30 +1243,33 @@ def _run_headless_cloud_sync(
     summary: dict[str, object]
 
     def _perform_sync() -> dict[str, object]:
-        auth_context = _resolve_guard_sync_auth_context(store)
-        if managed_controls_publish is None:
-            sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
+        observed_connections: list[OAuthConnectionSnapshot] = []
+        auth_context = _resolve_guard_sync_auth_context(store, connection_observer=observed_connections.append)
+        connection = observed_connections[-1] if observed_connections else None
+        with hold_sync_auth_handoff(store, auth_context, connection):
+            if managed_controls_publish is None:
+                sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
+                    store,
+                    auth_context,
+                )
+            else:
+                sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
+                    store,
+                    auth_context,
+                    managed_controls_publish,
+                )
+            supply_chain_payload = _sync_supply_chain_cloud_state_with_optional_auth_context(
                 store,
                 auth_context,
             )
-        else:
-            sync_payload = _sync_local_guard_cloud_proof_with_optional_auth_context(
-                store,
-                auth_context,
-                managed_controls_publish,
+            latest_state = store.get_latest_guard_connect_state(now=recorded_at) or {}
+            request_id = latest_state.get("request_id") if isinstance(latest_state, dict) else None
+            store.record_latest_guard_connect_sync_success(
+                sync_payload=sync_payload,
+                now=recorded_at,
+                request_id=request_id if isinstance(request_id, str) and request_id else None,
             )
-        supply_chain_payload = _sync_supply_chain_cloud_state_with_optional_auth_context(
-            store,
-            auth_context,
-        )
-        latest_state = store.get_latest_guard_connect_state(now=recorded_at) or {}
-        request_id = latest_state.get("request_id") if isinstance(latest_state, dict) else None
-        store.record_latest_guard_connect_sync_success(
-            sync_payload=sync_payload,
-            now=recorded_at,
-            request_id=request_id if isinstance(request_id, str) and request_id else None,
-        )
-        return headless_cloud_sync_summary(sync_payload, supply_chain_payload)
+            return headless_cloud_sync_summary(sync_payload, supply_chain_payload)
 
     def _safe_storage_repair() -> dict[str, object]:
         try:

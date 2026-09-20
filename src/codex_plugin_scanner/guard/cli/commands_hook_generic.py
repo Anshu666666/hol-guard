@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from ..live_process_identity import CODEX_BROWSER_WAIT_PROCESS_KEY
 from ..policy_memory_source import CapturedPolicyMemorySource, capture_policy_memory_source_input
 from ..runtime.extension_control_runtime import ExtensionControlRuntimeSnapshot
 from .commands_hook_compat_bootstrap import bootstrap_compatibility_module
@@ -1134,6 +1135,7 @@ def _run_hook_generic_payload(
                         "artifact_type": artifact.artifact_type,
                         "source_scope": artifact.source_scope,
                         "config_path": config_path,
+                        "effective_workspace": str(runtime_workspace) if runtime_workspace is not None else None,
                         "policy_action": policy_action,
                         "changed_fields": changed_capabilities or ["tool_action"],
                         "launch_target": redacted_command_text,
@@ -1153,6 +1155,9 @@ def _run_hook_generic_payload(
             approval_center_url=approval_center_url,
             now=_now(),
             redaction_level=config.receipt_redaction_level,
+            live_hook_payload=(
+                payload_map if args.harness == "codex" and CODEX_BROWSER_WAIT_PROCESS_KEY in payload_map else None
+            ),
         )
         payload_map["approval_requests"] = queued
         payload_map["approval_center_url"] = approval_center_url

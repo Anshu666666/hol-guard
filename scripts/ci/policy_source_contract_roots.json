@@ -368,7 +368,15 @@
     "src/codex_plugin_scanner/guard/daemon/aibom_inventory_persist.py",
     "tests/test_guard_daemon_listen_ready.py",
     "tests/test_guard_sqlite_failure_containment.py",
-    "tests/test_hook_worker_responses.py"
+    "tests/test_hook_worker_responses.py",
+    "src/codex_plugin_scanner/guard/store_live_hook_binding.py",
+    "src/codex_plugin_scanner/guard/store_approval_facade.py",
+    "src/codex_plugin_scanner/guard/approvals.py",
+    "src/codex_plugin_scanner/guard/cli/commands_hook_generic.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "tests/test_guard_codex_live_action_boundary.py",
+    "tests/test_guard_live_hook_binding.py",
+    "tests/test_headless_readiness_handoff.py"
   ],
   "additional_style_roots": [
     "tests/test_native_command_program_metadata_limits.py",
@@ -433,7 +441,16 @@
     "src/codex_plugin_scanner/guard/daemon/aibom_inventory_persist.py",
     "tests/test_guard_daemon_listen_ready.py",
     "tests/test_guard_sqlite_failure_containment.py",
-    "tests/test_hook_worker_responses.py"
+    "tests/test_hook_worker_responses.py",
+    "src/codex_plugin_scanner/guard/store_live_hook_binding.py",
+    "src/codex_plugin_scanner/guard/store_approval_facade.py",
+    "src/codex_plugin_scanner/guard/approvals.py",
+    "src/codex_plugin_scanner/guard/cli/commands_hook_generic.py",
+    "src/codex_plugin_scanner/guard/daemon/hook_native_review_approval.py",
+    "tests/test_guard_codex_live_action_boundary.py",
+    "tests/test_guard_live_hook_binding.py",
+    "tests/test_guard_auto_first_sync.py",
+    "tests/test_headless_readiness_handoff.py"
   ],
   "source_groups": [
     {
@@ -470,7 +487,7 @@
       "id": "source-06",
       "partition": "policy",
       "name": "Verify source-free lease renewal and resident transitions",
-      "selectors": ["tests/test_native_source_free_renewal.py","tests/test_native_policy_snapshot_v3_publisher.py","tests/test_native_source_free_cloud_projection.py","tests/test_policy_consumer_readiness_contract.py","tests/test_native_policy_consumer_capture.py","tests/test_policy_consumer_readiness_observation.py","tests/test_policy_consumer_readiness_sync.py"]
+      "selectors": ["tests/test_native_source_free_renewal.py","tests/test_native_policy_snapshot_v3_publisher.py","tests/test_native_source_free_cloud_projection.py","tests/test_policy_consumer_readiness_contract.py","tests/test_native_policy_consumer_capture.py","tests/test_policy_consumer_readiness_observation.py","tests/test_policy_consumer_readiness_sync.py","tests/test_headless_readiness_handoff.py"]
     },
     {
       "id": "source-07",
@@ -488,7 +505,7 @@
       "id": "source-09",
       "partition": "maintenance",
       "name": "Verify inventory authority and authentication recovery",
-      "selectors": ["tests/test_aibom_chunking.py","tests/test_aibom_operation_authority.py","tests/test_aibom_sync_admission.py","tests/test_cloud_review_oauth_refresh_bindings.py","tests/test_guard_aibom_cli.py","tests/test_guard_aibom_content_upload.py","tests/test_guard_aibom_content_upload_batches.py","tests/test_guard_encrypted_secret_store_stability.py","tests/test_guard_event_schema_v1.py","tests/test_guard_exact_cloud_review.py","tests/test_cloud_review_renewal_convergence.py","tests/test_cloud_review_lifecycle_process.py","tests/test_cloud_review_worker_restoration.py","tests/test_guard_exact_cloud_review_concurrency.py","tests/test_guard_exact_cloud_review_oauth.py","tests/test_guard_keyring_support.py","tests/test_guard_oauth_cached_expiry_compatibility.py","tests/test_guard_oauth_reconnect.py","tests/test_guard_oauth_refresh_resilience.py","tests/test_guard_receipt_redaction_cursor.py","tests/test_guard_store_migrations.py","tests/test_guard_supply_chain_daemon.py","tests/test_oauth_connection_authority.py","tests/test_guard_connect_completion_authority.py","tests/test_guard_connect_supply_completion.py","tests/test_sync_response_connection_authority.py","tests/test_oauth_refresh_connection_authority.py","tests/test_inventory_request_authority.py","tests/test_inventory_consumer_authority.py","tests/test_guard_sync_http_error_message.py","tests/test_guard_sync_retry_clock_isolation.py","tests/test_inventory_oauth_completion_authority.py","tests/test_guard_skill_directory_identity_downstream.py","tests/test_receipt_signed_redaction_default.py","tests/test_receipt_redaction_local_floors.py","tests/test_receipt_signed_redaction_commit.py","tests/test_cloud_review_outbox_arrival_progress.py","tests/test_optional_preferences_local_safety.py"]
+      "selectors": ["tests/test_aibom_chunking.py","tests/test_aibom_operation_authority.py","tests/test_aibom_sync_admission.py","tests/test_cloud_review_oauth_refresh_bindings.py","tests/test_guard_aibom_cli.py","tests/test_guard_aibom_content_upload.py","tests/test_guard_aibom_content_upload_batches.py","tests/test_guard_encrypted_secret_store_stability.py","tests/test_guard_event_schema_v1.py","tests/test_guard_exact_cloud_review.py","tests/test_cloud_review_renewal_convergence.py","tests/test_cloud_review_lifecycle_process.py","tests/test_cloud_review_worker_restoration.py","tests/test_guard_exact_cloud_review_concurrency.py","tests/test_guard_exact_cloud_review_oauth.py","tests/test_guard_keyring_support.py","tests/test_guard_oauth_cached_expiry_compatibility.py","tests/test_guard_oauth_reconnect.py","tests/test_guard_oauth_refresh_resilience.py","tests/test_guard_receipt_redaction_cursor.py","tests/test_guard_store_migrations.py","tests/test_guard_supply_chain_daemon.py","tests/test_oauth_connection_authority.py","tests/test_guard_connect_completion_authority.py","tests/test_guard_connect_supply_completion.py","tests/test_sync_response_connection_authority.py","tests/test_oauth_refresh_connection_authority.py","tests/test_inventory_request_authority.py","tests/test_inventory_consumer_authority.py","tests/test_guard_sync_http_error_message.py","tests/test_guard_sync_retry_clock_isolation.py","tests/test_inventory_oauth_completion_authority.py","tests/test_guard_skill_directory_identity_downstream.py","tests/test_receipt_signed_redaction_default.py","tests/test_receipt_redaction_local_floors.py","tests/test_receipt_signed_redaction_commit.py","tests/test_cloud_review_outbox_arrival_progress.py","tests/test_optional_preferences_local_safety.py","tests/test_guard_codex_live_action_boundary.py","tests/test_guard_live_hook_binding.py","tests/test_guard_auto_first_sync.py::test_headless_first_sync_auth_expiry_marks_connect_state_for_repair","tests/test_guard_auto_first_sync.py::test_headless_cloud_sync_repairs_storage_and_records_sync_success","tests/test_guard_auto_first_sync.py::test_headless_cloud_sync_survives_storage_repair_failure","tests/test_guard_auto_first_sync.py::test_headless_cloud_sync_retry_unexpected_error_becomes_pending"]
     },
     {
       "id": "source-10",

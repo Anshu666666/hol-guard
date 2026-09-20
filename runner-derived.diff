@@ -1,0 +1,21 @@
+...
+ 
+ PACKET = "deadline-format-prep"
++ROLES = ("candidate",)
+-ROLES = ("before", "candidate")
+ SOURCE_PATHS = (
+     "rust/crates/guard-runtime/src/managed_resident.rs",
+...
+ def source_images(root: Path, manifest: dict[str, object]) -> dict[str, bytes]:
+     rows = manifest.get("images")
++    require(isinstance(rows, list) and len(rows) == 5, "source_image_count")
+-    require(isinstance(rows, list) and len(rows) == 10, "source_image_count")
+     expected = {f"{PACKET}/{role}/{path}" for role in ROLES for path in SOURCE_PATHS}
+     images: dict[str, bytes] = {}
+...
+             require(again == formatted, "formatter_not_idempotent")
+             row["idempotent"] = True
++        result["formatting_preparation_passed"] = len(files) == 5
+-        result["formatting_preparation_passed"] = len(files) == 10
+     except Exception as error:
+         result["failure"] = {"stage": stage, "kind": type(error).__name__,

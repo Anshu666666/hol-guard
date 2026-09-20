@@ -1,0 +1,14 @@
+...
+ SOURCE_PATHS = {
+     f"formatted/{role}/rust/crates/guard-runtime/src/{name}"
++    for role in ("candidate",) for name in SOURCE_NAMES
+-    for role in ("before", "candidate") for name in SOURCE_NAMES
+ }
+ STDERR_PATH = re.compile(r"commands/[0-9]{2}-[a-z0-9_-]+\.stderr\Z")
+...
+     formatted = result.get("formatted_files")
+     commands = result.get("commands")
++    if not isinstance(formatted, list) or len(formatted) > 5:
+-    if not isinstance(formatted, list) or len(formatted) > 10:
+         raise ValueError("projection_formatted_shape")
+     if not isinstance(commands, list) or len(commands) > MAX_FILES:

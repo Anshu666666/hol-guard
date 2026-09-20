@@ -71,6 +71,7 @@ impl Drop for Home {
 enum Reply {
     Bound,
     WrongProof,
+    CommittedEof,
 }
 
 fn reply_once(
@@ -111,6 +112,10 @@ fn reply_once(
         &header[digest_start..digest_start + crate::FRAME_DIGEST_BYTES],
         &Sha256::digest(&body)[..]
     );
+    if matches!(reply, Reply::CommittedEof) {
+        // The complete authenticated request arrived; no reply follows.
+        return Ok(true);
+    }
     let mut response = Vec::new();
     response.extend_from_slice(crate::RESPONSE_MAGIC);
     response.extend_from_slice(&header[4..digest_start]);
@@ -148,6 +153,15 @@ impl Peer {
                     Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(1));
                     }
+                    Err(error) => return Err(error),
+                }
+            }
+            // The owned client has joined before finish requests shutdown.
+            // Count every connection it queued before returning.
+            loop {
+                match listener.accept() {
+                    Ok((_stream, _)) => accepted += 1,
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => break,
                     Err(error) => return Err(error),
                 }
             }
@@ -211,6 +225,30 @@ fn controlled_call(
     expire: bool,
     reply: Reply,
 ) -> (Result<Vec<u8>, String>, (usize, usize)) {
+    let case = match (call, stage, expire, reply) {
+        (Call::Discovered, Stage::Validated, true, Reply::Bound) => {
+            "validation_delay_does_not_admit_expired_request"
+        }
+        (Call::Discovered, Stage::Validated, false, Reply::Bound) => {
+            "validated_request_completes_authenticated_bound_exchange_once"
+        }
+        (Call::Leased, Stage::Returned, true, Reply::Bound) => {
+            "leased_request_does_not_return_late_bound_success"
+        }
+        (Call::OneShot, Stage::LeaseCleanup, true, Reply::Bound) => {
+            "lease_cleanup_does_not_return_late_bound_success"
+        }
+        (Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound) => {
+            "lease_cleanup_returns_timely_bound_success"
+        }
+        (Call::OneShot, Stage::LeaseCleanup, true, Reply::WrongProof) => {
+            "late_lease_cleanup_preserves_fatal_authentication_error"
+        }
+        (Call::OneShot, Stage::LeaseCleanup, true, Reply::CommittedEof) => {
+            "late_lease_cleanup_preserves_committed_response_error"
+        }
+        _ => panic!("unsupported managed deadline fixture"),
+    };
     let home = Home::new();
     let digest = runtime_digest().unwrap();
     let scope = state_scope(&home.0, &digest).unwrap();
@@ -272,8 +310,29 @@ fn controlled_call(
         );
         assert!(Instant::now() >= deadline);
     }
+    let expired_on_release = Instant::now() >= deadline;
     let result = client.finish();
     let counts = peer.finish();
+    fs::remove_dir_all(&home.0).unwrap();
+    assert!(!home.0.exists(), "owned deadline fixture was not removed");
+    let outcome = match &result {
+        Ok(bytes) if bytes.as_slice() == RESPONSE => "bound_response",
+        Err(error) if error == "native_client_deadline_exceeded" => "deadline",
+        Err(error) if error == "native_resident_live_request_failed" => "live_request_failed",
+        _ => "unexpected",
+    };
+    // Emit fixed evidence only after the real call, both joins and cleanup.
+    eprintln!(
+        "HOL_GUARD_DEADLINE_CONTROL {}",
+        serde_json::json!({
+            "case": case,
+            "result": outcome,
+            "connections": counts.0,
+            "requests": counts.1,
+            "expired_on_release": expired_on_release,
+            "owned_cleanup": true,
+        })
+    );
     (result, counts)
 }
 
@@ -317,6 +376,32 @@ fn late_lease_cleanup_preserves_fatal_authentication_error() {
     let (result, counts) =
         controlled_call(Call::OneShot, Stage::LeaseCleanup, true, Reply::WrongProof);
     assert_eq!(counts, (1, 0), "an authentication rejection was replayed");
+    assert_eq!(
+        result,
+        Err("native_resident_live_request_failed".to_owned())
+    );
+}
+
+#[test]
+fn lease_cleanup_returns_timely_bound_success() {
+    let (result, counts) = controlled_call(Call::OneShot, Stage::LeaseCleanup, false, Reply::Bound);
+    assert_eq!(result, Ok(RESPONSE.to_vec()));
+    assert_eq!(counts, (1, 1));
+}
+
+#[test]
+fn late_lease_cleanup_preserves_committed_response_error() {
+    let (result, counts) = controlled_call(
+        Call::OneShot,
+        Stage::LeaseCleanup,
+        true,
+        Reply::CommittedEof,
+    );
+    assert_eq!(
+        counts,
+        (1, 1),
+        "an ambiguous committed request was replayed"
+    );
     assert_eq!(
         result,
         Err("native_resident_live_request_failed".to_owned())

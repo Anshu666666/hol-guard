@@ -173,6 +173,9 @@ fn connect_unix_with_digest(
         .map_err(|_| "native_client_connect_failed".to_owned())?;
     fcntl(&descriptor, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC))
         .map_err(|_| "native_client_connect_failed".to_owned())?;
+    #[cfg(test)]
+    connect_deadline_tests::checkpoint();
+    let _ = connect_remaining(deadline)?;
     match connect(descriptor.as_raw_fd(), &address) {
         Ok(()) | Err(Errno::EISCONN) => {}
         Err(Errno::EINPROGRESS) => {
@@ -413,3 +416,7 @@ mod tests;
 #[cfg(test)]
 #[path = "resident_client_deadline_tests.rs"]
 mod deadline_tests;
+
+#[cfg(all(test, unix))]
+#[path = "resident_client_connect_deadline_tests.rs"]
+mod connect_deadline_tests;

@@ -97,6 +97,7 @@ jobs:
           .venv/bin/python ci/native_runtime/probe_installed_pi_output.py --json installed-pi-output.json
           .venv/bin/python -I ci/native_runtime/probe_installed_native_extensions.py --json installed-native-extensions.json
           HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT=1 .venv/bin/python -I ci/native_runtime/probe_installed_scoped_policy.py --json installed-scoped-policy.json --expected-source-sha "$SOURCE_SHA"
+          HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT=1 .venv/bin/python -I ci/native_runtime/probe_installed_consumer_readiness.py --json installed-consumer-readiness.json --expected-source-sha "$SOURCE_SHA"
           GUARD_EXTENSION_CATALOG_SYNC_V1=true GUARD_POLICY_EXTENSION_TARGETS_V1=true \
             GUARD_MANAGED_EXTENSION_CONTROLS_V1=true GUARD_MANAGED_CONTROLS_ATOMIC_APPLY_V1=true \
             HOL_GUARD_POLICY_CANONICAL_ENFORCEMENT=1 .venv/bin/python -I ci/native_runtime/probe_installed_managed_floors.py --json installed-managed-floors.json --expected-source-sha "$SOURCE_SHA"
@@ -166,6 +167,7 @@ jobs:
             installed-pi-output.json
             installed-native-extensions.json
             installed-scoped-policy.json
+            installed-consumer-readiness.json
             installed-managed-floors.json
             native-installed-slo.json
             native-soak.json

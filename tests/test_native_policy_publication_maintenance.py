@@ -126,7 +126,8 @@ def test_real_postcommit_cleanup_retains_serialization(tmp_path, monkeypatch, st
         monkeypatch.setattr(store, "_repair_store_permissions", repair)
     else:
         store.set_policy_integrity_state_listener(lambda payload: repair())
-    deadline = time.monotonic() + 0.1
+    # Allow bounded setup before holding post-commit cleanup through caller expiry.
+    deadline = time.monotonic() + 1.0
 
     def run(cancelled):
         try:

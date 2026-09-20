@@ -48,6 +48,8 @@ from ..config import VALID_RECEIPT_REDACTION_LEVELS, GuardConfig
 from ..edge_events import build_runtime_session_event
 from ..managed_controls_policy_fields import ParsedManagedControlsPolicy
 from ..mdm.network import managed_urlopen
+from ..policy_consumer_readiness_contract import PROTOCOL_CAPABILITY
+from ..policy_consumer_readiness_sync import sync_consumer_readiness
 from ..models import GuardAction, GuardArtifact, HarnessDetection, PolicyDecision
 from ..native_policy_authority_command_source import has_canonical_command_expressions
 from ..native_policy_bundle_sync import publish_received_canonical_policy
@@ -4038,7 +4040,7 @@ def _local_guard_runtime_session(
         "client_title": "HOL Guard CLI",
         "client_version": __version__,
         "workspace": "local-machine",
-        "capabilities": ["approval-center", "guard-cloud-sync", "local-daemon"],
+        "capabilities": ["approval-center", "guard-cloud-sync", "local-daemon", PROTOCOL_CAPABILITY],
         "policy_document_versions": list(_POLICY_DOCUMENT_VERSIONS),
         "policy_bundle_versions": list(_POLICY_BUNDLE_VERSIONS),
         "policy_contracts": list(_POLICY_CONTRACTS),
@@ -4089,6 +4091,10 @@ def sync_local_guard_cloud_proof(
                     store=store,
                 ),
                 auth_context=resolved_auth_context,
+            )
+            runtime_summary["consumer_readiness"] = sync_consumer_readiness(
+                store, connection=auth_connection, auth_context=resolved_auth_context,
+                runtime_summary=runtime_summary,
             )
             receipts_summary = sync_receipts(
                 store,

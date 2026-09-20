@@ -357,3 +357,42 @@ def test_replayed_observation_and_explicit_native_refusal_are_never_retried(tmp_
     with pytest.raises(NativePolicySnapshotError, match="writer_busy"):
         observe(tmp_path, refused)
     assert len(calls) == 1
+
+
+def test_external_challenge_nonce_is_authenticated_without_changing_deadline(tmp_path):
+    nonce = "7" * 64
+    deadline = time.monotonic() + 0.5
+    calls = []
+
+    def client(**kwargs):
+        calls.append(kwargs)
+        request = json.loads(kwargs["payload"])["request"]
+        assert request["intent"]["nonce"] == nonce
+        assert kwargs["deadline_monotonic"] == deadline
+        response, domain = response_for(kwargs["payload"], authority=reference())
+        return signed(response, domain)
+
+    observed = control.observe_native_authority(
+        executable=tmp_path / "synthetic", guard_home=tmp_path, runtime_identity=RUNTIME,
+        verifier_key=KEY, deadline_monotonic=deadline, client=client, challenge_nonce=nonce,
+    )
+    assert observed.authority is not None and observed.authority.usable_snapshot
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("nonce", ["", "1" * 63, "1" * 65, "A" * 64, "g" * 64, " " + "1" * 63])
+def test_external_invalid_challenge_nonce_refuses_before_transport(tmp_path, nonce):
+    called = False
+
+    def client(**kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("invalid nonce reached transport")
+
+    with pytest.raises(NativePolicySnapshotError):
+        control.observe_native_authority(
+            executable=tmp_path / "synthetic", guard_home=tmp_path, runtime_identity=RUNTIME,
+            verifier_key=KEY, deadline_monotonic=time.monotonic() + 1, client=client,
+            challenge_nonce=nonce,
+        )
+    assert not called

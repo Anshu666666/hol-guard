@@ -67,8 +67,7 @@ def test_server_refusal_is_distinct_from_upload_and_actual_application(
         _stub_http(monkeypatch, {"syncedAt": NOW, "receiptsStored": 0})
         assert runner.sync_receipts(store)["policy_application_status"] == "retained"
     before = {
-        key: store.get_sync_payload(key)
-        for key in ("policy_bundle", "policy_bundle_ack", "policy_bundle_last_good")
+        key: store.get_sync_payload(key) for key in ("policy_bundle", "policy_bundle_ack", "policy_bundle_last_good")
     }
     _stub_http(monkeypatch, response(status))
     summary = runner.sync_receipts(store)

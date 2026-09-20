@@ -1,0 +1,43 @@
+{
+  "profileId": "guard.native-scoped-shell-exact.v1",
+  "revision": 1,
+  "purpose": "Delivery representability only; not an applied-policy acknowledgement.",
+  "mode": "enforce",
+  "harness": "codex",
+  "event": "PreToolUse",
+  "artifact": "codex:project:Bash",
+  "effects": [
+    "allow",
+    "block",
+    "review"
+  ],
+  "lifetime": "permanent",
+  "commandContractVersion": "guard.exact-command.v1",
+  "commands": [
+    {
+      "text": "pwd",
+      "sha256": "a1159e9df3670d549d04524532629f5477ceb7deec9b45e47e8c009506ecb2c8"
+    },
+    {
+      "text": "true",
+      "sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+    },
+    {
+      "text": "whoami",
+      "sha256": "f25297859cf0a70af5c053a5464a5fa647a35ceee1d91397331903846d79ffc1"
+    }
+  ],
+  "requestShape": {
+    "toolName": "Bash",
+    "sourceScope": "project",
+    "singleCommandArgument": true,
+    "absoluteExistingCwd": true,
+    "wrappers": false,
+    "environmentAssignments": false,
+    "compoundSegments": false,
+    "pathOverride": false
+  },
+  "unsupported": "Every other command digest, selector, active match field, lifetime, artifact or mode must be refused explicitly; empty optional match arrays and the existing exact device recipient projection are not widened.",
+  "agentHarness": "hol-guard",
+  "agentRuntimeId": "Exact authenticated nullable runtimeId; never inferred from producer harness."
+}

@@ -209,13 +209,14 @@ def observe_native_authority(
     verifier_key: bytes,
     deadline_monotonic: float,
     client: Callable[..., bytes | None] | None = None,
+    challenge_nonce: str | None = None,
 ) -> NativeAuthorityObservation:
     """Authenticate one current native precondition, without granting readiness."""
 
     _remaining(deadline_monotonic)
     runtime = _digest(runtime_identity)
     scope = _scope_digest_v3(guard_home)
-    nonce = secrets.token_hex(32)
+    nonce = secrets.token_hex(32) if challenge_nonce is None else _digest(challenge_nonce)
     request = _signed_request(
         {
             "schema": "guard-policy-snapshot-observation.v1",

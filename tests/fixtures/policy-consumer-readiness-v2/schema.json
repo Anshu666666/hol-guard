@@ -1,0 +1,436 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:guard:consumer-readiness:v2",
+  "$defs": {
+    "localContext": {
+      "type": "object",
+      "properties": {
+        "agentConnectionEpoch": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "publisherInstanceId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "publisherEpoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "sourceInputDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "agentConnectionEpoch",
+        "publisherInstanceId",
+        "publisherEpoch",
+        "sourceInputDigest"
+      ],
+      "additionalProperties": false
+    },
+    "issue": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "guard.consumer-readiness-challenge-request.v2"
+        },
+        "runtimeSessionId": {
+          "type": "string",
+          "pattern": "^[!-~]+$",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "profileId": {
+          "const": "guard.native-scoped-shell-exact.v1"
+        },
+        "localContext": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/localContext"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contractVersion",
+        "runtimeSessionId",
+        "profileId",
+        "localContext"
+      ],
+      "additionalProperties": false
+    },
+    "subject": {
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "installationId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "machineId": {
+          "type": "string",
+          "pattern": "^[!-~]+$",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "oauthGrantId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "runtimeId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[!-~]+$",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runtimeSessionId": {
+          "type": "string",
+          "pattern": "^[!-~]+$",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "workspaceId",
+        "installationId",
+        "machineId",
+        "oauthGrantId",
+        "runtimeId",
+        "runtimeSessionId"
+      ],
+      "additionalProperties": false
+    },
+    "challenge": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "guard.consumer-readiness-challenge.v2"
+        },
+        "challengeId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "profileId": {
+          "const": "guard.native-scoped-shell-exact.v1"
+        },
+        "subject": {
+          "$ref": "#/$defs/subject"
+        },
+        "subjectVersion": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "challengeSequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "keyThumbprint": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        },
+        "localContext": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/localContext"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "issuedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "expiresAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "contractVersion",
+        "challengeId",
+        "nonce",
+        "profileId",
+        "subject",
+        "subjectVersion",
+        "challengeSequence",
+        "keyThumbprint",
+        "localContext",
+        "issuedAtMs",
+        "expiresAtMs"
+      ],
+      "additionalProperties": false
+    },
+    "ready": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "guard.consumer-readiness-observation.v2"
+        },
+        "challenge": {
+          "$ref": "#/$defs/challenge"
+        },
+        "signatureAlgorithm": {
+          "const": "ES256"
+        },
+        "readiness": {
+          "const": "ready_for_delivery"
+        },
+        "runtimeIdentity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "runtimeProtocolVersion": {
+          "const": 1
+        },
+        "runtimeRuleDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "nativeScopeDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "residentGeneration": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "nativeAuthority": {
+          "type": "object",
+          "properties": {
+            "fingerprint": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "generationFloor": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            },
+            "policyDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "usableSnapshot": {
+              "const": true
+            }
+          },
+          "required": [
+            "fingerprint",
+            "generationFloor",
+            "policyDigest",
+            "usableSnapshot"
+          ],
+          "additionalProperties": false
+        },
+        "publisherSnapshot": {
+          "type": "object",
+          "properties": {
+            "schemaVersion": {
+              "enum": [
+                3,
+                4
+              ]
+            },
+            "generation": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            },
+            "policyDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "sourceInputDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "residentGeneration": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            },
+            "mode": {
+              "const": "enforce"
+            },
+            "expiresAtMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "generation",
+            "policyDigest",
+            "sourceInputDigest",
+            "residentGeneration",
+            "mode",
+            "expiresAtMs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "contractVersion",
+        "challenge",
+        "signatureAlgorithm",
+        "readiness",
+        "runtimeIdentity",
+        "runtimeProtocolVersion",
+        "runtimeRuleDigest",
+        "nativeScopeDigest",
+        "residentGeneration",
+        "nativeAuthority",
+        "publisherSnapshot"
+      ],
+      "additionalProperties": false
+    },
+    "unavailable": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "guard.consumer-readiness-observation.v2"
+        },
+        "challenge": {
+          "$ref": "#/$defs/challenge"
+        },
+        "signatureAlgorithm": {
+          "const": "ES256"
+        },
+        "readiness": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": [
+            "native_unavailable",
+            "authority_changed",
+            "snapshot_unavailable",
+            "unsupported_runtime",
+            "mode_unavailable"
+          ]
+        }
+      },
+      "required": [
+        "contractVersion",
+        "challenge",
+        "signatureAlgorithm",
+        "readiness",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ready"
+            },
+            {
+              "$ref": "#/$defs/unavailable"
+            }
+          ]
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$"
+        }
+      },
+      "required": [
+        "body",
+        "signature"
+      ],
+      "additionalProperties": false
+    },
+    "ack": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "guard.consumer-readiness-ack.v2"
+        },
+        "challengeId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "subjectVersion": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "challengeSequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "readiness": {
+          "enum": [
+            "ready_for_delivery",
+            "unavailable"
+          ]
+        },
+        "receivedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "validUntilMs": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contractVersion",
+        "challengeId",
+        "subjectVersion",
+        "challengeSequence",
+        "readiness",
+        "receivedAtMs",
+        "validUntilMs"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/issue"
+    },
+    {
+      "$ref": "#/$defs/challenge"
+    },
+    {
+      "$ref": "#/$defs/observation"
+    },
+    {
+      "$ref": "#/$defs/ack"
+    }
+  ]
+}

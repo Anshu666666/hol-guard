@@ -386,6 +386,15 @@ def notify_native_policy_mutation(guard_home: Path, *, require_source_authority:
         publisher.request_publish(require_source_authority=require_source_authority)
 
 
+def find_native_policy_snapshot_publisher(store: GuardStore) -> NativePolicySnapshotPublisher | None:
+    """Find an existing live publisher without starting or creating authority."""
+    with _PUBLISHER_LOCK:
+        for publisher in _PUBLISHERS.get(_publisher_key(Path(store.guard_home)), ()):
+            if not publisher.closed:
+                return publisher
+    return None
+
+
 def get_native_policy_snapshot_publisher(store: GuardStore) -> NativePolicySnapshotPublisher:
     """Return the per-Guard-home publisher shared by daemon hook workers."""
 
@@ -411,6 +420,7 @@ __all__ = [
     "build_policy_snapshot_v3",
     "derive_native_policy_verifier_key",
     "effective_native_policy_v3",
+    "find_native_policy_snapshot_publisher",
     "get_native_policy_snapshot_publisher",
     "native_policy_snapshot",
     "native_policy_snapshot_v3",

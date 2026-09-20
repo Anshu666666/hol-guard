@@ -223,7 +223,8 @@ def test_late_valid_ack_never_authorizes_later_sql(tmp_path, monkeypatch):
     store, observed = _native_fixture(tmp_path, monkeypatch, release=release)
     old = store.get_device_metadata()
     try:
-        with sqlite_connect_timeout_override(0.10), pytest.raises(NativePolicySnapshotError, match="deadline_exceeded"):
+        # Reach the held authenticated ACK before forcing actual caller expiry.
+        with sqlite_connect_timeout_override(1.0), pytest.raises(NativePolicySnapshotError, match="deadline_exceeded"):
             store.rotate_installation_id("test")
         assert observed["withdrawn"].is_set()
         assert store.get_device_metadata() == old
@@ -371,7 +372,8 @@ def test_rotation_timeout_keeps_competing_writer_out_through_finalization(tmp_pa
         monkeypatch.setattr(store, "_replace_remote_policy_rows_locked", replace)
         store.set_policy_integrity_state_listener(lambda payload: finalizer())
     try:
-        with sqlite_connect_timeout_override(0.1), pytest.raises(NativePolicySnapshotError, match="deadline_exceeded"):
+        # Reach the held finalizer before forcing actual caller expiry.
+        with sqlite_connect_timeout_override(1.0), pytest.raises(NativePolicySnapshotError, match="deadline_exceeded"):
             store.rotate_installation_id("test")
         assert entered.is_set()
         parent_channel.send("try")

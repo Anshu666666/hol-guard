@@ -1,0 +1,123 @@
+name: Windows retained-wheel journal origin
+
+on:
+  push:
+    branches: ["codex/pr2974-windows-journal-origin-20260920"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  windows-journal-origin:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      DIAGNOSTIC_SOURCE_SHA: "7aa7858ffbc57bb7e87cb83131e4e119d34896c1"
+      DIAGNOSTIC_SOURCE_TREE: "ce1e1c63c03ed026867ace846bfae670717e8787"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: driver
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: "7aa7858ffbc57bb7e87cb83131e4e119d34896c1"
+          path: candidate
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12.10"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Bind source and driver before preparation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $driver -ne $env:GITHUB_SHA) { throw 'driver_identity_mismatch' }
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          if ($source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE) { throw 'source_identity_mismatch' }
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree} | ConvertTo-Json | Set-Content evidence/checkouts-before.json
+      - name: Prepare frozen source-control environment
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          uv sync --frozen --extra dev --python 3.12.10
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate diagnostic source before workload
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $files = @('ci/native_runtime/journal_checkpoint_artifact.py', 'ci/native_runtime/journal_checkpoint_binding.py', 'ci/native_runtime/journal_checkpoint_capture.py', 'ci/native_runtime/journal_checkpoint_run.py', 'tests/test_journal_checkpoint_capture.py', 'tests/test_journal_checkpoint_runner.py')
+          & .venv/Scripts/ruff.exe check @files *> ../evidence/ruff.log
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/ruff.log; exit $LASTEXITCODE }
+          & .venv/Scripts/ruff.exe format --check @files *> ../evidence/format.log
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/format.log; exit $LASTEXITCODE }
+          & .venv/Scripts/basedpyright.exe --pythonversion 3.12 --pythonplatform Windows --outputjson @files > ../evidence/types.json
+          if ($LASTEXITCODE -ne 0) { Get-Content ../evidence/types.json; exit $LASTEXITCODE }
+          & .venv/Scripts/python.exe -m pytest tests/test_journal_checkpoint_capture.py tests/test_journal_checkpoint_runner.py -q --tb=short --junitxml=../evidence/controls.xml *> ../evidence/controls.log
+          $code = $LASTEXITCODE
+          Get-Content ../evidence/controls.log
+          if ($code -ne 0) { exit $code }
+          [xml]$xml = Get-Content -Raw ../evidence/controls.xml
+          $cases = @($xml.testsuites.testsuite.testcase)
+          if ($cases.Count -ne 33 -or [int]$xml.testsuites.testsuite.failures -ne 0 -or [int]$xml.testsuites.testsuite.errors -ne 0 -or [int]$xml.testsuites.testsuite.skipped -ne 0) { throw 'diagnostic_control_gate_failed' }
+      - name: Retrieve exact original artifact
+        working-directory: candidate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          & .venv/Scripts/python.exe ci/native_runtime/journal_checkpoint_artifact.py --output ../retained
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item ../retained/artifact-binding.json ../evidence/artifact-binding.json
+      - name: Install retained unchanged wheel
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          uv pip uninstall --python .venv/Scripts/python.exe hol-guard
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip install --python .venv/Scripts/python.exe --no-deps --force-reinstall ../retained/hol_guard-3.0.1-py3-none-win_amd64.whl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Observe the original default-auto workload once
+        working-directory: candidate
+        shell: pwsh
+        run: |
+          $names = @('HOL_GUARD_NATIVE','HOL_GUARD_NATIVE_BINARY','HOL_GUARD_HOOK_FAST_PATH','HOL_GUARD_NATIVE_MODE','HOL_GUARD_NATIVE_ORACLE','HOL_GUARD_NATIVE_DIAGNOSTIC','HOL_GUARD_HOOK_FAST_PATH_SHADOW','HOL_GUARD_HOOK_SOURCE_REF','HOL_GUARD_HOOK_BINARY','HOL_GUARD_FAST_PATH','HOL_GUARD_BINARY','HOL_GUARD_ORACLE','HOL_GUARD_DIAGNOSTIC','HOL_GUARD_TEST_MODE','HOL_GUARD_PYTHON_ORACLE','HOL_GUARD_TEST_KEYRING_FILE','HOL_GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','HOL_GUARD_RUN_SYSTEM_KEYCHAIN_TEST','GUARD_NATIVE','GUARD_NATIVE_BINARY','GUARD_NATIVE_MODE','GUARD_NATIVE_ORACLE','GUARD_NATIVE_DIAGNOSTIC','GUARD_HOOK_FAST_PATH','GUARD_HOOK_FAST_PATH_SHADOW','GUARD_HOOK_SOURCE_REF','GUARD_HOOK_BINARY','GUARD_FAST_PATH','GUARD_BINARY','GUARD_ORACLE','GUARD_DIAGNOSTIC','GUARD_TEST_MODE','GUARD_TEST_KEYRING_FILE','GUARD_TEST_SYNC_AUTH_CONTEXT_JSON','GUARD_PYTEST_DURATION_OUTPUT','PYTEST_CURRENT_TEST','PYTEST_ADDOPTS','PYTEST_PLUGINS','PYTHONPATH')
+          foreach ($name in $names) { Remove-Item "Env:$name" -ErrorAction SilentlyContinue }
+          & .venv/Scripts/python.exe ci/native_runtime/journal_checkpoint_run.py --output ../evidence *> ../evidence/original-probe.log
+          $code = $LASTEXITCODE
+          @{driver_invocations=1; returncode=$code; instrumented_cause_diagnostic=$true; timing_qualification=$false} | ConvertTo-Json | Set-Content ../evidence/original-probe-exit.json
+          Get-Content ../evidence/original-probe.log
+          exit $code
+      - name: Admit diagnostic completeness separately from original probe exit
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $report = Get-Content -Raw evidence/journal-origin.json | ConvertFrom-Json
+          $binding = Get-Content -Raw evidence/binding-comparison.json | ConvertFrom-Json
+          if ($report.observation_complete -ne $true -or $report.callbacks_restored -ne $true -or $report.original_probe_invocations -ne 1 -or $binding.equal -ne $true) { throw 'journal_diagnostic_incomplete' }
+      - name: Retain final source and driver identity
+        if: always()
+        shell: pwsh
+        run: |
+          $driver = (git -C driver rev-parse HEAD).Trim()
+          $source = (git -C candidate rev-parse HEAD).Trim()
+          $tree = (git -C candidate rev-parse 'HEAD^{tree}').Trim()
+          $dirty = @(git -C candidate diff --name-only) + @(git -C candidate diff --cached --name-only) + @(git -C driver diff --name-only) + @(git -C driver diff --cached --name-only)
+          @{driver=$driver; driver_tree=(git -C driver rev-parse 'HEAD^{tree}'); source=$source; source_tree=$tree; tracked_changes=$dirty} | ConvertTo-Json | Set-Content evidence/checkouts-after.json
+          if ($driver -ne $env:GITHUB_SHA -or $source -ne $env:DIAGNOSTIC_SOURCE_SHA -or $tree -ne $env:DIAGNOSTIC_SOURCE_TREE -or $dirty.Count -ne 0) { throw 'final_checkout_binding_failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: windows-retained-journal-origin
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 14

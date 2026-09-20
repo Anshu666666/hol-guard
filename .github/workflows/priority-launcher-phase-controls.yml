@@ -1,0 +1,72 @@
+name: Untimed priority phase controls
+
+on:
+  push:
+    branches: [codex/pr2974-priority-phase-controls-20260920-490534b3]
+    paths: [.github/workflows/priority-launcher-phase-controls.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: priority-phase-controls-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  controls:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      SOURCE_SHA: 490534b3440d9f925c65c621b1f1cbf08a3c4e8b
+      SOURCE_TREE: 28eb09152852cc754ff79ff2d5d3c80a5715ff9c
+      SOURCE_PARENT_SHA: 124472b8949805e0dd36052df6894b335d8b519d
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          path: source
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: "0.9.26"
+          enable-cache: false
+      - name: Bind source and driver before controls
+        shell: bash
+        run: |
+          mkdir -p phase-control-evidence
+          python driver/scripts/ci/priority_launcher_phase_controls.py bind \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --output "$GITHUB_WORKSPACE/phase-control-evidence"
+      - name: Install the frozen Python dev environment
+        working-directory: source
+        run: uv sync --frozen --extra dev --python 3.12
+      - name: Run exact untimed source controls once
+        working-directory: source
+        run: |
+          "$GITHUB_WORKSPACE/source/.venv/bin/python" "$GITHUB_WORKSPACE/driver/scripts/ci/priority_launcher_phase_controls.py" controls \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --output "$GITHUB_WORKSPACE/phase-control-evidence"
+      - name: Preserve after bindings even on failure
+        if: always()
+        run: |
+          python driver/scripts/ci/priority_launcher_phase_controls.py after \
+            --source "$GITHUB_WORKSPACE/source" --driver "$GITHUB_WORKSPACE/driver" \
+            --output "$GITHUB_WORKSPACE/phase-control-evidence"
+      - name: Preserve all source and control outcomes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: priority-phase-untimed-${{ github.run_id }}
+          path: phase-control-evidence/
+          if-no-files-found: error
+          retention-days: 30

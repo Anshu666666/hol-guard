@@ -1,5 +1,7 @@
 # ADR 0006: Python control plane with Rust runtime data plane
 
+> Historical scope: the original PostToolUse-only migration and blanket failure wording below are not the current complete hook contract. Supported PreToolUse and PostToolUse authority, current availability delivery, and the separate approval continuation routes are reconciled in [the RSP-024 technical review](../native-runtime-technical-contract-review.md). This notice does not expand any route.
+
 Status: accepted for the 3.0 prerelease train. Eligible PostToolUse default-`auto` is authorized by ADR 0010; broader native authority remains out of scope.
 
 ## Decision

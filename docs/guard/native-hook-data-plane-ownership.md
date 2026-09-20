@@ -1,6 +1,8 @@
 # Native hook data-plane ownership v2
 
-Status: executable migration contract for `main`.
+Status: executable migration contract for `main`. Current outcome, approval-continuation,
+distribution and rollback scopes are reconciled in the
+[RSP-024 technical review](native-runtime-technical-contract-review.md).
 
 The machine-readable source of truth is
 `docs/guard/contracts/hook-data-plane-ownership.v2.json`. The always-selected
@@ -38,7 +40,7 @@ harness launcher or managed hook
   -> Python bounded asynchronous evidence handoff (non-authoritative)
 ```
 
-Native approval path (when a hook requires approval):
+External-authority native approval path (when this separately admitted route is used):
 
 ```text
 Rust raw envelope
@@ -168,10 +170,15 @@ Current material gaps include:
   current Python delivery bridge can still read home/workspace posture on the
   request path. The Rust performance program inventories that synchronous read
   separately and removes it only when the acknowledged binding is sufficient.
-- Rust owns the request-bound approval artifact, external Ed25519 authority,
-  resident-memory replay state, and final consume fence. Python may present
-  the opaque challenge and forward the external artifact, but it never signs,
-  authorizes, or persists approval state.
+- On the externally enrolled native route, Rust owns the request-bound approval
+  artifact, external Ed25519 authority, resident-memory replay state, and final
+  consume fence. Python may present the opaque challenge and forward the artifact;
+  it cannot mint the external signature or replace Rust's validation, replay and
+  consume checks. This is not every current hook
+  approval continuation: `hook_native_review_approval.py` also persists pending
+  local approvals and applies bounded request/policy-bound compatibility reuse.
+  That route does not prove general native approval consumption; see the
+  [RSP-024 technical review](native-runtime-technical-contract-review.md).
 
 ## No-environment production contract
 

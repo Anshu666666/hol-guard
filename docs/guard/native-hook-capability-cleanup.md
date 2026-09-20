@@ -13,7 +13,7 @@ and only one owner:
 | Class | Files | Responsibility |
 |---|---:|---|
 | Required control plane | 64 | adapters, byte transport, native launch, supervision, presentation, and non-authoritative receipts |
-| Named reference oracle | 17 | explicit differential tests and the documented pure-Python rollback oracle |
+| Named reference oracle | 17 | explicit differential tests and the retained test-only Python reference oracle |
 | Dead duplicate | 1 | superseded Python resident transport |
 
 The Rust runtime remains the sole semantic authority for supported native hook
@@ -66,6 +66,11 @@ exercised by `tests/test_python_capability_cleanup_gate.py` and the existing
 semantic/reference suites.
 
 ## Delta and rollback boundary
+
+This section describes reversal of the source/package cleanup only. It is not an
+installed native rollback procedure or evidence of a production Python fallback.
+The program's rollback contract is the prior tested native route, as recorded in the
+[RSP-024 technical review](native-runtime-technical-contract-review.md).
 
 The gate's snapshot at this change is:
 

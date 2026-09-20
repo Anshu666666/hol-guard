@@ -1,5 +1,7 @@
 # ADR 0009: Native child and Python daemon critical-failure behavior
 
+> Historical availability scope: the blanket PreToolUse pause and resident/one-shot/fail-safe sequence below do not specify all current delivery routes. [The RSP-024 technical review](../native-runtime-technical-contract-review.md) records the actual event-specific continuation, integrity-denial and permission behavior, and preserves the phase-aware nonreplay rules. The original ADR is retained for context, not as current installed qualification.
+
 Baseline reviewed: `release/3.0` at `0432719ee0d638443b7ef5208b4e16fc4ab70d80`.
 
 Status: accepted for implementation on the 3.0 prerelease train. This ADR does not change the native source default.

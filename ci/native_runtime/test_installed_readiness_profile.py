@@ -269,7 +269,7 @@ def test_preexisting_profiler_is_not_replaced_or_disabled() -> None:
 
 
 def test_unknown_window_is_refused_before_any_profile() -> None:
-    with pytest.raises(ValueError, match="^unknown_profile_window$"):
+    with pytest.raises(ValueError, match=r"^unknown_profile_window$"):
         profiling.ReadinessProfile({}, enabled=True, window="synthetic-private-window")
 
 

@@ -12,6 +12,8 @@ from contextlib import contextmanager, suppress
 from types import CodeType
 from typing import Any
 
+from ci.native_runtime.installed_readiness_spans import SelectedThreadSpans
+
 _LIMIT = 999_999
 _WINDOWS = ("start", "publication")
 _LABELS = frozenset(
@@ -66,11 +68,13 @@ class ReadinessProfile:
         *,
         enabled: bool,
         window: str = "publication",
+        thread_spans: bool = False,
     ) -> None:
         if window not in _WINDOWS:
             raise ValueError("unknown_profile_window")
         self.enabled = enabled
         self.window = window
+        self._thread_spans = thread_spans
         self._codes: dict[int, tuple[CodeType, str]] = {}
         for label, function in targets.items():
             if label not in _LABELS:
@@ -81,7 +85,13 @@ class ReadinessProfile:
         self._lock = threading.Lock()
         self._records: dict[str, dict[str, object]] = {}
 
-    def _finish(self, window: str, profiler: cProfile.Profile | None, available: bool) -> None:
+    def _finish(
+        self,
+        window: str,
+        profiler: cProfile.Profile | None,
+        available: bool,
+        spans: dict[str, object] | None = None,
+    ) -> None:
         rows: list[dict[str, object]] = []
         if available and profiler is not None:
             try:
@@ -106,6 +116,8 @@ class ReadinessProfile:
         rows.sort(key=lambda item: str(item["label"]))
         with self._lock:
             self._records[window] = {"completed": True, "available": available, "rows": rows}
+            if spans is not None:
+                self._records[window]["thread_spans"] = spans
 
     def _wrap(self, window: str, original: Callable[..., Any]) -> Callable[..., Any]:
         def run(*args: Any, **kwargs: Any) -> Any:
@@ -127,11 +139,20 @@ class ReadinessProfile:
                     with suppress(BaseException):
                         profiler.disable()
                 profiler = None
+            spans = None
+            with suppress(BaseException):
+                if self._thread_spans:
+                    spans = SelectedThreadSpans(self._codes)
+                    spans.start()
             try:
                 return original(*args, **kwargs)
             finally:
+                span_record = None
                 with suppress(BaseException):
-                    self._finish(window, profiler, available)
+                    if spans is not None:
+                        span_record = spans.close()
+                with suppress(BaseException):
+                    self._finish(window, profiler, available, span_record)
 
         return run
 

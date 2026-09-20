@@ -438,6 +438,7 @@ def trial(
                 publisher_targets(publisher),
                 enabled=mode != "control",
                 window="start" if mode == "start" else "publication",
+                thread_spans=mode != "control",
             )
             with observation.attach(publisher):
                 try:

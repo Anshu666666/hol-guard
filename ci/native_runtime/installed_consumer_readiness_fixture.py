@@ -54,6 +54,12 @@ class ReadinessFixture(SignedPolicyFixture):
             raise
 
     def _configure_agent(self) -> None:
+        # Each signed profile stage supplies its own default action. The base
+        # fixture's narrower Codex review floor would make a matching review
+        # rule noncausal for commands that already require that same action.
+        (self.store.guard_home / "config.toml").write_text(
+            'mode="enforce"\ndefault_action="review"\n', encoding="utf-8"
+        )
         now = datetime.now(timezone.utc)
         self.store.set_oauth_local_credentials(
             issuer=f"https://127.0.0.1:{self.server.server_port}",

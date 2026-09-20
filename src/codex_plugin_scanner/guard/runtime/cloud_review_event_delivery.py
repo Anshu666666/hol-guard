@@ -94,9 +94,8 @@ def _normalize_response(
 ) -> dict[str, object]:
     version = response.get("protocolVersion")
     if type(version) is not int or version != CLOUD_REVIEW_EVENT_PROTOCOL_VERSION:
-        rendered = "missing" if version is None else str(version)
         raise CloudReviewEventProtocolError(
-            f"Guard Cloud Review returned unsupported protocol version {rendered}. "
+            "Guard Cloud Review returned an unsupported protocol version. "
             "Update HOL Guard and reconnect Guard Cloud before retrying."
         )
     results = response.get("results")

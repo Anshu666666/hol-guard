@@ -114,6 +114,47 @@ fn installed_review_probe_requires_a_rule_that_changes_the_current_action() {
 }
 
 #[test]
+fn readiness_profile_stage_defaults_make_all_three_exact_rules_causal() {
+    for command in ["pwd", "true", "whoami"] {
+        let mut source = envelope(command);
+        source.raw_payload["tool_name"] = json!("Bash");
+        source.raw_payload["source_scope"] = json!("project");
+        for effect in ["block", "review", "allow"] {
+            let default = if effect == "allow" { "review" } else { "warn" };
+            let mut selected = row(7, "artifact", effect, "signed-bundle");
+            selected["artifact_id"] = json!("codex:project:Bash");
+            selected["exact_command_sha256"] = json!(exact_command_sha256(command));
+            let policy = snapshot(default, vec![selected.clone()]);
+            let baseline = evaluate(&snapshot(default, vec![]), &source);
+            let result = evaluate(&policy, &source);
+            assert_ne!(baseline.result.policy_action, effect, "{command}/{effect}");
+            assert_eq!(result.result.policy_action, effect, "{command}/{effect}");
+            assert_eq!(result.selected_decision_id, Some(7), "{command}/{effect}");
+            assert_eq!(
+                result.result.decision,
+                if effect == "allow" { "allow" } else { "deny" }
+            );
+
+            // The original fixture's independent local review floor remains
+            // authoritative; an equally restrictive rule gets no causal credit.
+            if effect == "review" {
+                let mut inherited = snapshot(default, vec![selected]);
+                inherited
+                    .effective_policy
+                    .harness_actions
+                    .insert("codex".to_owned(), "review".to_owned());
+                let prior = evaluate(&inherited, &source);
+                assert_eq!(prior.result.policy_action, "review");
+                assert_eq!(
+                    prior.selected_decision_id,
+                    if command == "pwd" { Some(7) } else { None }
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn modeled_destination_only_ssh_uses_exact_signed_review_without_lowering_stronger_floors() {
     let command = "ssh synthetic@example.invalid";
     for kind in ["signed-bundle", "signed-memory"] {

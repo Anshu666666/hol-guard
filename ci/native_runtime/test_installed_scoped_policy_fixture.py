@@ -11,13 +11,16 @@ import urllib.request
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from threading import Condition
 from typing import Any, cast
 
 import pytest
 
 from ci.native_runtime import probe_installed_scoped_policy as probe
+from ci.native_runtime.installed_consumer_readiness_fixture import ReadinessFixture
 from ci.native_runtime.installed_scoped_policy_fixture import WORKSPACE, SignedPolicyFixture
 from codex_plugin_scanner.guard.cli.oauth_client import GuardDpopKeyMaterial
+from codex_plugin_scanner.guard.native_policy_snapshot_publisher_inputs import NativePolicySnapshotPublisherInputs
 from codex_plugin_scanner.guard.oauth_connection_authority import OAuthConnectionSnapshot
 from codex_plugin_scanner.guard.policy_bundle_trusted_keys import validate_synced_policy_bundle
 from codex_plugin_scanner.guard.policy_document_compile import compile_policy_document
@@ -333,3 +336,43 @@ def test_application_diagnostic_failure_preserves_original_refusal(monkeypatch: 
     monkeypatch.setattr(probe, "print", broken_output, raising=False)
     with pytest.raises(probe.ProbeError, match=r"^current_application_missing$"):
         probe.require_current_application({}, version=1, completed_cases=1)
+
+
+def _actual_compiled_fixture_policy(fixture: SignedPolicyFixture, action: str) -> dict[str, object]:
+    # Execute the complete production file-lock/config/overlay/compiler path;
+    # no publisher worker, native process or authority acknowledgement is seeded.
+    inputs = NativePolicySnapshotPublisherInputs()
+    inputs.guard_home = fixture.store.guard_home
+    inputs._condition = Condition()
+    inputs._workspace_paths = {fixture.workspace}
+    return inputs._compiled_effective_policy(cloud_defaults={"mode": "enforce", "defaultAction": action})
+
+
+def test_readiness_profile_uses_each_signed_stage_default_without_a_local_harness_floor(
+    tmp_path: Path,
+) -> None:
+    value = ReadinessFixture(tmp_path)
+    try:
+        for action in ("warn", "review"):
+            compiled = _actual_compiled_fixture_policy(value, action)
+            assert compiled["default_action"] == action
+            assert compiled["harness_actions"] == {}
+            assert compiled["mode"] == "enforce"
+        assert value.store.get_sync_payload("policy_bundle") is None
+        assert value.store.get_sync_payload("policy_bundle_ack") is None
+        assert not value.store.list_policy_decisions()
+    finally:
+        value.close()
+
+
+def test_scoped_fixture_keeps_its_independent_local_review_floor(
+    tmp_path: Path,
+) -> None:
+    value = SignedPolicyFixture(tmp_path)
+    try:
+        compiled = _actual_compiled_fixture_policy(value, "warn")
+        assert compiled["default_action"] == "warn"
+        assert compiled["harness_actions"] == {"codex": "review"}
+        assert compiled["mode"] == "enforce"
+    finally:
+        value.close()

@@ -20,21 +20,30 @@ from .cloud_review_batching import (
 )
 from .cloud_review_event_delivery import (
     CLOUD_REVIEW_EVENT_PROTOCOL_VERSION,
+    CloudReviewEventProtocolError,
     post_review_events,
 )
 from .cloud_review_event_projection import build_cloud_review_event, project_cloud_review_event
 from .cloud_review_retry_recovery import repair_retry_identity_failures
 from .cloud_review_sync_auth import resolve_cloud_review_sync_auth_context as _resolve_cloud_review_sync_auth_context
-from .local_request_snapshots import (
-    _cloud_scrub_text,
-    _resolve_cloud_receipt_redaction_level,
-)
+from .local_request_snapshots import _resolve_cloud_receipt_redaction_level
 from .oauth_request_retry import request_after_oauth_refresh
 
 _LOGGER = logging.getLogger(__name__)
 
 CLOUD_REVIEW_SYNC_MAX_BATCHES = 200
 CLOUD_REVIEW_SYNC_STATE_KEY = "guard_cloud_review_sync_state"
+_PUBLIC_RETRY_CODES = frozenset(
+    {
+        "review_event_snapshot_required",
+        "review_event_canonical_correlation_required",
+        "review_event_sequence_conflict",
+        "temporary_failure",
+        "validation_failed",
+        "quarantined",
+        "rejected",
+    }
+)
 
 __all__ = [
     "CloudReviewSyncWorker",
@@ -52,10 +61,13 @@ def _now() -> str:
 
 def _redacted_error(error: BaseException) -> str:
     if isinstance(error, urllib.error.HTTPError):
-        return f"HTTP Error {error.code}: {error.reason}"
+        # HTTP reason phrases are remote content, not trusted diagnostics.
+        return f"HTTP {error.code}: Cloud Review upload failed. Retry synchronization."
     if isinstance(error, OSError):
         return type(error).__name__
-    return str(error)
+    if isinstance(error, (CloudReviewEventProtocolError, CloudReviewEventTooLargeError)):
+        return str(error)
+    return "Cloud Review synchronization failed. Retry synchronization or reconnect Guard Cloud."
 
 
 def _cloud_review_sync_state_key(store: GuardStore) -> str:
@@ -201,9 +213,8 @@ def _retry_result_message(items: list[dict[str, object]]) -> str:
     for item in items:
         code = item.get("code")
         error = item.get("error")
-        detail = ": ".join(
-            _cloud_scrub_text(value) for value in (code, error) if isinstance(value, str) and value.strip()
-        )
+        # Preserve recognized recovery codes, never arbitrary server text.
+        detail = ": ".join(value for value in (code, error) if isinstance(value, str) and value in _PUBLIC_RETRY_CODES)
         if detail and detail not in details:
             details.append(detail)
     message = f"{len(items)} Cloud Review events require retry."
@@ -442,7 +453,7 @@ def sync_cloud_review_events_once(
             outbox=outbox_status,
         )
     except urllib.error.HTTPError as error:
-        error_message = f"HTTP {error.code}: {error.reason}"
+        error_message = _redacted_error(error)
         state.update(
             {
                 "state": "error",

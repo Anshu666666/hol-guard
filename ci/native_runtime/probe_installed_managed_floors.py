@@ -18,6 +18,8 @@ import secrets
 import sys
 import tempfile
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -205,6 +207,79 @@ def verify_delivery(
     require(accepted.get("command_extensions") == command_binding, "receipt_controls_mismatch")
 
 
+@contextmanager
+def observe_http_native_call(worker: Any) -> Iterator[list[tuple[dict[str, Any], object]]]:
+    """Observe the owned HTTP worker without changing native inputs or results.
+
+    A separate direct review may use an earlier, equally valid publication.
+    Keep the HTTP call's own immutable input/result pair in memory only.
+    """
+    original = worker._review_raw_hook_native
+    had_override = "_review_raw_hook_native" in vars(worker)
+    override = vars(worker).get("_review_raw_hook_native")
+    calls: list[tuple[dict[str, Any], object]] = []
+
+    def observed(**kwargs: Any) -> object:
+        inputs = copy.deepcopy(kwargs)
+        result = original(**kwargs)
+        calls.append((inputs, copy.deepcopy(result)))
+        return result
+
+    worker._review_raw_hook_native = observed
+    try:
+        yield calls
+    finally:
+        if had_override:
+            worker._review_raw_hook_native = override
+        else:
+            del worker._review_raw_hook_native
+
+
+def verify_http_native_call(
+    calls: list[tuple[dict[str, Any], object]],
+    *,
+    payload: dict[str, object],
+    home: Path,
+    workspace: Path,
+    mode: str,
+    runtime_identity: object,
+    receipt: object,
+    label: str,
+    immutable_review: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    require(len(calls) == 1, "http_native_call_count")
+    inputs, observed = calls[0]
+    require(
+        inputs.get("payload") == payload
+        and inputs.get("harness") == "claude-code"
+        and inputs.get("event") == "PreToolUse"
+        and inputs.get("guard_home") == home
+        and inputs.get("home_dir") == home
+        and inputs.get("cwd") == workspace
+        and inputs.get("source_ref_external_allowed") is False
+        and inputs.get("observe_mode") is False,
+        "http_native_input_mismatch",
+    )
+    binding = mapping(inputs.get("policy_snapshot"), "http_native_binding_missing")
+    require(
+        binding.get("mode") == mode
+        and binding.get("command_extensions_bound") is True
+        and binding.get("runtime_identity") == runtime_identity
+        and "source_input_digest" not in binding,
+        "http_native_binding_mismatch",
+    )
+    edge = mapping(observed, "http_native_response_missing")
+    require(
+        edge.get("authority") == "rust" and edge.get("schema") == "guard-hook-edge-result.v2",
+        "http_native_authority_missing",
+    )
+    verify_native_floor(
+        mapping(edge.get("result"), "http_native_result_missing"), label=label, immutable_review=immutable_review
+    )
+    require(mapping(edge.get("receipt"), "http_native_receipt_missing") == receipt, "http_native_receipt_mismatch")
+    return binding, edge
+
+
 def exercise(root: Path) -> dict[str, object]:
     # HTTP validates canonical source directories; the direct native control
     # must bind the same paths even when the temporary root is a symlink.
@@ -339,18 +414,32 @@ def _exercise_fixture(root: Path, fixture: ManagedPolicyFixture) -> dict[str, ob
             require(result["reason_code"] == reason, f"native_floor_reason_mismatch:{label}")
         extensions = mapping(result.get("command_extensions"), "result_control_binding_missing")
         previous_receipt = copy.deepcopy(daemon._server.hook_worker.last_native_decision_receipt)
-        with report_hook_transport_timeout(case=label, completed_cases=len(rows), control_revision=revision):
+        with (
+            observe_http_native_call(daemon._server.hook_worker) as http_calls,
+            report_hook_transport_timeout(case=label, completed_cases=len(rows), control_revision=revision),
+        ):
             response = present(
                 installed_hook_request(daemon, home, workspace, "claude-code", "PreToolUse", payload), "http_missing"
             )
+        http_binding, http_edge = verify_http_native_call(
+            http_calls,
+            payload=payload,
+            home=home,
+            workspace=workspace,
+            mode=mode,
+            runtime_identity=binding["runtime_identity"],
+            receipt=daemon._server.hook_worker.last_native_decision_receipt,
+            label=label,
+            immutable_review=immutable_review,
+        )
         verify_delivery(
             response,
-            binding=binding,
+            binding=http_binding,
             receipt=daemon._server.hook_worker.last_native_decision_receipt,
             command_binding=extensions["binding"],
             previous_receipt=previous_receipt,
             expected_reason=result["reason_code"],
-            expected_request_digest=mapping(edge.get("receipt"), "raw_receipt_missing")["request_digest"],
+            expected_request_digest=mapping(http_edge.get("receipt"), "raw_receipt_missing")["request_digest"],
             immutable_review=immutable_review,
             label=label,
             completed_cases=len(rows),

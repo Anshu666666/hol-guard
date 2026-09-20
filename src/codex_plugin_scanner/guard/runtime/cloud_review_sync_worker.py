@@ -171,7 +171,7 @@ def _cloud_sync_sync_loop(
             sync._save_sync_state(store, state)
         except Exception as error:
             error_streak += 1
-            _LOGGER.exception("Unexpected error in Cloud Review sync loop")
+            _LOGGER.warning("Cloud Review sync loop failed: %s", sync._redacted_error(error))
             state = sync._load_sync_state(store)
             state.update(
                 {

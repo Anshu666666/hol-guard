@@ -1,0 +1,455 @@
+name: Inspect original native artifact evidence
+
+on:
+  push:
+    branches: [hgp/inspect-original-native-artifacts]
+    paths: [.github/workflows/inspect-original-native-artifacts.yml]
+
+permissions:
+  actions: read
+
+jobs:
+  inspect:
+    if: github.repository == 'hashgraph-online/hol-guard' && github.event_name == 'push' && github.ref == 'refs/heads/hgp/inspect-original-native-artifacts' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Verify fixed original archives and bounded native identities
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import re
+          import stat
+          import tempfile
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+          
+          REPO = "hashgraph-online/hol-guard"
+          HEAD = "bfe9d3e1f1cdf8a29373484ca9d99a11ce2800e1"
+          TREE = "0c0dc296a21e80435b1edf319364e2fccc114034"
+          SOURCES = {"35493915301":"bfe9d3e1f1cdf8a29373484ca9d99a11ce2800e1","35493916750":"2f810e7b674cacabbe151b06dbd05f4d2b1105db","35493915463":"bfe9d3e1f1cdf8a29373484ca9d99a11ce2800e1"}
+          RUNS = {"35493915301":{"event":"push","path":".github/workflows/native-wheel-ci.yml","conclusion":"failure"},"35493916750":{"event":"pull_request","path":".github/workflows/native-wheel-ci.yml","conclusion":"failure"},"35493915463":{"event":"push","path":".github/workflows/candidate-integration-lab.yml","conclusion":"success"}}
+          ROWS = json.loads(r'''[{"label":"arm-push","artifact":10600501607,"run":35493915301,"job":106033438777,"bytes":13182175,"sha256":"28e28ee0baa08d82a38efd037a59297bb8fe5621430c80062c99f7bdb9e98be2","created":"2026-09-20T06:25:03Z","start":"2026-09-20T06:19:16Z","end":"2026-09-20T06:25:07Z","conclusion":"success","name":"hol-guard-native-wheel-aarch64-apple-darwin","jobName":"macos (macos-15, macosx_11_0_arm64, aarch64-apple-darwin, 11.0)","runtimeSha256":"06b3dcb54cc3f5ebd59a868bbb78f6f25282e78288767b01a270ddc5b241039e"},{"label":"windows-push","artifact":10599977350,"run":35493915301,"job":106033438824,"bytes":8272491,"sha256":"22dcfc8b0ebebdb2ebd12db82742c546ecc81f4377ce17ad9ef4dc244ffc8e8d","created":"2026-09-20T06:23:22Z","start":"2026-09-20T06:19:16Z","end":"2026-09-20T06:23:27Z","conclusion":"failure","name":"hol-guard-native-wheel-windows-x64","jobName":"windows-x64","runtimeSha256":"8a107235e58244bec16633194e430a1f1a41d33d364cca4d36106d2169beb4ee"},{"label":"intel-push","artifact":10599962605,"run":35493915301,"job":106033438674,"bytes":8452688,"sha256":"65848308e11b4d3b730b197ce31355163cacc178b2401f94cc303165882b4abf","created":"2026-09-20T06:25:04Z","start":"2026-09-20T06:19:13Z","end":"2026-09-20T06:25:09Z","conclusion":"failure","name":"hol-guard-native-wheel-x86_64-apple-darwin","jobName":"macos (macos-15-intel, macosx_13_0_x86_64, x86_64-apple-darwin, 13.0)","runtimeSha256":"0199fe4edacfc9a5f705f7da24e22604ab3bfd626d4db41407eb780f9ed91ebb"},{"label":"intel-pr","artifact":10600570444,"run":35493916750,"job":106033442606,"bytes":8452580,"sha256":"90f461e9f60b094f2835d1e3722ecb51721a45339deed8b3ee69f07c7aa74c2e","created":"2026-09-20T06:25:58Z","start":"2026-09-20T06:19:18Z","end":"2026-09-20T06:26:04Z","conclusion":"failure","name":"hol-guard-native-wheel-x86_64-apple-darwin","jobName":"macos (macos-15-intel, macosx_13_0_x86_64, x86_64-apple-darwin, 13.0)","runtimeSha256":"2e407de96f35aef05c66f7854711de6970e132c1ef29f68b47f5d452bdede61e"},{"label":"windows-pr","artifact":10600550812,"run":35493916750,"job":106033442514,"bytes":8272028,"sha256":"73a59c68106b33235508db6c7f33aa3a6d6e4004a489389fb5f64467a865374e","created":"2026-09-20T06:23:28Z","start":"2026-09-20T06:19:15Z","end":"2026-09-20T06:23:32Z","conclusion":"failure","name":"hol-guard-native-wheel-windows-x64","jobName":"windows-x64","runtimeSha256":"a396bef838dc1d55495b6f4a97432e5e80e7c24a0fcb08dbdc08363058e9ef4b"},{"label":"arm-pr","artifact":10599887682,"run":35493916750,"job":106033442655,"bytes":13182142,"sha256":"25746622e4e98c9fc421f62c4ec5af504ec06e5453a4b9108ca8f21df3b475f0","created":"2026-09-20T06:25:05Z","start":"2026-09-20T06:19:19Z","end":"2026-09-20T06:25:09Z","conclusion":"success","name":"hol-guard-native-wheel-aarch64-apple-darwin","jobName":"macos (macos-15, macosx_11_0_arm64, aarch64-apple-darwin, 11.0)","runtimeSha256":"fbf87f6497374e8f4462d56c068c0902034d0e746b629419fef99c328fe79201"},{"label":"docker-activation","artifact":10600076947,"run":35493915463,"job":106033439045,"bytes":475,"sha256":"d4c5a1df247aad17dd7a1e5843ab9548fc6086f7fc268bbf07838bc91ccb9a53","created":"2026-09-20T06:20:11Z","start":"2026-09-20T06:19:12Z","end":"2026-09-20T06:20:14Z","conclusion":"success","name":"native-policy-activation-35493915463-1","jobName":"integration / Native policy activation assertions","runtimeSha256":null},{"label":"docker-integration","artifact":10600037052,"run":35493915463,"job":106033439236,"bytes":9880,"sha256":"2bdf3bdd9be06a05fcb1c1bfd304c4108cc365bbe0ebf906c08ecd9b986e1a26","created":"2026-09-20T06:20:37Z","start":"2026-09-20T06:19:13Z","end":"2026-09-20T06:20:40Z","conclusion":"success","name":"mdm-cloud-integration-35493915463-1","jobName":"integration / integration","runtimeSha256":null},{"label":"linux-push","artifact":10600209018,"run":35493915301,"job":106033438752,"bytes":13581004,"sha256":"1be6007ba6643caefddd4f3276805f24102486226c7f341f59a3d1463382b196","created":"2026-09-20T06:55:16Z","start":"2026-09-20T06:19:12Z","end":"2026-09-20T06:55:19Z","conclusion":"success","name":"hol-guard-native-wheel-linux-x64","jobName":"linux-x64","runtimeSha256":"395aadb84038c8381488a347b3b559ce93e0717c4a6c702d5df5603de8f1bf1a"},{"label":"linux-pr","artifact":10600273912,"run":35493916750,"job":106033442672,"bytes":13581073,"sha256":"a2872c1973fa59f5354c3a2ffc8395fed5b962743f2f2f64edff0f6ebb6d7f5e","created":"2026-09-20T06:55:05Z","start":"2026-09-20T06:19:16Z","end":"2026-09-20T06:55:10Z","conclusion":"success","name":"hol-guard-native-wheel-linux-x64","jobName":"linux-x64","runtimeSha256":"4137fdd6aa95d2265a9e9458f09750af9fb52305b3ba3e22524a1c96546a178c"}]''')
+          PLATFORMS = {"linux": ("x86_64-unknown-linux-musl", "manylinux_2_17_x86_64"),
+              "arm": ("aarch64-apple-darwin", "macosx_11_0_arm64"),
+              "intel": ("x86_64-apple-darwin", "macosx_13_0_x86_64"),
+              "windows": ("x86_64-pc-windows-msvc", "win_amd64")}
+          MIB = 1024 * 1024
+          DEADLINE = time.monotonic() + 720
+          TOKEN = os.environ.pop("GH_TOKEN", "")
+          API = "https://api.github.com/repos/" + REPO
+          
+          
+          class Refusal(Exception):
+              pass
+          
+          
+          def need(condition, code):
+              if not condition:
+                  raise Refusal(code)
+          
+          
+          def tick():
+              need(time.monotonic() < DEADLINE, "inspection_deadline")
+          
+          
+          def object_pairs(pairs):
+              result = {}
+              for key, value in pairs:
+                  need(key not in result, "duplicate_json_key")
+                  result[key] = value
+              return result
+          
+          
+          def parse_json(raw):
+              return json.loads(raw.decode("utf-8"), object_pairs_hook=object_pairs,
+                                parse_constant=lambda value: fail_json())
+          
+          
+          def fail_json():
+              raise Refusal("nonfinite_json")
+          
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          
+          
+          OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+          
+          
+          def open_url(url, authenticated):
+              tick()
+              parsed = urllib.parse.urlsplit(url)
+              need(parsed.scheme == "https" and parsed.port in (None, 443)
+                   and not parsed.username and not parsed.password and not parsed.fragment, "unsafe_transport")
+              if authenticated:
+                  need(parsed.hostname == "api.github.com" and url.startswith(API + "/")
+                       and not parsed.query, "unsafe_api_target")
+              else:
+                  need(re.fullmatch(r"productionresultssa[a-z0-9]+\.blob\.core\.windows\.net",
+                                    parsed.hostname or "") is not None, "unsafe_artifact_target")
+              headers = {"User-Agent": "bounded-original-artifact-inspector"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json",
+                                  "X-GitHub-Api-Version": "2022-11-28"})
+              try:
+                  return OPENER.open(urllib.request.Request(url, headers=headers, method="GET"), timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code in (301, 302, 303, 307, 308):
+                      return error
+                  error.close()
+                  raise Refusal("http_refused") from None
+          
+          
+          def limited_read(response, limit):
+              chunks = []
+              total = 0
+              while True:
+                  tick()
+                  chunk = response.read(min(65536, limit + 1 - total))
+                  if not chunk:
+                      return b"".join(chunks)
+                  total += len(chunk)
+                  need(total <= limit, "response_size_limit")
+                  chunks.append(chunk)
+          
+          
+          def api(path):
+              with open_url(API + path, True) as response:
+                  need(response.status == 200, "api_status")
+                  return parse_json(limited_read(response, 2 * MIB))
+          
+          
+          def download(artifact_id, size, digest, target):
+              need(0 < size <= 128 * MIB, "archive_size_limit")
+              url = API + "/actions/artifacts/" + str(artifact_id) + "/zip"
+              for index in range(4):
+                  with open_url(url, index == 0) as response:
+                      if response.status in (301, 302, 303, 307, 308):
+                          # Location stays in memory. Authorization is never sent after the API request.
+                          location = response.headers.get("Location", "")
+                          need(0 < len(location) <= 16384, "redirect_location")
+                          url = urllib.parse.urljoin(url, location)
+                          continue
+                      need(index > 0 and response.status == 200, "archive_status")
+                      length = response.headers.get("Content-Length")
+                      need(length is None or (length.isdigit() and int(length) == size), "archive_length")
+                      actual = 0
+                      checksum = hashlib.sha256()
+                      while True:
+                          tick()
+                          chunk = response.read(min(65536, size + 1 - actual))
+                          if not chunk:
+                              break
+                          actual += len(chunk)
+                          need(actual <= size, "archive_size_mismatch")
+                          checksum.update(chunk)
+                          target.write(chunk)
+                      need(actual == size and checksum.hexdigest() == digest, "archive_digest_mismatch")
+                      target.seek(0)
+                      return
+              raise Refusal("redirect_limit")
+          
+          
+          def timestamp(value):
+              need(isinstance(value, str) and re.fullmatch(
+                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value) is not None, "invalid_timestamp")
+              return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+          
+          
+          REPORTS = (
+              "native-default-auto.json", "installed-native-extensions.json",
+              "installed-scoped-policy.json", "installed-pi-output.json",
+              "installed-command-control-lock.json", "installed-managed-floors.json",
+              "native-installed-slo.json", "native-soak.json", "native-artifact-evidence.json",
+              "native-stop-diagnostic.json", "proof.json", "mdm-cloud-integration-report.json",
+              "mdm-cloud-integration-report.json.sha256",
+          )
+          GLOBAL_EXPANDED = 0
+          
+          
+          def valid_member(entry, names):
+              name = entry.filename
+              parts = name.rstrip("/").split("/")
+              need(0 < len(name) <= 512 and not name.startswith("/") and "\\" not in name
+                   and all(part not in ("", ".", "..") for part in parts)
+                   and not any(ord(char) < 32 or ord(char) == 127 for char in name)
+                   and not re.match(r"^[A-Za-z]:", name), "unsafe_zip_path")
+              need(entry.orig_filename == name and name not in names, "duplicate_zip_member")
+              names.add(name)
+              kind = stat.S_IFMT(entry.external_attr >> 16)
+              need(kind in (0, stat.S_IFREG, stat.S_IFDIR) and not entry.flag_bits & 1
+                   and entry.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED), "unsafe_zip_member")
+              need(0 <= entry.file_size <= 128 * MIB and entry.compress_size >= 0
+                   and entry.file_size <= max(1, entry.compress_size) * 2000, "zip_expansion_limit")
+              return name
+          
+          
+          def stream_member(archive, entry, retain=False, target=None):
+              global GLOBAL_EXPANDED
+              count = 0
+              retained = bytearray()
+              digest = hashlib.sha256()
+              with archive.open(entry, "r") as member:
+                  while True:
+                      tick()
+                      chunk = member.read(65536)
+                      if not chunk:
+                          break
+                      count += len(chunk)
+                      GLOBAL_EXPANDED += len(chunk)
+                      need(count <= entry.file_size and GLOBAL_EXPANDED <= 2048 * MIB, "zip_actual_size")
+                      digest.update(chunk)
+                      if retain:
+                          retained.extend(chunk)
+                      if target is not None:
+                          target.write(chunk)
+              need(count == entry.file_size, "zip_member_length")
+              return bytes(retained), digest.hexdigest()
+          
+          
+          def native_wheel(target, row):
+              names = set()
+              native = {}
+              manifest = None
+              total = 0
+              with zipfile.ZipFile(target, "r") as archive:
+                  entries = archive.infolist()
+                  need(0 < len(entries) <= 20000, "wheel_member_count")
+                  for entry in entries:
+                      tick()
+                      name = valid_member(entry, names)
+                      total += entry.file_size
+                      need(total <= 512 * MIB, "wheel_total_size")
+                      is_manifest = name == "codex_plugin_scanner/_native/runtime-manifest.json"
+                      is_runtime = name in (
+                          "codex_plugin_scanner/_native/hol-guard-runtime",
+                          "codex_plugin_scanner/_native/hol-guard-runtime.exe",
+                      )
+                      if is_manifest:
+                          need(entry.file_size <= 16384 and not entry.is_dir(), "runtime_manifest_size")
+                      raw, checksum = stream_member(archive, entry, retain=is_manifest)
+                      if is_runtime:
+                          need(not native and not entry.is_dir(), "duplicate_runtime")
+                          native = {"sha256": checksum, "bytes": entry.file_size,
+                                    "windows": name.endswith(".exe")}
+                      if is_manifest:
+                          manifest = parse_json(raw)
+              result = {"allNestedMemberCrcsVerified": True, "members": len(names), "bytesExpanded": total}
+              if not native:
+                  need(manifest is None, "manifest_without_runtime")
+                  return {**result, "native": False}
+              need(isinstance(manifest, dict) and manifest.get("schema") == "hol-guard-native-runtime.v1"
+                   and manifest.get("protocol_version") == 1
+                   and manifest.get("source_sha") == SOURCES[str(row["run"])]
+                   and manifest.get("runtime_sha256") == native["sha256"] == row["runtimeSha256"]
+                   and manifest.get("runtime_size") == native["bytes"], "runtime_manifest_binding")
+              need(native["windows"] == row["label"].startswith("windows-"), "runtime_platform_binding")
+              target_name, platform_name = PLATFORMS[row["label"].split("-")[0]]
+              need(manifest.get("target") == target_name and manifest.get("platform_tag") == platform_name,
+                   "runtime_target_binding")
+              need(isinstance(manifest.get("rule_digest"), str)
+                   and re.fullmatch(r"[0-9a-f]{64}", manifest["rule_digest"]), "runtime_rule_digest")
+              return {**result, "native": True, "runtimeSha256": native["sha256"], "runtimeBytes": native["bytes"],
+                      "sourceSha": manifest["source_sha"], "ruleDigest": manifest["rule_digest"],
+                      "_packageVersion": manifest.get("package_version")}
+          
+          
+          def finite_report(raw):
+              value = parse_json(raw)
+              need(isinstance(value, dict), "report_object")
+              output = {}
+              for key in ("passed", "healthy", "allAssertionsPassed", "exactCleanSourceVerified"):
+                  if key in value:
+                      need(type(value[key]) is bool, "report_boolean")
+                      output[key] = value[key]
+              for key in ("assertionCount", "stepCount"):
+                  if key in value:
+                      need(type(value[key]) is int and 0 <= value[key] <= 1000000, "report_counter")
+                      output[key] = value[key]
+              if "status" in value:
+                  output["status"] = value["status"] if value["status"] in ("pass", "fail", "success", "failure") else "unrecognized"
+              return value, output
+          
+          
+          def inspect_zip(target, row):
+              names = set()
+              reports = {}
+              wheels = []
+              total = 0
+              with zipfile.ZipFile(target, "r") as archive:
+                  entries = archive.infolist()
+                  need(0 < len(entries) <= 4096, "zip_member_count")
+                  for entry in entries:
+                      tick()
+                      name = valid_member(entry, names)
+                      total += entry.file_size
+                      need(total <= 512 * MIB, "zip_total_size")
+                      basename = name.rsplit("/", 1)[-1]
+                      is_report = basename in REPORTS
+                      is_wheel = name.endswith(".whl")
+                      if is_report:
+                          need(basename not in reports and entry.file_size <= 2 * MIB and not entry.is_dir(),
+                               "report_collision_or_size")
+                      if is_wheel:
+                          need(re.fullmatch(r"(?:native-dist/)?hol_guard-[A-Za-z0-9_.+-]+\.whl", name)
+                               and not entry.is_dir() and len(wheels) < 3 and row["runtimeSha256"], "unexpected_wheel")
+                          with tempfile.TemporaryFile(mode="w+b") as nested:
+                              _, checksum = stream_member(archive, entry, target=nested)
+                              nested.seek(0)
+                              wheel = native_wheel(nested, row)
+                              wheel.update({"sha256": checksum, "bytes": entry.file_size, "_basename": basename})
+                              wheels.append(wheel)
+                      else:
+                          raw, checksum = stream_member(archive, entry, retain=is_report)
+                          if is_report:
+                              reports[basename] = {"raw": raw, "sha256": checksum, "bytes": entry.file_size}
+              result = {"allOuterMemberCrcsVerified": True, "members": len(names), "bytesExpanded": total}
+              summaries = {}
+              decoded = {}
+              for name, report in reports.items():
+                  if name.endswith(".sha256"):
+                      continue
+                  value, summary = finite_report(report["raw"])
+                  decoded[name] = value
+                  summaries[name] = {"present": True, "sha256": report["sha256"], "bytes": report["bytes"], **summary}
+                  if row["runtimeSha256"]:
+                      for field in ("source_sha",):
+                          if field in value:
+                              need(value[field] == SOURCES[str(row["run"])], "report_source_binding")
+                      if "runtime_sha256" in value:
+                          need(value["runtime_sha256"] == row["runtimeSha256"], "report_runtime_binding")
+              if row["runtimeSha256"]:
+                  native = [wheel for wheel in wheels if wheel["native"]]
+                  need(len(native) == 1, "native_wheel_selection")
+                  scoped = decoded.get("installed-scoped-policy.json")
+                  need(isinstance(scoped, dict) and scoped.get("schema") == "guard.installed-scoped-policy.v1"
+                       and scoped.get("source_sha") == SOURCES[str(row["run"])]
+                       and scoped.get("runtime_sha256") == row["runtimeSha256"], "scoped_runtime_binding")
+                  evidence = decoded.get("native-artifact-evidence.json")
+                  if evidence is not None:
+                      need(evidence.get("schema") == "hol-guard-release-artifact-evidence.v1"
+                           and evidence.get("source_sha") == SOURCES[str(row["run"])]
+                           and evidence.get("rule_digest") == native[0]["ruleDigest"]
+                           and evidence.get("package_version") == native[0]["_packageVersion"], "wheel_evidence_binding")
+                      records = evidence.get("artifacts")
+                      need(isinstance(records, list) and len(records) <= 16, "wheel_evidence_shape")
+                      matches = [item for item in records if isinstance(item, dict) and item.get("role") == "native-wheel"]
+                      need(len(matches) == 1 and matches[0].get("sha256") == native[0]["sha256"]
+                           and matches[0].get("size") == native[0]["bytes"]
+                           and matches[0].get("name") == native[0]["_basename"], "wheel_evidence_digest")
+                      result["artifactEvidenceJoined"] = True
+                  else:
+                      result["artifactEvidenceJoined"] = False
+                  result["wheels"] = [{key: value for key, value in wheel.items() if not key.startswith("_")} for wheel in wheels]
+                  result["reports"] = {name: summaries.get(name, {"present": False}) for name in REPORTS[:10]}
+                  result["missingReportMeaning"] = "absent-in-original-archive-not-a-pass"
+              elif row["label"] == "docker-activation":
+                  proof = decoded.get("proof.json")
+                  need(isinstance(proof, dict) and proof.get("schema") == "native-policy-activation-proof.v1"
+                       and proof.get("sourceSha") == HEAD and proof.get("status") == "pass"
+                       and proof.get("assertionCount") == 4 and proof.get("allAssertionsPassed") is True
+                       and proof.get("exactCleanSourceVerified") is True
+                       and proof.get("binarySha256") == "879d196c474edf7ce8e66be87a74fb028c4b9e02c11d6a910f1421c2632cc504"
+                       and proof.get("installedWheelCertification") == "not-evaluated", "activation_proof_binding")
+                  result["reports"] = {"proof.json": summaries["proof.json"]}
+                  result["installedWheelCertification"] = "not-evaluated"
+              else:
+                  proof = decoded.get("mdm-cloud-integration-report.json")
+                  need(isinstance(proof, dict) and proof.get("schemaVersion") == "hol-guard-mdm-cloud-integration-lab.v1"
+                       and proof.get("healthy") is True and proof.get("stepCount") == 55
+                       and isinstance(proof.get("steps"), list) and len(proof["steps"]) == 55
+                       and all(isinstance(item, dict) and item.get("passed") is True for item in proof["steps"])
+                       and isinstance(proof.get("nativeCertification"), dict)
+                       and proof["nativeCertification"].get("outcome") == "not-evaluated", "integration_proof_binding")
+                  sidecar = reports.get("mdm-cloud-integration-report.json.sha256")
+                  need(sidecar is not None, "integration_digest_missing")
+                  declared = sidecar["raw"].decode("ascii").strip().split()
+                  need(len(declared) in (1, 2) and declared[0] == reports["mdm-cloud-integration-report.json"]["sha256"],
+                       "integration_digest_mismatch")
+                  result["reports"] = {"mdm-cloud-integration-report.json": summaries["mdm-cloud-integration-report.json"]}
+                  result["nativeCertification"] = "not-evaluated"
+              return result
+          
+          
+          def inspect(row, cache):
+              run = row["run"]
+              if run not in cache:
+                  data = api("/actions/runs/" + str(run))
+                  need(data.get("id") == run and data.get("head_sha") == HEAD and data.get("run_attempt") == 1
+                       and data.get("status") == "completed" and data.get("conclusion") == RUNS[str(run)]["conclusion"]
+                       and data.get("event") == RUNS[str(run)]["event"] and data.get("path") == RUNS[str(run)]["path"]
+                       and data.get("repository", {}).get("full_name") == REPO, "run_binding")
+                  cache[run] = data
+              job = api("/actions/jobs/" + str(row["job"]))
+              need(job.get("id") == row["job"] and job.get("run_id") == run and job.get("run_attempt") == 1
+                   and job.get("head_sha") == HEAD and job.get("name") == row["jobName"]
+                   and job.get("started_at") == row["start"] and job.get("completed_at") == row["end"]
+                   and job.get("status") == "completed" and job.get("conclusion") == row["conclusion"], "job_binding")
+              meta = api("/actions/artifacts/" + str(row["artifact"]))
+              need(meta.get("id") == row["artifact"] and meta.get("size_in_bytes") == row["bytes"]
+                   and meta.get("digest") == "sha256:" + row["sha256"] and meta.get("expired") is False
+                   and meta.get("created_at") == row["created"] and meta.get("name") == row["name"]
+                   and meta.get("workflow_run", {}).get("id") == run
+                   and meta.get("workflow_run", {}).get("head_sha") == HEAD
+                   and meta.get("workflow_run", {}).get("repository_id") == cache[run]["repository"]["id"]
+                   and timestamp(row["start"]) <= timestamp(row["created"]) <= timestamp(row["end"]), "artifact_binding")
+              with tempfile.TemporaryFile(mode="w+b") as target:
+                  download(row["artifact"], row["bytes"], row["sha256"], target)
+                  result = inspect_zip(target, row)
+              return {"verified": True, "sha256": row["sha256"], "bytes": row["bytes"], **result}
+          
+          
+          def main():
+              need(bool(TOKEN) and len(ROWS) == 10 and len({row["artifact"] for row in ROWS}) == 10
+                   and sum(row["bytes"] for row in ROWS) == 86986536, "inspector_configuration")
+              for source in set(SOURCES.values()):
+                  # Immutable public source lookup carries no token and cannot redirect.
+                  with OPENER.open(urllib.request.Request(API + "/git/commits/" + source,
+                          headers={"User-Agent": "bounded-original-artifact-inspector"}, method="GET"), timeout=30) as response:
+                      need(response.status == 200, "public_commit_status")
+                      commit = parse_json(limited_read(response, 2 * MIB))
+                  need(commit.get("sha") == source and commit.get("tree", {}).get("sha") == TREE, "commit_tree_binding")
+              failures = 0
+              cache = {}
+              for row in ROWS:
+                  record = {"schema": "guard.original-native-artifact-inspection.v1", "run": row["run"],
+                            "attempt": 1, "apiHead": HEAD, "executedSource": SOURCES[str(row["run"])],
+                            "job": row["job"], "artifact": row["artifact"], "label": row["label"]}
+                  try:
+                      record.update(inspect(row, cache))
+                  except Refusal as error:
+                      failures += 1
+                      record.update({"verified": False, "failure": str(error)})
+                  except Exception:
+                      failures += 1
+                      record.update({"verified": False, "failure": "inspection_unavailable"})
+                  print(json.dumps(record, sort_keys=True, separators=(",", ":")), flush=True)
+              print(json.dumps({"schema": "guard.original-native-artifact-inspection-summary.v1",
+                                "total": 10, "verified": 10 - failures, "failed": failures,
+                                "bytes": 86986536, "scope": "original-archive-inspection-only",
+                                "nativeExecution": False, "procedureRerun": False, "acceptancePromotion": False},
+                               sort_keys=True), flush=True)
+              return 1 if failures else 0
+          
+          
+          try:
+              raise SystemExit(main())
+          except Refusal:
+              print('{"schema":"guard.original-native-artifact-inspection-summary.v1","failed":10,"failure":"configuration_refused"}')
+              raise SystemExit(1)
+          except Exception:
+              print('{"schema":"guard.original-native-artifact-inspection-summary.v1","failed":10,"failure":"inspection_unavailable"}')
+              raise SystemExit(1)
+          
+          PY

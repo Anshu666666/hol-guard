@@ -7,6 +7,10 @@ use std::net::{Ipv4Addr, SocketAddr, TcpStream};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
+#[cfg(all(test, feature = "diagnostic-phases", target_os = "macos"))]
+#[path = "resident_startup_closed_peer_tests.rs"]
+mod resident_startup_diagnostic_closed_peer_tests;
+
 #[path = "resident_client_deadline.rs"]
 mod deadline;
 use deadline::DeadlineStream;

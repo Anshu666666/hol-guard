@@ -30,6 +30,7 @@ from codex_plugin_scanner.guard.store import GuardStore
 _MAX_STDOUT = _MAX_ACK_BYTES
 _MAX_STDERR = 16_384 + 256
 _PHASES = {"connect", "authenticate", "request_write_flush", "committed_response_read"}
+_IO_OPERATIONS = {"unspecified", "read_timeout_configuration", "stream_read"}
 _IO_KINDS = {
     "timed_out",
     "would_block",
@@ -179,7 +180,7 @@ def parse_diagnostic(stderr: bytes, payload: bytes) -> dict[str, Any]:
     }
     require(type(value) is dict and set(value) == expected, "diagnostic_fields")
     value = cast(dict[str, Any], value)
-    require(value["schema"] == "hol-guard.resident-startup-diagnostic.v1", "diagnostic_schema")
+    require(value["schema"] == "hol-guard.resident-startup-diagnostic.v2", "diagnostic_schema")
     require(value["scope"] == "single_explicit_managed_client_operation", "diagnostic_scope")
     require(value["deadline_budget_ms"] == 2000 and type(value["deadline_budget_ms"]) is int, "native_budget")
     require(value["payload_bytes"] == len(payload) and type(value["payload_bytes"]) is int, "payload_length")
@@ -222,8 +223,12 @@ def parse_diagnostic(stderr: bytes, payload: bytes) -> dict[str, Any]:
         )
         failure = event["io_failure"]
         if failure is not None:
-            require(type(failure) is dict and set(failure) == {"kind", "os_code"}, "io_fields")
+            require(type(failure) is dict and set(failure) == {"operation", "kind", "os_code"}, "io_fields")
             failure = cast(dict[str, Any], failure)
+            require(
+                isinstance(failure["operation"], str) and failure["operation"] in _IO_OPERATIONS,
+                "io_operation",
+            )
             require(isinstance(failure["kind"], str) and failure["kind"] in _IO_KINDS, "io_kind")
             require(
                 failure["os_code"] is None

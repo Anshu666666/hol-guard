@@ -12,12 +12,14 @@ fn default_build_erases_observation_and_retains_one_original_expression() {
     crate::record_resident_startup_fatal!(panic!("default diagnostic expression evaluated"));
     assert_eq!(calls, 1);
     assert_eq!(result.as_ptr(), address);
+    let result = crate::observe_resident_startup_io!(StreamRead, result);
+    assert_eq!(result.as_ptr(), address);
 }
 
 #[cfg(feature = "diagnostic-phases")]
 mod enabled {
     use super::super::enabled::{capture, export, MAX_EVENTS, MAX_REPORT_BYTES};
-    use super::super::{observe, record_fatal, record_io, Phase};
+    use super::super::{observe, observe_io, record_fatal, record_io, IoOperation, Phase};
     use crate::resident_client::ResidentClientError;
     use serde_json::Value;
     use std::fs;
@@ -138,6 +140,39 @@ mod enabled {
         assert_eq!(result, Err("native_client_deadline_exceeded".to_owned()));
     }
 
+    #[test]
+    fn timeout_configuration_and_read_errors_remain_distinct_after_outer_mapping() {
+        for (operation, expected) in [
+            (
+                IoOperation::ReadTimeoutConfiguration,
+                "read_timeout_configuration",
+            ),
+            (IoOperation::StreamRead, "stream_read"),
+        ] {
+            let mut calls = 0;
+            let (_, report) = capture(PAYLOAD, |_| {
+                observe::<()>(Phase::CommittedResponseRead, || {
+                    let result = observe_io::<()>(operation, || {
+                        calls += 1;
+                        Err(io::Error::from_raw_os_error(22))
+                    });
+                    assert_eq!(result.as_ref().unwrap_err().raw_os_error(), Some(22));
+                    record_io(result.as_ref().unwrap_err());
+                    Err(fixed_error())
+                })
+                .map(|()| Vec::new())
+                .map_err(|error| error.code)
+            });
+            assert_eq!(calls, 1);
+            let value = serde_json::to_value(report).unwrap();
+            assert_eq!(value["schema"], "hol-guard.resident-startup-diagnostic.v2");
+            let failure = &value["events"][0]["io_failure"];
+            assert_eq!(failure["operation"], expected);
+            assert_eq!(failure["kind"], "invalid_input");
+            assert_eq!(failure["os_code"], 22);
+        }
+    }
+
     fn accept_bounded(listener: &TcpListener) -> TcpStream {
         listener.set_nonblocking(true).unwrap();
         let deadline = Instant::now() + Duration::from_secs(2);
@@ -214,6 +249,9 @@ mod enabled {
         assert_eq!(events[1]["phase"], "authenticate");
         assert_eq!(events[1]["error_code"], "native_client_frame_read_failed");
         assert_eq!(events[1]["io_failure"]["kind"], "unexpected_eof");
+        // read_exact synthesizes EOF after a successful zero-byte read;
+        // do not label that as a failed underlying read syscall.
+        assert_eq!(events[1]["io_failure"]["operation"], "unspecified");
         assert_eq!(events[1]["retryable_teardown"], false);
     }
 }

@@ -52,6 +52,25 @@ macro_rules! record_resident_startup_fatal {
     };
 }
 
+#[cfg(not(feature = "diagnostic-phases"))]
+#[macro_export]
+macro_rules! observe_resident_startup_io {
+    ($operation:ident, $expression:expr) => {
+        $expression
+    };
+}
+
+#[cfg(feature = "diagnostic-phases")]
+#[macro_export]
+macro_rules! observe_resident_startup_io {
+    ($operation:ident, $expression:expr) => {
+        $crate::resident_startup_diagnostic::observe_io(
+            $crate::resident_startup_diagnostic::IoOperation::$operation,
+            || $expression,
+        )
+    };
+}
+
 #[cfg(feature = "diagnostic-phases")]
 mod enabled {
     use crate::resident_client::ResidentClientError;
@@ -80,7 +99,16 @@ mod enabled {
     }
 
     #[derive(Clone, Copy, Serialize)]
+    #[serde(rename_all = "snake_case")]
+    pub(crate) enum IoOperation {
+        Unspecified,
+        ReadTimeoutConfiguration,
+        StreamRead,
+    }
+
+    #[derive(Clone, Copy, Serialize)]
     struct IoFailure {
+        operation: IoOperation,
         kind: &'static str,
         os_code: Option<i32>,
     }
@@ -162,13 +190,39 @@ mod enabled {
         ACTIVE.with(|active| {
             if let Ok(mut active) = active.try_borrow_mut() {
                 if let Some(collector) = active.as_mut() {
+                    if collector.io_failure.is_some_and(|failure| {
+                        failure.kind == io_kind(error.kind())
+                            && failure.os_code == error.raw_os_error()
+                    }) {
+                        return;
+                    }
                     collector.io_failure = Some(IoFailure {
+                        operation: IoOperation::Unspecified,
                         kind: io_kind(error.kind()),
                         os_code: error.raw_os_error(),
                     });
                 }
             }
         });
+    }
+
+    pub(crate) fn observe_io<T>(
+        operation: IoOperation,
+        expression: impl FnOnce() -> io::Result<T>,
+    ) -> io::Result<T> {
+        let result = expression();
+        ACTIVE.with(|active| {
+            if let Ok(mut active) = active.try_borrow_mut() {
+                if let Some(collector) = active.as_mut() {
+                    collector.io_failure = result.as_ref().err().map(|error| IoFailure {
+                        operation,
+                        kind: io_kind(error.kind()),
+                        os_code: error.raw_os_error(),
+                    });
+                }
+            }
+        });
+        result
     }
 
     pub(crate) fn record_fatal(error: &ResidentClientError) {
@@ -249,7 +303,7 @@ mod enabled {
             .with(|active| active.borrow_mut().take())
             .expect("owned startup observation");
         let report = Report {
-            schema: "hol-guard.resident-startup-diagnostic.v1",
+            schema: "hol-guard.resident-startup-diagnostic.v2",
             scope: "single_explicit_managed_client_operation",
             operation_succeeded: result.is_ok(),
             operation_error: result.as_ref().err().map(|code| fixed_code(code)),
@@ -292,7 +346,7 @@ mod enabled {
 }
 
 #[cfg(feature = "diagnostic-phases")]
-pub(crate) use enabled::{observe, record_fatal, record_io, run, Phase};
+pub(crate) use enabled::{observe, observe_io, record_fatal, record_io, run, IoOperation, Phase};
 
 #[cfg(test)]
 #[path = "resident_startup_diagnostic_tests.rs"]

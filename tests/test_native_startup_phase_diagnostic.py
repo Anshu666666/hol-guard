@@ -19,7 +19,7 @@ PAYLOAD = b'{"operation":"policy_snapshot_push","deadline_budget_ms":2000}'
 
 def native_record() -> dict:
     return {
-        "schema": "hol-guard.resident-startup-diagnostic.v1",
+        "schema": "hol-guard.resident-startup-diagnostic.v2",
         "scope": "single_explicit_managed_client_operation",
         "operation_succeeded": False,
         "operation_error": "native_resident_live_request_failed",
@@ -35,7 +35,7 @@ def native_record() -> dict:
                 "succeeded": False,
                 "error_code": "native_client_frame_read_failed",
                 "retryable_teardown": False,
-                "io_failure": {"kind": "unexpected_eof", "os_code": None},
+                "io_failure": {"operation": "unspecified", "kind": "unexpected_eof", "os_code": None},
             }
         ],
         "maximum_events": 16,
@@ -68,6 +68,7 @@ def test_diagnostic_retains_leaf_phase_and_exact_payload_reference() -> None:
         lambda value: value["events"][0]["io_failure"].update(path="private path"),
         lambda value: value["events"][0].update(phase=[]),
         lambda value: value["events"][0]["io_failure"].update(kind={}),
+        lambda value: value["events"][0]["io_failure"].update(operation="private operation"),
     ],
 )
 def test_diagnostic_rejects_unbounded_unbound_or_unknown_evidence(mutation) -> None:

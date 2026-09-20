@@ -33,6 +33,35 @@ CONTROL_NAMES = (
     "lost_handle",
 )
 
+ADMISSION_LABELS = frozenset(
+    {
+        "admission_requires_single_thread",
+        "cgroup_domain_unproved",
+        "cgroup_handle_closed",
+        "cgroup_hierarchy_depth",
+        "cgroup_initial_hierarchy_unproved",
+        "cgroup_member_size",
+        "cgroup_membership_changed",
+        "cgroup_migration_possible",
+        "cgroup_mount_identity",
+        "cgroup_mount_unsupported",
+        "cgroup_not_exclusive_at_admission",
+        "cgroup_owner_unproved",
+        "cgroup_path_invalid",
+        "cgroup_reader_process_changed",
+        "cpu_counter_regressed",
+        "cpu_stat_invalid",
+        "cpu_stat_size",
+        "metadata_size",
+        "privilege_boundary_unproved",
+        "protected_cgroup_platform_or_user",
+        "shared_root_cgroup",
+        "status_duplicate",
+        "admission_os_error",
+        "admission_unlisted_error",
+    }
+)
+
 
 def duplicate_free(items: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
@@ -97,14 +126,25 @@ def admit_facts(name: str, facts: Any) -> None:
             raise ValueError("control_facts_join")
 
 
-def admit_worker_report(body: bytes) -> dict[str, Any]:
+def read_worker_report(body: bytes) -> dict[str, Any]:
     if len(body) > STREAM_LIMIT:
         raise ValueError("worker_report_size")
     result = json.loads(body, object_pairs_hook=duplicate_free)
-    if not isinstance(result, dict) or set(result) != {"schema", "admitted", "controls", "passed"}:
+    if not isinstance(result, dict) or set(result) != {"schema", "admitted", "admission_refusal", "controls", "passed"}:
         raise ValueError("worker_report_schema")
-    if result["schema"] != "hol-guard.kernel-cpu-finite-controls.v1" or result["admitted"] is not True:
+    if result["schema"] != "hol-guard.kernel-cpu-finite-controls.v2" or type(result["admitted"]) is not bool:
         raise ValueError("worker_not_admitted")
+    if result["admitted"] is False:
+        if (
+            type(result["admission_refusal"]) is not str
+            or result["admission_refusal"] not in ADMISSION_LABELS
+            or result["controls"] != []
+            or result["passed"] is not False
+        ):
+            raise ValueError("worker_refusal_schema")
+        return result
+    if result["admission_refusal"] is not None:
+        raise ValueError("admitted_worker_refusal")
     rows = result["controls"]
     if not isinstance(rows, list) or len(rows) != len(CONTROL_NAMES):
         raise ValueError("worker_control_count")
@@ -121,6 +161,13 @@ def admit_worker_report(body: bytes) -> dict[str, Any]:
             raise ValueError("failed_control_facts")
     if type(result["passed"]) is not bool or result["passed"] != all(row["passed"] for row in rows):
         raise ValueError("worker_summary_join")
+    return result
+
+
+def admit_worker_report(body: bytes) -> dict[str, Any]:
+    result = read_worker_report(body)
+    if result["admitted"] is not True:
+        raise ValueError("worker_not_admitted")
     return result
 
 
@@ -269,7 +316,10 @@ def run(python: Path, uid: int, gid: int) -> dict[str, Any]:
         report["worker_exit"] = process.wait(timeout=1.0)
         if failure is not None:
             raise RuntimeError(failure)
-        report["worker_report"] = admit_worker_report(stdout)
+        # Preserve only a validated safe report before the same strict refusal.
+        report["worker_report"] = read_worker_report(stdout)
+        if report["worker_report"]["admitted"] is not True:
+            raise ValueError("worker_not_admitted")
         report["passed"] = report["worker_exit"] == 0 and not stderr and report["worker_report"]["passed"]
     except BaseException as error:
         report["fault"] = "os" if isinstance(error, OSError) else "controller"

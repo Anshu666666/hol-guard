@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
@@ -44,7 +45,13 @@ def report() -> dict[str, Any]:
                 "lost_handle": {"original_return_identity": True, "lifetime_cpu_complete": False, "fault_count": 1},
             }[name]
         rows.append({"name": name, "passed": True, "error": None, "facts": facts})
-    return {"schema": "hol-guard.kernel-cpu-finite-controls.v1", "admitted": True, "controls": rows, "passed": True}
+    return {
+        "schema": "hol-guard.kernel-cpu-finite-controls.v2",
+        "admitted": True,
+        "admission_refusal": None,
+        "controls": rows,
+        "passed": True,
+    }
 
 
 def test_strict_reader_preserves_actual_counter_values_and_order() -> None:
@@ -319,3 +326,90 @@ def test_reader_requires_explicit_orphan_live_member_witness(field: str, value: 
     original["controls"][1]["facts"][field] = value
     with pytest.raises(ValueError, match="orphan_live_member_witness"):
         controller.admit_worker_report(json.dumps(original).encode())
+
+
+def test_closed_admission_labels_are_exact_source_literals_plus_two_generic_refusals() -> None:
+    path = Path(__file__).resolve().parents[1] / "scripts/native_slo_lifetime_cpu.py"
+    tree = ast.parse(path.read_text())
+    labels = {
+        node.args[0].value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "LifetimeCpuUnavailableError"
+        and node.args
+        and isinstance(node.args[0], ast.Constant)
+    }
+    assert (
+        worker.ADMISSION_LABELS
+        == controller.ADMISSION_LABELS
+        == labels | {"admission_os_error", "admission_unlisted_error"}
+    )
+
+
+@pytest.mark.parametrize("label", sorted(worker.ADMISSION_LABELS - {"admission_os_error", "admission_unlisted_error"}))
+def test_actual_reader_refusal_is_retained_but_never_admitted(monkeypatch: pytest.MonkeyPatch, label: str) -> None:
+    offered = []
+
+    def refuse(_group: Path) -> None:
+        raise worker.LifetimeCpuUnavailableError(label)
+
+    monkeypatch.setattr(worker, "ProtectedCgroupCpu", refuse)
+    monkeypatch.setattr(worker, "_child", lambda _program: offered.append(True))
+    result = worker.run(Path("/unused"))
+    assert result["admission_refusal"] == label
+    assert result["admitted"] is result["passed"] is False and result["controls"] == [] and offered == []
+    encoded = json.dumps(result).encode()
+    assert controller.read_worker_report(encoded) == result
+    with pytest.raises(ValueError, match="worker_not_admitted"):
+        controller.admit_worker_report(encoded)
+
+
+@pytest.mark.parametrize("kind", ["os", "runtime", "unlisted_accounting", "non_string_accounting"])
+def test_unlisted_exception_values_never_enter_the_safe_report(monkeypatch: pytest.MonkeyPatch, kind: str) -> None:
+    class PrivateValue:
+        def __str__(self) -> str:
+            raise AssertionError("private value formatted")
+
+    errors = {
+        "os": OSError(13, "PRIVATE/admission"),
+        "runtime": RuntimeError("PRIVATE/admission"),
+        "unlisted_accounting": worker.LifetimeCpuUnavailableError("PRIVATE/admission"),
+        "non_string_accounting": worker.LifetimeCpuUnavailableError(PrivateValue()),
+    }
+
+    def refuse(_group: Path) -> None:
+        raise errors[kind]
+
+    monkeypatch.setattr(worker, "ProtectedCgroupCpu", refuse)
+    result = worker.run(Path("/unused"))
+    assert result["admission_refusal"] == ("admission_os_error" if kind == "os" else "admission_unlisted_error")
+    assert "PRIVATE" not in json.dumps(result)
+    assert controller.read_worker_report(json.dumps(result).encode()) == result
+    with pytest.raises(ValueError):
+        controller.admit_worker_report(json.dumps(result).encode())
+
+
+@pytest.mark.parametrize("change", ["unlisted", "admitted", "passed", "rows", "extra", "false_type"])
+def test_retained_admission_refusal_has_a_closed_schema(change: str) -> None:
+    value: dict[str, Any] = {
+        "schema": "hol-guard.kernel-cpu-finite-controls.v2",
+        "admitted": False,
+        "admission_refusal": "cgroup_mount_unsupported",
+        "controls": [],
+        "passed": False,
+    }
+    if change == "unlisted":
+        value["admission_refusal"] = "PRIVATE/refusal"
+    elif change == "admitted":
+        value["admitted"] = True
+    elif change == "passed":
+        value["passed"] = True
+    elif change == "rows":
+        value["controls"] = [{}]
+    elif change == "extra":
+        value["private_path"] = "PRIVATE/refusal"
+    else:
+        value["admitted"] = 0
+    with pytest.raises(ValueError):
+        controller.read_worker_report(json.dumps(value).encode())

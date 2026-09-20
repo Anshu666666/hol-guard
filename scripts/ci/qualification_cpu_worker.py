@@ -19,6 +19,35 @@ from scripts.native_slo_lifetime_cpu import LifetimeCpuUnavailableError, Protect
 
 _LEAF = "import time; end=time.process_time()+0.08\nwhile time.process_time()<end: pass\nprint('leaf-done',flush=True)"
 
+ADMISSION_LABELS = frozenset(
+    {
+        "admission_requires_single_thread",
+        "cgroup_domain_unproved",
+        "cgroup_handle_closed",
+        "cgroup_hierarchy_depth",
+        "cgroup_initial_hierarchy_unproved",
+        "cgroup_member_size",
+        "cgroup_membership_changed",
+        "cgroup_migration_possible",
+        "cgroup_mount_identity",
+        "cgroup_mount_unsupported",
+        "cgroup_not_exclusive_at_admission",
+        "cgroup_owner_unproved",
+        "cgroup_path_invalid",
+        "cgroup_reader_process_changed",
+        "cpu_counter_regressed",
+        "cpu_stat_invalid",
+        "cpu_stat_size",
+        "metadata_size",
+        "privilege_boundary_unproved",
+        "protected_cgroup_platform_or_user",
+        "shared_root_cgroup",
+        "status_duplicate",
+        "admission_os_error",
+        "admission_unlisted_error",
+    }
+)
+
 
 def _child(program: str) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
@@ -178,8 +207,9 @@ def partial_tail(reader: ProtectedCgroupCpu, _group: Path) -> dict[str, Any]:
 def run(group: Path) -> dict[str, Any]:
     controls: list[dict[str, Any]] = []
     report: dict[str, Any] = {
-        "schema": "hol-guard.kernel-cpu-finite-controls.v1",
+        "schema": "hol-guard.kernel-cpu-finite-controls.v2",
         "admitted": False,
+        "admission_refusal": None,
         "controls": controls,
         "passed": False,
     }
@@ -214,8 +244,16 @@ def run(group: Path) -> dict[str, Any]:
                 {"name": operation.__name__, "passed": error_kind is None, "error": error_kind, "facts": facts}
             )
         report["passed"] = all(row["passed"] for row in controls)
-    except BaseException:
+    except BaseException as error:
         report["passed"] = False
+        if report["admitted"] is False:
+            # Closed source labels only: never format arbitrary exception text.
+            label = "admission_os_error" if isinstance(error, OSError) else "admission_unlisted_error"
+            if isinstance(error, LifetimeCpuUnavailableError) and len(error.args) == 1:
+                value = error.args[0]
+                if type(value) is str and value in ADMISSION_LABELS:
+                    label = value
+            report["admission_refusal"] = label
     finally:
         if reader is not None:
             reader.close()

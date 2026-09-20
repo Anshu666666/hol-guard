@@ -1,0 +1,412 @@
+{
+  "schema": "hol-guard.pr2974-native-vfs-loader-freeze.v1",
+  "created_at_utc": "2026-09-20T02:19:36.663355+00:00",
+  "base_head": "ed7313dff240292a482c53410a2492f80ba8a220",
+  "files": [
+    {
+      "path": "scripts/native_slo_sqlite_vfs_loader.py",
+      "sha256": "6099f8dd4470af56335fbc016ccf4f3252db5abaa42bba71eea600d666e8457e",
+      "bytes": 3860,
+      "lines": 102
+    },
+    {
+      "path": "scripts/native_slo_sqlite_vfs.py",
+      "sha256": "8e7986d7450bd8552a510d90b49a2d650f57c3d855c1102cc9902a4997b7465a",
+      "bytes": 16362,
+      "lines": 330
+    },
+    {
+      "path": "tests/test_native_slo_sqlite_vfs_loader.py",
+      "sha256": "ac2e7828c8940a5f64f74bcdbb68a782c382b79c3d06a9e1e88c85839e03daeb",
+      "bytes": 9531,
+      "lines": 204
+    },
+    {
+      "path": "scripts/ci/rsp131_sqlite_vfs/README.md",
+      "sha256": "f415c4a37828fb48a8f60ddf8de95ab993ca70f29798467ce66eb491f45f9e3c",
+      "bytes": 11092,
+      "lines": 179
+    }
+  ],
+  "source_frozen": true,
+  "change_scope": [
+    "Keep a unique CLOEXEC duplicate pathname for each attempted SQLite extension image until process exit, matching SQLITE_OK_LOAD_PERMANENTLY code lifetime.",
+    "Reuse the retained alias only after current full identity and retained metadata checks; cap all attempted identities at sixteen without eviction.",
+    "Keep pre-loader failures closable, quarantine attempted loads even when later verification fails, and record successful callback/API admission separately.",
+    "Preserve per-observer digest/inode checks and database/VFS closure; report retained loader descriptors separately."
+  ],
+  "actual_before_proof": {
+    "schema": "hol-guard.vfs-loader-alias-reproduction.v1",
+    "source_files": {
+      "scripts/native_slo_sqlite_vfs.py": "1b4cc7f9726d5038374a27563966be8b8f62520a23d06f54e03de9205956b9ee",
+      "scripts/native_slo_sqlite_vfs_identity.py": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+      "scripts/ci/rsp131_sqlite_vfs/control.c": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb"
+    },
+    "extension_sha256": "8f4f34535b8575ea4e09c82cb2de5a62683539b127bb380b0b4da99c2d437226",
+    "first_database_and_vfs_closed": true,
+    "first_descriptor_closed": true,
+    "first_image_still_mapped": true,
+    "two_distinct_owned_inodes": true,
+    "same_loader_alias_reused": true,
+    "first_callback_inode": 116508,
+    "second_expected_inode": 116509,
+    "second_callback_inode": 116508,
+    "second_admission_refusal": "loaded observer callback does not belong to the verified extension inode",
+    "events": [
+      {
+        "kind": "descriptor",
+        "descriptor": 3,
+        "identity": {
+          "sha256": "8f4f34535b8575ea4e09c82cb2de5a62683539b127bb380b0b4da99c2d437226",
+          "bytes": 26712,
+          "device": 28,
+          "inode": 116508,
+          "mode": 384,
+          "mtime_ns": 1789869089031861378,
+          "ctime_ns": 1789869089031861378
+        }
+      },
+      {
+        "kind": "callback",
+        "identity": {
+          "device": 28,
+          "inode": 116508,
+          "permissions": "r-xp",
+          "file_offset": 4096
+        }
+      },
+      {
+        "kind": "callback",
+        "identity": {
+          "device": 28,
+          "inode": 9223372036855340587,
+          "permissions": "r-xp",
+          "file_offset": 131072
+        }
+      },
+      {
+        "kind": "descriptor",
+        "descriptor": 3,
+        "identity": {
+          "sha256": "8f4f34535b8575ea4e09c82cb2de5a62683539b127bb380b0b4da99c2d437226",
+          "bytes": 26712,
+          "device": 28,
+          "inode": 116509,
+          "mode": 384,
+          "mtime_ns": 1789869089032211415,
+          "ctime_ns": 1789869089032211415
+        }
+      },
+      {
+        "kind": "callback",
+        "identity": {
+          "device": 28,
+          "inode": 116508,
+          "permissions": "r-xp",
+          "file_offset": 4096
+        }
+      }
+    ],
+    "qualification": false
+  },
+  "actual_after_proof": {
+    "schema": "hol-guard.vfs-loader-lifetime-repair.v1",
+    "source_files": {
+      "scripts/native_slo_sqlite_vfs.py": "8e7986d7450bd8552a510d90b49a2d650f57c3d855c1102cc9902a4997b7465a",
+      "scripts/native_slo_sqlite_vfs_identity.py": "a8e7a0ca30acd1de92e603f03c519811419bc3e4641a86b4458ef7dd3a9a1cf0",
+      "scripts/native_slo_sqlite_vfs_loader.py": "6099f8dd4470af56335fbc016ccf4f3252db5abaa42bba71eea600d666e8457e",
+      "scripts/ci/rsp131_sqlite_vfs/control.c": "35a26e88bcbe7ad04bda86a5b70631424b57a991eb9915f2d419b580773099cb"
+    },
+    "compiled_extension_sha256": "8f4f34535b8575ea4e09c82cb2de5a62683539b127bb380b0b4da99c2d437226",
+    "observations": [
+      {
+        "image_inode": 73889,
+        "callback_inode": 73889,
+        "loader_descriptor_inode": 73889,
+        "loader_alias": "/proc/self/fd/4",
+        "database_and_vfs_closed": true,
+        "extension_identity_unchanged": true,
+        "loader": {
+          "scope": "process_resident_sqlite_extension_loader",
+          "descriptor_lifetime": "process_exit",
+          "maximum_retained_image_descriptors": 16,
+          "retained_image_descriptors": 1,
+          "admitted_image_descriptors": 1,
+          "unadmitted_image_descriptors": 0,
+          "selected_image_descriptor_retained": true,
+          "selected_descriptor_close_on_exec": true,
+          "database_and_vfs_descriptors_included": false
+        }
+      },
+      {
+        "image_inode": 73905,
+        "callback_inode": 73905,
+        "loader_descriptor_inode": 73905,
+        "loader_alias": "/proc/self/fd/5",
+        "database_and_vfs_closed": true,
+        "extension_identity_unchanged": true,
+        "loader": {
+          "scope": "process_resident_sqlite_extension_loader",
+          "descriptor_lifetime": "process_exit",
+          "maximum_retained_image_descriptors": 16,
+          "retained_image_descriptors": 2,
+          "admitted_image_descriptors": 2,
+          "unadmitted_image_descriptors": 0,
+          "selected_image_descriptor_retained": true,
+          "selected_descriptor_close_on_exec": true,
+          "database_and_vfs_descriptors_included": false
+        }
+      },
+      {
+        "image_inode": 73889,
+        "callback_inode": 73889,
+        "loader_descriptor_inode": 73889,
+        "loader_alias": "/proc/self/fd/4",
+        "database_and_vfs_closed": true,
+        "extension_identity_unchanged": true,
+        "loader": {
+          "scope": "process_resident_sqlite_extension_loader",
+          "descriptor_lifetime": "process_exit",
+          "maximum_retained_image_descriptors": 16,
+          "retained_image_descriptors": 2,
+          "admitted_image_descriptors": 2,
+          "unadmitted_image_descriptors": 0,
+          "selected_image_descriptor_retained": true,
+          "selected_descriptor_close_on_exec": true,
+          "database_and_vfs_descriptors_included": false
+        }
+      }
+    ],
+    "committed_values": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "qualification": false
+  },
+  "validation": {
+    "new_loader_controls": {
+      "passed": 5,
+      "log": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/loader-controls.log"
+    },
+    "first_combined_orders_before_storage_extraction": {
+      "persistence_first_passed": 47,
+      "vfs_first_passed": 47,
+      "logs": [
+        "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/combined-persistence-first.log",
+        "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/combined-vfs-first.log"
+      ]
+    },
+    "final_combined_orders_after_storage_freeze": [
+      {
+        "command": "CPATH=/workspace/scratch/745337b67ff9/observer-local-build/sqlite-sdk uv run --no-sync pytest --tb=short -q tests/test_native_slo_persistence_observation.py tests/test_native_slo_sqlite_vfs.py tests/test_native_slo_sqlite_vfs_loader.py",
+        "passed": 47,
+        "seconds": 3.75,
+        "log": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-persistence-first.log"
+      },
+      {
+        "command": "CPATH=/workspace/scratch/745337b67ff9/observer-local-build/sqlite-sdk uv run --no-sync pytest --tb=short -q tests/test_native_slo_sqlite_vfs_loader.py tests/test_native_slo_sqlite_vfs.py tests/test_native_slo_persistence_observation.py",
+        "passed": 47,
+        "seconds": 4.9,
+        "log": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-vfs-first.log"
+      }
+    ],
+    "full_affected_cohort_before_storage_extraction": {
+      "command": "HOL_GUARD_NONCOMMAND_RECEIPT_FIXTURE_LOG=/workspace/scratch/745337b67ff9/noncommand-review-rust-next.log CPATH=/workspace/scratch/745337b67ff9/observer-local-build/sqlite-sdk uv run --no-sync pytest --tb=short -q tests/test_native_slo_mixed_request.py tests/test_native_slo_mixed_witness.py tests/test_native_slo_mixed_load.py tests/test_native_slo_mixed_controls.py tests/test_native_slo_persistence_observation.py tests/test_native_slo_sqlite_vfs.py tests/test_native_slo_sqlite_vfs_loader.py tests/test_native_slo_posture.py tests/test_native_slo_posture_controls.py tests/test_native_slo_posture_server.py tests/test_native_slo_workspace_request_observer.py tests/test_native_slo_workspace_request_lifecycle.py tests/test_native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_faults.py tests/test_native_slo_workspace_lifecycle_evidence.py tests/test_native_slo_workspace_lifecycle_runner.py tests/test_native_slo_workspace_server.py tests/test_native_slo_workspace_fixture.py tests/test_installed_native_ollama_probe.py tests/test_installed_ollama_legacy_retry.py tests/test_installed_ollama_partial_evidence.py",
+      "passed": 370,
+      "seconds": 49.39,
+      "log": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/full-affected-controls.log",
+      "module_count": 21
+    },
+    "actual_rust_producer_backed_ollama_regression": {
+      "test": "tests/test_installed_ollama_legacy_retry.py::test_actual_signed_ollama_review_cannot_reuse_resolved_legacy_approval",
+      "executed_and_passed_in_full_cohort": true,
+      "producer_log": {
+        "path": "/workspace/scratch/745337b67ff9/noncommand-review-rust-next.log",
+        "sha256": "7ce9ca77411ffe434891d255ab07bf9d3e20a8c0f27f47f719ac2cd342f18088",
+        "bytes": 17802,
+        "lines": 10
+      }
+    },
+    "ruff_check": "three source/test files passed",
+    "ruff_format": "three source/test files passed",
+    "basedpyright": {
+      "command": "uv run --no-sync basedpyright --pythonversion 3.12 --outputjson scripts/native_slo_sqlite_vfs_loader.py scripts/native_slo_sqlite_vfs.py tests/test_native_slo_sqlite_vfs_loader.py",
+      "summary": {
+        "filesAnalyzed": 3,
+        "errorCount": 0,
+        "warningCount": 211,
+        "informationCount": 0,
+        "timeInSec": 3.092
+      }
+    },
+    "diff_check": "passed",
+    "p2_frozen_file_hashes_unchanged": true,
+    "retained_initial_failures": [
+      "Both original module orders failed callback inode admission when the old /proc/self/fd/N loader pathname was reused for a distinct image; original P2 evidence remains frozen.",
+      "Default Python 3.10 type target produced 35 errors for the explicitly Python 3.12 observer surface; explicit Python 3.12 initially found 10 identity-map inference errors, corrected with dict[str, Any]. Final explicit target has zero errors.",
+      "Two final order rechecks during another owner\u2019s storage extraction stopped during import with missing _OAUTH_REFRESH_LOCK_TIMEOUT_SECONDS; no tests ran. Those exact failures are retained in separate intermediate-storage-import logs, followed by successful checks after the owner froze the corrected source."
+    ]
+  },
+  "final_recheck_storage_dependency_files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "sha256": "d1a6948b0eef4f8340ffe52d5bdaf57cf1f1dc0b13dd29e71111db4fe2bf4f36",
+      "bytes": 21408,
+      "lines": 476
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_lifecycle.py",
+      "sha256": "ca8924f5cd59ee617f3c002035aac32e8cf57006eb085b97d48f92a7a43a412a",
+      "bytes": 21489,
+      "lines": 399
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_columns.py",
+      "sha256": "463429c9a0f877be788b076197e7916472a1e9ba1fe2323d24b6e9067f6a0da0",
+      "bytes": 9231,
+      "lines": 203
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_statements.py",
+      "sha256": "a17d8e175c8c53c1390e67e556874445a5acf73a777e3dee8d7917c38dd8ed15",
+      "bytes": 15293,
+      "lines": 405
+    }
+  ],
+  "peer_review": {
+    "agent": "/root/ci_review_audit",
+    "result": "No concrete loader lifetime or admission defect found; independent read-only source review."
+  },
+  "resource_accounting": {
+    "previous_successful_image_bound": 4,
+    "maximum_retained_attempted_images": 16,
+    "retained_descriptor_lifetime": "process_exit",
+    "database_and_vfs_closure_reported_separately": true,
+    "failed_attempts_count_toward_cap": true,
+    "eviction": false
+  },
+  "limitations": [
+    "Diagnostic-only repair; no production protocol, authentication, retry or deadline changes.",
+    "No new Cargo invocation, installed native run, platform SLO pass or release qualification claimed.",
+    "The full 370-control cohort preceded the unrelated storage split; the final 47-control cohorts bind the frozen combined storage files listed above.",
+    "Previous frozen P2 and decision-diff reports remain intact."
+  ],
+  "patch": {
+    "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-frozen.patch",
+    "sha256": "92d058310dc92d4061356e29d1ed181d8b80b1fb072abb6f3ffd602beaf31ea9",
+    "bytes": 20473,
+    "lines": 412
+  },
+  "evidence": [
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/after.json",
+      "sha256": "c2e323751af855f098a1f0da33234bed0bc90572818f33cda58aff6fd1abbe22",
+      "bytes": 2885,
+      "lines": 81
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/after.log",
+      "sha256": "b3051a90c373fab620a8c37442ecf8dd6833b4d2d446b2790598760682eab669",
+      "bytes": 2180,
+      "lines": 63
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/before.json",
+      "sha256": "b9c268d4b7c97a6e3444e3af24bf61ce80cb67bde907b46f811726590ea4c30d",
+      "bytes": 2189,
+      "lines": 74
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/before.log",
+      "sha256": "47c67f492f8e53fed370cfb5d38f250021d122d4a28cb1dbb9706c7a39fcb2d6",
+      "bytes": 572,
+      "lines": 14
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/combined-persistence-first.log",
+      "sha256": "2ebd5f4457285efcaeae9061c34eed7b9b9fdca887e4518c49d8a7a43e139b85",
+      "bytes": 99,
+      "lines": 2
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/combined-vfs-first.log",
+      "sha256": "beaa004a8b8a6e79420a650b42442a4d67057ed17c74e2e412052ab5c3b1084e",
+      "bytes": 99,
+      "lines": 2
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-persistence-first.log",
+      "sha256": "c4637ad0ef4079d6ad5b1fe4174a09b2e1fa8f12a41a397823224300276077bf",
+      "bytes": 99,
+      "lines": 2
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-ruff-check.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19,
+      "lines": 1
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-ruff-format.log",
+      "sha256": "eee76f865de5a9f2456950f710ae5d5f9b5bd0ea02aa54f614c5eed6642a0bfd",
+      "bytes": 26,
+      "lines": 1
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-types-python312.json",
+      "sha256": "810dc61bb196a5e6859332fb9bb79ce5e364f385c158e86118686f7f684b4c06",
+      "bytes": 116851,
+      "lines": 3390
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/final-vfs-first.log",
+      "sha256": "6768059636a6d6dfee0b29fc012913d7a1cf4008c9797dbd3d285a0003d44e17",
+      "bytes": 99,
+      "lines": 2
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/full-affected-controls.log",
+      "sha256": "f268cacce20e53389178caf0a4aaddce94843987f630b52590d95bf8e46dae73",
+      "bytes": 501,
+      "lines": 7
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/intermediate-storage-import-persistence-first.log",
+      "sha256": "8ed4bab6ee8ad477b8ee01039afd9b04e8d065a9376f1e75c8b08eeefeace27e",
+      "bytes": 8328,
+      "lines": 101
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/intermediate-storage-import-vfs-first.log",
+      "sha256": "8ed4bab6ee8ad477b8ee01039afd9b04e8d065a9376f1e75c8b08eeefeace27e",
+      "bytes": 8328,
+      "lines": 101
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/loader-controls.log",
+      "sha256": "c3b50173dd019464e9d743d3dc0c4af81bb170a09999ec406aa3da1b87d24297",
+      "bytes": 98,
+      "lines": 2
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/types-python312.json",
+      "sha256": "60ca8eacbbb3560e7529edf96844ee94887ffb04903f009b308116e6b7e8a33d",
+      "bytes": 123587,
+      "lines": 3518
+    },
+    {
+      "path": "/workspace/scratch/745337b67ff9/native-vfs-loader-lifetime-proof/types.json",
+      "sha256": "8f69b1fa6374bc6f28898974b7fcca03a8234f29e4f428a6c145f5aea5dce963",
+      "bytes": 145141,
+      "lines": 4174
+    }
+  ],
+  "qualification": false
+}

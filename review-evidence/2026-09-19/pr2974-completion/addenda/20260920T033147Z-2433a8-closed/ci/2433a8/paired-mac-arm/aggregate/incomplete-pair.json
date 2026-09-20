@@ -1,0 +1,78 @@
+{
+  "schema": "hol-guard.native-incomplete-pair.v1",
+  "failed_run": 0,
+  "planned_runs": 1,
+  "attempted_blocks": 2,
+  "unattempted_blocks": 0,
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failures": [
+    {
+      "category": "RuntimeError",
+      "config_diagnostic_available": false,
+      "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+      "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "startup_stack": [
+        {
+          "line": 808,
+          "origin": "socket.getfqdn"
+        },
+        {
+          "line": 138,
+          "origin": "http.server.HTTPServer.server_bind"
+        },
+        {
+          "line": 199,
+          "origin": "bounded_http.__init__"
+        },
+        {
+          "line": 662,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 7907,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 330,
+          "origin": "native_slo_session.__init__"
+        },
+        {
+          "line": 386,
+          "origin": "native_slo_daemon_fixture._serve"
+        },
+        {
+          "line": 27,
+          "origin": "native_slo_daemon_entrypoint.main"
+        }
+      ],
+      "arm": "baseline",
+      "run": 0,
+      "artifact_sha256": "e93dac07d0dfa137824335d4fa4427715e456a1046a15aecab627908d9fe0848",
+      "timed_out": false,
+      "containment_failed": false,
+      "worker_limit_exceeded": false,
+      "return_code": 1
+    },
+    {
+      "category": "RuntimeError",
+      "diagnostic_digest": "d75c053128b3e82c6fac05f13d176d7adc99da5dd572d84e8d6ff0d8829998f2",
+      "line": 32,
+      "origin": "native_slo_batch.validate_batch_routes",
+      "reason": "unclassified_failure",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "arm": "candidate",
+      "run": 0,
+      "artifact_sha256": "a0c3bd4f3f9a6ebe23be849481b55608c0ac0f9124989736cf87073b6ee15d8c",
+      "timed_out": false,
+      "containment_failed": false,
+      "worker_limit_exceeded": false,
+      "return_code": 1
+    }
+  ],
+  "comparison_available": false,
+  "qualification_complete": false
+}

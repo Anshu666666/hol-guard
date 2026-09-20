@@ -1,0 +1,378 @@
+{
+  "schema": "hol-guard.windows-paired-smoke-verification.v1",
+  "driver_sha": "c24e5687a74db8ae3850ab45b589d05d9b8755a4",
+  "driver_tree": "85463cb6b0b3c416db9fc067972a049b9a200f66",
+  "run_id": 35483934012,
+  "job_id": 106006668078,
+  "job_conclusion": "failure",
+  "artifact_id": 10596738545,
+  "artifact_bytes": 19319,
+  "artifact_sha256": "f3f9aec3a4eb1dc589353e0a531071e12194e712bc8a9366177e7e5cad7aef51",
+  "artifact_digest_verified": true,
+  "original_members_preserved": true,
+  "checkouts_before": {
+    "baseline": {
+      "available": true,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "matches_expected": true,
+      "tracked_files_unchanged": true,
+      "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+    },
+    "binding_driver_sha256": "380adbb585e78c62676d3d62485f0abec381681d3bb7d4677b253c20278da9c2",
+    "candidate": {
+      "available": true,
+      "commit": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+      "matches_expected": true,
+      "tracked_files_unchanged": true,
+      "tree": "b0a1de665e3e0ea5da1252ad15fdf25716738d32"
+    },
+    "phase": "before",
+    "schema": "hol-guard.native-qualification-checkouts.v1",
+    "workflow_attempt": "1",
+    "workflow_commit": "c24e5687a74db8ae3850ab45b589d05d9b8755a4",
+    "workflow_run": "35483934012"
+  },
+  "checkouts_after": {
+    "baseline": {
+      "available": true,
+      "commit": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "matches_expected": true,
+      "tracked_files_unchanged": true,
+      "tree": "a577c6c03270ec55ef028213711b859e410f076d"
+    },
+    "binding_driver_sha256": "380adbb585e78c62676d3d62485f0abec381681d3bb7d4677b253c20278da9c2",
+    "candidate": {
+      "available": true,
+      "commit": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+      "matches_expected": true,
+      "tracked_files_unchanged": true,
+      "tree": "b0a1de665e3e0ea5da1252ad15fdf25716738d32"
+    },
+    "phase": "after",
+    "schema": "hol-guard.native-qualification-checkouts.v1",
+    "workflow_attempt": "1",
+    "workflow_commit": "c24e5687a74db8ae3850ab45b589d05d9b8755a4",
+    "workflow_run": "35483934012"
+  },
+  "build_metadata": {
+    "baseline": {
+      "source_sha": "2e672d2d950c6ec471005ddba46e49bba16dc23b",
+      "package_version": "3.0.1",
+      "target": "x86_64-pc-windows-msvc",
+      "platform_tag": "win_amd64",
+      "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+      "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+      "python": "3.12.10",
+      "build_flags": [
+        "--locked",
+        "--release",
+        "--target",
+        "x86_64-pc-windows-msvc"
+      ]
+    },
+    "candidate": {
+      "source_sha": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+      "package_version": "3.0.1",
+      "target": "x86_64-pc-windows-msvc",
+      "platform_tag": "win_amd64",
+      "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+      "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+      "python": "3.12.10",
+      "build_flags": [
+        "--locked",
+        "--release",
+        "--target",
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "mode": "smoke",
+  "planned_paired_runs": 1,
+  "samples_per_declared_category": 2,
+  "incomplete_pair": {
+    "schema": "hol-guard.native-incomplete-pair.v1",
+    "failed_run": 0,
+    "planned_runs": 1,
+    "attempted_blocks": 2,
+    "unattempted_blocks": 0,
+    "completed_blocks": {
+      "baseline": 0,
+      "candidate": 0
+    },
+    "failures": [
+      {
+        "case": "zcode.PreToolUse.watch_unavailable.small",
+        "category": "AssertionError",
+        "config_diagnostic_available": false,
+        "diagnostic_digest": "86382aafeede823f740047fb9f07f65ef71d39a55f358ede9cd4b7381c7071a9",
+        "field": "native_request_unavailable",
+        "line": 444,
+        "native_call_count": 0,
+        "native_call_diagnostic": null,
+        "native_completed_call_count": 0,
+        "observed_semantics": {
+          "delivered": {
+            "available": true,
+            "policy_action": "warn",
+            "reason_code_digest": "18e549883b610e88d22874a748f4b4f925a4743d9ca43605a01064b8d6601109"
+          },
+          "native": {
+            "available": false
+          }
+        },
+        "origin": "native_slo_workloads.validate_setup",
+        "policy_refusal_count": 0,
+        "policy_refusal_diagnostic": null,
+        "reason": "qualification_fixture.native_qualification_setup_unproven",
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "arm": "baseline",
+        "run": 0,
+        "artifact_sha256": "e9ac540081f90ebb05bb8a96deaf5e1f86f9e502a8e9ccaa6f1fe4b14576cb53",
+        "timed_out": false,
+        "containment_failed": false,
+        "worker_limit_exceeded": false,
+        "return_code": 1
+      },
+      {
+        "case": "cursor.afterShellExecution.block.256k",
+        "category": "AssertionError",
+        "diagnostic_digest": "04b0e60f56044ac4e9f2e01fbfa17dfcd3ac8f254f6597b849eb12d707a9c817",
+        "field": "route",
+        "line": 367,
+        "native_call_count": 1,
+        "native_call_diagnostic": {
+          "caller_deadline_valid": true,
+          "caller_expired_after": false,
+          "caller_expired_before": false,
+          "caller_remaining_ms_after": 2906.0,
+          "caller_remaining_ms_before": 2937.0,
+          "capture_context": "native_worker_wrapper",
+          "client_after_state": "absent",
+          "client_before_state": "absent",
+          "client_code_attribution": "unchanged_or_stale",
+          "client_code_changed": false,
+          "edge_client_byte_count": 57,
+          "edge_client_calls": 1,
+          "edge_client_returned_bytes": true,
+          "edge_client_returned_none": false,
+          "edge_decoder_accepted": false,
+          "edge_decoder_calls": 1,
+          "edge_decoder_edge_schema": false,
+          "edge_decoder_error_digest": "37ea530a39bdb99d74c9f66efc60c83e274092ae085ccbc4b6fcfdb77214252c",
+          "edge_decoder_error_digest_complete": true,
+          "edge_decoder_error_present": true,
+          "edge_decoder_error_state": "known",
+          "edge_decoder_error_value": "native_request_invalid_json",
+          "edge_decoder_input_object": true,
+          "edge_decoder_receipt_present": false,
+          "edge_envelope_byte_count": 274331,
+          "edge_envelope_calls": 1,
+          "edge_envelope_returned_bytes": true,
+          "edge_envelope_returned_none": false,
+          "edge_resident_failure_calls": 1,
+          "edge_resident_failure_reason_digest": "21fd3857216b4d61575673f4dbf3201341ede58a4eba8a8fe4d37d75a69669cf",
+          "edge_resident_failure_reason_digest_complete": true,
+          "edge_resident_failure_reason_state": "known",
+          "edge_resident_failure_reason_value": "native_hook_edge_invalid_response",
+          "edge_runtime_status_available": true,
+          "edge_runtime_status_calls": 1,
+          "edge_runtime_status_capabilities_present": true,
+          "edge_runtime_status_compatible": true,
+          "edge_runtime_status_hook_envelope_feature": true,
+          "edge_runtime_status_identity_present": true,
+          "edge_runtime_status_mode": "auto",
+          "edge_runtime_status_pre_tool_feature": true,
+          "edge_runtime_status_reason_digest": "b6f1c3feb88bd9a941842d069adc895c1faa790b478b3b74ac2c6a9017c71aa9",
+          "edge_runtime_status_reason_digest_complete": true,
+          "edge_runtime_status_reason_state": "known",
+          "edge_runtime_status_reason_value": "native_ready",
+          "edge_runtime_status_resident_client_feature": true,
+          "edge_wrappers_installed": true,
+          "elapsed_ms": 31.0,
+          "policy_binding_supplied": true,
+          "policy_generation_valid": true,
+          "policy_mode": "enforce",
+          "publisher_acked": true,
+          "publisher_cache": "captured",
+          "publisher_closed": false,
+          "publisher_error_state": "absent",
+          "publisher_failure_count": 0,
+          "publisher_snapshot_present": true,
+          "publisher_started": true,
+          "schema": "hol-guard.native-call-diagnostic.v1"
+        },
+        "native_completed_call_count": 1,
+        "observed_semantics": {
+          "delivered": {
+            "available": true,
+            "policy_action": "allow",
+            "reason_code": "native_post_tool_unavailable",
+            "reason_code_digest": "e48159e09fe2a1c09a7a46ab9587590a08a018d75db874f40d8e5fceb51b5075"
+          },
+          "native": {
+            "available": false
+          }
+        },
+        "origin": "native_slo_workloads.validate_case",
+        "policy_refusal_count": 0,
+        "policy_refusal_diagnostic": null,
+        "reason": "qualification_fixture.native_qualification_mismatch",
+        "schema": "hol-guard.native-qualification-failure.v1",
+        "arm": "candidate",
+        "run": 0,
+        "artifact_sha256": "306c710dddf22129742247c091582cb347df334219b3bb10fa04189eb6c53c74",
+        "timed_out": false,
+        "containment_failed": false,
+        "worker_limit_exceeded": false,
+        "return_code": 1
+      }
+    ],
+    "comparison_available": false,
+    "qualification_complete": false
+  },
+  "ollama": {
+    "passed": false,
+    "builder_passed": true,
+    "completed_cases": 21,
+    "completed_phases": 6,
+    "failure": {
+      "category": "AssertionError",
+      "diagnostic_digest": "a31cbd2e1bd90d5aa6a7ea912b3fcf6895ce24da66dc1afd9d0b372654be2ac0",
+      "phase": "stale_write_rejected",
+      "readiness": {
+        "budget_exhausted": true,
+        "budget_ms": 400.0,
+        "elapsed_ms": 406.0,
+        "expected_revision": 4,
+        "publisher_closed_after_failure": false,
+        "publisher_error": "none",
+        "publisher_error_state": "absent",
+        "publisher_ready_after_failure": false,
+        "snapshot_returned": false
+      },
+      "reason": "qualification_fixture.installed_ollama_native_readiness_failed",
+      "schema": "hol-guard.native-qualification-failure.v1"
+    },
+    "identity": {
+      "build_sha": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+      "contribution_sha256": "8e61a55f7f6af03ef2910f7e16bca56cc5d99a8030764013b278db64ea818f16",
+      "installed_package_sha256": "4038db8eb0d0c8b1cdc338ffa17704ce2eab944c574a3ae6f2cf900a42c0c913",
+      "program_sha256": "e9839eca81167d698326b39a89af1b26767d1cd8c3660e7d0818bd8bb5295b0d",
+      "wheel_sha256": "306c710dddf22129742247c091582cb347df334219b3bb10fa04189eb6c53c74"
+    }
+  },
+  "transitions": {
+    "passed": false,
+    "suite_acceptance": {
+      "available": true,
+      "contract": "compatible_rollback_and_rejected_legacy_restore",
+      "original_baseline_functional_downgrade_passed": false,
+      "passed": false,
+      "program_qualification_complete": false,
+      "required_expected_negative_count": 1,
+      "required_positive_count": 7,
+      "schema": "hol-guard.installed-transition-acceptance.v1",
+      "verified_expected_negative_count": 0,
+      "verified_positive_count": 3
+    },
+    "phases": [
+      {
+        "phase": "clean_baseline",
+        "passed": true,
+        "worker_timed_out": false,
+        "worker_containment_failed": false,
+        "worker_limit_exceeded": false,
+        "failure": null,
+        "publisher_at_failure": null,
+        "verified_legacy_rejection": false
+      },
+      {
+        "phase": "candidate_upgrade",
+        "passed": true,
+        "worker_timed_out": false,
+        "worker_containment_failed": false,
+        "worker_limit_exceeded": false,
+        "failure": null,
+        "publisher_at_failure": null,
+        "verified_legacy_rejection": false
+      },
+      {
+        "phase": "candidate_reinstall",
+        "passed": true,
+        "worker_timed_out": false,
+        "worker_containment_failed": false,
+        "worker_limit_exceeded": false,
+        "failure": null,
+        "publisher_at_failure": null,
+        "verified_legacy_rejection": false
+      },
+      {
+        "phase": "baseline_rollback",
+        "passed": false,
+        "worker_timed_out": false,
+        "worker_containment_failed": false,
+        "worker_limit_exceeded": false,
+        "failure": {
+          "category": "RuntimeError",
+          "config_diagnostic_available": false,
+          "diagnostic_digest": "81bbb4f24d473bde070c1f20bebbcc946a573697af49c6ec2119b9303a601cc7",
+          "line": 58,
+          "origin": "hook_process_runner_lifecycle.require_initial_capacity",
+          "reason": "unclassified_failure",
+          "schema": "hol-guard.native-qualification-failure.v1"
+        },
+        "publisher_at_failure": {
+          "diagnostic_digest": "f66c96d154e30f75f289f9e0a5d2976a74fed49232751a45dbb8ec887c536901",
+          "ready": false,
+          "reason": "native_policy_snapshot_unknown_field",
+          "thread_alive": true
+        },
+        "verified_legacy_rejection": false
+      }
+    ],
+    "prior_artifact": {
+      "archive_digest_scope": "recorded_original_download",
+      "archive_sha256": "ec65e2d9448c1a6c37202518e71e9fdc6ca338d8731f3d99d7d172e91bc64e5f",
+      "artifact_id": 10495748426,
+      "build_sha": "a224cc2e01e1eb8d74182fa32d78f46e9b417348",
+      "embedded_build_verification": "required_after_isolated_install",
+      "pr_head_sha": "ae33987d0c8675c36a77375e03419aee920825f6",
+      "rebuilt": false,
+      "schema": "hol-guard.installed-prior-artifact.v1",
+      "target": "x86_64-pc-windows-msvc",
+      "wheel_bytes_verified": true,
+      "wheel_sha256": "cb378e13d354c123de3761b0197b4b63c884fe368b65135bf576e7e42c26e089",
+      "workflow_run_id": 35217841356
+    }
+  },
+  "offline_secrets": {
+    "status": "passed",
+    "run_complete": true,
+    "cases": 28,
+    "all_cases_passed": true,
+    "scope": "installed retained Python; no native detector activation"
+  },
+  "post_run_resolver": {
+    "baseline_artifact_modified": false,
+    "before": {
+      "elapsed_ms": 47.0,
+      "loopback_label": false,
+      "status": "completed"
+    },
+    "environment_scope": "disposable_ci_runner_both_arms",
+    "experiment_attempted": false,
+    "fixture_deadline_changed": false,
+    "mechanism": "exact_loopback_ptr_resolver",
+    "qualification_pass": false,
+    "runtime_patched": false,
+    "schema": "hol-guard.native-loopback-resolver.v2",
+    "status": "diagnostic_only"
+  },
+  "qualification_complete": false,
+  "headline_comparison_available": false,
+  "runtime_deadlines_changed": false,
+  "baseline_changed": false,
+  "normal_windows_scope": "Separate native-wheel corpus and complete source resident cohort already passed; this paired failure remains independent.",
+  "log_sha256": "ba78b697a1fb95ec338e51f44618b2391f3fd0b23017c740ad619ddbe7965f0f",
+  "member_hashes_sha256": "dedb6da5635777b403e3f6c0f5b3a1f1b0a0b577c993dc6a4c1605c4f4a38065"
+}

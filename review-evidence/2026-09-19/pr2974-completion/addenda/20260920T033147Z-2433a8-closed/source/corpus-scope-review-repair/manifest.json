@@ -1,0 +1,48 @@
+{
+  "schema": "hol-guard.pr2974.corpus-scope-review-repair.v1",
+  "parent": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "files": [
+    {
+      "path": "scripts/native_slo_corpus_identity.py",
+      "bytes": 6307,
+      "lines": 135,
+      "sha256": "69755e5848819d814b0a893e8f500ddba86de0e5d6152a6eb9e4931a4e9c1213"
+    },
+    {
+      "path": "tests/test_native_slo_corpus_identity.py",
+      "bytes": 9810,
+      "lines": 206,
+      "sha256": "325d654e20775142aa93859226ed1ddbeea62a99f2031292eb60b59658bab0cf"
+    }
+  ],
+  "review_comment": 4055815258,
+  "behavior": "Reject every unscoped comparison; remove legacy_full_matrix_v1 admission. Current producers still declare the existing scope, finite profile and exact evidence digest.",
+  "original_collector_function_ast_unchanged": true,
+  "collector_implementation_self_digest_changes_for_future_runs": true,
+  "frozen_baseline_or_reports_modified": false,
+  "frozen_F_plan_sha256": "c3ac8620ffd90b8cf9e4365fa0eed3f8291426e90c50788e24f478e8910b6d4c",
+  "frozen_F_plan_unchanged": true,
+  "validation": {
+    "before": "2 failed, 25 deselected: matching unscoped records were accepted",
+    "after": "57 passed in 9.18s across corpus identity, Windows source capability, scoped acceptance and qualification modules",
+    "ruff": "check and format passed on both changed files",
+    "types": "0 errors, 130 warnings, 0 notes",
+    "diff_check": "passed"
+  },
+  "logs": {
+    "tests.log": {
+      "bytes": 99,
+      "sha256": "54aacff77b101f0921e26a7a63229d3ad2e8ac1bacd8cac1fe5fe07378c33fb3"
+    },
+    "types.log": {
+      "bytes": 26808,
+      "sha256": "63dbeb7beed889e503a8d21fcfba044809b543ce6da5b2207361f0b817f06453"
+    },
+    "before.log": {
+      "bytes": 1155,
+      "sha256": "ac1e9ce1f095a0ed69d0210a5bd404842853c01d7f57a071028286be1fda5ee1"
+    }
+  },
+  "published": false,
+  "qualification_complete": false
+}

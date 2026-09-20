@@ -1,0 +1,11 @@
+The published Mac read repair passed all 21 resident-client controls on ARM and Intel, including the four actual closed-peer cases. Both installed default-auto probes then produced 21 resident decisions and committed all 21 receipts, with no receipt drops or failures. Both Pi probes completed and the final recorded resident stop reports authenticated contained shutdown.
+
+Normal run 35483845033 builds PR merge 7547248637d9809929055813ec49e26e00395498, whose tree b0a1de665e3e0ea5da1252ad15fdf25716738d32 matches candidate 2433a8ce570f34f5ad3dbf23f3d7367267aad461. The two downloaded archives were SHA-256 verified before inspection; their wheel-embedded runtime hashes match the installed identity reports. These are ordinary default builds, separate from the earlier diagnostic builds.
+
+ARM's installed SLO smoke passed all 14 gates. Warm p95 was 62.67 ms and recovery p95 273.771 ms. Capacity16 returned 16 resident decisions; capacity64 returned 32 resident decisions and 32 explicit bounded bypass overloads. Its report explicitly keeps qualification_complete=false.
+
+Intel reached capacity16 after the installed corpus, cold, warm, sizes, recovery and serialized pool warmup phases. All 16 requests were delivered as allowed, but the route delta was 13 resident and 3 native_fail_safe. The three native calls returned native_resident_live_request_failed after 317.786, 307.170 and 303.220 ms with over 2.37 seconds of caller budget remaining. Their publisher ACK/binding state was valid. No native phase or original leaf was retained, and overlapping aggregate observations cannot assign an individual route. The conservation check correctly failed. A fail-safe route here must not be described as a delivered denial.
+
+The current evidence does not identify authentication queuing, writes/flush, connection identity, or response processing as the cause. Zero native_overloaded responses also cannot rule out an unauthenticated admission drop. The next isolated diagnostic observes the real warmed persistent client while preserving original inputs, deadlines, results and gates.
+
+This is an additive follow-up to the frozen diagnostic-to-repair packet. Earlier failures, archives, and the original containment limits remain intact. Command enrollment, complete rollout/rollback, signing qualification and full PRD qualification remain open.

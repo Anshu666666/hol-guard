@@ -1,0 +1,304 @@
+diff --git a/rust/crates/guard-runtime/src/resident_client_deadline.rs b/rust/crates/guard-runtime/src/resident_client_deadline.rs
+index fbb7a459c..8c1583baf 100644
+--- a/rust/crates/guard-runtime/src/resident_client_deadline.rs
++++ b/rust/crates/guard-runtime/src/resident_client_deadline.rs
+@@ -44,9 +44,19 @@ impl<'a> DeadlineStream<'a> {
+ impl Read for DeadlineStream<'_> {
+     fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+         let deadline = self.read_deadline.get();
+-        self.stream
+-            .set_resident_read_timeout(Some(remaining(deadline)?))?;
+-        let result = self.stream.read(output);
++        let result = match self
++            .stream
++            .set_resident_read_timeout(Some(remaining(deadline)?))
++        {
++            Ok(()) => self.stream.read(output),
++            Err(error) => match self
++                .stream
++                .read_buffered_after_timeout_error(output, &error, deadline)
++            {
++                Some(result) => result,
++                None => return Err(error),
++            },
++        };
+         // Socket timeout granularity can allow a successful final read past
+         // the deadline. Such a response must not be accepted as timely.
+         remaining(deadline)?;
+diff --git a/rust/crates/guard-runtime/src/resident_client_deadline_tests.rs b/rust/crates/guard-runtime/src/resident_client_deadline_tests.rs
+index 949bef043..2edc7922b 100644
+--- a/rust/crates/guard-runtime/src/resident_client_deadline_tests.rs
++++ b/rust/crates/guard-runtime/src/resident_client_deadline_tests.rs
+@@ -244,3 +244,210 @@ fn zero_budget_is_rejected_before_endpoint_or_process_access() {
+     assert_eq!(error.code, "native_client_deadline_exceeded");
+     assert!(!error.retryable_teardown);
+ }
++
++struct TimeoutFallbackProbe {
++    complete_after_deadline: bool,
++    fallback_reads: usize,
++}
++
++impl Read for TimeoutFallbackProbe {
++    fn read(&mut self, _output: &mut [u8]) -> io::Result<usize> {
++        panic!("a failed timeout setter cannot enter the blocking read")
++    }
++}
++
++impl Write for TimeoutFallbackProbe {
++    fn write(&mut self, _input: &[u8]) -> io::Result<usize> {
++        unreachable!()
++    }
++
++    fn flush(&mut self) -> io::Result<()> {
++        unreachable!()
++    }
++}
++
++impl ResidentStream for TimeoutFallbackProbe {
++    fn set_resident_read_timeout(&self, _timeout: Option<Duration>) -> io::Result<()> {
++        Err(io::Error::from_raw_os_error(22))
++    }
++
++    fn set_resident_write_timeout(&self, _timeout: Option<Duration>) -> io::Result<()> {
++        unreachable!()
++    }
++
++    fn set_resident_nonblocking(&self, _nonblocking: bool) -> io::Result<()> {
++        panic!("the deadline reader must not toggle socket mode")
++    }
++
++    fn read_buffered_after_timeout_error(
++        &mut self,
++        output: &mut [u8],
++        _error: &io::Error,
++        deadline: Instant,
++    ) -> Option<io::Result<usize>> {
++        if !self.complete_after_deadline {
++            return None;
++        }
++        self.fallback_reads += 1;
++        thread::sleep(
++            deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(1),
++        );
++        output[0] = b'x';
++        Some(Ok(1))
++    }
++}
++
++#[test]
++fn unsupported_timeout_error_is_preserved_without_reading() {
++    let mut stream = TimeoutFallbackProbe {
++        complete_after_deadline: false,
++        fallback_reads: 0,
++    };
++    let error = DeadlineStream::new(&mut stream, Instant::now() + Duration::from_secs(1))
++        .read(&mut [0u8; 1])
++        .unwrap_err();
++    assert_eq!(error.raw_os_error(), Some(22));
++    assert_eq!(stream.fallback_reads, 0);
++}
++
++#[test]
++fn buffered_fallback_cannot_bypass_absolute_deadline_after_read() {
++    let mut stream = TimeoutFallbackProbe {
++        complete_after_deadline: true,
++        fallback_reads: 0,
++    };
++    let error = DeadlineStream::new(&mut stream, Instant::now() + Duration::from_millis(200))
++        .read(&mut [0u8; 1])
++        .unwrap_err();
++    assert_eq!(error.kind(), io::ErrorKind::TimedOut);
++    assert_eq!(stream.fallback_reads, 1);
++}
++
++#[cfg(target_os = "macos")]
++mod macos_closed_peer {
++    use super::*;
++    use std::os::fd::AsFd;
++    use std::os::unix::net::UnixStream;
++
++    const REQUEST_ID: [u8; FRAME_REQUEST_ID_BYTES] = [0x51; FRAME_REQUEST_ID_BYTES];
++
++    fn closed_response(header: &[u8], body: &[u8]) -> UnixStream {
++        let (client, mut server) = UnixStream::pair().unwrap();
++        client
++            .set_read_timeout(Some(Duration::from_millis(250)))
++            .unwrap();
++        server.write_all(header).unwrap();
++        server.write_all(body).unwrap();
++        drop(server);
++        let error = client
++            .set_read_timeout(Some(Duration::from_millis(250)))
++            .unwrap_err();
++        assert_eq!(error.raw_os_error(), Some(nix::errno::Errno::EINVAL as i32));
++        let mut descriptors = [nix::poll::PollFd::new(
++            client.as_fd(),
++            nix::poll::PollFlags::POLLIN,
++        )];
++        assert_eq!(
++            nix::poll::poll(&mut descriptors, nix::poll::PollTimeout::ZERO).unwrap(),
++            1
++        );
++        assert!(descriptors[0]
++            .revents()
++            .unwrap()
++            .contains(nix::poll::PollFlags::POLLHUP));
++        client
++    }
++
++    fn assert_blocking(stream: &UnixStream) {
++        let flags = nix::fcntl::fcntl(stream, nix::fcntl::FcntlArg::F_GETFL).unwrap();
++        assert_eq!(flags & nix::fcntl::OFlag::O_NONBLOCK.bits(), 0);
++    }
++
++    #[test]
++    fn complete_bound_response_survives_peer_close_without_changing_socket_mode() {
++        let mut client = closed_response(&response_header(&REQUEST_ID, b"{}"), b"{}");
++        assert_blocking(&client);
++        let mut stream =
++            DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
++        assert_eq!(
++            read_committed_response(&mut stream, &REQUEST_ID).unwrap(),
++            b"{}"
++        );
++        assert_eq!(stream.read(&mut [0u8; 1]).unwrap(), 0);
++        assert_blocking(&client);
++    }
++
++    #[test]
++    fn malformed_or_partial_buffered_responses_remain_fatal() {
++        for (header, body, code) in [
++            (
++                response_header(&[0x52; FRAME_REQUEST_ID_BYTES], b"{}"),
++                b"{}".as_slice(),
++                "native_client_response_binding_failed",
++            ),
++            (
++                response_header(&REQUEST_ID, b"{}"),
++                b"[]".as_slice(),
++                "native_client_response_digest_mismatch",
++            ),
++            (
++                response_header(&REQUEST_ID, b"{}"),
++                b"{".as_slice(),
++                "native_client_frame_read_failed",
++            ),
++        ] {
++            let mut client = closed_response(&header, body);
++            let mut stream =
++                DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
++            let error = read_committed_response(&mut stream, &REQUEST_ID).unwrap_err();
++            assert_eq!(error.code, code);
++            assert!(!error.retryable_teardown);
++        }
++    }
++
++    #[test]
++    fn expired_deadline_leaves_buffered_response_unread() {
++        let mut client = closed_response(&response_header(&REQUEST_ID, b"{}"), b"{}");
++        let error = DeadlineStream::new(&mut client, Instant::now())
++            .read(&mut [0u8; 1])
++            .unwrap_err();
++        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
++        let mut stream =
++            DeadlineStream::new(&mut client, Instant::now() + Duration::from_millis(250));
++        assert_eq!(
++            read_committed_response(&mut stream, &REQUEST_ID).unwrap(),
++            b"{}"
++        );
++    }
++
++    #[test]
++    fn fallback_requires_exact_setter_error_and_actual_peer_hangup() {
++        let (mut client, mut server) = UnixStream::pair().unwrap();
++        client
++            .set_read_timeout(Some(Duration::from_millis(250)))
++            .unwrap();
++        server.write_all(b"x").unwrap();
++        let mut output = [0u8; 1];
++        let deadline = Instant::now() + Duration::from_millis(250);
++        assert!(client
++            .read_buffered_after_timeout_error(
++                &mut output,
++                &io::Error::from_raw_os_error(22),
++                deadline
++            )
++            .is_none());
++        assert_eq!(output, [0]);
++        drop(server);
++        assert!(client
++            .read_buffered_after_timeout_error(
++                &mut output,
++                &io::Error::from_raw_os_error(13),
++                deadline
++            )
++            .is_none());
++        assert_eq!(output, [0]);
++        assert_eq!(client.read(&mut output).unwrap(), 1);
++        assert_eq!(output, [b'x']);
++        assert_blocking(&client);
++    }
++}
+diff --git a/rust/crates/guard-runtime/src/resident_transport.rs b/rust/crates/guard-runtime/src/resident_transport.rs
+index c0d7119a9..8b36d60c1 100644
+--- a/rust/crates/guard-runtime/src/resident_transport.rs
++++ b/rust/crates/guard-runtime/src/resident_transport.rs
+@@ -14,6 +14,14 @@ pub(crate) trait ResidentStream: Read + Write + Send {
+     fn set_resident_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;
+     fn set_resident_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()>;
+     fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()>;
++    fn read_buffered_after_timeout_error(
++        &mut self,
++        _output: &mut [u8],
++        _error: &io::Error,
++        _deadline: Instant,
++    ) -> Option<io::Result<usize>> {
++        None
++    }
+     fn try_read_available(&mut self, output: &mut [u8]) -> io::Result<usize> {
+         self.set_resident_nonblocking(true)?;
+         let result = self.read(output);
+@@ -60,6 +68,42 @@ impl ResidentStream for UnixStream {
+     fn set_resident_nonblocking(&self, nonblocking: bool) -> io::Result<()> {
+         self.set_nonblocking(nonblocking)
+     }
++
++    #[cfg(target_os = "macos")]
++    fn read_buffered_after_timeout_error(
++        &mut self,
++        output: &mut [u8],
++        error: &io::Error,
++        deadline: Instant,
++    ) -> Option<io::Result<usize>> {
++        use nix::errno::Errno;
++        use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
++        use nix::sys::socket::{recv, MsgFlags};
++        use std::os::fd::{AsFd, AsRawFd};
++
++        // Darwin rejects SO_RCVTIMEO after a Unix peer closes, even when its
++        // complete response remains buffered. EINVAL alone is insufficient:
++        // independently require hangup on this same owned descriptor.
++        if error.raw_os_error() != Some(Errno::EINVAL as i32) {
++            return None;
++        }
++        let mut descriptors = [PollFd::new(self.as_fd(), PollFlags::POLLIN)];
++        if poll(&mut descriptors, PollTimeout::ZERO).ok()? != 1 {
++            return None;
++        }
++        let events = descriptors[0].revents()?;
++        if !events.contains(PollFlags::POLLHUP)
++            || events.intersects(PollFlags::POLLERR | PollFlags::POLLNVAL)
++        {
++            return None;
++        }
++        if Instant::now() >= deadline {
++            return Some(Err(io::Error::from(io::ErrorKind::TimedOut)));
++        }
++        // Read only already available bytes or EOF. Do not change socket mode,
++        // reuse an old blocking timeout, or wait for any further peer data.
++        Some(recv(self.as_raw_fd(), output, MsgFlags::MSG_DONTWAIT).map_err(io::Error::from))
++    }
+ }
+ 
+ pub(crate) type BoxedResidentStream = Box<dyn ResidentStream>;

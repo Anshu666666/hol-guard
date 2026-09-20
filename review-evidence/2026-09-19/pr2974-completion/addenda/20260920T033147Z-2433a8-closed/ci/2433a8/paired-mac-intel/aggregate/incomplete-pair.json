@@ -1,0 +1,88 @@
+{
+  "schema": "hol-guard.native-incomplete-pair.v1",
+  "failed_run": 0,
+  "planned_runs": 1,
+  "attempted_blocks": 2,
+  "unattempted_blocks": 0,
+  "completed_blocks": {
+    "baseline": 0,
+    "candidate": 0
+  },
+  "failures": [
+    {
+      "category": "RuntimeError",
+      "config_diagnostic_available": false,
+      "diagnostic_digest": "11b19ab407eaaa2e645f392cde38778f2967716ce0a6f4bc8f602e112347bdea",
+      "reason": "qualification_fixture.daemon_fixture_deadline_at_construct_daemon",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "startup_stack": [
+        {
+          "line": 808,
+          "origin": "socket.getfqdn"
+        },
+        {
+          "line": 138,
+          "origin": "http.server.HTTPServer.server_bind"
+        },
+        {
+          "line": 199,
+          "origin": "bounded_http.__init__"
+        },
+        {
+          "line": 662,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 7907,
+          "origin": "server.__init__"
+        },
+        {
+          "line": 330,
+          "origin": "native_slo_session.__init__"
+        },
+        {
+          "line": 386,
+          "origin": "native_slo_daemon_fixture._serve"
+        },
+        {
+          "line": 27,
+          "origin": "native_slo_daemon_entrypoint.main"
+        }
+      ],
+      "arm": "baseline",
+      "run": 0,
+      "artifact_sha256": "be8e062a4491e6f2b95594ab705f84005fe1707cda134f6545e8b15328c4d37c",
+      "timed_out": false,
+      "containment_failed": false,
+      "worker_limit_exceeded": false,
+      "return_code": 1
+    },
+    {
+      "category": "RuntimeError",
+      "diagnostic_digest": "fdb19f4df4c0ed5d6cdd861f6da2f15b34e707048d6eeb599eeeabaa7f07b93d",
+      "line": 258,
+      "observed_semantics": {
+        "delivered": {
+          "available": true,
+          "policy_action": "warn",
+          "reason_code_digest": "4a4c54683008aa5b74af61e5a1ba1cb6fc9d990e89ef0eb094ffc53b74a4d44e"
+        },
+        "native": {
+          "available": false
+        }
+      },
+      "origin": "native_slo_priority_launchers.validate_launcher_stdout",
+      "reason": "qualification_fixture.priority_launcher_policy_mismatch",
+      "schema": "hol-guard.native-qualification-failure.v1",
+      "arm": "candidate",
+      "run": 0,
+      "artifact_sha256": "5e08307b78c8a7be033d4a121d3ebe69e8aa8f62f5e01667af19f05db02cc63f",
+      "timed_out": false,
+      "containment_failed": false,
+      "worker_limit_exceeded": false,
+      "return_code": 1
+    }
+  ],
+  "comparison_available": false,
+  "qualification_complete": false
+}

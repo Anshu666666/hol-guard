@@ -1,0 +1,77 @@
+{
+  "schema": "hol-guard-read-only-source-review.v1",
+  "reviewed_at_utc": "2026-09-20T03:06:50.896333+00:00",
+  "reviewer": "native_runtime_audit",
+  "base_commit": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "scope": "explicit persistent-stream native phase diagnostic, eight Rust files",
+  "source_files": {
+    "rust/crates/guard-runtime/src/main.rs": {
+      "sha256": "5849783c877778b5fce1eb0ce8c27ad042b7507191a1a4e7fd905e39a824e189",
+      "lines": 369
+    },
+    "rust/crates/guard-runtime/src/managed_resident.rs": {
+      "sha256": "bd87c9350d0448840a61b1d642d2f404c20e0444c0c89b207cb005a15adf6392",
+      "lines": 500
+    },
+    "rust/crates/guard-runtime/src/managed_resident_client_stream.rs": {
+      "sha256": "682250c4742980e3b9b6d52d640052af3d947fcfa7f1a0eb526ccb6236607e63",
+      "lines": 116
+    },
+    "rust/crates/guard-runtime/src/resident_client.rs": {
+      "sha256": "5e7d874fb9be14227f34ea1537f7d1b774ac3c77e7a6ee14d9ac711f66b8696e",
+      "lines": 421
+    },
+    "rust/crates/guard-runtime/src/resident_client_deadline.rs": {
+      "sha256": "67a617ee16a8b359c27fa83eddfc2520b33b44effafae9e026be6ce5ad09bae6",
+      "lines": 126
+    },
+    "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs": {
+      "sha256": "4eda5c5bcf3a7895d6150f1d8605e523da67b5a2538952aee5836ea0d974b1a9",
+      "lines": 486
+    },
+    "rust/crates/guard-runtime/src/resident_startup_diagnostic.rs": {
+      "sha256": "b34179b5b198a0529e5265a9022a0be3857d7b2f7218de78b02cf06afc984dbb",
+      "lines": 455
+    },
+    "rust/crates/guard-runtime/src/resident_startup_diagnostic_tests.rs": {
+      "sha256": "69617ae4bd7213698aebc1aabd02920ffeb50d6812b9aa6baa585c18adb47994",
+      "lines": 367
+    }
+  },
+  "blocking_findings": [],
+  "resolved_findings": [
+    {
+      "finding": "remaining(deadline)? inside the diagnostic IO closure could label a pre-syscall deadline failure as a timeout-setter failure.",
+      "resolution": "All five deadline prechecks now execute once before IO observation; real TCP-pair control checks no setter event is emitted for expired read/write/flush/timeout operations."
+    },
+    {
+      "finding": "managed_resident.rs exceeded the 500-line source cap.",
+      "resolution": "The unchanged client_timeout function moved to existing managed_resident_client_stream and is reexported; the parent file has 500 lines."
+    }
+  ],
+  "invariants_reviewed": [
+    "The feature-only command enters the existing persistent per-frame loop and lifetime lease, retaining the original started_at, payload-derived deadline and one managed request call.",
+    "Default-build observation macros erase to the original expression or nothing; the explicit diagnostic command and frame export are feature-only.",
+    "Authentication, detailed fatal versus retryable classification, original safe-error mapping and original frame write Result are retained.",
+    "The macOS read-buffer fallback remains unchanged; wrappers record existing operations and their Results.",
+    "Payload and response digests are computed only after the original stdout-frame write; raw request bytes, tokens, endpoint strings and arbitrary error messages are not exported.",
+    "Events are bounded16per frame, diagnostic reports128per stream plus one fixed cap marker, report bytes16384; error labels are finite and timings clipped with incomplete evidence.",
+    "Events are bounded to 16 per frame, diagnostic reports to 128 per stream plus one fixed cap marker, and report size to 16384 bytes; error labels are finite and timings are clipped with incomplete evidence recorded.",
+    "Result pointer/value preservation and no extra request are controlled in the source tests; no installed workload result is inferred from those finite controls."
+  ],
+  "client_timeout_relocation": {
+    "body_exactly_identical": true,
+    "body_sha256": "b2b93561b652bd4f42b3e45d4478c02a60717b14261ae409b1e9622a2a42a9d3",
+    "default_ms": 750,
+    "minimum_ms": 1,
+    "maximum_ms": 9000,
+    "old_public_path_retained_by_reexport": true
+  },
+  "validation_scope": "Read-only source/callsite review; no Cargo or runtime tests executed by reviewer.",
+  "qualification_complete": false,
+  "limits": [
+    "Diagnostic observations can affect scheduling and are ineligible for headline timing.",
+    "Actual failing warmed persistent-client workload still needs hosted execution.",
+    "The reader and driver source are separately owned; final whole-driver source binding must be reviewed and frozen by their owner."
+  ]
+}

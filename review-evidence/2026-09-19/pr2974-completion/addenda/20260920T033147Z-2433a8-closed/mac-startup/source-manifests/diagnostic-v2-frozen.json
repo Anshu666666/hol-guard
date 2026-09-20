@@ -1,0 +1,201 @@
+{
+  "schema": "hol-guard.mac-startup-io-diagnostic-preparation.v1",
+  "base_commit": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+  "base_tree": "c2e88b60d8308df11402098a4bb5bfbf419699ea",
+  "source_root": "/workspace/scratch/745337b67ff9/mac-startup-io-diagnostic-prep",
+  "source_files": [
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "bytes": 15592,
+      "lines": 425,
+      "sha256": "bb5f80ba859fb0982d7d0edba564b4f3cee146de4f0ec31a021267439a2197e0",
+      "base_git_blob_sha": "68b7fd1481bce7fd90b3d75f39e536c978cd75d7",
+      "candidate_git_blob_sha": "9083645cb69415bd82f1fedf9669fc12376ddca4"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "bytes": 3586,
+      "lines": 104,
+      "sha256": "c4b98e589bf882ad892fd599053ce29e31fb058f6ecacc7928dde7a110e9cbd3",
+      "base_git_blob_sha": "fbb7a459c84eab83a31422ba268ad1cf2086cc1b",
+      "candidate_git_blob_sha": "50609b78ec99a6d1dfd6d3925a0fb2cf7f945171"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic.rs",
+      "bytes": 12256,
+      "lines": 353,
+      "sha256": "edc2d376220fbfc69561080d980374d5923bbc764470438a52ea1c9f626c14f2",
+      "base_git_blob_sha": "d3ae2ec0fae99b6d995c16bd9439ce6c8c33bc72",
+      "candidate_git_blob_sha": "519476fb0504c7100bb463d1875ce0ffb9e40b89"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic_tests.rs",
+      "bytes": 10552,
+      "lines": 257,
+      "sha256": "37ab04164f07b0430468ffccd2548d85845f1633ba1502147ffd8663fb0efeb7",
+      "base_git_blob_sha": "5beb488c780e7d89b730e3c9b9a55f6ff6d30d3f",
+      "candidate_git_blob_sha": "f9b65ca0edf93086d98cbc4a309cf1c685f4aa3e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_closed_peer_tests.rs",
+      "bytes": 3321,
+      "lines": 70,
+      "sha256": "d655e2f73f63e3878cbc0dd56394ca678cab990f45e73fe1fdd10340f5c7fe05",
+      "base_git_blob_sha": null,
+      "candidate_git_blob_sha": "d3f6dd9e613261451058ca265367d087301ab509"
+    },
+    {
+      "path": "scripts/ci/run_native_startup_phase_diagnostic.py",
+      "bytes": 18033,
+      "lines": 431,
+      "sha256": "c297cf0da46f285ca0c2768881d335627fb1a34d5b9c88b2ba58dbcdf15cff1d",
+      "base_git_blob_sha": "577b18b6d2e2c064be160e7946ea6c7bcaa3693a",
+      "candidate_git_blob_sha": "e8cff9b616d6fef37c91fe2ffcbd45049ed78541"
+    },
+    {
+      "path": "tests/test_native_startup_phase_diagnostic.py",
+      "bytes": 12094,
+      "lines": 285,
+      "sha256": "5b26f537bcb1ede2fd2aa9e62ad01dce47d29d8babb06050ac0b772473c7e68b",
+      "base_git_blob_sha": "aa5c589f33608194319ceaa2b173eacf45ba05b3",
+      "candidate_git_blob_sha": "03539b65d3873dc6cc2197ef62c1a6772fbd914a"
+    }
+  ],
+  "workflow_template": {
+    "path": ".github/workflows/native-resident-startup-phase-diagnostics.yml",
+    "bytes": 6945,
+    "lines": 142,
+    "sha256": "7acf983f5535ac28af9056cf324400f4f9949ac7336b8d5ac30aa43b5aa89271",
+    "base_git_blob_sha": null,
+    "candidate_git_blob_sha": "d7a963384de2f36482f94eec418d37ce2825851d"
+  },
+  "rust_controls": [
+    {
+      "name": "default-erasure",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "-p",
+        "hol-guard-runtime",
+        "-j2",
+        "resident_startup_diagnostic",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 12.386,
+      "log_sha256": "2765e49f76ecf33cd14171544bb481cb785e1a34e4deadcafe74cdcfc3b046c3"
+    },
+    {
+      "name": "diagnostic-controls",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "-p",
+        "hol-guard-runtime",
+        "-j2",
+        "--features",
+        "diagnostic-phases",
+        "resident_startup_diagnostic",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.36,
+      "log_sha256": "15231c54f25afc1b96b484a52b55e0a718b1bef4228f32abf4a12ca60e92b322"
+    },
+    {
+      "name": "existing-client-controls",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "-p",
+        "hol-guard-runtime",
+        "-j2",
+        "--features",
+        "diagnostic-phases",
+        "resident_client",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.558,
+      "log_sha256": "4f1d7c0a372d004776876470b6a9ce99d3f2f34fd2e8c04ae2ecdc3d9ccfada6"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "-p",
+        "hol-guard-runtime",
+        "-j2",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.116,
+      "log_sha256": "87c31fcfce9aa18b45411e5e9adaa3e9dd04a8f34a6e5c45a449bfa23697ea72"
+    }
+  ],
+  "rust_final_stage_assertion": {
+    "name": "diagnostic-controls-final",
+    "command": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--manifest-path",
+      "rust/Cargo.toml",
+      "-p",
+      "hol-guard-runtime",
+      "-j2",
+      "--features",
+      "diagnostic-phases",
+      "resident_startup_diagnostic",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 11.65,
+    "log_sha256": "dd8de8f5f23a2312b42f9b3ed853c3769385276bf6ec2bab04cf32911e66dbac"
+  },
+  "python_validation": {
+    "command": "PYTHONPATH=src:. /workspace/scratch/745337b67ff9/hol-guard/.venv/bin/python -m pytest -q tests/test_native_startup_phase_diagnostic.py",
+    "result": "24 passed in 0.59s",
+    "ruff": "passed",
+    "format": "passed",
+    "basedpyright": "0 errors, 0 warnings, 0 notes"
+  },
+  "mac_platform_control": {
+    "name": "resident_client::resident_startup_diagnostic_closed_peer_tests::closed_unix_peer_rejects_timeout_reset_but_retains_complete_bound_response",
+    "selected_by": "cargo test --features diagnostic-phases resident_startup_diagnostic",
+    "locally_executed": false,
+    "expected_behavior": "Observe original raw EINVAL timeout setter/wrapper failure after peer close, then diagnostic-only nonblocking decode of the same complete bound buffered response."
+  },
+  "peer_review": "native_runtime_audit read-only review accepted original order/result/deadline/default erasure and closed-peer control; no production fix or qualification inferred.",
+  "original_artifact_directory": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-phases-71f24e16",
+  "observations": "Both ARM and Intel authenticate and fully write the request, then committed response read reports raw EINVAL22. This v2 identifies failing timeout setter versus actual stream read.",
+  "qualification": false,
+  "production_deadline_retry_or_error_contract_change": false,
+  "source_published": false
+}

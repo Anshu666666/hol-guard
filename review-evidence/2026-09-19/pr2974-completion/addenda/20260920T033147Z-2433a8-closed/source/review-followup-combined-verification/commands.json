@@ -1,0 +1,20 @@
+{
+  "checks": [
+    [
+      "tests",
+      "CPATH='/workspace/scratch/745337b67ff9/observer-local-build/sqlite-sdk' .venv/bin/python -m pytest 'tests/test_native_slo_corpus_identity.py' 'tests/test_native_slo_windows_source_capability.py' 'tests/test_native_slo_acceptance.py' 'tests/test_native_slo_qualification.py' 'tests/test_native_slo_resources.py' 'tests/test_native_slo_mixed_load.py' 'tests/test_guard_storage_gate_concurrency.py' 'tests/test_native_slo_sqlite_vfs.py' 'tests/test_native_slo_sqlite_vfs_loader.py' 'tests/test_native_slo_persistence_observation.py' 'tests/test_native_slo_workspace_lifecycle_order.py' 'tests/test_native_slo_workspace_lifecycle.py' 'tests/test_native_slo_workspace_lifecycle_clocks.py' 'tests/test_native_slo_workspace_lifecycle_faults.py' 'tests/test_native_slo_workspace_lifecycle_evidence.py' 'tests/test_native_slo_workspace_lifecycle_runner.py' 'tests/test_native_slo_expiry.py' --tb=short -q"
+    ],
+    [
+      "lint",
+      ".venv/bin/ruff check 'scripts/native_slo_corpus_identity.py' 'scripts/native_slo_resources.py' 'scripts/native_slo_workspace_lifecycle.py' 'tests/test_guard_storage_gate_concurrency.py' 'tests/test_native_slo_corpus_identity.py' 'tests/test_native_slo_resources.py' 'tests/test_native_slo_sqlite_vfs.py' 'tests/test_native_slo_workspace_lifecycle_order.py'"
+    ],
+    [
+      "format",
+      ".venv/bin/ruff format --check 'scripts/native_slo_corpus_identity.py' 'scripts/native_slo_resources.py' 'scripts/native_slo_workspace_lifecycle.py' 'tests/test_guard_storage_gate_concurrency.py' 'tests/test_native_slo_corpus_identity.py' 'tests/test_native_slo_resources.py' 'tests/test_native_slo_sqlite_vfs.py' 'tests/test_native_slo_workspace_lifecycle_order.py'"
+    ],
+    [
+      "types",
+      ".venv/bin/basedpyright --pythonversion 3.12 'scripts/native_slo_corpus_identity.py' 'scripts/native_slo_resources.py' 'scripts/native_slo_workspace_lifecycle.py' 'tests/test_native_slo_workspace_lifecycle_order.py'"
+    ]
+  ]
+}

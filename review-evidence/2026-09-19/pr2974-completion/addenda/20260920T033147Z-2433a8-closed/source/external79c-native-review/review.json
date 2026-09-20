@@ -1,0 +1,101 @@
+{
+  "schema": "hol-guard-read-only-external-change-review.v1",
+  "reviewed_at_utc": "2026-09-20T03:26:01.984558+00:00",
+  "reviewer": "native_runtime_audit",
+  "commit": "79c555fc2ac19b55f7cf585ab96480392c30a694",
+  "tree": "1bd2af0961603b185119969fe5dfbe24a25528d3",
+  "parent": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "scope": "four Rust deltas only; source reviewed directly from immutable git objects without resetting or editing shared checkout",
+  "files": {
+    "rust/crates/guard-runtime/src/policy_store_noncommand_review_tests.rs": {
+      "sha256": "849a5bf3b79dd05e5dc52d3f177fb5c060d84e8a6518da4e2447aae7e9edd47b",
+      "git_blob": "fcb3172d5f863358f1199100cd1e1e52d0250ace",
+      "bytes": 10673,
+      "lines": 253
+    },
+    "rust/crates/guard-runtime/src/resident_client_deadline.rs": {
+      "sha256": "8f32fd1f476ab50d0398041176780f1b74ee7ffdc1aee6a4635ca4dd1946bd6d",
+      "git_blob": "2c243ed400191760940cb86a3a1847bd2858f4b4",
+      "bytes": 3964,
+      "lines": 118
+    },
+    "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs": {
+      "sha256": "a2cc1328e7aa909c4574e5646d4a0db0bc3b67dab50c37808de7e5d39b233fd0",
+      "git_blob": "676fa271a894d9369e34be93a5e482fd9faa1735",
+      "bytes": 17019,
+      "lines": 493
+    },
+    "rust/crates/guard-runtime/src/resident_transport.rs": {
+      "sha256": "fbf2e0146a59bcbdf5d481901028ad4afda3dd3e451a2903f582be4f3dfb13a2",
+      "git_blob": "ab7f91d6bb56aba346d2cf5c5c392727b32b9352",
+      "bytes": 15999,
+      "lines": 441
+    }
+  },
+  "patch": {
+    "path": "/workspace/scratch/745337b67ff9/external79c-native-review/four-rust-files.patch",
+    "sha256": "206ad992c6bce1c233dd39533d58f517e38ce2f0c23d6fec9c03ab89896bf82a",
+    "bytes": 13993
+  },
+  "blocking_semantic_findings": [],
+  "findings": [
+    {
+      "area": "Mac flush fallback",
+      "classification": "bounded production behavior change",
+      "evidence": "Only macOS UnixStream overrides the new default-None trait method. Exact raw EINVAL plus independent same-descriptor zero-wait POLLHUP is required, while POLLERR, POLLNVAL, poll failure, wrong error and live peer refuse the fallback.",
+      "consequence": "A write completed before peer close can proceed through the no-op UnixStream flush and then the existing bound response read."
+    },
+    {
+      "area": "deadline",
+      "classification": "original checks preserved",
+      "evidence": "DeadlineStream flush computes remaining(write_deadline) before the timeout setter and checks the same remaining deadline after either original flush or fallback. The Mac fallback also checks that same deadline before its no-op flush. No duration or accepted time is reset."
+    },
+    {
+      "area": "commitment and replay",
+      "classification": "original semantics preserved",
+      "evidence": "write_request still requires write_all to complete before flush. No new request write, socket mode change, managed retry or replay classification is added. Bound response header, request ID, payload digest, length and original post-exchange deadline checks remain unchanged; closed peer without a valid response still fails fatally."
+    },
+    {
+      "area": "read fallback refactor",
+      "classification": "equivalent prerequisite extraction",
+      "evidence": "The existing EINVAL/HUP/no-ERR/no-NVAL predicate moved to a shared helper; original read deadline check and MSG_DONTWAIT receive remain unchanged."
+    },
+    {
+      "area": "noncommand test additions",
+      "classification": "test-only stronger coverage",
+      "evidence": "Two additional signed-policy tests require absent markers for explicit/unbound or malformed commands, preserve noncommand marker for real extractor absence, keep command lockdown and intrinsic blocks, and export three bounded real native receipt cases. No production receipt, approval or command-control code changed."
+    }
+  ],
+  "official_rust_source": {
+    "url": "https://github.com/rust-lang/rust/blob/1.88.0/library/std/src/os/unix/net/stream.rs",
+    "git_blob": "1cab04a454dc0d4396b76b077ba47859571cc387",
+    "retrieval": "GitHub connector fetched the exact 1.88.0 tag source",
+    "verified_fact": "UnixStream Write::flush delegates to the &UnixStream implementation, which returns Ok(()) without writing bytes or changing socket options."
+  },
+  "new_macos_control": {
+    "name": "resident_client::deadline_tests::macos_closed_peer::completed_write_can_flush_after_peer_close_without_replaying_request",
+    "source_evidence": [
+      "Writes the original two bytes through DeadlineStream and verifies the peer received them.",
+      "Peer writes a valid response header/body, then closes.",
+      "Verifies real SO_SNDTIMEO setter returns raw EINVAL and socket remains blocking.",
+      "An already-expired flush returns TimedOut.",
+      "Timely flush succeeds, existing read_committed_response validates the exact response, EOF is read, and blocking mode remains unchanged."
+    ],
+    "scope_limit": "This deterministic socket control does not exercise an authenticated managed request or the warmed 16 capacity workload.",
+    "negative_controls": "Existing prerequisite test now also rejects flush fallback for EINVAL with a live peer and non-EINVAL after hangup; existing malformed/binding/digest/truncation fatal response controls remain."
+  },
+  "not_demonstrated_by_this_review": [
+    "No local macOS test execution; this environment is Linux and prohibits AF_UNIX creation.",
+    "No native warmed 16 failure cause established solely by the source patch or deterministic socket control.",
+    "No additional portable flush-specific unsupported-setter or late-fallback-success control is present; source retains the final deadline check.",
+    "No 2433 source-bound execution result is promoted to 79c validation."
+  ],
+  "formatting_issue_reported_separately": "CI peer found two rustfmt failures in new policy_store_noncommand_review_tests.rs assert_eq calls. Root assigned a formatting-only correction to that owner.",
+  "diagnostic_overlap": [
+    "The shared diagnostic deliberately remains based on exact failing 2433; do not import the external flush repair into that source and relabel its outcome as the old failure.",
+    "Future diagnostic rebase has a direct flush-method overlap in resident_client_deadline.rs. It must preserve the new fallback branch and keep deadline prechecks outside IO observer closures.",
+    "Both branches add to resident_client_deadline_tests.rs; a later combined file must still satisfy the 500-line cap.",
+    "The external resident_transport.rs predicate extraction/flush override is absent from the 2433-based diagnostic and is a separate production difference."
+  ],
+  "qualification_complete": false
+}

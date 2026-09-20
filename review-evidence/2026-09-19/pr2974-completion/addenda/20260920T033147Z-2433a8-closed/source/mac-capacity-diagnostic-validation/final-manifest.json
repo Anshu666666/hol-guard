@@ -1,0 +1,293 @@
+{
+  "base_sha": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "base_tree": "b0a1de665e3e0ea5da1252ad15fdf25716738d32",
+  "checks": {
+    "combined_python": {
+      "failed": 0,
+      "log": "combined-python-controls.log",
+      "passed": 50
+    },
+    "default_erasure": {
+      "failed": 0,
+      "log": "default-erasure.log",
+      "passed": 1
+    },
+    "default_resident_client": {
+      "failed": 0,
+      "log": "default-client-tests.log",
+      "passed": 17
+    },
+    "earlier_full_feature_runtime": {
+      "failed": 4,
+      "failures": "Four existing native_phase_endpoint_tests fail at AF_UNIX socket creation with local EPERM. No complete local feature pass is claimed.",
+      "ignored": 2,
+      "log": "feature-runtime-tests.log",
+      "passed": 201,
+      "source_stage": "before_final_byte_identical_client_timeout_function_relocation"
+    },
+    "final_feature_resident": {
+      "failed": 0,
+      "filtered": 158,
+      "log": "final-feature-resident-tests.log",
+      "passed": 49
+    },
+    "python_types": {
+      "errors": 0,
+      "files": 4,
+      "log": "combined-types.json",
+      "warnings": 264
+    },
+    "ruff_and_format": {
+      "logs": [
+        "combined-ruff.log",
+        "combined-format.log"
+      ],
+      "passed": true
+    },
+    "rust_clippy": {
+      "log": "clippy.log",
+      "passed": true,
+      "scope": "workspace_all_targets_all_features"
+    },
+    "rustfmt_and_diff": {
+      "logs": [
+        "rust-format.log",
+        "diff-check.log"
+      ],
+      "passed": true
+    }
+  },
+  "default_feature_erasure": true,
+  "diagnostic_command_added": "resident-client-stream-diagnostic",
+  "hosted_execution_pending": true,
+  "normal_command_preserved": "resident-client-stream",
+  "normal_operation_behavior_changed": false,
+  "original_deadlines_preserved": true,
+  "original_requests_and_retries_preserved": true,
+  "peer_review": {
+    "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-review.json",
+    "rust_blockers": [],
+    "sha256": "cb7fe21fd73aed3c245cb37918220404bd70e5a754f94c31b0eb8c360a6b2fa4",
+    "windows_peer_review": "Shared collector reviewed; all concrete findings corrected before freeze."
+  },
+  "qualification": false,
+  "schema": "hol-guard.persistent-stream-diagnostic-source-freeze.v1",
+  "scope": [
+    "Both platforms share one explicit diagnostic binary built from this separately published source.",
+    "Mac runs the unchanged normal installed run_slo sequence once at its original 2/2/2/2 counts and capacity enabled.",
+    "Windows runs the unchanged full run_contract_corpus once, observing only the original normal fixture.",
+    "Native per-frame phases and original errors precede safe_error_response; payload/response hashes and stderr export follow the original stdout frame.",
+    "The private observer drains concurrently after retention overflow; all loss, malformed records, missing joins, and cleanup failures remain explicit.",
+    "Diagnostic timings are ineligible for headline SLOs; no currently unknown failure cause is inferred."
+  ],
+  "separate_mac_driver_workflow_template": {
+    "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/.github/workflows/native-resident-stream-phase-diagnostics.yml",
+    "base_blob_sha": null,
+    "bytes": 7079,
+    "git_blob_sha": "ea755c8bf5367bec75681b1aa37a1d0b204fd951",
+    "lines": 143,
+    "path": ".github/workflows/native-resident-stream-phase-diagnostics.yml",
+    "sha256": "ee6ad5376721391a51163fe21eb52d5871f0340b9f80f0ece63d085cf7e66b36"
+  },
+  "source_files": [
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/main.rs",
+      "base_blob_sha": "e02848425bdeaabccc6f52acb6f5092b5fb79781",
+      "bytes": 14869,
+      "git_blob_sha": "8ed7a644a00ded7c189eec318f2d5b6083d3f289",
+      "lines": 369,
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "sha256": "5849783c877778b5fce1eb0ce8c27ad042b7507191a1a4e7fd905e39a824e189"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/managed_resident.rs",
+      "base_blob_sha": "5726f25f54751f785530f7046d04247219b2bae9",
+      "bytes": 17864,
+      "git_blob_sha": "6b0290e6a471eef312c94c3e4a340e0c45b7632d",
+      "lines": 500,
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "sha256": "bd87c9350d0448840a61b1d642d2f404c20e0444c0c89b207cb005a15adf6392"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/managed_resident_client_stream.rs",
+      "base_blob_sha": "5fd98c29158ad4d7980bd321de2016aa6571b58e",
+      "bytes": 4022,
+      "git_blob_sha": "6521e361d3326de9f9eabf1f92d2211cf439e3db",
+      "lines": 116,
+      "path": "rust/crates/guard-runtime/src/managed_resident_client_stream.rs",
+      "sha256": "682250c4742980e3b9b6d52d640052af3d947fcfa7f1a0eb526ccb6236607e63"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/resident_client.rs",
+      "base_blob_sha": "7af7627235fa59880625dd7cc51a6cb1b93f30ea",
+      "bytes": 15420,
+      "git_blob_sha": "68b7fd1481bce7fd90b3d75f39e536c978cd75d7",
+      "lines": 421,
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "sha256": "5e7d874fb9be14227f34ea1537f7d1b774ac3c77e7a6ee14d9ac711f66b8696e"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "base_blob_sha": "8c1583baf462c1318441a4290298e90b76c55844",
+      "bytes": 4532,
+      "git_blob_sha": "e1b7ad0c29e47501ce5163d6d02b2fbece5b8f2e",
+      "lines": 126,
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "sha256": "67a617ee16a8b359c27fa83eddfc2520b33b44effafae9e026be6ce5ad09bae6"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+      "base_blob_sha": "2edc7922bf531153e2406d6c096a9f6b8e246d97",
+      "bytes": 16772,
+      "git_blob_sha": "79e25dacb25f5c822a9a348b450b01f0ab79cecc",
+      "lines": 486,
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+      "sha256": "4eda5c5bcf3a7895d6150f1d8605e523da67b5a2538952aee5836ea0d974b1a9"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/resident_startup_diagnostic.rs",
+      "base_blob_sha": null,
+      "bytes": 15538,
+      "git_blob_sha": "bc8eb1390c6a80f12dce0099271640ed4cf94441",
+      "lines": 455,
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic.rs",
+      "sha256": "b34179b5b198a0529e5265a9022a0be3857d7b2f7218de78b02cf06afc984dbb"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime/src/resident_startup_diagnostic_tests.rs",
+      "base_blob_sha": null,
+      "bytes": 14371,
+      "git_blob_sha": "708290e6d53f8783dd95d96b769d3715c7029f10",
+      "lines": 367,
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic_tests.rs",
+      "sha256": "69617ae4bd7213698aebc1aabd02920ffeb50d6812b9aa6baa585c18adb47994"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/scripts/native_slo_stream_diagnostic.py",
+      "base_blob_sha": null,
+      "bytes": 17073,
+      "git_blob_sha": "6b50ccd969737149553291c989f83b249ba7bab7",
+      "lines": 414,
+      "path": "scripts/native_slo_stream_diagnostic.py",
+      "sha256": "da1e8c5becb9b3ab546b7fa83687fac69ffc9fc8fc4c1e2c09bfbecc3852eff3"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/scripts/ci/run_native_stream_phase_diagnostic.py",
+      "base_blob_sha": null,
+      "bytes": 5793,
+      "git_blob_sha": "94d7c1ea8dc9a0a9412e9426f19bc998cb3f8e4b",
+      "lines": 143,
+      "path": "scripts/ci/run_native_stream_phase_diagnostic.py",
+      "sha256": "003229f4f0e3672e1d5e843fd5c86a096f6fc01a6e119c7760b78ba4d16106a1"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/scripts/ci/windows_stream_diagnostics.py",
+      "base_blob_sha": null,
+      "bytes": 14515,
+      "git_blob_sha": "df4c7c37931003bf37f922af68974c1784c1c026",
+      "lines": 341,
+      "path": "scripts/ci/windows_stream_diagnostics.py",
+      "sha256": "7ad3fe766c6270b685f6e30ef96addf97cfa91e1446204d6303bac169ce4a090"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/scripts/ci/windows_stream_json_capture.py",
+      "base_blob_sha": null,
+      "bytes": 9272,
+      "git_blob_sha": "40b688b394802aee1f57461dc919a4785618811a",
+      "lines": 224,
+      "path": "scripts/ci/windows_stream_json_capture.py",
+      "sha256": "46c449fa141bed6f9e4a204ada7facbf9be7eb7d3fa99a5083e0ca93fbe98256"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/tests/test_native_stream_phase_diagnostic.py",
+      "base_blob_sha": null,
+      "bytes": 13171,
+      "git_blob_sha": "def4c80c44a2a05233a739fe000f134cc7cf1c6c",
+      "lines": 329,
+      "path": "tests/test_native_stream_phase_diagnostic.py",
+      "sha256": "14824640a6a7adee4c158762347a78d0dad0abf26ed37b8ab71bcae91506a418"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/tests/test_windows_stream_diagnostics.py",
+      "base_blob_sha": null,
+      "bytes": 13458,
+      "git_blob_sha": "3c60c5e5d5a5a47e146da4941bd60f1432529b3a",
+      "lines": 313,
+      "path": "tests/test_windows_stream_diagnostics.py",
+      "sha256": "34a3710c8debfa57a4c213adfc8414d7ed094d23b5466ed951806e3bcaa24245"
+    }
+  ],
+  "validation_files": [
+    {
+      "bytes": 1510,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/clippy.log",
+      "sha256": "7a068e7e517c34325d20255ff47278d8cc7de1103bfe1c5a732d57defd1cb7d8"
+    },
+    {
+      "bytes": 26,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/combined-format.log",
+      "sha256": "ef7d13d02214e98ca902b05257cdbe6a8e84f3b4714508efdc19766460b54209"
+    },
+    {
+      "bytes": 99,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/combined-python-controls.log",
+      "sha256": "53fa13bc356c4092cfec6f702155f7860c49df079aaa6784f5e54d8ec603c5d9"
+    },
+    {
+      "bytes": 19,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/combined-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "bytes": 1876,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/default-client-tests.log",
+      "sha256": "b64e0d92548416f8134284a7f7f03c9867bfa4ca908f06c1756221ce8efde9e9"
+    },
+    {
+      "bytes": 532,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/default-erasure.log",
+      "sha256": "b6d459e9863dc1aab7afc77ae17fc0bf3153cf17bff76fa1e11f327fafd286be"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 22699,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/feature-runtime-tests.log",
+      "sha256": "3771d31ceebf8a806f4989dd30b42154709aedb351d0e63504e7f8b9ea1001dc"
+    },
+    {
+      "bytes": 5143,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/final-feature-resident-tests.log",
+      "sha256": "a81ce90dc7dd863732144b58b422d89c6d52515d29a38580dbc0c2484ced0732"
+    },
+    {
+      "bytes": 26,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/format.log",
+      "sha256": "eee76f865de5a9f2456950f710ae5d5f9b5bd0ea02aa54f614c5eed6642a0bfd"
+    },
+    {
+      "bytes": 99,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/python-controls.log",
+      "sha256": "c9daa0319a0ac3395e2bebebdfc9ea58ab483e738ce7030d8341f0bfbf71a4ab"
+    },
+    {
+      "bytes": 19,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/rust-format.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 153117,
+      "path": "/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-validation/combined-types.json",
+      "sha256": "1850510fc78f00912602236c018eb772bc88b93c97cf608fdd6a09ff329d413e"
+    }
+  ],
+  "windows_driver_workflow": "Parent publisher binds separately; use the same diagnostic source SHA/tree."
+}

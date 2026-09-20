@@ -1,0 +1,57 @@
+   Compiling hol-guard-runtime v0.1.0 (/workspace/scratch/745337b67ff9/mac-capacity-diagnostic-prep/rust/crates/guard-runtime)
+    Finished `test` profile [unoptimized] target(s) in 8.92s
+     Running unittests src/main.rs (/dev/shm/pr2974-native-target/debug/deps/hol_guard_runtime-5e78d44b8379f3c4)
+
+running 49 tests
+test managed_resident::tests::client_leases_keep_shared_resident_alive_until_last_client_closes ... ok
+test managed_resident::tests::managed_owner_lock_is_exclusive_for_resident_lifetime ... ok
+test policy_store::tests::restarted_resident_applies_installed_policy_without_request_time_io ... ok
+test resident_client::deadline_tests::buffered_fallback_cannot_bypass_absolute_deadline_after_read ... ok
+test resident_client::deadline_tests::fragmented_response_header_cannot_renew_request_budget ... ok
+test resident_client::deadline_tests::fragmented_server_proof_cannot_renew_authentication_budget ... ok
+test resident_client::deadline_tests::progressing_backpressured_request_write_remains_bounded_and_nonretryable ... ok
+test resident_client::deadline_tests::resident_stream_diagnostic_expired_precheck_is_not_a_socket_setter_error ... ok
+test resident_client::deadline_tests::response_body_uses_time_left_after_header_and_partial_reads ... ok
+test resident_client::deadline_tests::timely_authenticated_socket_response_is_unchanged ... ok
+test resident_client::deadline_tests::timely_authentication_rejection_keeps_its_fatal_error ... ok
+test resident_client::deadline_tests::unsupported_timeout_error_is_preserved_without_reading ... ok
+test resident_client::deadline_tests::zero_budget_is_rejected_before_endpoint_or_process_access ... ok
+test resident_client::tests::closed_socket_during_auth_nonce_write_carries_teardown_evidence ... ok
+test resident_client::tests::partial_or_flush_request_write_is_never_retryable ... ok
+test resident_client::tests::rejects_non_loopback_tcp_endpoint ... ok
+test resident_client::tests::rejects_response_bound_to_another_request ... ok
+test resident_client::tests::rejects_response_digest_mismatch ... ok
+test resident_client::tests::response_eof_and_reset_are_never_retryable ... ok
+test resident_client::tests::response_teardown_after_flushed_request_is_never_retryable ... ok
+test resident_client::tests::truncated_server_proof_is_never_retryable ... ok
+test resident_protocol::tests::approval_error_transport_is_finite ... ok
+test resident_protocol::tests::approval_requests_have_a_smaller_raw_payload_bound ... ok
+test resident_protocol::tests::command_control_error_transport_preserves_only_registered_fixed_codes ... ok
+test resident_protocol::tests::lifecycle_disposition_follows_strictly_validated_operation ... ok
+test resident_startup_diagnostic::tests::enabled::actual_managed_authentication_failure_retains_leaf_phase_without_replay ... ok
+test resident_startup_diagnostic::tests::enabled::bounded_events_preserve_first_fatal_code_and_never_export_raw_errors ... ok
+test resident_startup_diagnostic::tests::enabled::failed_diagnostic_export_does_not_replace_the_operation_error ... ok
+test resident_startup_diagnostic::tests::enabled::frame_export_is_bounded_and_reports_loss_once_without_repeating_request ... ok
+test resident_startup_diagnostic::tests::enabled::observation_keeps_same_operation_result_and_original_payload_budget ... ok
+test resident_startup_diagnostic::tests::enabled::only_the_owned_thread_and_explicit_capture_are_observed ... ok
+test resident_startup_diagnostic::tests::enabled::original_frame_deadline_and_unassigned_setter_error_are_preserved ... ok
+test resident_startup_diagnostic::tests::enabled::timeout_configuration_and_read_errors_remain_distinct_after_outer_mapping ... ok
+test resident_state::resident_state_files::tests::would_block_is_lock_contention ... ok
+test resident_state::tests::home_state_discovery_allows_nonmatching_entries_within_bound ... ok
+test resident_state::tests::home_state_discovery_fails_closed_on_many_state_entries ... ok
+test resident_state::tests::home_state_discovery_fails_closed_on_total_entry_overflow ... ok
+test resident_state::tests::home_state_discovery_rejects_seventeenth_matching_scope ... ok
+test resident_state::tests::preferred_runtime_scope_is_found_after_the_fallback_scope_bound ... ok
+test resident_state::tests::process_identity_rejects_a_reused_same_binary_pid_marker ... ok
+test resident_state::tests::publishing_fails_closed_when_scope_entry_bound_is_exceeded ... ok
+test resident_state::tests::publishing_generations_retires_superseded_state ... ok
+test resident_state::tests::stale_startup_lock_recovery_preserves_lockfile_for_reuse ... ok
+test resident_state::tests::startup_lock_drop_preserves_stable_private_lockfile ... ok
+test resident_state::tests::startup_lock_holds_advisory_lock_until_drop ... ok
+test resident_state::tests::startup_lock_repeated_acquisition_rewrites_without_growth ... ok
+test resident_state::tests::state_mac_rejects_endpoint_mutation ... ok
+test tests::resident_hmac_changes_with_nonce ... ok
+test tests::resident_hmac_matches_cross_language_vectors ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 158 filtered out; finished in 2.73s
+

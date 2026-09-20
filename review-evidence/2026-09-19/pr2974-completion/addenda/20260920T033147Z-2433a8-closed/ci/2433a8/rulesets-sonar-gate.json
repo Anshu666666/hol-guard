@@ -1,0 +1,174 @@
+{
+  "observed_at": "2026-09-20T02:44:00Z",
+  "target_branch": "release/3.2",
+  "default_branch": "main",
+  "rulesets": [
+    {
+      "id": 14511015,
+      "name": "main",
+      "target": "branch",
+      "source_type": "Repository",
+      "source": "hashgraph-online/hol-guard",
+      "enforcement": "active",
+      "conditions": {
+        "ref_name": {
+          "exclude": [],
+          "include": [
+            "~DEFAULT_BRANCH",
+            "refs/heads/main",
+            "refs/heads/release/2.2",
+            "refs/heads/release/3.0",
+            "refs/heads/release/3.1",
+            "refs/heads/release/3.2"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "type": "deletion"
+        },
+        {
+          "type": "non_fast_forward"
+        },
+        {
+          "type": "pull_request",
+          "parameters": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews_on_push": true,
+            "required_reviewers": [],
+            "require_code_owner_review": true,
+            "dismissal_restriction": {
+              "enabled": false,
+              "allowed_actors": []
+            },
+            "require_last_push_approval": true,
+            "required_review_thread_resolution": true,
+            "require_extra_approval_for_unattributed_changes": true,
+            "allowed_merge_methods": [
+              "merge",
+              "squash",
+              "rebase"
+            ]
+          }
+        },
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": true,
+            "do_not_enforce_on_create": false,
+            "required_status_checks": [
+              {
+                "context": "quality",
+                "integration_id": 15368
+              }
+            ]
+          }
+        }
+      ],
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5HNmuLzgDda6c",
+      "created_at": "2026-03-30T10:33:02.757-04:00",
+      "updated_at": "2026-09-13T13:44:12.733-04:00",
+      "bypass_actors": [],
+      "current_user_can_bypass": "never",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/hashgraph-online/hol-guard/rulesets/14511015"
+        },
+        "html": {
+          "href": "https://github.com/hashgraph-online/hol-guard/rules/14511015"
+        }
+      }
+    },
+    {
+      "id": 17369060,
+      "name": "main-status-checks",
+      "target": "branch",
+      "source_type": "Repository",
+      "source": "hashgraph-online/hol-guard",
+      "enforcement": "active",
+      "conditions": {
+        "ref_name": {
+          "exclude": [],
+          "include": [
+            "~DEFAULT_BRANCH"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": true,
+            "do_not_enforce_on_create": false,
+            "required_status_checks": [
+              {
+                "context": "ci (3.12)",
+                "integration_id": 15368
+              },
+              {
+                "context": "dashboard",
+                "integration_id": 15368
+              },
+              {
+                "context": "cisco-full",
+                "integration_id": 15368
+              },
+              {
+                "context": "Semgrep",
+                "integration_id": 15368
+              },
+              {
+                "context": "Gitleaks",
+                "integration_id": 15368
+              },
+              {
+                "context": "Trivy release scan",
+                "integration_id": 15368
+              },
+              {
+                "context": "CodeQL",
+                "integration_id": 15368
+              }
+            ]
+          }
+        }
+      ],
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5HNmuLzgEJB-Q",
+      "created_at": "2026-06-07T09:00:12.410-04:00",
+      "updated_at": "2026-09-13T13:34:49.666-04:00",
+      "bypass_actors": [],
+      "current_user_can_bypass": "never",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/hashgraph-online/hol-guard/rulesets/17369060"
+        },
+        "html": {
+          "href": "https://github.com/hashgraph-online/hol-guard/rules/17369060"
+        }
+      }
+    }
+  ],
+  "sonar_workflow_condition": {
+    "source": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+    "path": ".github/workflows/ci.yml",
+    "guard_needs": [
+      "tests"
+    ],
+    "job_needs": [
+      "sonar-guard",
+      "tests"
+    ],
+    "condition": "needs.sonar-guard.outputs.has-token == 'true' && vars.SONAR_CI_ENABLED == 'true'",
+    "gate_failure": {
+      "job": 106007530760,
+      "external_check": 106008273282,
+      "reliability_rating": "D",
+      "required_rating": "A"
+    },
+    "sonar_is_ruleset_required_for_release_3_2": false
+  },
+  "branch_protection_read": {
+    "status": "unavailable",
+    "reason": "connector rejects encoded branch path; rulesets successfully read"
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "schema": "hol-guard-source-validation.v1",
+  "frozen_at_utc": "2026-09-20T03:02:42.157652+00:00",
+  "source_base_commit": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "source_base_tree": "b0a1de665e3e0ea5da1252ad15fdf25716738d32",
+  "source_files": {
+    "scripts/native_slo_workspace_lifecycle.py": {
+      "sha256": "e9f693d124704a3389adc48781fb5be32c86afb7a3d11a452cf85bab6adc9210",
+      "bytes": 16597,
+      "lines": 358
+    },
+    "tests/test_native_slo_workspace_lifecycle_order.py": {
+      "sha256": "4c3efc13f2dee3225904a96899c9ebd4fae963b3c50bd2765f1754d7246955a1",
+      "bytes": 10946,
+      "lines": 260
+    }
+  },
+  "observed_failure": {
+    "run_id": 35483934026,
+    "job_id": 106006668240,
+    "artifact_id": 10596367945,
+    "zip_sha256": "5e78a7b8e6aa8e3a52bd8e128e57f750373d50138c226bac94f429411083dc63",
+    "full_workspace_cells": "/workspace/scratch/745337b67ff9/ci-review-evidence/2433a8/observer/workspace-cells-reconstructed.json"
+  },
+  "changes": [
+    "Observe the constructor-started cold native publisher ACK and publication chain before calling full daemon.start, under the original all-registrations-returned acceptance timestamp and 400 ms deadline.",
+    "Retain mandatory full service startup and its separate clocks; re-read authenticated native authority and require the live publisher snapshot to match before any owned HTTP probe.",
+    "Require the publisher live snapshot to remain identical after authenticated readback before await_ack returns; preserve original deadline and publisher invalidation."
+  ],
+  "validation": [
+    {
+      "command": "uv run --no-sync pytest --tb=short -q tests/test_native_slo_workspace_lifecycle_order.py -k withdrawn_during_readback",
+      "source": "before final authority fence",
+      "result": "2 expected failures prove stale returns with real explicit and metadata publisher invalidation"
+    },
+    {
+      "command": "uv run --no-sync pytest --tb=short -q tests/test_native_slo_workspace_lifecycle_order.py tests/test_native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_clocks.py tests/test_native_slo_workspace_lifecycle_faults.py tests/test_native_slo_workspace_lifecycle_evidence.py tests/test_native_slo_workspace_lifecycle_runner.py tests/test_native_slo_expiry.py",
+      "result": "117 passed in 25.01s"
+    },
+    {
+      "command": "uv run --no-sync pytest --tb=short -q tests/test_native_slo_workspace_lifecycle_order.py",
+      "source": "final formatted files",
+      "result": ".......                                                                  [100%]\n7 passed in 1.00s"
+    },
+    {
+      "command": "uv run --no-sync ruff check scripts/native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "All checks passed!"
+    },
+    {
+      "command": "uv run --no-sync ruff format --check scripts/native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "2 files already formatted"
+    },
+    {
+      "command": "uv run --no-sync basedpyright --pythonversion 3.12 scripts/native_slo_workspace_lifecycle.py",
+      "result": "0 errors, 85 warnings, 0 notes"
+    }
+  ],
+  "prior_control_setup_failure": "The first order reproduction used an incomplete observer double missing freeze; the log is retained separately. The corrected pre-fix control then failed at the same authenticated ACK deadline as the installed workload.",
+  "logs": {
+    "lifecycle-order-before.log": {
+      "sha256": "705e45efc58b675779cd4c43aba8770b5adea11d44c07cef8350fd9c199c163f",
+      "bytes": 1057,
+      "lines": 13
+    },
+    "lifecycle-order-before-native-deadline.log": {
+      "sha256": "b05be59f426a71072de03292938e3d3a32e768085c1e4d518fab6bd4e2c6f428",
+      "bytes": 918,
+      "lines": 10
+    },
+    "lifecycle-ack-fence-before.log": {
+      "sha256": "b82c3aa3913a80ee6c1424091a1451d713d40150bd004809d45b993b96ef50bd",
+      "bytes": 1306,
+      "lines": 14
+    },
+    "lifecycle-order-and-ack-fence-after.log": {
+      "sha256": "6a117e5b46fbfde4c9131b01476ccf75d42f2fd7f985c223f6b7ae9cf2ac8152",
+      "bytes": 98,
+      "lines": 2
+    },
+    "lifecycle-repair-cohort.log": {
+      "sha256": "d57af9d576ee0635b6e464825658d9200119ef2a7693843e518a73c63c40f987",
+      "bytes": 181,
+      "lines": 3
+    },
+    "lifecycle-order-formatted-source.log": {
+      "sha256": "6e17d0e2abd033c981f9408310ab97bf4daa68f2d8379372c51ccf3ed1a0c8db",
+      "bytes": 98,
+      "lines": 2
+    },
+    "lifecycle-repair-ruff.log": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19,
+      "lines": 1
+    },
+    "lifecycle-repair-format.log": {
+      "sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938",
+      "bytes": 26,
+      "lines": 1
+    },
+    "lifecycle-repair-types.log": {
+      "sha256": "17fd7b9e43a68f19add639759bdaf88aa3b2d7f9a2cb26d69f3b61c749cb98f2",
+      "bytes": 14424,
+      "lines": 102
+    }
+  },
+  "peer_review": {
+    "reviewer": "ci_review_audit",
+    "mode": "read-only",
+    "blocking_findings": [],
+    "invariants": "Original acceptance/deadline and full-startup work/errors preserved; live authenticated authority checked before probe; no cached authority reuse or publisher invalidation change."
+  },
+  "limits": [
+    "New controls use explicit native ACK, authenticated readback and HTTP doubles; they do not produce installed native timing evidence.",
+    "The real publisher metadata control proves withdrawal with unchanged effective fingerprint, epoch and no error, but does not prove the exact interleaving of the hosted expiry failure.",
+    "Legitimate authority withdrawal after await_ack returns still fails expiry admission; no atomic snapshot-and-close fixture was introduced.",
+    "Accepted-to-offer and full daemon-start times remain explicit; the 400 ms ACK proof does not claim complete service startup within 400 ms.",
+    "No production source, readiness bound, hook deadline, authentication, replay or containment policy changed.",
+    "Actual installed lifecycle rerun and all-platform qualification remain required."
+  ],
+  "qualification_complete": false,
+  "supersedes": {
+    "path": "/workspace/scratch/745337b67ff9/workspace-lifecycle-order-repair/validation.json",
+    "sha256": "7b63eab9b65700e9b02c91e78cbbba3d01318f9112f1c4280fad9a31212db09c",
+    "bytes": 6183,
+    "lines": 121,
+    "preserved_unchanged": true
+  },
+  "final_test_typing_correction": "Explicit nullable fixture snapshot types, invariant dict[str, object] for real publisher state, cast result JSON mappings, and a non-null fixture guard before its deliberate generation mutation. Runtime diagnostic source is unchanged from the initial freeze.",
+  "additional_validation": [
+    {
+      "command": "uv run --no-sync pytest --tb=short -q tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "7 passed in 0.61s",
+      "source": "final typed test and unchanged runtime diagnostic source"
+    },
+    {
+      "command": "uv run --no-sync basedpyright --pythonversion 3.12 scripts/native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "0 errors, 261 warnings, 0 notes"
+    },
+    {
+      "command": "uv run --no-sync ruff check scripts/native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "All checks passed!"
+    },
+    {
+      "command": "uv run --no-sync ruff format --check scripts/native_slo_workspace_lifecycle.py tests/test_native_slo_workspace_lifecycle_order.py",
+      "result": "2 files already formatted"
+    },
+    {
+      "owner": "root",
+      "scope": "17-module combined cohort before this test-only typing correction",
+      "result": "284 passed in 37.02s",
+      "session_id": 57379
+    }
+  ],
+  "initial_expanded_type_failure": {
+    "path": "/workspace/scratch/745337b67ff9/review-followup-combined-verification/types.log",
+    "sha256": "be180315124923be12fec7b0ac8ad69cce3b42b6bf75c92f005d597ef7fc7e4c",
+    "bytes": 59544,
+    "lines": 384,
+    "result": "11 errors in the new test module; initial script-only type scope had not checked this file"
+  },
+  "final_logs": {
+    "final-control-tests.log": {
+      "sha256": "1874b47a6432969fc829a7aa42f0385f4307a8d7af57a127368403918405344e",
+      "bytes": 98,
+      "lines": 2
+    },
+    "final-types.log": {
+      "sha256": "c558a54e9f2a4eba688906170c4568bf482f28187d7cf20e05e7dcc4a2f1e446",
+      "bytes": 48101,
+      "lines": 302
+    },
+    "final-ruff.log": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19,
+      "lines": 1
+    },
+    "final-format.log": {
+      "sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938",
+      "bytes": 26,
+      "lines": 1
+    }
+  }
+}

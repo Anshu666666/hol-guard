@@ -1,0 +1,172 @@
+{
+  "base_sha": "ed7313dff240292a482c53410a2492f80ba8a220",
+  "scope": "macOS Unix read timeout EINVAL with independently observed peer hangup; nonblocking buffered receive only",
+  "files": [
+    {
+      "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+      "base_blob": "c0d7119a905d3b76b7111850ff8498e65137dd97",
+      "base_sha256": "4424adc17785ffebd0423d008a3ad25c7a26452265e3075f63ed374a425df5be",
+      "sha256": "f09c705e70d31fcbdc34a0d453b080b38caf25c58c5544897cf5c7ef1f0de1f1",
+      "git_blob": "8b36d60c1e70d721540484f618ac496fec71567e",
+      "bytes": 15133,
+      "lines": 411
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+      "base_blob": "fbb7a459c84eab83a31422ba268ad1cf2086cc1b",
+      "base_sha256": "c374cc8b7d196db2569f249a5f35447670b8f4f3ffc47f4c15b12e480d24f241",
+      "sha256": "74cd0cd33fe440087f8340b57b9f3d577bea4983f8badb6b1ccb8e8f8707d9a7",
+      "git_blob": "8c1583baf462c1318441a4290298e90b76c55844",
+      "bytes": 3724,
+      "lines": 111
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+      "base_blob": "949bef043b6741e6f15af4104f4b0fe8cbc1222e",
+      "base_sha256": "20ccf81918af9010a68022bd0a36f5e0424b441a7dd17643301946e29b8e0115",
+      "sha256": "8522048df61ba22772f57e4a1b7e382e63f946acc919b36981c8fe1533e69c92",
+      "git_blob": "2edc7922bf531153e2406d6c096a9f6b8e246d97",
+      "bytes": 15406,
+      "lines": 453
+    }
+  ],
+  "patch_sha256": "9263fc7d4be49b588baa2c3307d9b59a4605fc8d123853ced14f8b2f3a947800",
+  "validation": {
+    "rust_version": "1.88.0",
+    "commands": [
+      [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "-p",
+        "hol-guard-runtime",
+        "-j2",
+        "resident_client",
+        "--",
+        "--nocapture"
+      ],
+      [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "--workspace",
+        "-j2"
+      ],
+      [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "rust/Cargo.toml",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ]
+    ],
+    "selected_client_passed": 17,
+    "workspace_passed": 297,
+    "workspace_failed": 0,
+    "workspace_ignored": 6,
+    "clippy_passed": true,
+    "rustfmt_check_passed": true,
+    "git_diff_check_passed": true,
+    "local_mac_controls_executed": false,
+    "hosted_mac_controls_required": 4,
+    "initial_cached_dependency_mismatch": "Old diagnostic checkout guard-contracts/hook-core metadata was invalidated by cargo clean -p guard-contracts -p guard-hook-core; all affected contract dependents rebuilt successfully."
+  },
+  "read_only_peer_review": {
+    "agent": "/root/native_runtime_audit",
+    "result": "No concrete blocker; Mac body still requires hosted platform execution."
+  },
+  "logs": {
+    "client-controls.log": {
+      "sha256": "83ce66c48a0195fb6a13ac3f2ad6f6090b2e9e0179c173f58a2bb0ef3f230bc7",
+      "bytes": 3024
+    },
+    "client-controls-rebuilt.log": {
+      "sha256": "4d8f0dbca40fbc742c4eb450f5946ced42d5a8ef6e34243b7c3225fa81185207",
+      "bytes": 2425
+    },
+    "workspace-controls.log": {
+      "sha256": "04ff957dadd5cc509d0a4c74e8855f37a9f35a6774e0850e3ae079280f485997",
+      "bytes": 33559
+    },
+    "clippy.log": {
+      "sha256": "01bd39980393696b628667e19adfb3ba895ba00b150d330e4a43da47b0535c6a",
+      "bytes": 821
+    }
+  },
+  "causal_hosted_evidence": [
+    {
+      "record": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-io-0bf2452e/mac-arm-artifact-verification.json",
+      "sha256": "a03193edafe64f80a75d431b44bceb1b7da714f297ac27924816904b2107efb3",
+      "artifact_id": 10596039362,
+      "run_id": 35482336444,
+      "job_id": 106002258766,
+      "driver_sha": "8df9ef3756dbab256a65e32e916cc102b6ba1818",
+      "source_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+      "bytes": 8244170,
+      "digest_verified": true,
+      "source_tree": "f472f8f04eeda458f166dd6840af6a2047888cdc",
+      "tracked_source_unchanged": true,
+      "wheel_sha256": "5c7a0cb11ead964f3bd0d5bef0d071cf4615311b87976e80e31fc977cc4ad070",
+      "embedded_runtime_sha256": "7126b4110df51269f11e41aa614331d19ded2871cb4eb466966c6b0fa11a9ef5",
+      "embedded_runtime_bytes": 10817744,
+      "diagnostic_sha256": "3b240d99cebc5910413621ddf93e73f55f1d90655803096493b3e4d4a04353ea",
+      "closed_peer_control": {
+        "name": "resident_client::resident_startup_diagnostic_closed_peer_tests::closed_unix_peer_rejects_timeout_reset_but_retains_complete_bound_response",
+        "passed": true
+      },
+      "native_selected_tests_passed": 7,
+      "python_tests_passed": 24,
+      "actual_read_failure": {
+        "kind": "invalid_input",
+        "operation": "read_timeout_configuration",
+        "os_code": 22
+      },
+      "qualification": false
+    },
+    {
+      "record": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-io-0bf2452e/mac-intel-artifact-verification.json",
+      "sha256": "85827e3306901e876212100ff1bf96eb7d39c70ad5aa521c2bbb3cd9a7c5d39b",
+      "artifact_id": 10596915250,
+      "run_id": 35482336444,
+      "job_id": 106002258665,
+      "driver_sha": "8df9ef3756dbab256a65e32e916cc102b6ba1818",
+      "source_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+      "source_tree": "f472f8f04eeda458f166dd6840af6a2047888cdc",
+      "bytes": 8382311,
+      "digest_verified": true,
+      "tracked_source_unchanged": true,
+      "wheel_sha256": "80f9efda783d3f59e6df041453279592c782a602e6ab0903fca4f96179bcc1a0",
+      "embedded_runtime_sha256": "63a82c4267ca2c4f4949e633916af0361215c3984d4f7e05207f1b7a2181a73b",
+      "embedded_runtime_bytes": 11344460,
+      "diagnostic_sha256": "b096d72897545cee7e08ca04480405248e0869b8c1396d7fdf1c41a6af3056bd",
+      "closed_peer_control": {
+        "name": "resident_client::resident_startup_diagnostic_closed_peer_tests::closed_unix_peer_rejects_timeout_reset_but_retains_complete_bound_response",
+        "passed": true
+      },
+      "native_selected_tests_passed": 7,
+      "python_tests_passed": 24,
+      "actual_read_failure": {
+        "kind": "invalid_input",
+        "operation": "read_timeout_configuration",
+        "os_code": 22
+      },
+      "qualification": false
+    }
+  ],
+  "qualification": false,
+  "hosted_repaired_installed_startup_passed": false
+}

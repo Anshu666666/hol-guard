@@ -1,0 +1,24 @@
+Both macOS ARM and Intel diagnostics now identify the failed operation: the read-timeout setter returns EINVAL (22) after the first signed policy push has authenticated and finished writing. A bounded production repair is ready; its installed Mac validation remains pending.
+
+The first diagnostic [source 71f24e16](https://github.com/hashgraph-online/hol-guard/commit/71f24e16f52c0851d45cbb2585bf3309769ce0f8), built by [driver eabb0b41](https://github.com/hashgraph-online/hol-guard/commit/eabb0b41f6cc0ffbcf75d4dba636ce0cafd14853), located EINVAL inside committed-response reading. The second [source 0bf2452e](https://github.com/hashgraph-online/hol-guard/commit/0bf2452e74e58e1e41b9160b55290e33d1bf26ef), built by [driver 8df9ef37](https://github.com/hashgraph-online/hol-guard/commit/8df9ef3756dbab256a65e32e916cc102b6ba1818), separates timeout configuration from the read syscall. [Run 35481385756](https://github.com/hashgraph-online/hol-guard/actions/runs/35481385756) and [run 35482336444](https://github.com/hashgraph-online/hol-guard/actions/runs/35482336444) retain both failed Mac samples. Full source/tree, driver/tree, embedded-runtime, wheel, archive and diagnostic SHA256 identities are in [audit.json](audit.json).
+
+| Sample | Verified artifact | I/O operation retained | Native / Python controls passed |
+|---|---:|---|---:|
+| v1 / mac-arm | 10595239834 | setter/read not separated | 5 / 23 |
+| v1 / mac-intel | 10595648656 | setter/read not separated | 5 / 23 |
+| v2 / mac-arm | 10596039362 | read_timeout_configuration | 7 / 24 |
+| v2 / mac-intel | 10596915250 | read_timeout_configuration | 7 / 24 |
+
+Both v2 jobs passed the real Unix-socket closed-peer regression: while the peer is open, the timeout setter succeeds; after the peer writes a complete bound frame and closes, the original setter and deadline wrapper return EINVAL (22). A separate diagnostic nonblocking read still validates the original response magic, request ID, length and digest. Together with the two actual policy-push setter failures, this establishes the concrete Mac socket-close defect. The relevant transport, deadline and client source remained unchanged between original 3780 and product head ed7313.
+
+Each diagnostic sends one explicit cold policy push using the real publisher payload construction and native identity. The production publisher normally uses a persistent framed client. Native and outer request budgets remain 2000 ms, and the diagnostics add no replay. These one-shot diagnostic builds do not establish default-runtime startup or performance qualification.
+
+All four observations remain failures: ACK validation, authenticated stop, full containment and observation completeness are false. The direct diagnostic children were reaped, and resident state was absent after cleanup. Those facts do not establish complete descendant containment. Existing raw archives and frozen records are preserved; this report adds later findings without revising them.
+
+The repair changes three existing Rust files: `resident_transport.rs`, `resident_client_deadline.rs` and its deadline tests. Only macOS UnixStream can use the new path. It requires the exact failed setter EINVAL, an immediate same-descriptor POLLHUP observation, no poll/ERR/NVAL failure, and a live phase deadline before one MSG_DONTWAIT receive. The socket mode stays unchanged. The original post-read deadline, authenticated framing, request binding, digest validation and fatal response semantics continue to apply. Other setter failures retain their original error.
+
+Current-source local validation passed 17 client controls and 297 workspace tests; six existing tests remain ignored. All-target/all-feature Clippy, rustfmt and diff checks passed. A stale cross-checkout dependency cache was invalidated before the successful build; the affected current contract dependents were rebuilt. The [frozen repair manifest](repair/source-and-validation-manifest.json) binds all three files and the validation logs. These Linux results do not execute the Mac-only implementation or its four new platform controls.
+
+The root-owned Mac workflow now selects 21 resident-client tests on both Mac hosts before building the native wheel. Its four new controls require a complete buffered response, fatal rejection of bad binding/digest/truncation, unchanged socket mode, unread bytes after deadline expiry, and exact EINVAL plus actual hangup. The successor source SHA, these hosted controls, ordinary installed default-auto behavior and installed SLO results are pending. No startup recovery or full PRD qualification is claimed here.
+
+The implementation lesson is to retain the exact failing I/O stage before a public error is collapsed, reproduce peer-close behavior with a fully validated frame, and preserve absolute deadlines and fatal no-replay rules while consuming only bytes already available from the authenticated connection.

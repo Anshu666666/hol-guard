@@ -1,0 +1,98 @@
+{
+  "schema": "hol-guard.mac-startup-diagnostic-final-preparation.v1",
+  "base_commit": "3780ad899ad6c42c91049b2a15fef138e911443f",
+  "base_tree": "424770b711053bfc28aea50556041f200dd7d6b6",
+  "source_root": "/workspace/scratch/745337b67ff9/mac-startup-diagnostic-prep",
+  "source_files": [
+    {
+      "path": "rust/crates/guard-runtime/src/main.rs",
+      "bytes": 15015,
+      "lines": 374,
+      "base_git_blob_sha": "e02848425bdeaabccc6f52acb6f5092b5fb79781",
+      "candidate_git_blob_sha": "8ae5c813d85646c4b2d7953a0b2a7ea512587070",
+      "sha256": "482de7c683b7f778630dfd69f13607b39da8a6b5cea63c5a754d312bfa91a90b"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/managed_resident.rs",
+      "bytes": 17683,
+      "lines": 500,
+      "base_git_blob_sha": "5726f25f54751f785530f7046d04247219b2bae9",
+      "candidate_git_blob_sha": "3800156f112f5a42a73576a29805a6713eb68cf1",
+      "sha256": "19ab558d74619b2420e9df34e8ee50771981287557d33cd87e2c35114c39c99f"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_client.rs",
+      "bytes": 15420,
+      "lines": 421,
+      "base_git_blob_sha": "7af7627235fa59880625dd7cc51a6cb1b93f30ea",
+      "candidate_git_blob_sha": "68b7fd1481bce7fd90b3d75f39e536c978cd75d7",
+      "sha256": "5e7d874fb9be14227f34ea1537f7d1b774ac3c77e7a6ee14d9ac711f66b8696e"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic.rs",
+      "bytes": 10513,
+      "lines": 299,
+      "base_git_blob_sha": null,
+      "candidate_git_blob_sha": "d3ae2ec0fae99b6d995c16bd9439ce6c8c33bc72",
+      "sha256": "8450af431676b5cbdaf55759985a4fa2f8586bbbeb0206af58df6ed1fc0caf3c"
+    },
+    {
+      "path": "rust/crates/guard-runtime/src/resident_startup_diagnostic_tests.rs",
+      "bytes": 8803,
+      "lines": 219,
+      "base_git_blob_sha": null,
+      "candidate_git_blob_sha": "5beb488c780e7d89b730e3c9b9a55f6ff6d30d3f",
+      "sha256": "dec20c60318a8eab5737c4180f0301c2aa1372da50edd2f1da797ed2c3282ec5"
+    },
+    {
+      "path": "scripts/ci/run_native_startup_phase_diagnostic.py",
+      "sha256": "108a4e5da522602c0bcaf9ca949297dd37c4827e76f2e01e3be4597a25a9be2d",
+      "bytes": 17777,
+      "lines": 426,
+      "candidate_git_blob_sha": "577b18b6d2e2c064be160e7946ea6c7bcaa3693a",
+      "base_git_blob_sha": null
+    },
+    {
+      "path": "tests/test_native_startup_phase_diagnostic.py",
+      "sha256": "62e6e38c56c93bfca47ccef9bc7d7693e3a7808c5796ddd6bfc7f6ba366b93b9",
+      "bytes": 11972,
+      "lines": 284,
+      "candidate_git_blob_sha": "aa5c589f33608194319ceaa2b173eacf45ba05b3",
+      "base_git_blob_sha": null
+    }
+  ],
+  "workflow_template": {
+    "path": ".github/workflows/native-resident-startup-phase-diagnostics.yml",
+    "sha256": "e3aa0fd9c7be9c06830d80018d4bce2879d8324dcbfc83e4e15bc5453840f050",
+    "bytes": 6859,
+    "lines": 141,
+    "candidate_git_blob_sha": "0d24a7bb9c5e3a3b493c8596e9ad2f54dcfb2879",
+    "base_git_blob_sha": null
+  },
+  "source_publication": "Seven files based on exact 3780; workflow excluded from source commit and separately bound to immutable source SHA/tree on unique push branch.",
+  "rust_validation_manifest": {
+    "path": "/workspace/scratch/745337b67ff9/mac-startup-diagnostic-validation/source-manifest.json",
+    "sha256": "4c5985fe2659389a9684ea6fd971e53c1c210e98d9fa20b1a5c70dc799b0b1c8"
+  },
+  "driver_validation_manifest": {
+    "path": "/workspace/scratch/745337b67ff9/mac-startup-driver-validation.json",
+    "sha256": "d76a9a549be406efaaddaf9391e510120255abb617004d0a47b0d8a05976e7c2"
+  },
+  "rust_controls_passed": 21,
+  "python_controls_passed": 23,
+  "clippy_all_targets_all_features": true,
+  "diagnostic_only": true,
+  "qualification": false,
+  "actual_macos_run": false,
+  "root_cause_established": false,
+  "limitations": [
+    "No actual macOS run has been performed on this diagnostic source.",
+    "Connect combines socket creation and existing peer identity checks.",
+    "The explicit one-shot CLI uses the same managed client path and payload budget; the original publisher uses a persistent framed client stream.",
+    "Operation total includes existing containment and cleanup before return.",
+    "Client phase timing cannot by itself prove why a server stopped waiting.",
+    "Default macros erase the collector and argument evaluation; the explicit diagnostic feature build is not eligible for qualification.",
+    "Ordinary authenticated stop must succeed and retire state for containment. Stop-unavailable plus absent state remains incomplete even if original managed failure already retired its state.",
+    "The original absolute two-second Python request deadline may expire before the after-operation native report is emitted; that remains an incomplete observation, without increasing any budget."
+  ]
+}

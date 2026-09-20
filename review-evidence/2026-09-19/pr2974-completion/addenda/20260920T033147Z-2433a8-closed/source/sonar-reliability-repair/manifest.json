@@ -1,0 +1,114 @@
+{
+  "change": "Worker preconditions and coordination failures raise explicit RuntimeError or TimeoutError. Existing BaseException collection, main-thread assertions, joins, and cleanup remain. Three real-thread negative controls prove missing connection, wrong query result, and query exception fail the test before its body and close the lease.",
+  "evidence": [
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/ci-review-evidence/2433a8/sonar-new-issues.json",
+      "bytes": 6958,
+      "sha256": "9922b69d2a2f420683ef70f1e7dc08c92cf2ef184c65e7fae2bb25570fe94cf0"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/ci-review-evidence/2433a8/sonar-ce-component.json",
+      "bytes": 587,
+      "sha256": "cc68b839990a7646ea186f0cabfc2101f3da0b80be3a07ee29f859b33748a6bd"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/sonar-reliability-repair/pytest.log",
+      "bytes": 99,
+      "sha256": "2e999fb79107c20d2bd7d1face6f8db240e2c68cbc21e7fb1baff586e8d0dc0b"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/sonar-reliability-repair/pytest.xml",
+      "bytes": 5732,
+      "sha256": "419f6e550042e91ca9c9465dfca60ff91962abbb24b1b148b3795d002991194e"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/sonar-reliability-repair/original-types.json",
+      "bytes": 81218,
+      "sha256": "4af0c8adc098f940fb108aa0ccf6901f626490899582b4d0a76f7db7cfdd3f70"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/sonar-reliability-repair/current-types.json",
+      "bytes": 77982,
+      "sha256": "f05393e54bbdc632cac1cc62e975e108cf54f4d046e44e5c95d08877d31e49bc"
+    }
+  ],
+  "files": [
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/hol-guard/tests/test_guard_storage_gate_concurrency.py",
+      "bytes": 7400,
+      "destination": "tests/test_guard_storage_gate_concurrency.py",
+      "lines": 178,
+      "sha256": "d054aabd9dbee960ad2221c0e89569abff0602d7100454d85199536e3d7ba878"
+    },
+    {
+      "absolute_path": "/workspace/scratch/745337b67ff9/hol-guard/tests/test_native_slo_sqlite_vfs.py",
+      "bytes": 21748,
+      "destination": "tests/test_native_slo_sqlite_vfs.py",
+      "lines": 496,
+      "sha256": "e04ec8443add66b5383314c185dd6eaf82e9e6e1abbc88642c4ec6187531e3d2"
+    }
+  ],
+  "gate": {
+    "analysis_id": "b67383de-253d-4712-ba67-48deb863e771",
+    "ce_task": "AaC8rV0HhttQouuq3fGS",
+    "current_hosted_gate_remains_failed": true,
+    "external_check": 106008273282,
+    "issue_keys": [
+      "AaC8rXojHJI3ouYwKuO3",
+      "AaC8rXojHJI3ouYwKuO4",
+      "AaC8rXojHJI3ouYwKuO5",
+      "AaC8rXhYHJI3ouYwKuO1",
+      "AaC8rXhYHJI3ouYwKuO2"
+    ],
+    "job": 106007530760,
+    "reliability_rating": "D",
+    "required_rating": "A",
+    "rule": "python:S5779",
+    "scm_revision": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+    "tested_merge": "7547248637d9809929055813ec49e26e00395498",
+    "workflow_run": 35483844991
+  },
+  "local_repair_published": false,
+  "published_source": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "schema": "hol-guard.pr2974-sonar-reliability-repair.v1",
+  "validation": {
+    "diff_check": "passed",
+    "format": "passed",
+    "fresh_hosted_sonar_analysis": "pending",
+    "initial_attempt": {
+      "passed": 14,
+      "reason": "local SQLite headers absent from default compiler search path",
+      "record": "/workspace/scratch/745337b67ff9/sonar-reliability-repair-tests.xml",
+      "setup_errors": 23
+    },
+    "pytest": {
+      "actual_sqlite_c_build": true,
+      "cpath": "/workspace/scratch/745337b67ff9/observer-local-build/sqlite-sdk",
+      "duration_seconds": 3.35,
+      "full_selected_modules": [
+        "tests/test_guard_storage_gate_concurrency.py",
+        "tests/test_native_slo_sqlite_vfs.py"
+      ],
+      "passed": 37
+    },
+    "ruff": "passed",
+    "typecheck": {
+      "current": {
+        "errorCount": 18,
+        "filesAnalyzed": 2,
+        "informationCount": 0,
+        "timeInSec": 5.272,
+        "warningCount": 118
+      },
+      "new_error_or_warning_messages": 0,
+      "original": {
+        "errorCount": 18,
+        "filesAnalyzed": 2,
+        "informationCount": 0,
+        "timeInSec": 2.083,
+        "warningCount": 118
+      },
+      "scope": "Explicit test files are outside the normal configured source-only CI check; original 18 errors/118 warnings reproduced unchanged."
+    }
+  }
+}

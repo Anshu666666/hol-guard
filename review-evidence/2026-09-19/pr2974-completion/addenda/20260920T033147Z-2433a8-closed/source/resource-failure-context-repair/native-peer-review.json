@@ -1,0 +1,28 @@
+{
+  "schema": "hol-guard-read-only-source-review.v1",
+  "reviewed_at_utc": "2026-09-20T02:55:25.649633+00:00",
+  "scope": "resource failure operation and role attribution",
+  "reviewer": "native_runtime_audit",
+  "source_files": {
+    "scripts/native_slo_resources.py": {
+      "sha256": "758e6ce225335ffc3f10372a1ac36cb19e03b2a39935a9c4965b107fde09cc6f",
+      "lines": 315
+    },
+    "tests/test_native_slo_resources.py": {
+      "sha256": "76e5c59ee56406a0ba1e9b83f493c4d65e17c1623d51ad396f4841d6ee777e60",
+      "lines": 376
+    }
+  },
+  "findings": [],
+  "invariants_reviewed": [
+    "Both existing inventory reads and two-attempt loop remain unchanged; no extra process reads are added.",
+    "Linux CPU iteration still performs exactly one _stat read per member of the same pre-sample inventory.",
+    "Only the final failed attempt contributes the fixed operation:role label; a successful second attempt does not contribute a missing-sample label.",
+    "Metric permission roles report the last denial per metric in each returned sample; metric unavailability and denial counts remain unchanged.",
+    "Process identifiers, names and exception messages are not exported.",
+    "No incompatible positional TreeResources caller found in repository scripts or tests.",
+    "Required sample minimum 30, zero-missing admission, interval, resource metrics, CPU denominator and incomplete short-lived descendant coverage are unchanged."
+  ],
+  "validation_scope": "read-only source and caller review; owner-executed tests not rerun by reviewer",
+  "qualification_complete": false
+}

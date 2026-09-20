@@ -1,0 +1,141 @@
+{
+  "parent": "ed7313dff240292a482c53410a2492f80ba8a220",
+  "files": [
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_schema.py",
+      "sha256": "d1a6948b0eef4f8340ffe52d5bdaf57cf1f1dc0b13dd29e71111db4fe2bf4f36",
+      "git_blob": "9b75a55ffad19896846e82c206e0cf3ffd5a3be8",
+      "lines": 476,
+      "bytes": 21408
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_lifecycle.py",
+      "sha256": "ca8924f5cd59ee617f3c002035aac32e8cf57006eb085b97d48f92a7a43a412a",
+      "git_blob": "682181516eafcdca8bdd9f83b199b43edb11bcdf",
+      "lines": 399,
+      "bytes": 21489
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_columns.py",
+      "sha256": "463429c9a0f877be788b076197e7916472a1e9ba1fe2323d24b6e9067f6a0da0",
+      "git_blob": "5566e7722b10d84cf511f087b3e86cd1c4647c4b",
+      "lines": 203,
+      "bytes": 9231
+    },
+    {
+      "path": "src/codex_plugin_scanner/guard/store_connection_statements.py",
+      "sha256": "a17d8e175c8c53c1390e67e556874445a5acf73a777e3dee8d7917c38dd8ed15",
+      "git_blob": "9e7fdbe48229640f964c68f836d21010db300572",
+      "lines": 405,
+      "bytes": 15293
+    },
+    {
+      "path": "tests/test_guard_storage_gate_concurrency.py",
+      "sha256": "5c228e81e6b73af027b1eb33029f6f8456dca2afeafb77e63fc3f34d96c4a996",
+      "git_blob": "bac12d160d3cab06fec8577990858ca55974d43c",
+      "lines": 148,
+      "bytes": 6110
+    }
+  ],
+  "scope": "Partition storage connection implementation below 500 physical lines per file while preserving live facade globals; replace only Windows storage gate CRT lease with the existing nonblocking shared Win32 helper.",
+  "source_audit": {
+    "original_source_sha256": "1fa357edd734f75d85d1f29a3cf825cad630ca82ac0023a4d2b499f4a2b74a8a",
+    "equivalent_methods": [
+      "_connect",
+      "_connect_once",
+      "_current_thread_owns_storage_recovery",
+      "_enable_wal_mode",
+      "_ensure_approval_column",
+      "_ensure_attachment_column",
+      "_ensure_column",
+      "_ensure_evidence_column",
+      "_ensure_local_device",
+      "_ensure_policy_column",
+      "_ensure_runtime_receipt_envelopes_table",
+      "_ensure_runtime_receipts_column",
+      "_hold_advisory_file_lock",
+      "_initialize_policy_integrity",
+      "_initialize_schema",
+      "_initialize_serialized",
+      "_initialize_serialized_once",
+      "_is_fatal_sqlite_error",
+      "_migrate_v5_receipt_envelopes",
+      "_record_schema_version",
+      "_recover_fatal_sqlite_store",
+      "_schema_is_current",
+      "_schema_version_applied",
+      "_sqlite_profiler",
+      "_store_is_proven_unusable",
+      "cloud_sync_in_progress",
+      "hold_cloud_sync_lock",
+      "hold_oauth_credential_lock",
+      "hold_oauth_refresh_lock",
+      "hold_workflow_capability_authority_lock",
+      "list_table_names",
+      "sqlite_migration_gate_report",
+      "sqlite_profile"
+    ],
+    "only_changed_method": "_hold_storage_gate",
+    "original_sql_tuple_elements": 54,
+    "sql_tuple_ast_exact": true,
+    "all_original_facade_class_fields_exact": true,
+    "fresh_process_import_orders_and_database_initialization": 4
+  },
+  "behavior": {
+    "only_changed_method": "StoreConnectionSchemaMixin._hold_storage_gate",
+    "shared_windows_primitive": "native_command_control_windows_lock.try_lock_authority_file(shared=not exclusive)",
+    "release_primitive": "native_command_control_windows_lock.unlock_authority_file",
+    "writer_deadline_seconds": 0.05,
+    "poll_seconds": 0.01,
+    "exclusive_recovery_unchanged": true,
+    "posix_gate_unchanged": true,
+    "facade_defaults_and_patch_points_retained": true,
+    "runtime_retry_or_timeout_changes": false,
+    "failure_counts_preserved": true
+  },
+  "causal_evidence": {
+    "driver_commit": "6e21d5a20f42176b6ed59d7d8363578dc9cf854e",
+    "run_id": 35482673488,
+    "job_id": 106003174300,
+    "artifact_id": 10596411186,
+    "artifact_sha256": "3673d321df1633e17b276b34c203930a6e0a4e70f4a883706e4a984004798eed",
+    "shared_control_failed_at_storage_gate": true,
+    "exclusive_controls_preserved": true,
+    "fresh_default_auto_storage_gate_timeout_classifier_invocations": 11,
+    "fresh_default_auto_receipt_failed_record_attempts": 11,
+    "fresh_default_auto_command_failed_record_attempts": 3,
+    "fresh_default_auto_journal_checkpoint_os_permission": 1,
+    "journal_permission_root_cause": "unexplained; this repair makes no claim to fix it",
+    "callback_counts_are_failed_record_units": false,
+    "installed_headline_qualification": false
+  },
+  "validation": {
+    "targeted_cohort": "113 passed, 1 skipped, 1 warning in 16.21s",
+    "skip": "Existing real-Windows helper control is unavailable on Linux; all 10 new gate tests run locally.",
+    "warning": "Unchanged injected-corruption holder thread fails on connection-exit review-event finalization with sqlite3.DatabaseError. Same original ed7313 source/test reproduces 1 passed, 1 warning in 2.14s.",
+    "exact_original_warning_control": "isolated exact source and contracts, --noconftest, original pytest configuration",
+    "initial_original_control_incomplete_fixture": "Collection failed before execution because contracts were omitted; preserved, then exact original contracts included.",
+    "types": "0 errors, 417 warnings, 0 notes",
+    "ruff": "check and format passed",
+    "diff_check": "passed",
+    "vfs_persistence_first": "47 passed in 3.75s",
+    "vfs_loader_first": "47 passed in 4.90s",
+    "actual_windows_fix_executed_locally": false,
+    "peer_review": "CI and native owners independently verified source/SQL/facade equivalence, Win32 gate semantics and live patch points; no concrete blocker."
+  },
+  "logs": {
+    "storage-gate-final-tests.log": "0882785291abff493432fcd2c965e0e861f742c9caca7cb291dfb150f6ac89da",
+    "storage-gate-types-final-v2.log": "2b5f76bdcc2431e06e65ed72d44f15e21b9c6c24a34583f863e924deb4bb0caa",
+    "storage-partition-final-ast-imports.json": "bc15cbca3395c63e8abcf978315e906a9e18a1548006da3c6bbc9b047a4ab6ea",
+    "storage-partition-tests.log": "36c5448d3e6c0ff1fb00c38802efbda2d126055fbc0ffcb2b2a750639ff1c0ec",
+    "storage-original-warning-control/identity.json": "93320681004257e1f6da21064ce57ea7d5a2c0a270cab2f2444f7940454e756b",
+    "storage-original-warning-control/pytest.log": "106468a261dba4fdbe15aa2c40684350d36f18d95eb8b83f4a5e84e25324d707",
+    "storage-original-warning-control/pytest-incomplete-fixture.log": "726fa325ebc53716262d7775c48d38742eca712a1cc8410946df69355a3a5935",
+    "native-vfs-loader-lifetime-proof/final-persistence-first.log": "c4637ad0ef4079d6ad5b1fe4174a09b2e1fa8f12a41a397823224300276077bf",
+    "native-vfs-loader-lifetime-proof/final-vfs-first.log": "6768059636a6d6dfee0b29fc012913d7a1cf4008c9797dbd3d285a0003d44e17",
+    "storage-partition-independent-review.json": "fae077d37daeb10014c92e679951ee16569db57fe2b17ad59c4978c07a5d79e5",
+    "storage-split-native-peer-review.json": "1fed7fa5873d830943d9e50780d399062da11fcf508d32b245218174c5d065df"
+  },
+  "frozen": true,
+  "hosted_windows_repair_validation": "required next; no local Win32 execution claimed"
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "hol-guard.pr2974.sonar-repair-root-review.v1",
+  "source_manifest_sha256": "93fe2e69ecf046ed57ae67bc3c5e9c1c08eef95eb1156ba0daea6528eb392edf",
+  "paths": [
+    "tests/test_guard_storage_gate_concurrency.py",
+    "tests/test_native_slo_sqlite_vfs.py"
+  ],
+  "review": "Read both complete diffs and targeted controls. Explicit worker RuntimeError/TimeoutError keeps collection and main-thread assertions, signal order, joins and lease cleanup. Three new negative controls prove missing connection, incorrect result and query exception cannot reach test body and close the lease. No suppression or altered product behavior.",
+  "blocking_findings": [],
+  "independent_codeowner_approval": false,
+  "hosted_gate_cleared": false
+}

@@ -1,0 +1,570 @@
+{
+  "schema": "hol-guard.mac-startup-diagnostic-repair-audit.v1",
+  "as_of_utc": "2026-09-20 02:18:19 UTC",
+  "original_source_sha": "3780ad899ad6c42c91049b2a15fef138e911443f",
+  "diagnostic_sources": {
+    "v1": {
+      "source_sha": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+      "source_tree": "c2e88b60d8308df11402098a4bb5bfbf419699ea",
+      "driver_sha": "eabb0b41f6cc0ffbcf75d4dba636ce0cafd14853",
+      "driver_tree": "90981c563a817d2b979b279d3871db363cb28a80",
+      "run_id": 35481385756,
+      "directory": "mac-startup-phases-71f24e16",
+      "jobs": {
+        "arm": 105999722854,
+        "intel": 105999722953
+      },
+      "native_controls": 5,
+      "python_controls": 23
+    },
+    "v2": {
+      "source_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+      "source_tree": "f472f8f04eeda458f166dd6840af6a2047888cdc",
+      "driver_sha": "8df9ef3756dbab256a65e32e916cc102b6ba1818",
+      "driver_tree": "c981ea11fea52747a62022c19a53150ada26d3a5",
+      "run_id": 35482336444,
+      "directory": "mac-startup-io-0bf2452e",
+      "jobs": {
+        "arm": 106002258766,
+        "intel": 106002258665
+      },
+      "native_controls": 7,
+      "python_controls": 24
+    }
+  },
+  "samples": [
+    {
+      "version": "v1",
+      "platform": "mac-arm",
+      "job_id": 105999722854,
+      "run_id": 35481385756,
+      "source_sha": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+      "driver_sha": "eabb0b41f6cc0ffbcf75d4dba636ce0cafd14853",
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35481385756/job/105999722854",
+      "archive": {
+        "artifact_id": 10595239834,
+        "sha256": "89b7950f972eb6bbdd8502378d353b18fb051061a306b92cb45ef3d085405efb",
+        "bytes": 8243320,
+        "local_archive": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-phases-71f24e16/mac-arm-10595239834.zip",
+        "metadata_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10595239834",
+        "run_id": 35481385756,
+        "preserved": true,
+        "included_in_small_packet": false
+      },
+      "wheel_sha256": "c51f7ab19f3d34befd1563d93160b4e4f986cb70c4ecbff1805b01b9a753c836",
+      "runtime_identity": {
+        "build_sha": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+        "rule_digest": "1c11a69a858049afa765bf458181e87eb8c66f2ce1492aa661ed1e3b7211a7eb",
+        "sha256": "d0664b6334f83a4c305f1cd51b54b7a0926c369363261cbd51977fcf61b0b234",
+        "size": 10817120,
+        "target": "aarch64-macos"
+      },
+      "diagnostic_sha256": "06620d26a05af686a8702faa098bba325f762dcfff3e88e24478f2525af32a43",
+      "events": [
+        {
+          "duration_us": 86,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "connect",
+          "retryable_teardown": false,
+          "started_us": 233960,
+          "succeeded": true
+        },
+        {
+          "duration_us": 19381,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "authenticate",
+          "retryable_teardown": false,
+          "started_us": 234047,
+          "succeeded": true
+        },
+        {
+          "duration_us": 36,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "request_write_flush",
+          "retryable_teardown": false,
+          "started_us": 253433,
+          "succeeded": true
+        },
+        {
+          "duration_us": 63424,
+          "error_code": "native_client_frame_read_failed",
+          "io_failure": {
+            "kind": "invalid_input",
+            "os_code": 22
+          },
+          "phase": "committed_response_read",
+          "retryable_teardown": false,
+          "started_us": 253469,
+          "succeeded": false
+        }
+      ],
+      "elapsed_us": 439419,
+      "payload_bytes": 2554,
+      "payload_sha256": "c02f7c7dcceaeba71e9eb8a3ebbd89e7d140db87bcfd2a36623db7eca9a34aa3",
+      "original_fatal_code": "native_client_frame_read_failed",
+      "operation_error": "native_resident_live_request_failed",
+      "native_budget_ms": 2000,
+      "outer_budget_ms": 2000,
+      "original_operation_result_preserved": true,
+      "native_controls_passed": 5,
+      "python_controls_passed": 23,
+      "closed_peer_control_executed": false,
+      "closed_peer_control_passed": null,
+      "closed_peer_control_scope": null,
+      "ack_validated": false,
+      "process": {
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "returncode": 2,
+        "stderr_bytes": 1314,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "cleanup": {
+        "authenticated_stop_succeeded": false,
+        "contained": false,
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "resident_state_absent": true,
+        "returncode": 2,
+        "scope": "ordinary_authenticated_resident_stop_and_direct_child_reap",
+        "stderr_bytes": 33,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "observation_complete": false,
+      "qualification": false
+    },
+    {
+      "version": "v1",
+      "platform": "mac-intel",
+      "job_id": 105999722953,
+      "run_id": 35481385756,
+      "source_sha": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+      "driver_sha": "eabb0b41f6cc0ffbcf75d4dba636ce0cafd14853",
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35481385756/job/105999722953",
+      "archive": {
+        "artifact_id": 10595648656,
+        "sha256": "d822f9c6364b679729e1be59178a4cfc66091dd6fabe4201f7431db1694e91b2",
+        "bytes": 8385051,
+        "local_archive": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-phases-71f24e16/mac-intel-10595648656.zip",
+        "metadata_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10595648656",
+        "run_id": 35481385756,
+        "preserved": true,
+        "included_in_small_packet": false
+      },
+      "wheel_sha256": "7f11bb6a3425eaf3d4ab86b5387b77651bc7a34c595fe98176b8f061f2f2e6ef",
+      "runtime_identity": {
+        "build_sha": "71f24e16f52c0851d45cbb2585bf3309769ce0f8",
+        "rule_digest": "1c11a69a858049afa765bf458181e87eb8c66f2ce1492aa661ed1e3b7211a7eb",
+        "sha256": "e693d67eabeb794cb4f639b4e5b7e9e8194c087ac70010d875ce6fe241c83b54",
+        "size": 11348596,
+        "target": "x86_64-macos"
+      },
+      "diagnostic_sha256": "b6113b1290d0a27685f3ee7015d35ed9bfe8d52d8ec32e48cf326b63bf021ead",
+      "events": [
+        {
+          "duration_us": 175,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "connect",
+          "retryable_teardown": false,
+          "started_us": 222438,
+          "succeeded": true
+        },
+        {
+          "duration_us": 34102,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "authenticate",
+          "retryable_teardown": false,
+          "started_us": 222615,
+          "succeeded": true
+        },
+        {
+          "duration_us": 98,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "request_write_flush",
+          "retryable_teardown": false,
+          "started_us": 256726,
+          "succeeded": true
+        },
+        {
+          "duration_us": 94668,
+          "error_code": "native_client_frame_read_failed",
+          "io_failure": {
+            "kind": "invalid_input",
+            "os_code": 22
+          },
+          "phase": "committed_response_read",
+          "retryable_teardown": false,
+          "started_us": 256825,
+          "succeeded": false
+        }
+      ],
+      "elapsed_us": 420251,
+      "payload_bytes": 2554,
+      "payload_sha256": "61dcaa30b04e94819d265282b955417898b3e027930fa2dd248f64ed0185f8ee",
+      "original_fatal_code": "native_client_frame_read_failed",
+      "operation_error": "native_resident_live_request_failed",
+      "native_budget_ms": 2000,
+      "outer_budget_ms": 2000,
+      "original_operation_result_preserved": true,
+      "native_controls_passed": 5,
+      "python_controls_passed": 23,
+      "closed_peer_control_executed": false,
+      "closed_peer_control_passed": null,
+      "closed_peer_control_scope": null,
+      "ack_validated": false,
+      "process": {
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "returncode": 2,
+        "stderr_bytes": 1315,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "cleanup": {
+        "authenticated_stop_succeeded": false,
+        "contained": false,
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "resident_state_absent": true,
+        "returncode": 2,
+        "scope": "ordinary_authenticated_resident_stop_and_direct_child_reap",
+        "stderr_bytes": 33,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "observation_complete": false,
+      "qualification": false
+    },
+    {
+      "version": "v2",
+      "platform": "mac-arm",
+      "job_id": 106002258766,
+      "run_id": 35482336444,
+      "source_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+      "driver_sha": "8df9ef3756dbab256a65e32e916cc102b6ba1818",
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35482336444/job/106002258766",
+      "archive": {
+        "artifact_id": 10596039362,
+        "sha256": "a03193edafe64f80a75d431b44bceb1b7da714f297ac27924816904b2107efb3",
+        "bytes": 8244170,
+        "local_archive": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-io-0bf2452e/mac-arm-10596039362.zip",
+        "metadata_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10596039362",
+        "run_id": 35482336444,
+        "preserved": true,
+        "included_in_small_packet": false
+      },
+      "wheel_sha256": "5c7a0cb11ead964f3bd0d5bef0d071cf4615311b87976e80e31fc977cc4ad070",
+      "runtime_identity": {
+        "build_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+        "rule_digest": "1c11a69a858049afa765bf458181e87eb8c66f2ce1492aa661ed1e3b7211a7eb",
+        "sha256": "7126b4110df51269f11e41aa614331d19ded2871cb4eb466966c6b0fa11a9ef5",
+        "size": 10817744,
+        "target": "aarch64-macos"
+      },
+      "diagnostic_sha256": "3b240d99cebc5910413621ddf93e73f55f1d90655803096493b3e4d4a04353ea",
+      "events": [
+        {
+          "duration_us": 80,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "connect",
+          "retryable_teardown": false,
+          "started_us": 190812,
+          "succeeded": true
+        },
+        {
+          "duration_us": 4191,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "authenticate",
+          "retryable_teardown": false,
+          "started_us": 190893,
+          "succeeded": true
+        },
+        {
+          "duration_us": 24,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "request_write_flush",
+          "retryable_teardown": false,
+          "started_us": 195088,
+          "succeeded": true
+        },
+        {
+          "duration_us": 42655,
+          "error_code": "native_client_frame_read_failed",
+          "io_failure": {
+            "kind": "invalid_input",
+            "operation": "read_timeout_configuration",
+            "os_code": 22
+          },
+          "phase": "committed_response_read",
+          "retryable_teardown": false,
+          "started_us": 195112,
+          "succeeded": false
+        }
+      ],
+      "elapsed_us": 330650,
+      "payload_bytes": 2554,
+      "payload_sha256": "8fb6e2a3c6b6e1843adb5b9f5a10435164f3d6a9811b498e945315660cd6f764",
+      "original_fatal_code": "native_client_frame_read_failed",
+      "operation_error": "native_resident_live_request_failed",
+      "native_budget_ms": 2000,
+      "outer_budget_ms": 2000,
+      "original_operation_result_preserved": true,
+      "native_controls_passed": 7,
+      "python_controls_passed": 24,
+      "closed_peer_control_executed": true,
+      "closed_peer_control_passed": true,
+      "closed_peer_control_scope": "actual Mac Unix pair, original failed timeout setter, complete framed response read back under diagnostic nonblocking mode",
+      "ack_validated": false,
+      "process": {
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "returncode": 2,
+        "stderr_bytes": 1354,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "cleanup": {
+        "authenticated_stop_succeeded": false,
+        "contained": false,
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "resident_state_absent": true,
+        "returncode": 2,
+        "scope": "ordinary_authenticated_resident_stop_and_direct_child_reap",
+        "stderr_bytes": 33,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "observation_complete": false,
+      "qualification": false
+    },
+    {
+      "version": "v2",
+      "platform": "mac-intel",
+      "job_id": 106002258665,
+      "run_id": 35482336444,
+      "source_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+      "driver_sha": "8df9ef3756dbab256a65e32e916cc102b6ba1818",
+      "job_url": "https://github.com/hashgraph-online/hol-guard/actions/runs/35482336444/job/106002258665",
+      "archive": {
+        "artifact_id": 10596915250,
+        "sha256": "85827e3306901e876212100ff1bf96eb7d39c70ad5aa521c2bbb3cd9a7c5d39b",
+        "bytes": 8382311,
+        "local_archive": "/workspace/scratch/745337b67ff9/ci-review-evidence/mac-startup-io-0bf2452e/mac-intel-10596915250.zip",
+        "metadata_url": "https://api.github.com/repos/hashgraph-online/hol-guard/actions/artifacts/10596915250",
+        "run_id": 35482336444,
+        "preserved": true,
+        "included_in_small_packet": false
+      },
+      "wheel_sha256": "80f9efda783d3f59e6df041453279592c782a602e6ab0903fca4f96179bcc1a0",
+      "runtime_identity": {
+        "build_sha": "0bf2452e74e58e1e41b9160b55290e33d1bf26ef",
+        "rule_digest": "1c11a69a858049afa765bf458181e87eb8c66f2ce1492aa661ed1e3b7211a7eb",
+        "sha256": "63a82c4267ca2c4f4949e633916af0361215c3984d4f7e05207f1b7a2181a73b",
+        "size": 11344460,
+        "target": "x86_64-macos"
+      },
+      "diagnostic_sha256": "b096d72897545cee7e08ca04480405248e0869b8c1396d7fdf1c41a6af3056bd",
+      "events": [
+        {
+          "duration_us": 115,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "connect",
+          "retryable_teardown": false,
+          "started_us": 288487,
+          "succeeded": true
+        },
+        {
+          "duration_us": 3857,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "authenticate",
+          "retryable_teardown": false,
+          "started_us": 288603,
+          "succeeded": true
+        },
+        {
+          "duration_us": 43,
+          "error_code": null,
+          "io_failure": null,
+          "phase": "request_write_flush",
+          "retryable_teardown": false,
+          "started_us": 292465,
+          "succeeded": true
+        },
+        {
+          "duration_us": 103381,
+          "error_code": "native_client_frame_read_failed",
+          "io_failure": {
+            "kind": "invalid_input",
+            "operation": "read_timeout_configuration",
+            "os_code": 22
+          },
+          "phase": "committed_response_read",
+          "retryable_teardown": false,
+          "started_us": 292508,
+          "succeeded": false
+        }
+      ],
+      "elapsed_us": 522949,
+      "payload_bytes": 2554,
+      "payload_sha256": "06ad7396fd7d5ac5827abeb61d6f62df3425ba02b4e883c9afe628d333c3b679",
+      "original_fatal_code": "native_client_frame_read_failed",
+      "operation_error": "native_resident_live_request_failed",
+      "native_budget_ms": 2000,
+      "outer_budget_ms": 2000,
+      "original_operation_result_preserved": true,
+      "native_controls_passed": 7,
+      "python_controls_passed": 24,
+      "closed_peer_control_executed": true,
+      "closed_peer_control_passed": true,
+      "closed_peer_control_scope": "actual Mac Unix pair, original failed timeout setter, complete framed response read back under diagnostic nonblocking mode",
+      "ack_validated": false,
+      "process": {
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "returncode": 2,
+        "stderr_bytes": 1356,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "cleanup": {
+        "authenticated_stop_succeeded": false,
+        "contained": false,
+        "direct_child_reaped": true,
+        "output_overflow": false,
+        "resident_state_absent": true,
+        "returncode": 2,
+        "scope": "ordinary_authenticated_resident_stop_and_direct_child_reap",
+        "stderr_bytes": 33,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "observation_complete": false,
+      "qualification": false
+    }
+  ],
+  "finding": "Both v2 installed diagnostic clients fail the first real signed policy push at the read-timeout setter with EINVAL22 after successful authentication and request write/flush. Both actual Mac closed-peer controls reproduce setter rejection while a complete bound reply remains readable.",
+  "interpretation_limits": [
+    "v1 did not distinguish timeout configuration from the actual read syscall.",
+    "The explicit diagnostic client sends one request; the original Python publisher uses a persistent framed client.",
+    "A diagnostic feature build and a single cold sample per platform are not default-runtime startup or performance qualification.",
+    "All four failed observations retain ACKfalse, authenticated_stop_succeededfalse, containedfalse and observation_completefalse; direct-child reaping and absent resident state do not prove full containment.",
+    "The Mac-only product implementation and four new product controls have not yet run on hosted Macs."
+  ],
+  "repair": {
+    "base_sha": "ed7313dff240292a482c53410a2492f80ba8a220",
+    "source_manifest_sha256": "a31e88f4a6c8880bd87a2198254002749db1d843105eb6720a2290568e44d96b",
+    "files": [
+      {
+        "path": "rust/crates/guard-runtime/src/resident_transport.rs",
+        "base_blob": "c0d7119a905d3b76b7111850ff8498e65137dd97",
+        "base_sha256": "4424adc17785ffebd0423d008a3ad25c7a26452265e3075f63ed374a425df5be",
+        "sha256": "f09c705e70d31fcbdc34a0d453b080b38caf25c58c5544897cf5c7ef1f0de1f1",
+        "git_blob": "8b36d60c1e70d721540484f618ac496fec71567e",
+        "bytes": 15133,
+        "lines": 411
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/resident_client_deadline.rs",
+        "base_blob": "fbb7a459c84eab83a31422ba268ad1cf2086cc1b",
+        "base_sha256": "c374cc8b7d196db2569f249a5f35447670b8f4f3ffc47f4c15b12e480d24f241",
+        "sha256": "74cd0cd33fe440087f8340b57b9f3d577bea4983f8badb6b1ccb8e8f8707d9a7",
+        "git_blob": "8c1583baf462c1318441a4290298e90b76c55844",
+        "bytes": 3724,
+        "lines": 111
+      },
+      {
+        "path": "rust/crates/guard-runtime/src/resident_client_deadline_tests.rs",
+        "base_blob": "949bef043b6741e6f15af4104f4b0fe8cbc1222e",
+        "base_sha256": "20ccf81918af9010a68022bd0a36f5e0424b441a7dd17643301946e29b8e0115",
+        "sha256": "8522048df61ba22772f57e4a1b7e382e63f946acc919b36981c8fe1533e69c92",
+        "git_blob": "2edc7922bf531153e2406d6c096a9f6b8e246d97",
+        "bytes": 15406,
+        "lines": 453
+      }
+    ],
+    "validation": {
+      "rust_version": "1.88.0",
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "-p",
+          "hol-guard-runtime",
+          "-j2",
+          "resident_client",
+          "--",
+          "--nocapture"
+        ],
+        [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--workspace",
+          "-j2"
+        ],
+        [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "rust/Cargo.toml",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "-j2",
+          "--",
+          "-D",
+          "warnings"
+        ]
+      ],
+      "selected_client_passed": 17,
+      "workspace_passed": 297,
+      "workspace_failed": 0,
+      "workspace_ignored": 6,
+      "clippy_passed": true,
+      "rustfmt_check_passed": true,
+      "git_diff_check_passed": true,
+      "local_mac_controls_executed": false,
+      "hosted_mac_controls_required": 4,
+      "initial_cached_dependency_mismatch": "Old diagnostic checkout guard-contracts/hook-core metadata was invalidated by cargo clean -p guard-contracts -p guard-hook-core; all affected contract dependents rebuilt successfully."
+    },
+    "behavior": "Only macOS UnixStream: exact EINVAL from the failed timeout setter, zero-wait same-owned-descriptor POLLHUP, no ERR/NVAL/poll error, phase deadline still live, then one MSG_DONTWAIT receive. The original post-read deadline and framing/binding/digest/fatal-no-replay checks remain.",
+    "workflow_path": ".github/workflows/native-wheel-ci.yml",
+    "workflow_sha256": "4fde268386a8be5d11d9bf6d9ac85c9aff5271b4e2d9e90bef3c6598a201c339",
+    "workflow_capture_scope": "Root-owned workflow snapshot includes the Mac control and the later Windows storage-control step; this report makes no Windows validation claim.",
+    "hosted_command": "cargo test --manifest-path rust/Cargo.toml --locked -p hol-guard-runtime resident_client -- --nocapture --test-threads=1",
+    "expected_mac_selected_controls": 21,
+    "new_mac_controls": 4,
+    "successor_source_sha": null,
+    "hosted_fixed_source_controls_status": "pending",
+    "installed_default_auto_and_slo_status": "pending"
+  },
+  "primary_mechanism_sources": [
+    "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/uipc_socket.c",
+    "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/sys_generic.c",
+    "https://github.com/rust-lang/rust/blob/1.88.0/library/std/src/sys/net/connection/socket/unix.rs"
+  ],
+  "qualification": false
+}

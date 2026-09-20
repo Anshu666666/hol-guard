@@ -1,0 +1,73 @@
+{
+  "schema": "hol-guard.pr2974.resource-failure-context.v1",
+  "parent": "2433a8ce570f34f5ad3dbf23f3d7367267aad461",
+  "files": [
+    {
+      "path": "scripts/native_slo_resources.py",
+      "bytes": 15265,
+      "lines": 315,
+      "sha256": "758e6ce225335ffc3f10372a1ac36cb19e03b2a39935a9c4965b107fde09cc6f"
+    },
+    {
+      "path": "tests/test_native_slo_resources.py",
+      "bytes": 14900,
+      "lines": 376,
+      "sha256": "76e5c59ee56406a0ba1e9b83f493c4d65e17c1623d51ad396f4841d6ee777e60"
+    }
+  ],
+  "hosted_cause_unproven": true,
+  "hosted_boundary": {
+    "artifact": 10596367945,
+    "valid_samples": 262,
+    "missing_samples": 4,
+    "reason": "process_lookup_failed",
+    "descriptor_permission_denied_samples": 1,
+    "minimum_samples_required": 30,
+    "all_required_metric_coverage_failed": true
+  },
+  "change": "Fixed operation and finite root/descendant/unknown failure attribution; no process IDs, names, paths or exception text. A successful retry emits no failed-sample context. The last failed attempt remains the attribution boundary. Metric role counts are the last permission denial per metric per returned sample.",
+  "unchanged": {
+    "_run_enter_exit_ast": true,
+    "metric_minimum_expression_ast": true,
+    "sample_interval_seconds": 0.1,
+    "attempts_per_sample": 2,
+    "extra_process_reads": 0,
+    "short_exited_descendants_cpu_complete": false,
+    "qualification_limits": true
+  },
+  "validation": {
+    "tests": "56 passed in 3.74s, resource + acceptance + mixed modules",
+    "ruff": "passed",
+    "format": "passed",
+    "types": "0 errors,53 warnings,0 notes",
+    "diff_check": "passed"
+  },
+  "logs": {
+    "format.log": {
+      "bytes": 26,
+      "sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938"
+    },
+    "ruff.log": {
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "tests.log": {
+      "bytes": 99,
+      "sha256": "5c64d3f6318c944f6a3995675795fa20ab8ab17fa29262ed4d63661b9807bb76"
+    },
+    "types.log": {
+      "bytes": 8387,
+      "sha256": "a21b277ad89250544a1e5168d9b9ee6d8ed9a1cebfdd2dd9b54c73027a134a61"
+    },
+    "tests-final.log": {
+      "bytes": 99,
+      "sha256": "9e0bae5adf6ced129ab5b88ab21804684fab7ec8402d9a4de4f433054c984901"
+    },
+    "initial-ruff-failure.txt": {
+      "bytes": 350,
+      "sha256": "e872adaabf6dd54fc3552b59099da2cf1f866b088d0b0f79f5414d1685ccdd9f"
+    }
+  },
+  "published": false,
+  "qualification_complete": false
+}

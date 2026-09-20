@@ -163,7 +163,7 @@ fn try_home_states(
             // serving-process exit cannot make authentication or response
             // failures safe to send to another resident.
             Err(error) if containment::is_retryable_live_request_error(&error) => {}
-            Err(_) => return Err("native_resident_live_request_failed".to_owned()),
+            Err(_error) => return crate::observe_native_live_failure!(_error),
         }
     }
     Ok(None)

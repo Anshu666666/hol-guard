@@ -2,7 +2,7 @@ name: Installed package export diagnostic
 
 on:
   push:
-    branches: [codex/pr2974-package-export-diagnostics-20260920-e2a4deca]
+    branches: [codex/pr2974-package-export-diagnostics-v2-20260920-e2a4deca]
     paths: [.github/workflows/package-export-diagnostics.yml]
 
 permissions:
@@ -89,9 +89,14 @@ jobs:
               metadata.update(python_executable=str(python), wheel_path=str(wheel), diagnostic_runtime_features=False)
               (evidence / (label + '-build.json')).write_text(json.dumps(metadata, indent=2) + '\n')
           PY
-      - name: Verify untimed driver and public export controls
+      - name: Verify untimed public export controls in the candidate checkout
         working-directory: candidate
-        run: .venv/bin/python -m pytest -q tests/test_package_lazy_scan_export.py ../driver/tests/test_package_export_diagnostic.py
+        run: |
+          "$GITHUB_WORKSPACE/candidate/.venv/bin/python" -m pytest -q tests/test_package_lazy_scan_export.py
+      - name: Verify untimed driver controls in the driver checkout
+        working-directory: driver
+        run: |
+          "$GITHUB_WORKSPACE/candidate/.venv/bin/python" -m pytest -q tests/test_package_export_diagnostic.py
       - name: Prepare owned interpreter invocations without changing shared bytes
         run: |
           candidate/.venv/bin/python candidate/scripts/provision_native_qualification_interpreters.py \

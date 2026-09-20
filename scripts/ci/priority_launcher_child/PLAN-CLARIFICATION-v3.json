@@ -1,0 +1,35 @@
+{
+  "schema": "hol-guard.priority-child-invocation-correction.v1",
+  "predecessor_source": "369444ec47054ebc5dc9de7d3aeec0d91882ddef",
+  "predecessor_driver": "8b2f1a591031711bd696f0e721e2ba8eea0e9c3b",
+  "retained_first_run": 35523485023,
+  "retained_first_result_tree": "c8e73dfd2c8ee7473ca90184a1da01e61e6ffdc9",
+  "prior_observation": {
+    "source_controls_local": 87,
+    "hosted_passed": 81,
+    "hosted_failed": 6,
+    "original_launcher_calls": 0,
+    "type_gate_executed": false
+  },
+  "source_reason": {
+    "url": "https://github.com/python/cpython/blob/v3.12.10/Mac/Tools/pythonw.c",
+    "fact": "The framework launcher assigns argv[0]=exec_path before exec, while __PYVENV_LAUNCHER__ retains the invoked venv executable.",
+    "limitation": "The first failed run did not retain child orig_argv; this is a source-supported activation hypothesis, not retrospectively observed refusal."
+  },
+  "correction": [
+    "Before observer installation and before original population, one exact owned-interpreter -I -c metadata process records executable/prefix/version/platform/framework and complete internal orig_argv. It imports no product and does not invoke an original launcher.",
+    "Admission requires identical invoked executable, private prefix, exact parent Python version and every argument after argv0; different argv0 requires Darwin plus framework. The expected representation is fixed in the sealed private configuration.",
+    "The source and reader keep separate observed argv_sha256 and registered_argv_sha256 in version2. Neither actual registered argv nor the original subprocess call is changed.",
+    "Startup and activate continue exact full observed-argv matching, exact executable, parent, Python version, isolation and sealed bytes. Duplicate mapped registrations are refused.",
+    "Successful probe evidence includes input/observed digests and both image hashes, with no raw path/command export. Executable image is stable before/after the probe. This proves preparation-time image observation, not a new process-executable attestation.",
+    "All prior87 local controls retained;16 new parse/preflight/reader cases plus2 real startup refusal cases make105."
+  ],
+  "limits": [
+    "Metadata probe is untimed preparation and can affect interpreter/OS caches; there is no clean performance comparison or qualification.",
+    "subprocess.run timeout provides direct-child kill/wait for this fixed non-spawning metadata code; it is not a general escaped-descendant proof.",
+    "Image reads are bounded64MiB per image with65536-byte chunks; metadata body16384bytes; probe5seconds.",
+    "Original8+16 offer count, product/artifact/provider bytes, actual-c/-I registrations, timeouts, barrier/cancellation, decisions, native joins and cleanup semantics remain unchanged.",
+    "No original ≤24 population has executed at correction freeze."
+  ]
+}
+

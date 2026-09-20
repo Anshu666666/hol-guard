@@ -1,0 +1,153 @@
+name: Native observer diagnostics
+run-name: Native observer diagnostics - 2433a8ce570f34f5ad3dbf23f3d7367267aad461
+
+on:
+  push:
+    branches: [codex/pr2974-installed-validation-20260920-2433a8ce]
+    paths:
+      - '.github/workflows/native-observer-diagnostics.yml'
+      - 'scripts/ci/run_native_observer_diagnostics.sh'
+      - 'scripts/ci/record_native_qualification_checkouts.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-observer-diagnostics-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux-observers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out validation driver
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: validation-src
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check out exact candidate source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: candidate-src
+          ref: 2433a8ce570f34f5ad3dbf23f3d7367267aad461
+          persist-credentials: false
+      - name: Check out baseline for unchanged-source binding
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          path: baseline-src
+          ref: 2e672d2d950c6ec471005ddba46e49bba16dc23b
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        with:
+          version: '0.9.26'
+          enable-cache: false
+      - name: Bind untouched checkouts
+        id: bound
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python validation-src/scripts/ci/record_native_qualification_checkouts.py \
+            --baseline baseline-src --candidate candidate-src --phase before \
+            --output candidate-src/phase-evidence/checkouts-before.json
+      - name: Install pinned Rust and Linux build prerequisites
+        id: toolchain
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --component clippy
+          rustup target add --toolchain 1.88.0 x86_64-unknown-linux-musl
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends musl-tools build-essential libsqlite3-dev ripgrep
+      - name: Install source development environment and record versions
+        id: setup
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh setup candidate-src
+      - name: Run original Python observer and wheel controls
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh python-controls candidate-src
+      - name: Compile C observer and execute actual SQLite controls
+        id: vfs
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh vfs-controls candidate-src
+      - name: Run required default Rust workspace and serial runtime tests
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh rust-default candidate-src
+      - name: Run diagnostic Rust runtime tests
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh rust-diagnostic candidate-src
+      - name: Enforce required default Rust Clippy
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh clippy-default candidate-src
+      - name: Enforce diagnostic Rust Clippy
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh clippy-diagnostic candidate-src
+      - name: Build distinct static default and diagnostic native wheels
+        id: wheels
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.bound.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh build-wheels candidate-src
+      - name: Run actual native noncommand receipt and approval controls
+        if: ${{ !cancelled() && steps.wheels.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh noncommand-resident-controls candidate-src
+      - name: Run actual native process lifecycle controls
+        if: ${{ !cancelled() && steps.wheels.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh lifecycle candidate-src
+      - name: Install immutable default native wheel
+        id: default-install
+        if: ${{ !cancelled() && steps.wheels.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh install-default candidate-src
+      - name: Probe installed default package and runtime identity
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh default-identity candidate-src
+      - name: Probe ordinary default auto behavior
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh default-auto candidate-src
+      - name: Probe installed Pi output behavior
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh pi-output candidate-src
+      - name: Enforce original installed default SLO smoke
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh default-slo candidate-src
+      - name: Observe installed mixed workload with actual SQLite VFS and writer queue
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' && steps.vfs.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh persistence candidate-src
+      - name: Exercise installed workspace lifecycle at one, ten and one hundred registrations
+        if: ${{ !cancelled() && steps.default-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh workspace-lifecycle candidate-src
+      - name: Install immutable diagnostic native wheel
+        id: diagnostic-install
+        if: ${{ !cancelled() && steps.wheels.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh install-diagnostic candidate-src
+      - name: Probe installed diagnostic package and runtime identity
+        if: ${{ !cancelled() && steps.diagnostic-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh diagnostic-identity candidate-src
+      - name: Observe Rust phases in the existing installed workload
+        # Exit 2 remains a failed/incomplete diagnostic; the evidence upload still runs.
+        if: ${{ !cancelled() && steps.diagnostic-install.outcome == 'success' }}
+        run: bash validation-src/scripts/ci/run_native_observer_diagnostics.sh native-phases candidate-src
+      - name: Verify tracked candidate and baseline source remain unchanged
+        if: always()
+        env:
+          VALIDATION_WORKFLOW_SHA: ${{ github.sha }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          python validation-src/scripts/ci/record_native_qualification_checkouts.py \
+            --baseline baseline-src --candidate candidate-src --phase after \
+            --output candidate-src/phase-evidence/checkouts-after.json
+      - name: Retain every diagnostic report, original ledger and built wheel
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: native-observer-diagnostics-2433a8ce570f34f5ad3dbf23f3d7367267aad461-attempt-${{ github.run_attempt }}
+          path: |
+            candidate-src/phase-evidence/**
+            ${{ runner.temp }}/rsp131-c-build/rsp131-sqlite-vfs-build0/*
+          if-no-files-found: warn
+          retention-days: 30

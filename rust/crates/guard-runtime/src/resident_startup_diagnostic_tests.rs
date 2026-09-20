@@ -171,30 +171,49 @@ mod enabled {
             (IoOperation::StreamWrite, "stream_write"),
             (IoOperation::StreamFlush, "stream_flush"),
         ] {
-            let mut calls = 0;
-            let (_, report) = capture(PAYLOAD, |_| {
-                observe::<()>(Phase::CommittedResponseRead, || {
-                    let result = observe_io::<()>(operation, || {
-                        calls += 1;
-                        Err(io::Error::from_raw_os_error(22))
-                    });
-                    assert_eq!(result.as_ref().unwrap_err().raw_os_error(), Some(22));
-                    record_io(result.as_ref().unwrap_err());
-                    Err(fixed_error())
-                })
-                .map(|()| Vec::new())
-                .map_err(|error| error.code)
-            });
-            assert_eq!(calls, 1);
-            let value = serde_json::to_value(report).unwrap();
-            assert_eq!(
-                value["schema"],
-                "hol-guard.resident-stream-request-diagnostic.v1"
-            );
-            let failure = &value["events"][0]["io_failure"];
-            assert_eq!(failure["operation"], expected);
-            assert_eq!(failure["kind"], "invalid_input");
-            assert_eq!(failure["os_code"], 22);
+            // Raw code 22 is EINVAL on Unix but ERROR_BAD_COMMAND on Windows.
+            // Retain the native code separately from a portable InvalidInput.
+            let raw_kind = if cfg!(windows) {
+                "other"
+            } else {
+                "invalid_input"
+            };
+            for (error, expected_kind, expected_code) in [
+                (io::Error::from_raw_os_error(22), raw_kind, Some(22)),
+                (
+                    io::Error::from(io::ErrorKind::InvalidInput),
+                    "invalid_input",
+                    None,
+                ),
+            ] {
+                let mut calls = 0;
+                let (_, report) = capture(PAYLOAD, |_| {
+                    observe::<()>(Phase::CommittedResponseRead, || {
+                        let result = observe_io::<()>(operation, || {
+                            calls += 1;
+                            Err(error)
+                        });
+                        assert_eq!(result.as_ref().unwrap_err().raw_os_error(), expected_code);
+                        record_io(result.as_ref().unwrap_err());
+                        Err(fixed_error())
+                    })
+                    .map(|()| Vec::new())
+                    .map_err(|error| error.code)
+                });
+                assert_eq!(calls, 1);
+                let value = serde_json::to_value(report).unwrap();
+                assert_eq!(
+                    value["schema"],
+                    "hol-guard.resident-stream-request-diagnostic.v1"
+                );
+                let failure = &value["events"][0]["io_failure"];
+                assert_eq!(failure["operation"], expected);
+                assert_eq!(failure["kind"], expected_kind);
+                assert_eq!(
+                    failure["os_code"],
+                    serde_json::to_value(expected_code).unwrap()
+                );
+            }
         }
     }
 

@@ -21,6 +21,13 @@ from .guard_tier2_phase13_support import (
 FIXTURES = Path(__file__).parent / "fixtures" / "tier2"
 
 
+def _materialize_fixture_workspace(fixture_name: str, workspace_dir: Path) -> None:
+    """Restore inert manifest samples only inside a temporary test workspace."""
+    shutil.copytree(FIXTURES / fixture_name, workspace_dir)
+    for fixture_path in workspace_dir.glob("*.fixture"):
+        fixture_path.rename(fixture_path.with_suffix(""))
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "command", "ecosystem", "package_name", "blocked_version", "expected_decision"),
     [
@@ -107,7 +114,7 @@ def test_tier2_fixture_labs_cover_safe_and_vulnerable_paths(
     _force_unpaid_entitlement(monkeypatch)
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"
-    shutil.copytree(FIXTURES / fixture_name, workspace_dir)
+    _materialize_fixture_workspace(fixture_name, workspace_dir)
     store = GuardStore(home_dir)
     monkeypatch.setattr(store, "get_cloud_workspace_id", lambda: WORKSPACE_ID)
     store.cache_supply_chain_bundle(

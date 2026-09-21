@@ -7,10 +7,11 @@ import copy
 import json
 from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from codex_plugin_scanner.guard import policy_bundle_v2
+from codex_plugin_scanner.guard import policy_bundle_parser, policy_bundle_v2
 from codex_plugin_scanner.guard.daemon import GuardDaemonServer
 from codex_plugin_scanner.guard.managed_controls_policy_bundle import (
     signed_cloud_extension_projection_digest,
@@ -34,28 +35,14 @@ from tests.test_guard_headless_daemon_api import (
     _seed_guard_cloud,
 )
 
-_FIXTURE_NOW = datetime(2026, 8, 25, 12, tzinfo=timezone.utc)
+_POLICY_BUNDLE_FIXTURE_NOW = datetime(2026, 9, 1, 12, 0, tzinfo=timezone.utc)
 
 
-def _set_policy_bundle_clock(monkeypatch: pytest.MonkeyPatch, now: datetime) -> None:
-    """Change only the validator's clock, not daemon timers or signed data."""
-
-    assert now.tzinfo is not None
-
-    class _FixedDateTime(datetime):
-        @classmethod
-        def now(cls, tz: tzinfo | None = None) -> _FixedDateTime:
-            return cls.fromtimestamp(now.timestamp(), tz)
-
-    monkeypatch.setattr(policy_bundle_v2, "datetime", _FixedDateTime)
-
-
-@pytest.fixture(autouse=True)
-def _freeze_policy_bundle_clock(monkeypatch: pytest.MonkeyPatch) -> None:
-    # This immutable signed vector expires on 2026-09-21. Exercise delivery
-    # behavior inside its validity window without re-signing or skipping any
-    # validation. Function-scoped monkeypatch cleanup prevents clock leakage.
-    _set_policy_bundle_clock(monkeypatch, _FIXTURE_NOW)
+class _PolicyBundleFixtureDatetime(datetime):
+    @classmethod
+    def now(cls, tz: tzinfo | None = None) -> datetime:
+        fixed = _POLICY_BUNDLE_FIXTURE_NOW
+        return fixed.replace(tzinfo=None) if tz is None else fixed.astimezone(tz)
 
 
 def _fixture(store: GuardStore) -> tuple[dict[str, object], dict[str, object]]:
@@ -124,6 +111,14 @@ def _fixture(store: GuardStore) -> tuple[dict[str, object], dict[str, object]]:
 
 
 def _enable(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Keep the signed fixture byte-for-byte stable while making this test
+    # deterministic after its real-world expiry date.
+    monkeypatch.setattr(
+        policy_bundle_parser,
+        "time",
+        SimpleNamespace(time=lambda: _POLICY_BUNDLE_FIXTURE_NOW.timestamp()),
+    )
+    monkeypatch.setattr(policy_bundle_v2, "datetime", _PolicyBundleFixtureDatetime)
     for name in (
         "GUARD_EXTENSION_CATALOG_SYNC_V1",
         "GUARD_POLICY_EXTENSION_TARGETS_V1",
@@ -256,7 +251,10 @@ def test_daemon_enforces_signed_bundle_expiry_boundary(
     expires_at = bundle["expiresAt"]
     assert isinstance(expires_at, str)
     expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-    _set_policy_bundle_clock(monkeypatch, expiry + timedelta(seconds=seconds_from_expiry))
+    monkeypatch.setattr(
+        f"{__name__}._POLICY_BUNDLE_FIXTURE_NOW",
+        expiry + timedelta(seconds=seconds_from_expiry),
+    )
 
     status, response = _sync(store, bundle=bundle, delivery=delivery)
 

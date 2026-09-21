@@ -42,7 +42,7 @@ Install Git, [uv](https://docs.astral.sh/uv/getting-started/installation/), and
 ```bash
 git clone https://github.com/hashgraph-online/hol-guard.git
 cd hol-guard
-uv sync --frozen --extra dev --python 3.12
+uv sync --extra dev --frozen --python 3.12
 rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
 ```
 
@@ -69,7 +69,7 @@ For work on the optional Cisco scanner integrations, use Python 3.11 through 3.1
 those dependencies explicitly:
 
 ```bash
-uv sync --frozen --extra dev --extra cisco --group cisco-mcp --python 3.12
+uv sync --extra dev --extra cisco --group cisco-mcp --frozen --python 3.12
 ```
 
 A virtual environment with `pip install -e ".[dev]"` is an alternative for Python development.

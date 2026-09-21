@@ -77,8 +77,8 @@ requires a reviewed Rust operation with validation, lowering, evaluation,
 identity updates, and independent regression cases.
 
 Each rule belongs to one permission. A safe variant is a positive matcher
-attached to that rule; it removes only its owner's evidence on matching
-segments. It cannot suppress another rule or an independent native floor.
+attached to that rule; it clears the owning rule's effective segments while
+retaining the observation. It cannot suppress another rule or an independent native floor.
 Native observations retain stable extension/rule IDs, versions, segment
 evidence, safe-variant results, and uncertainty, bound to program/catalog and
 effective-control identities. Generated metadata supplies descriptions, risk

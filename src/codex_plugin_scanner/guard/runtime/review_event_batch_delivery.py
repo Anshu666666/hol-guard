@@ -58,6 +58,7 @@ def prepare_review_event_batch(
             sequence,
             reason="batch_byte_limit_exceeded",
             error="Review event exceeds the configured delivery byte limit.",
+            retain_outbox_event=True,
             oauth_subject_hash=delivery_binding["oauth_subject_hash"],
             workspace_id=delivery_binding["workspace_id"],
             machine_id=delivery_binding["machine_id"],

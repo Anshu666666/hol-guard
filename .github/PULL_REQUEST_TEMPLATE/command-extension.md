@@ -11,7 +11,7 @@
 ```sh
 uv run --no-sync hol-guard extensions handoff --repo . \
   --source contributions/command-sources/command.<name>.json \
-  --fixture tests/fixtures/command-source-<name>.v1.json
+  --fixture tests/fixtures/command-source-<slug>.v1.json
 ```
 
 <!-- Include any focused fixture or native checks you ran. Do not hand-edit generated projections: use the Builder apply/prepare flow. -->

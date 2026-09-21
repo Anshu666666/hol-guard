@@ -41,8 +41,11 @@ command execution and synchronizes the checked-in projections. Follow it with th
 ```sh
 uv run --no-sync hol-guard extensions handoff --repo . \
   --source contributions/command-sources/command.<name>.json \
-  --fixture tests/fixtures/command-source-<name>.v1.json
+  --fixture tests/fixtures/command-source-<slug>.v1.json
 ```
+
+Here, `<slug>` is the extension ID without the `command.` prefix. For example,
+`command.cloud.aws` uses `command-source-cloud.aws.v1.json`.
 
 Use `--check` with the preparation command to verify an already prepared change. Optional public
 credit, upstream, and claim-readiness metadata belongs in

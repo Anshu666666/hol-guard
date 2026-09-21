@@ -45,7 +45,7 @@ hol-guard extensions apply <reviewed-kit> --repo . \
   --write --expected-plan <printed-plan-digest>
 hol-guard extensions handoff --repo . \
   --source contributions/command-sources/command.<name>.json \
-  --fixture tests/fixtures/command-source-<name>.v1.json
+  --fixture tests/fixtures/command-source-<slug>.v1.json
 ```
 
 The handoff command checks the exact source/fixture binding, external trust mapping, generated

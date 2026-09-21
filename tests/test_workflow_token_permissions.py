@@ -235,16 +235,22 @@ def test_writer_workflows_start_empty_and_preserve_needed_job_grants(
         assert " ".join(publish["if"].split()) == expected_guard
 
 
-def test_gitar_fork_access_notice_only_handles_trusted_push_denials() -> None:
-    """The comment-triggered writer never checks out or executes contributor code."""
+def test_gitar_fork_access_notice_only_handles_verified_push_denials() -> None:
+    """Live comments and manual backfills require Gitar's verified denial evidence."""
 
     workflow = (ROOT / ".github/workflows/gitar-fork-access-notice.yml").read_text(encoding="utf-8")
+    parsed = yaml.safe_load(workflow)
     assert "permissions: {}" in workflow
     assert "pull-requests: write" in workflow
+    assert parsed[True]["workflow_dispatch"]["inputs"]["pr_number"]["required"] is True
     assert "github.event.issue.pull_request != null" in workflow
     assert "github.event.comment.user.login == 'gitar-bot[bot]'" in workflow
     assert "github.event.comment.user.type == 'Bot'" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in workflow
     assert "Gitar is not allowed to push to this forked PR." in workflow
+    assert "pr_state" in workflow
+    assert "head_is_fork" in workflow
+    assert "gitar_denial_ids" in workflow
     assert "actions/checkout" not in workflow
     assert "github-actions[bot]" in workflow
 

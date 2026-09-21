@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import base64
 import copy
 import json
+from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
 
 import pytest
 
+from codex_plugin_scanner.guard import policy_bundle_v2
 from codex_plugin_scanner.guard.daemon import GuardDaemonServer
 from codex_plugin_scanner.guard.managed_controls_policy_bundle import (
     signed_cloud_extension_projection_digest,
@@ -30,6 +33,29 @@ from tests.test_guard_headless_daemon_api import (
     _request,
     _seed_guard_cloud,
 )
+
+_FIXTURE_NOW = datetime(2026, 8, 25, 12, tzinfo=timezone.utc)
+
+
+def _set_policy_bundle_clock(monkeypatch: pytest.MonkeyPatch, now: datetime) -> None:
+    """Change only the validator's clock, not daemon timers or signed data."""
+
+    assert now.tzinfo is not None
+
+    class _FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz: tzinfo | None = None) -> _FixedDateTime:
+            return cls.fromtimestamp(now.timestamp(), tz)
+
+    monkeypatch.setattr(policy_bundle_v2, "datetime", _FixedDateTime)
+
+
+@pytest.fixture(autouse=True)
+def _freeze_policy_bundle_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    # This immutable signed vector expires on 2026-09-21. Exercise delivery
+    # behavior inside its validity window without re-signing or skipping any
+    # validation. Function-scoped monkeypatch cleanup prevents clock leakage.
+    _set_policy_bundle_clock(monkeypatch, _FIXTURE_NOW)
 
 
 def _fixture(store: GuardStore) -> tuple[dict[str, object], dict[str, object]]:
@@ -210,3 +236,65 @@ def test_daemon_accepts_cloud_normalized_device_identity(
     acknowledgement = store.get_sync_payload("policy_bundle_ack")
     assert isinstance(acknowledgement, dict)
     assert acknowledgement["deviceId"] == trusted_device_id
+
+
+@pytest.mark.parametrize(
+    "seconds_from_expiry",
+    [pytest.param(-1, id="before-expiry"), pytest.param(0, id="at-expiry"), pytest.param(1, id="after-expiry")],
+)
+def test_daemon_enforces_signed_bundle_expiry_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    seconds_from_expiry: int,
+) -> None:
+    _enable(monkeypatch)
+    store = GuardStore(tmp_path / "guard-home")
+    _seed_guard_cloud(store, workspace_id="workspace-managed-controls")
+    bundle, delivery = _fixture(store)
+    registry = BUILT_IN_COMMAND_EXTENSION_REGISTRY
+    authority_before = store.read_extension_control_authority_for_registry(registry)
+    expires_at = bundle["expiresAt"]
+    assert isinstance(expires_at, str)
+    expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+    _set_policy_bundle_clock(monkeypatch, expiry + timedelta(seconds=seconds_from_expiry))
+
+    status, response = _sync(store, bundle=bundle, delivery=delivery)
+
+    if seconds_from_expiry < 0:
+        assert status == 200, response
+        acknowledgement = store.get_sync_payload("policy_bundle_ack")
+        assert isinstance(acknowledgement, dict)
+        assert acknowledgement["bundleHash"] == bundle["bundleHash"]
+    else:
+        assert status == 400, response
+        assert response["error"] == "bundle_expired"
+        assert store.get_sync_payload("policy_bundle") is None
+        assert store.get_sync_payload("policy_bundle_ack") is None
+        assert store.read_extension_control_authority_for_registry(registry) == authority_before
+
+
+def test_daemon_rejects_invalid_signature_with_fixed_clock(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _enable(monkeypatch)
+    store = GuardStore(tmp_path / "guard-home")
+    _seed_guard_cloud(store, workspace_id="workspace-managed-controls")
+    bundle, delivery = _fixture(store)
+    registry = BUILT_IN_COMMAND_EXTENSION_REGISTRY
+    authority_before = store.read_extension_control_authority_for_registry(registry)
+    verifier = bundle["verifier"]
+    assert isinstance(verifier, dict)
+    signature = verifier["signature"]
+    assert isinstance(signature, str)
+    signature_bytes = bytearray(base64.b64decode(signature, validate=True))
+    signature_bytes[0] ^= 1
+    verifier["signature"] = base64.b64encode(signature_bytes).decode("ascii")
+
+    status, response = _sync(store, bundle=bundle, delivery=delivery)
+
+    assert status == 400, response
+    assert response["error"] == "bundle_signature_invalid"
+    assert store.get_sync_payload("policy_bundle") is None
+    assert store.get_sync_payload("policy_bundle_ack") is None
+    assert store.read_extension_control_authority_for_registry(registry) == authority_before

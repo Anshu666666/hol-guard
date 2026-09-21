@@ -1,4 +1,4 @@
-import { aL as fetchLocalCliApi, r as reactExports, aM as fetchExtensionControlApi, j as jsxRuntimeExports, B as HiMiniSparkles, s as HiMiniCheckCircle, aN as HiMiniNoSymbol, aO as useResolvedApprovalGate, am as HiMiniArrowPath, w as HiMiniShieldCheck, P as HiMiniExclamationTriangle, aP as HiMiniInformationCircle, af as HiMiniLockClosed, al as isApprovalProofSubmitDisabled, C as HiMiniXMark, an as ApprovalProofFieldInputs, aQ as buildApprovalProofCredentials, aR as GenIcon, Q as HiMiniBolt, aS as HiMiniGlobeAlt, aT as HiMiniCube, K as HiMiniCloud, aU as HiMiniServerStack, b as HiMiniCommandLine, aV as HiMiniFolder, aW as FaWindows, aX as FaAws, c as HiMiniChevronRight, I as HiMiniChevronDown, aY as approvalProofRecentlySatisfied, aZ as HiMiniArrowLeft, a_ as HiMiniPlus, a8 as HiMiniClipboardDocumentCheck, a9 as HiMiniClipboard, ah as HiMiniAdjustmentsHorizontal, a$ as HiMiniCheck, aG as HiMiniMagnifyingGlass, b0 as startGuardCloudConnect, b1 as HiMiniArrowTopRightOnSquare, aF as WorkspacePageHeader, b2 as guardAwareHref } from "../guard-dashboard.js";
+import { aL as fetchLocalCliApi, r as reactExports, aM as fetchExtensionControlApi, j as jsxRuntimeExports, B as HiMiniSparkles, s as HiMiniCheckCircle, aN as HiMiniNoSymbol, af as HiMiniLockClosed, P as HiMiniExclamationTriangle, aO as useResolvedApprovalGate, am as HiMiniArrowPath, w as HiMiniShieldCheck, aP as HiMiniInformationCircle, al as isApprovalProofSubmitDisabled, C as HiMiniXMark, an as ApprovalProofFieldInputs, aQ as buildApprovalProofCredentials, aR as GenIcon, Q as HiMiniBolt, aS as HiMiniGlobeAlt, aT as HiMiniCube, K as HiMiniCloud, aU as HiMiniServerStack, b as HiMiniCommandLine, aV as HiMiniFolder, aW as FaWindows, aX as FaAws, c as HiMiniChevronRight, I as HiMiniChevronDown, aY as approvalProofRecentlySatisfied, aZ as HiMiniArrowLeft, a_ as HiMiniPlus, a8 as HiMiniClipboardDocumentCheck, a9 as HiMiniClipboard, ah as HiMiniAdjustmentsHorizontal, a$ as HiMiniCheck, aG as HiMiniMagnifyingGlass, b0 as startGuardCloudConnect, b1 as HiMiniArrowTopRightOnSquare, aF as WorkspacePageHeader, b2 as guardAwareHref } from "../guard-dashboard.js";
 import { A as ApprovalProofModal } from "./approval-proof-modal.js";
 const EXTENSION_ID_PATTERN = /^command\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 const RULE_ID_PATTERN = /^command\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -1532,7 +1532,7 @@ function useExtensionPolicyDraft(props) {
     setError(null);
     setStale(false);
     setPendingRebase(null);
-  }, [props.effective.revision, props.effective.catalog_digest]);
+  }, [props.effective.revision, props.effective.catalog_digest, props.effective.health, props.effective.global_lockdown]);
   const changeCountFor = reactExports.useCallback((permissionIds) => {
     return permissionIds.filter(
       (permissionId) => localPermissionDraftState(baseEffective.layers, permissionId) !== localPermissionDraftState(draftLayers, permissionId)
@@ -1922,6 +1922,19 @@ function QuickApplyButton(props) {
     }
   );
 }
+function PolicyEditingLocks(props) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    props.globalLockdown ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { role: "status", className: "mt-4 flex gap-2 text-sm text-brand-dark", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniLockClosed, { className: "mt-0.5 size-4 shrink-0" }),
+      "Emergency Lockdown remains dominant. You can prepare a local draft, but matching commands stay blocked while lockdown is active."
+    ] }) : null,
+    props.health !== void 0 && props.health !== "protected" ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { role: "alert", className: "mt-4 flex gap-2 text-sm text-amber-950", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniExclamationTriangle, { className: "mt-0.5 size-4 shrink-0" }),
+      "Settings cannot be changed until Guard verifies local settings integrity."
+    ] }) : null,
+    props.refreshRequired ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "mt-4 text-sm text-blue-950", children: "Settings applied. Editing stays locked until Guard reloads the current protected state." }) : null
+  ] });
+}
 function managedControlsHref(input) {
   if (!input.cloudControlsUrl) {
     return null;
@@ -2291,19 +2304,6 @@ function PolicyReviewSheet(props) {
       ]
     }
   ) });
-}
-function PolicyEditingLocks(props) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-    props.globalLockdown ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { role: "status", className: "mt-4 flex gap-2 text-sm text-brand-dark", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniLockClosed, { className: "mt-0.5 size-4 shrink-0" }),
-      "Emergency Lockdown remains dominant. You can prepare a local draft, but matching commands stay blocked while lockdown is active."
-    ] }) : null,
-    props.health !== void 0 && props.health !== "protected" ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { role: "alert", className: "mt-4 flex gap-2 text-sm text-amber-950", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniExclamationTriangle, { className: "mt-0.5 size-4 shrink-0" }),
-      "Settings cannot be changed until Guard verifies local settings integrity."
-    ] }) : null,
-    props.refreshRequired ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { role: "status", className: "mt-4 text-sm text-blue-950", children: "Settings applied. Editing stays locked until Guard reloads the current protected state." }) : null
-  ] });
 }
 function ExtensionPolicyPanel(props) {
   const [policyExtension, setPolicyExtension] = reactExports.useState(props.extension);

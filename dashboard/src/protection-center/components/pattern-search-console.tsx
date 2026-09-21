@@ -11,7 +11,6 @@ import {
 import type { EffectiveExtensionControls, ExtensionCatalogItem } from "../../extension-controls-api";
 import {
   PermissionPolicyRow,
-  PolicyEditingLocks,
   PolicyReviewSheet,
 } from "../../extension-policy-panel";
 import { AppliedPolicyToast } from "../../extension-policy-applied-toast";
@@ -21,6 +20,7 @@ import { COMMAND_PATTERN_DISPLAY_LIMIT, searchCommandPatterns } from "../model/p
 import { ProtectionModuleRow } from "./protection-primitives";
 import { ExtensionBrandMark } from "./extension-brand-mark";
 import { QuickApplyToolbar } from "./quick-apply-toolbar";
+import { PolicyEditingLocks } from "./policy-editing-locks";
 
 function CatalogSearchRow(props: {
   extension: ExtensionCatalogItem;

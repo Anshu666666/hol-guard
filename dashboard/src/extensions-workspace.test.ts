@@ -405,6 +405,7 @@ const policyDraftSource = readFileSync(new URL("./use-extension-policy-draft.ts"
 const workspaceHostSource = readFileSync(new URL("./protection-center/protection-center-workspace.tsx", import.meta.url), "utf8");
 const patternSearchSource = readFileSync(new URL("./protection-center/components/pattern-search-console.tsx", import.meta.url), "utf8");
 const quickApplyToolbarSource = readFileSync(new URL("./protection-center/components/quick-apply-toolbar.tsx", import.meta.url), "utf8");
+const policyEditingLocksSource = readFileSync(new URL("./protection-center/components/policy-editing-locks.tsx", import.meta.url), "utf8");
 const extensionNavigationSource = readFileSync(new URL("./protection-center/extension-navigation.ts", import.meta.url), "utf8");
 assert.match(workspaceHostSource, /data-testid="extensions-workspace"/);
 assert.match(workspaceHostSource, /pushExtensionHistory/);
@@ -415,8 +416,18 @@ assert.match(extensionNavigationSource, /export function replaceExtensionHistory
 assert.match(policyDetailSource, /id="extension-policy-tabpanel"[\s\S]*role="tabpanel"[\s\S]*aria-labelledby="extension-tab-policy"/);
 assert.match(policyDraftSource, /isCurrentExtensionPolicyDraft\(generation, draftGeneration\.current\)\) handleApiError/);
 assert.match(policyDraftSource, /isCurrentExtensionPolicyDraft\(generation, draftGeneration\.current\)[\s\S]*Guard could not rebase this draft/);
+assert.match(
+  policyDraftSource,
+  /props\.effective\.revision, props\.effective\.catalog_digest, props\.effective\.health, props\.effective\.global_lockdown/,
+  "the draft re-seeds on integrity-health and lockdown transitions, not only revision or digest changes",
+);
 assert.match(policyPanelSource, /ArrowLeft[\s\S]*ArrowRight[\s\S]*ArrowUp[\s\S]*ArrowDown/);
-assert.match(policyPanelSource, /Settings applied\. Editing stays locked/);
+assert.match(policyPanelSource, /PolicyEditingLocks/);
+assert.match(
+  policyEditingLocksSource,
+  /Settings applied\. Editing stays locked/,
+  "the shared lock notices carry the post-apply reload copy",
+);
 assert.match(patternSearchSource, /QuickApplyToolbar/);
 assert.match(patternSearchSource, /PolicyEditingLocks/);
 assert.match(quickApplyToolbarSource, /Quick apply to/);

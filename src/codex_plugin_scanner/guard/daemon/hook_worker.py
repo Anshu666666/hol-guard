@@ -106,10 +106,14 @@ class HookWorker:
             if status.mode == "off":
                 raise HookWorkerUnsupported("native PreToolUse runtime is off")
             if status.available or native_mode() == "force":
-                return post_tool_fail_safe_response(
+                return _harness_json_from_native_pre_tool(
                     harness,
-                    reason="HOL Guard could not complete the native PreToolUse decision safely.",
-                    reason_code="native_pre_tool_unavailable",
+                    {
+                        "minimum_action": "deny",
+                        "decision": "deny",
+                        "reason": "HOL Guard could not complete the native PreToolUse decision safely.",
+                        "reason_code": "native_pre_tool_unavailable",
+                    },
                 )
             raise HookWorkerUnsupported("native PreToolUse runtime is unavailable")
         if event_name != "PostToolUse":

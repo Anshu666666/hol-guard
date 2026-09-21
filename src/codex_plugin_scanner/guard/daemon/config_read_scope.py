@@ -35,10 +35,9 @@ class HookConfigReadScope:
 
     def __call__(self, path: Path) -> CapturedGuardConfig:
         parent = path.parent.absolute()
-        # The configured home is a trusted construction input. Preserve its
-        # intentional alias by retaining the canonical home selected then; never
-        # follow a replacement alias on a later publication or posture lookup.
-        expected = self.canonical_home if parent == self.configured_home else parent
+        # Preserve the intentional home alias; otherwise canonicalize the parent
+        # so it matches the resolve() capture_guard_config performs internally.
+        expected = self.canonical_home if parent == self.configured_home else parent.resolve()
         return capture_guard_config(
             expected / path.name, expected_parent=expected, parent_validator=self._validate_held_parent
         )

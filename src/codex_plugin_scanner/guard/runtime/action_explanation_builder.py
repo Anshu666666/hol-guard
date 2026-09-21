@@ -268,7 +268,7 @@ def _build_compound_explanation(
                     actor_label=facts.actor_label,
                     executable=segment.executable,
                     arguments=tuple(segment.arguments),
-                    operands=tuple(segment.arguments),
+                    operands=(),
                     target_paths=facts.target_paths,
                     network_hosts=facts.network_hosts,
                     package_names=facts.package_names,

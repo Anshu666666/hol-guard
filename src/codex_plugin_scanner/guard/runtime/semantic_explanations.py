@@ -585,6 +585,7 @@ def _target_label(
     if strategy == "network":
         host = _network_host(input, arguments)
         if host:
+            host = host.split("@")[-1]
             return f"the service at {_bounded(host.casefold(), 253)}", "network_host", "normal"
         return "an external website or service", "network_host", "unknown"
     if strategy == "remote":

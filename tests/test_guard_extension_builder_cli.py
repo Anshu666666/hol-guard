@@ -10,7 +10,7 @@ import pytest
 
 from codex_plugin_scanner import cli
 from codex_plugin_scanner.guard.cli import commands_router
-from codex_plugin_scanner.guard.extension_builder.io import canonical_json
+from codex_plugin_scanner.guard.extension_builder.io import canonical_json, digest
 from codex_plugin_scanner.guard.extension_builder.kit import write_kit
 from tests.extension_builder_support import cli_document, make_kit, repository_fixture
 
@@ -164,6 +164,79 @@ def test_cli_apply_is_plan_only_until_explicit_write(
     assert status == 0 and result["written"] is True
     status, conflict = invoke([*arguments, "--write", "--expected-plan", plan["planDigest"]], capsys)
     assert status == 3 and conflict["error"]["code"] == "repository_conflict"
+
+
+def test_cli_handoff_requires_bound_generated_projections(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    source = {
+        "schema": "guard.command-extension-source.v1",
+        "extension": {"extension_id": "command.demo"},
+    }
+    source_path = tmp_path / "contributions/command-sources/command.demo.json"
+    fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
+    trust_path = tmp_path / "contracts/extensions/trust-class-map.v1.json"
+    source_path.parent.mkdir(parents=True)
+    fixture_path.parent.mkdir(parents=True)
+    trust_path.parent.mkdir(parents=True)
+    source_path.write_text(canonical_json(source), encoding="utf-8")
+    fixture_path.write_text(
+        canonical_json(
+            {
+                "schema": "guard.command-extension-fixtures.v1",
+                "build": {"schema": "guard.command-extension-build.v1", "sources": [source]},
+                "cases": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    trust_path.write_text(
+        canonical_json(
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {"first-party": [], "trusted-library": [], "external": ["command.demo"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+    arguments = [
+        "extensions",
+        "handoff",
+        "--repo",
+        str(tmp_path),
+        "--source",
+        str(source_path),
+        "--fixture",
+        str(fixture_path),
+        "--trust-map",
+        str(trust_path),
+        "--json",
+    ]
+    status, error = invoke(arguments, capsys)
+    assert status == 2 and error["error"]["code"] == "missing_projection"
+
+    descriptor_path = tmp_path / "contributions/extensions/command.demo.json"
+    descriptor_path.parent.mkdir(parents=True)
+    descriptor_path.write_text(
+        canonical_json(
+            {
+                "id": "command.demo",
+                "nativeSource": {
+                    "path": "contributions/command-sources/command.demo.json",
+                    "digest": digest(source),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    program_path = tmp_path / "contracts/extensions/native-command-program.v1.json"
+    catalog_path = tmp_path / "contracts/extensions/command-catalog.v1.json"
+    program_path.write_text(canonical_json({"extensions": [{"extension_id": "command.demo"}]}), encoding="utf-8")
+    catalog_path.write_text(canonical_json({"catalog": [{"extension_id": "command.demo"}]}), encoding="utf-8")
+    status, result = invoke(arguments, capsys)
+    assert status == 0
+    assert result == {"contributionId": "command.demo", "readyForPullRequest": True, "targetCommandsExecuted": 0}
 
 
 def test_cli_output_conflicts_have_dedicated_status(

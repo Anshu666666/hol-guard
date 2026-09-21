@@ -34,6 +34,24 @@ and the [portable behavior cases](../../../rust/crates/guard-command/tests/fixtu
 The source filename stem must equal `extension.extension_id`. Keep trust class,
 activation, candidate indexes, and native function names out of the source.
 
+## Prepare a complete pull request
+
+The Builder is the one write path for a contribution. Preview its plan, apply it only with the
+printed plan digest, then run the handoff check before opening a PR:
+
+```sh
+hol-guard extensions apply <reviewed-kit> --repo .
+hol-guard extensions apply <reviewed-kit> --repo . \
+  --write --expected-plan <printed-plan-digest>
+hol-guard extensions handoff --repo . \
+  --source contributions/command-sources/command.<name>.json \
+  --fixture tests/fixtures/command-source-<name>.v1.json
+```
+
+The handoff command checks the exact source/fixture binding, external trust mapping, generated
+descriptor, native program, and catalog without executing a target command. It fails before a PR
+opens when a deterministic projection is missing or stale.
+
 Every rule has one owning permission. Every safe variant is a narrower native
 matcher belonging to its rule. Use the existing native operation contracts;
 unknown operations, callbacks, imports, and unsupported configuration fail

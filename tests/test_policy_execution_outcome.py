@@ -188,8 +188,10 @@ def test_source_removed_after_real_child_completion_does_not_relabel_the_receipt
 
     def execute_then_clear_source(*args, **kwargs):
         result = actual_run(*args, **kwargs)
-        completed.append(result.returncode)
-        store.clear_policy_bundle_authority(_NOW, policy_bundle_last_error={})
+        launch_command = args[0] if args else kwargs.get("args")
+        if not (launch_command and str(launch_command[0]).endswith("ps")):
+            completed.append(result.returncode)
+            store.clear_policy_bundle_authority(_NOW, policy_bundle_last_error={})
         return result
 
     monkeypatch.setattr("codex_plugin_scanner.guard.local_supply_chain.subprocess.run", execute_then_clear_source)

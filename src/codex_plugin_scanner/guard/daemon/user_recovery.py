@@ -190,15 +190,19 @@ def _normal_reason(value: object, fallback: str = "unknown") -> str:
 
 
 def _normal_service(value: object) -> str:
-    return value if value in {"unknown", "unavailable", "ready"} else "unknown"
+    return value if isinstance(value, str) and value in {"unknown", "unavailable", "ready"} else "unknown"
 
 
 def _normal_protection(value: object) -> str:
-    return value if value in {"unknown", "verified", "needs_attention", "off"} else "unknown"
+    return (
+        value
+        if isinstance(value, str) and value in {"unknown", "verified", "needs_attention", "off"}
+        else "unknown"
+    )
 
 
 def _normal_check_result(value: object) -> str:
-    return value if value in {"pass", "fail", "unknown"} else "unknown"
+    return value if isinstance(value, str) and value in {"pass", "fail", "unknown"} else "unknown"
 
 
 def _safe_path(value: object) -> Path | None:
@@ -501,6 +505,7 @@ class UserRecoveryCoordinator:
         finally:
             with _OPERATIONS_LOCK:
                 _ACTIVE_BY_HOME.pop(home_key, None)
+                _ACTIVE_BY_ID.pop(str(operation.operation_id), None)
                 _COMPLETED_BY_ID[str(operation.operation_id)] = operation
                 while len(_COMPLETED_BY_ID) > _MAX_COMPLETED_OPERATIONS:
                     _COMPLETED_BY_ID.pop(next(iter(_COMPLETED_BY_ID)))
@@ -966,7 +971,7 @@ class UserRecoveryCoordinator:
     def _protection_posture(self) -> str:
         if self.hooks.protection_posture is not None:
             value = _call_hook(self.hooks.protection_posture, self.guard_home)
-            return value if value in {"on", "off", "unknown"} else "unknown"
+            return value if isinstance(value, str) and value in {"on", "off", "unknown"} else "unknown"
         try:
             from .recovery_lifecycle import guard_recovery_is_disabled
 
@@ -1214,7 +1219,9 @@ def _default_inspect_service(guard_home: Path, state: Mapping[str, object] | Non
             return ServiceInspection("unavailable", "endpoint_conflict", identity, process_running=True)
         if command_identity is not True:
             return ServiceInspection("unavailable", "identity_unverified", identity, process_running=True)
-        live = manager.verified_live_guard_daemon_identity(guard_home)
+        from .live_identity import verified_live_guard_daemon_identity
+
+        live = verified_live_guard_daemon_identity(guard_home)
     except (OSError, RuntimeError, ValueError):
         live = None
     if live is None:

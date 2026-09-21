@@ -177,7 +177,11 @@ def validate_event_sequence(previous: Mapping[str, object] | None, current: obje
     previous_snapshot = validate_recovery_snapshot(previous)
     if previous_snapshot["operationId"] != snapshot["operationId"]:
         raise RecoveryContractError("recovery_operation_changed")
-    if int(snapshot["sequence"]) <= int(previous_snapshot["sequence"]):
+    current_sequence = snapshot["sequence"]
+    previous_sequence = previous_snapshot["sequence"]
+    if not isinstance(current_sequence, int) or not isinstance(previous_sequence, int):
+        raise RecoveryContractError("recovery_sequence_invalid")
+    if current_sequence <= previous_sequence:
         raise RecoveryContractError("recovery_sequence_not_increasing")
     return snapshot
 
@@ -203,9 +207,11 @@ def _validate_terminal_invariants(snapshot: Mapping[str, object]) -> None:
             raise RecoveryContractError("recovery_complete_outcome_invalid")
     if phase == "timed_out_waiting" and (not snapshot["workerActive"] or snapshot["retryAllowed"]):
         raise RecoveryContractError("recovery_timeout_worker_invalid")
+    checks = snapshot["checks"]
+    if not isinstance(checks, list):
+        raise RecoveryContractError("recovery_checks_invalid")
     if snapshot["protection"] == "verified" and not any(
-        check["id"] == "protection_health" and check["result"] == "pass"
-        for check in snapshot["checks"]  # type: ignore[union-attr]
+        check["id"] == "protection_health" and check["result"] == "pass" for check in checks
     ):
         raise RecoveryContractError("recovery_protection_unverified")
 

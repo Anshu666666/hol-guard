@@ -43,8 +43,13 @@ def _persist_snapshot(guard_home: Path, snapshot: object) -> None:
     # report itself is written through the same owner-private atomic helper.
     try:
         previous = load_recovery_diagnostics(guard_home)
-        if previous is not None and previous.get("operationId") == validated.get("operationId"):
-            events = [*previous["events"], validated]
+        previous_events = previous.get("events") if previous is not None else None
+        if (
+            previous is not None
+            and previous.get("operationId") == validated.get("operationId")
+            and isinstance(previous_events, list)
+        ):
+            events = [*previous_events, validated]
         else:
             events = [validated]
         persist_recovery_diagnostics(guard_home, events)

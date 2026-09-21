@@ -21,17 +21,24 @@ def invoke(arguments: list[str], capsys: pytest.CaptureFixture[str]) -> tuple[in
     return result, json.loads(capsys.readouterr().out)
 
 
-def write_external_trust_map(repository: Path, extension_id: str = "command.demo") -> None:
+def write_trust_map(repository: Path, classes: dict[str, list[object]]) -> None:
     trust_map = repository / "contracts/extensions/trust-class-map.v1.json"
     trust_map.parent.mkdir(parents=True, exist_ok=True)
     trust_map.write_text(
         canonical_json(
             {
                 "schemaVersion": "guard.extension-trust-class-map.v1",
-                "classes": {"first-party": [], "trusted-library": [], "external": [extension_id]},
+                "classes": classes,
             }
         ),
         encoding="utf-8",
+    )
+
+
+def write_external_trust_map(repository: Path, extension_id: str = "command.demo") -> None:
+    write_trust_map(
+        repository,
+        {"first-party": [], "trusted-library": [], "external": [extension_id]},
     )
 
 
@@ -181,28 +188,72 @@ def test_cli_apply_is_plan_only_until_explicit_write(
     assert status == 3 and conflict["error"]["code"] == "repository_conflict"
 
 
-def test_cli_handoff_runs_the_complete_repository_preparation_check(
+def handoff_source(extension_id: str = "command.demo") -> dict[str, object]:
+    return {
+        "schema": "guard.command-extension-source.v1",
+        "extension": {"extension_id": extension_id},
+    }
+
+
+def write_handoff_inputs(
+    repository: Path,
+    *,
+    source: dict[str, object] | None = None,
+    include_script: bool = True,
+) -> tuple[Path, Path]:
+    source_path = repository / "contributions/command-sources/command.demo.json"
+    fixture_path = repository / "tests/fixtures/command-source-demo.v1.json"
+    source_path.parent.mkdir(parents=True)
+    fixture_path.parent.mkdir(parents=True)
+    source_path.write_text(canonical_json(handoff_source() if source is None else source), encoding="utf-8")
+    fixture_path.write_text("{}", encoding="utf-8")
+    if include_script:
+        script = repository / "scripts/prepare_extension_contribution.py"
+        script.parent.mkdir()
+        script.write_text("# invoked by the subprocess stub\n", encoding="utf-8")
+    return source_path, fixture_path
+
+
+def handoff_arguments(
+    repository: Path,
+    source_path: Path,
+    fixture_path: Path,
+    *,
+    json_output: bool = True,
+    compiler: Path | None = None,
+) -> list[str]:
+    arguments = [
+        "extensions",
+        "handoff",
+        "--repo",
+        str(repository),
+        "--source",
+        str(source_path),
+        "--fixture",
+        str(fixture_path),
+    ]
+    if compiler is not None:
+        arguments.extend(("--compiler", str(compiler)))
+    if json_output:
+        arguments.append("--json")
+    return arguments
+
+
+def test_cli_handoff_delegates_complete_repository_preparation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["hol-guard"])
-    source = {
-        "schema": "guard.command-extension-source.v1",
-        "extension": {"extension_id": "command.demo"},
-    }
-    source_path = tmp_path / "contributions/command-sources/command.demo.json"
-    fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
-    source_path.parent.mkdir(parents=True)
-    fixture_path.parent.mkdir(parents=True)
-    (tmp_path / "scripts").mkdir()
+    source_path, fixture_path = write_handoff_inputs(tmp_path)
     write_external_trust_map(tmp_path)
-    source_path.write_text(canonical_json(source), encoding="utf-8")
-    fixture_path.write_text("{}", encoding="utf-8")
+    compiler = tmp_path / "guard-command-source"
+    compiler.write_text("# already-built compiler\n", encoding="utf-8")
     script = tmp_path / "scripts/prepare_extension_contribution.py"
-    script.write_text("# checked by the subprocess stub\n", encoding="utf-8")
     calls: list[tuple[list[str], Path]] = []
 
     def run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-        calls.append((command, kwargs["cwd"]))
+        cwd = kwargs["cwd"]
+        assert isinstance(cwd, Path)
+        calls.append((command, cwd))
         return subprocess.CompletedProcess(
             command,
             0,
@@ -210,22 +261,12 @@ def test_cli_handoff_runs_the_complete_repository_preparation_check(
             stderr="",
         )
 
-    monkeypatch.setattr(
-        "codex_plugin_scanner.guard.cli.extension_builder_commands.subprocess.run",
-        run,
+    monkeypatch.setattr("codex_plugin_scanner.guard.cli.extension_builder_commands.subprocess.run", run)
+    status, result = invoke(
+        handoff_arguments(tmp_path, source_path, fixture_path, compiler=compiler),
+        capsys,
     )
-    arguments = [
-        "extensions",
-        "handoff",
-        "--repo",
-        str(tmp_path),
-        "--source",
-        str(source_path),
-        "--fixture",
-        str(fixture_path),
-        "--json",
-    ]
-    status, result = invoke(arguments, capsys)
+
     assert status == 0
     assert result == {"contributionId": "command.demo", "readyForPullRequest": True, "targetCommandsExecuted": 0}
     assert calls == [
@@ -238,115 +279,169 @@ def test_cli_handoff_runs_the_complete_repository_preparation_check(
                 str(source_path),
                 "--fixture",
                 str(fixture_path),
+                "--compiler",
+                str(compiler),
             ],
             tmp_path,
         )
     ]
 
 
+@pytest.mark.parametrize(
+    ("source", "code"),
+    [
+        ({"schema": "other", "extension": {"extension_id": "command.demo"}}, "source_schema"),
+        ({"schema": "guard.command-extension-source.v1", "extension": {"extension_id": "demo"}}, "source_identity"),
+    ],
+)
+def test_cli_handoff_rejects_invalid_source_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    source: dict[str, object],
+    code: str,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    source_path, fixture_path = write_handoff_inputs(tmp_path, source=source, include_script=False)
+
+    status, error = invoke(handoff_arguments(tmp_path, source_path, fixture_path), capsys)
+
+    assert status == 2 and error["error"]["code"] == code
+
+
 def test_cli_handoff_rejects_noncanonical_paths_before_running_preparation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["hol-guard"])
-    source = {
-        "schema": "guard.command-extension-source.v1",
-        "extension": {"extension_id": "command.demo"},
-    }
     source_path = tmp_path / "drafts/command.demo.json"
     fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
     source_path.parent.mkdir(parents=True)
     fixture_path.parent.mkdir(parents=True)
-    source_path.write_text(canonical_json(source), encoding="utf-8")
+    source_path.write_text(canonical_json(handoff_source()), encoding="utf-8")
     fixture_path.write_text("{}", encoding="utf-8")
-    status, error = invoke(
-        [
-            "extensions",
-            "handoff",
-            "--repo",
-            str(tmp_path),
-            "--source",
-            str(source_path),
-            "--fixture",
-            str(fixture_path),
-            "--json",
-        ],
-        capsys,
-    )
+
+    status, error = invoke(handoff_arguments(tmp_path, source_path, fixture_path), capsys)
+
     assert status == 2 and error["error"]["code"] == "canonical_paths"
 
 
-def test_cli_handoff_fails_when_repository_preparation_rejects_the_input(
+@pytest.mark.parametrize(
+    ("trust_map", "code"),
+    [
+        ({"schemaVersion": "other", "classes": {}}, "trust_schema"),
+        (
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {"first-party": [], "trusted-library": [], "external": [123]},
+            },
+            "trust_shape",
+        ),
+        (
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {"first-party": [], "trusted-library": [], "external": ["command.other"]},
+            },
+            "missing_external_trust",
+        ),
+        (
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {"first-party": ["command.demo"], "trusted-library": [], "external": []},
+            },
+            "trust_class",
+        ),
+        (
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {
+                    "first-party": ["command.demo"],
+                    "trusted-library": [],
+                    "external": ["command.demo"],
+                },
+            },
+            "trust_class",
+        ),
+    ],
+)
+def test_cli_handoff_rejects_invalid_trust_maps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    trust_map: dict[str, object],
+    code: str,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    source_path, fixture_path = write_handoff_inputs(tmp_path, include_script=False)
+    map_path = tmp_path / "contracts/extensions/trust-class-map.v1.json"
+    map_path.parent.mkdir(parents=True)
+    map_path.write_text(canonical_json(trust_map), encoding="utf-8")
+
+    status, error = invoke(handoff_arguments(tmp_path, source_path, fixture_path), capsys)
+
+    assert status == 2 and error["error"]["code"] == code
+
+
+def test_cli_handoff_requires_repository_preparation_tooling(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["hol-guard"])
-    source = {
-        "schema": "guard.command-extension-source.v1",
-        "extension": {"extension_id": "command.demo"},
-    }
-    source_path = tmp_path / "contributions/command-sources/command.demo.json"
-    fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
-    source_path.parent.mkdir(parents=True)
-    fixture_path.parent.mkdir(parents=True)
-    (tmp_path / "scripts").mkdir()
+    source_path, fixture_path = write_handoff_inputs(tmp_path, include_script=False)
     write_external_trust_map(tmp_path)
-    source_path.write_text(canonical_json(source), encoding="utf-8")
-    fixture_path.write_text("{}", encoding="utf-8")
-    (tmp_path / "scripts/prepare_extension_contribution.py").write_text("# invoked by the stub\n", encoding="utf-8")
-    monkeypatch.setattr(
-        "codex_plugin_scanner.guard.cli.extension_builder_commands.subprocess.run",
-        lambda command, **_kwargs: subprocess.CompletedProcess(command, 2, stdout="", stderr="invalid fixture"),
-    )
 
-    status, error = invoke(
-        [
-            "extensions",
-            "handoff",
-            "--repo",
-            str(tmp_path),
-            "--source",
-            str(source_path),
-            "--fixture",
-            str(fixture_path),
-            "--json",
-        ],
-        capsys,
-    )
+    status, error = invoke(handoff_arguments(tmp_path, source_path, fixture_path), capsys)
+
+    assert status == 2 and error["error"]["code"] == "repository_layout"
+
+
+@pytest.mark.parametrize("outcome", ["nonzero", "invalid_json", "incomplete", "launch_error"])
+def test_cli_handoff_rejects_failed_preparation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    outcome: str,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    source_path, fixture_path = write_handoff_inputs(tmp_path)
+    write_external_trust_map(tmp_path)
+
+    def run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        if outcome == "launch_error":
+            raise OSError("unavailable")
+        if outcome == "nonzero":
+            return subprocess.CompletedProcess(command, 2, stdout="", stderr="invalid fixture")
+        if outcome == "invalid_json":
+            return subprocess.CompletedProcess(command, 0, stdout="not JSON", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps({"ok": True, "checked": True}), stderr="")
+
+    monkeypatch.setattr("codex_plugin_scanner.guard.cli.extension_builder_commands.subprocess.run", run)
+    status, error = invoke(handoff_arguments(tmp_path, source_path, fixture_path), capsys)
+
     assert status == 2 and error["error"]["code"] == "handoff_validation"
 
 
-def test_cli_handoff_requires_an_external_trust_entry(
+def test_cli_handoff_human_output_confirms_the_safety_boundary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["hol-guard"])
-    source = {
-        "schema": "guard.command-extension-source.v1",
-        "extension": {"extension_id": "command.demo"},
-    }
-    source_path = tmp_path / "contributions/command-sources/command.demo.json"
-    fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
-    source_path.parent.mkdir(parents=True)
-    fixture_path.parent.mkdir(parents=True)
-    (tmp_path / "scripts").mkdir()
-    source_path.write_text(canonical_json(source), encoding="utf-8")
-    fixture_path.write_text("{}", encoding="utf-8")
-    (tmp_path / "scripts/prepare_extension_contribution.py").write_text("# should not run\n", encoding="utf-8")
-    write_external_trust_map(tmp_path, "command.other")
-
-    status, error = invoke(
-        [
-            "extensions",
-            "handoff",
-            "--repo",
-            str(tmp_path),
-            "--source",
-            str(source_path),
-            "--fixture",
-            str(fixture_path),
-            "--json",
-        ],
-        capsys,
+    source_path, fixture_path = write_handoff_inputs(tmp_path)
+    write_external_trust_map(tmp_path)
+    monkeypatch.setattr(
+        "codex_plugin_scanner.guard.cli.extension_builder_commands.subprocess.run",
+        lambda command, **_kwargs: subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps({"ok": True, "checked": True, "targetCommandsExecuted": 0}),
+            stderr="",
+        ),
     )
-    assert status == 2 and error["error"]["code"] == "missing_external_trust"
+
+    status = cli.main(handoff_arguments(tmp_path, source_path, fixture_path, json_output=False))
+    output = capsys.readouterr().out
+
+    assert status == 0
+    assert "Contribution handoff is ready for command.demo." in output
+    assert "Source, fixture, external trust mapping, and generated projections agree." in output
+    assert "No target was executed and active protection was not changed." in output
 
 
 def test_cli_output_conflicts_have_dedicated_status(

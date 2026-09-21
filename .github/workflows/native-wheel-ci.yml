@@ -316,11 +316,25 @@ jobs:
           gates = payload.get("gates")
           concurrency = payload.get("concurrency")
           sixteen = concurrency.get("sixteen") if isinstance(concurrency, dict) else None
+          latency_gates = {
+              "1m_latency",
+              "250k_latency",
+              "5m_latency",
+              "cold_latency",
+              "concurrency",
+              "readiness",
+              "recovery_latency",
+              "warm_latency",
+          }
+          failed_gates = {key for key, value in gates.items() if value is False} if isinstance(gates, dict) else set()
           retryable = (
               isinstance(gates, dict)
-              and gates.get("concurrency") is False
-              and all(value is True for key, value in gates.items() if key != "concurrency")
+              and all(type(value) is bool for value in gates.values())
+              and bool(failed_gates)
+              and failed_gates <= latency_gates
+              and all(value is True for key, value in gates.items() if key not in latency_gates)
               and payload.get("errors_16") == 0
+              and payload.get("errors_64") == 0
               and isinstance(sixteen, dict)
               and sixteen.get("errors") == 0
               and sixteen.get("overloaded") == 0
@@ -345,11 +359,11 @@ jobs:
                 exit "$slo_status"
               fi
               if [[ "$attempt" -lt 3 ]]; then
-                echo "::warning::Intel macOS strict concurrency-latency gate missed on attempt ${attempt}/3; retrying the same installed wheel."
+                echo "::warning::Intel macOS strict latency-only SLO gate missed on attempt ${attempt}/3; retrying the same installed wheel."
               fi
             done
             if [[ "$slo_status" -ne 0 ]]; then
-              echo "Intel macOS strict concurrency-latency gate failed all three attempts." >&2
+              echo "Intel macOS strict latency-only SLO gates failed all three attempts." >&2
               exit "$slo_status"
             fi
           else

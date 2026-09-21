@@ -111,6 +111,7 @@ def test_tier2_fixture_labs_cover_safe_and_vulnerable_paths(
     blocked_version: str,
     expected_decision: str,
 ) -> None:
+    """Verify blocked versions are denied and safe fixture versions require approval."""
     _force_unpaid_entitlement(monkeypatch)
     home_dir = tmp_path / "home"
     workspace_dir = tmp_path / "workspace"

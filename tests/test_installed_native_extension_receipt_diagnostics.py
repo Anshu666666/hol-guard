@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-import time
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -16,14 +15,22 @@ from codex_plugin_scanner.guard.native_approval_errors import NATIVE_COMMAND_CON
 
 
 class _ReceiptStore:
-    def __init__(self, path: Path, ids: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        path: Path,
+        ids: tuple[str, ...],
+        *,
+        first_receipt_id_read: threading.Event | None = None,
+    ) -> None:
         self._path = path
+        self._first_receipt_id_read: threading.Event | None = None
         with self._connect() as connection:
             connection.execute("create table native_hook_decision_receipts (decision_id text primary key)")
             connection.executemany(
                 "insert into native_hook_decision_receipts (decision_id) values (?)", ((identity,) for identity in ids)
             )
             connection.commit()
+        self._first_receipt_id_read = first_receipt_id_read
 
     @contextmanager
     def _connect(self):  # type: ignore[no-untyped-def]
@@ -33,6 +40,9 @@ class _ReceiptStore:
             yield connection
         finally:
             connection.close()
+            if self._first_receipt_id_read is not None:
+                self._first_receipt_id_read.set()
+                self._first_receipt_id_read = None
 
     def get_native_decision_receipt(self, identity: str) -> dict[str, object] | None:
         with self._connect() as connection:
@@ -57,10 +67,15 @@ def test_persisted_receipt_correlation_uses_a_new_durable_identity(tmp_path: Pat
 
 
 def test_persisted_receipt_correlation_waits_for_a_receipt_persisted_after_polling_starts(tmp_path: Path) -> None:
-    store = _ReceiptStore(tmp_path / "receipts.sqlite3", ("prior",))
+    first_receipt_id_read = threading.Event()
+    store = _ReceiptStore(
+        tmp_path / "receipts.sqlite3",
+        ("prior",),
+        first_receipt_id_read=first_receipt_id_read,
+    )
 
     def persist_after_polling_starts() -> None:
-        time.sleep(0.05)
+        assert first_receipt_id_read.wait(timeout=1)
         store.insert("current")
 
     writer = threading.Thread(target=persist_after_polling_starts)

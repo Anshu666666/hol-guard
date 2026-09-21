@@ -188,6 +188,9 @@ def test_source_removed_after_real_child_completion_does_not_relabel_the_receipt
 
     def execute_then_clear_source(*args, **kwargs):
         result = actual_run(*args, **kwargs)
+        launch_command = args[0] if args else kwargs.get("args")
+        if not (launch_command and any("npm" in Path(str(part)).name for part in launch_command)):
+            return result
         completed.append(result.returncode)
         store.clear_policy_bundle_authority(_NOW, policy_bundle_last_error={})
         return result

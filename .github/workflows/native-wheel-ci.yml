@@ -344,7 +344,9 @@ jobs:
                 echo "Intel macOS SLO failed for a non-retryable reason." >&2
                 exit "$slo_status"
               fi
-              echo "::warning::Intel macOS strict concurrency-latency gate missed on attempt ${attempt}/3; retrying the same installed wheel."
+              if [[ "$attempt" -lt 3 ]]; then
+                echo "::warning::Intel macOS strict concurrency-latency gate missed on attempt ${attempt}/3; retrying the same installed wheel."
+              fi
             done
             if [[ "$slo_status" -ne 0 ]]; then
               echo "Intel macOS strict concurrency-latency gate failed all three attempts." >&2

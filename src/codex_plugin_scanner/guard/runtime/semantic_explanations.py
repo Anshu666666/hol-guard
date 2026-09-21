@@ -639,14 +639,17 @@ def _target_label(
 
 
 def _network_host(input: CommandSemanticInput, arguments: Sequence[str]) -> str | None:
+    from urllib.parse import urlsplit
     for value in input.network_hosts:
         host = value.strip().strip("[]")
         if host:
             return host
     for argument in arguments:
-        match = _URL_RE.search(argument)
-        if match:
-            return match.group(1).strip("[]")
+        if "://" not in argument:
+            continue
+        parsed = urlsplit(argument)
+        if parsed.hostname:
+            return parsed.hostname
     return None
 
 

@@ -36,13 +36,17 @@ activation, candidate indexes, and native function names out of the source.
 
 ## Prepare a complete pull request
 
-The Builder is the one write path for a contribution. Preview its plan, apply it only with the
-printed plan digest, then run the handoff check before opening a PR:
+The Builder is the source-integration write path for a contribution. Preview its plan, apply it
+only with the printed plan digest, then synchronize deterministic projections before running the
+handoff check:
 
 ```sh
 hol-guard extensions apply <reviewed-kit> --repo .
 hol-guard extensions apply <reviewed-kit> --repo . \
   --write --expected-plan <printed-plan-digest>
+uv run --no-sync python scripts/prepare_extension_contribution.py \
+  --source contributions/command-sources/command.<name>.json \
+  --fixture tests/fixtures/command-source-<slug>.v1.json
 hol-guard extensions handoff --repo . \
   --source contributions/command-sources/command.<name>.json \
   --fixture tests/fixtures/command-source-<slug>.v1.json

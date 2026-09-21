@@ -82,8 +82,7 @@ jobs:
             exit 0
           fi
 
-          gh api --method POST "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
-            -f body="$(cat <<'EOF'
+          IFS= read -r -d '' notice_body <<'EOF' || true
           <!-- hol-gitar-fork-access:v1 -->
           Gitar found a repair, but GitHub did not allow it to push to this fork.
 
@@ -95,4 +94,6 @@ jobs:
 
           Only the fork owner can grant maintainer edits. This notice does not change access or request credentials.
           EOF
-          )"
+
+          gh api --method POST "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -f body="$notice_body"

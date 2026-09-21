@@ -248,6 +248,7 @@ def test_gitar_fork_access_notice_only_handles_verified_push_denials() -> None:
     assert "github.event.comment.user.type == 'Bot'" in workflow
     assert "github.event_name == 'workflow_dispatch'" in workflow
     assert "Gitar is not allowed to push to this forked PR." in workflow
+    assert '0* | *[!0-9]* | "")' in workflow
     assert "pr_state" in workflow
     assert "head_is_fork" in workflow
     assert "gitar_denial_ids" in workflow

@@ -31664,12 +31664,140 @@ function App() {
     helpOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBoundary, { onReset: handleCloseHelp, children: /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.Suspense, { fallback: null, children: /* @__PURE__ */ jsxRuntimeExports.jsx(HelpModal, { open: helpOpen, onClose: handleCloseHelp }) }) })
   ] });
 }
+const PRESENTATION_SCHEMA_VERSION = 1;
+const LEGACY = {
+  simple: "everyday",
+  advanced: "technical",
+  developer: "technical"
+};
+function resolvePresentationMode(input) {
+  const revision = typeof input.revision === "number" && Number.isSafeInteger(input.revision) && input.revision >= 0 ? input.revision : 0;
+  const writable = input.writable !== false;
+  const resolved = (value, source, explicit, diagnostic2 = null) => ({
+    value,
+    source,
+    explicit,
+    writable,
+    schemaVersion: PRESENTATION_SCHEMA_VERSION,
+    revision,
+    diagnostic: diagnostic2
+  });
+  if (input.readError) return resolved("everyday", "read-error", false, "presentation_settings_unavailable");
+  if (input.sessionPreview === "everyday" || input.sessionPreview === "technical") {
+    return resolved(input.sessionPreview, "session-preview", true);
+  }
+  const unsupportedSchema = input.schemaVersion !== void 0 && input.schemaVersion !== PRESENTATION_SCHEMA_VERSION;
+  const persistedMode = !unsupportedSchema && (input.value === "everyday" || input.value === "technical") ? input.value : null;
+  if (persistedMode !== null && input.explicit === true) {
+    return resolved(persistedMode, "local-explicit", true);
+  }
+  if (!unsupportedSchema && typeof input.value === "string" && LEGACY[input.value]) {
+    return resolved(LEGACY[input.value], "migrated", true, `migrated_legacy_${input.value}_presentation_mode`);
+  }
+  if (input.cloudProfile === "everyday" || input.cloudProfile === "technical") {
+    return resolved(input.cloudProfile, "cloud-profile", false);
+  }
+  if (persistedMode !== null) {
+    return resolved(persistedMode, "default", false);
+  }
+  let diagnostic = null;
+  if (unsupportedSchema) {
+    diagnostic = "unsupported_presentation_schema_fell_back_to_everyday";
+  } else if (input.value !== void 0 && input.value !== null && input.value !== "") {
+    diagnostic = "unknown_presentation_mode_fell_back_to_everyday";
+  }
+  return resolved("everyday", "default", false, diagnostic);
+}
+const DEFAULT_RESOLVED = resolvePresentationMode({});
+const PresentationModeContext = reactExports.createContext(null);
+const PRESENTATION_SOURCES = /* @__PURE__ */ new Set([
+  "default",
+  "local-explicit",
+  "migrated",
+  "session-preview",
+  "cloud-profile",
+  "read-error"
+]);
+function resolvedFromSettings(settings, sessionPreview) {
+  const source = settings.presentation;
+  if (sessionPreview === null && source) {
+    const value = source.value;
+    const sourceName = source.source;
+    const schemaVersion = source.schema_version;
+    const revision = source.revision;
+    if ((value === "everyday" || value === "technical") && typeof sourceName === "string" && PRESENTATION_SOURCES.has(sourceName) && schemaVersion === PRESENTATION_SCHEMA_VERSION && typeof revision === "number" && Number.isSafeInteger(revision) && revision >= 0) {
+      return {
+        value,
+        source: sourceName,
+        explicit: source.explicit === true,
+        writable: source.writable !== false,
+        schemaVersion: PRESENTATION_SCHEMA_VERSION,
+        revision,
+        diagnostic: typeof source.diagnostic === "string" ? source.diagnostic : null
+      };
+    }
+  }
+  return resolvePresentationMode({
+    value: source?.value ?? settings.presentation_mode,
+    explicit: source?.explicit ?? settings.presentation_mode_explicit,
+    schemaVersion: source?.schema_version ?? settings.presentation_schema_version,
+    revision: source?.revision ?? settings.presentation_revision,
+    writable: typeof source?.writable === "boolean" ? source.writable : true,
+    sessionPreview: sessionPreview ?? void 0
+  });
+}
+function PresentationModeProvider({
+  children,
+  initialResolved,
+  loadFromCore = true
+}) {
+  const [sessionPreview, setSessionPreview] = reactExports.useState(null);
+  const [state, setState] = reactExports.useState(
+    () => initialResolved ? { status: "ready", resolved: initialResolved } : { status: "loading", resolved: DEFAULT_RESOLVED }
+  );
+  const refresh = reactExports.useCallback(async () => {
+    if (!loadFromCore) return;
+    try {
+      const payload = await fetchSettings();
+      setState({ status: "ready", resolved: resolvedFromSettings(payload.settings, sessionPreview) });
+    } catch (error) {
+      setState({
+        status: "error",
+        resolved: resolvePresentationMode({ readError: true, sessionPreview: sessionPreview ?? void 0 }),
+        error: error instanceof Error ? error.message : "Unable to load the local presentation preference."
+      });
+    }
+  }, [loadFromCore, sessionPreview]);
+  reactExports.useEffect(() => {
+    void refresh();
+  }, [refresh]);
+  const setMode = reactExports.useCallback(
+    async (mode) => {
+      const current = state.resolved;
+      if (!current.writable) {
+        throw new Error("The local presentation preference is read-only on this surface.");
+      }
+      const payload = await updateSettings({
+        presentation_mode: mode,
+        presentation_revision: current.revision
+      });
+      setSessionPreview(null);
+      setState({ status: "ready", resolved: resolvedFromSettings(payload.settings, null) });
+    },
+    [state.resolved]
+  );
+  const value = reactExports.useMemo(
+    () => ({ ...state, setMode, refresh, sessionPreview, setSessionPreview }),
+    [refresh, sessionPreview, setMode, state]
+  );
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(PresentationModeContext.Provider, { value, children });
+}
 const container = document.getElementById("guard-dashboard-root");
 if (container === null) {
   throw new Error("Missing guard-dashboard-root");
 }
 clientExports.createRoot(container).render(
-  /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
+  /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(PresentationModeProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) })
 );
 export {
   ProofStrip as $,
@@ -31701,7 +31829,7 @@ export {
   HiMiniWrenchScrewdriver as Z,
   HiMiniExclamationCircle as _,
   EvidenceActivityHeatmapMini as a,
-  sortEvidence as a$,
+  DEFAULT_FILTER_STATE as a$,
   HiMiniEye as a0,
   HiMiniXCircle as a1,
   HiMiniClipboardDocumentCheck as a2,
@@ -31712,139 +31840,141 @@ export {
   React as a7,
   HiMiniKey as a8,
   HiMiniLockClosed as a9,
-  fetchLocalCliApi as aA,
-  fetchExtensionControlApi as aB,
-  useResolvedApprovalGate as aC,
-  HiMiniArrowPath as aD,
-  HiMiniInformationCircle as aE,
-  isApprovalProofSubmitDisabled as aF,
-  ApprovalProofFieldInputs as aG,
-  buildApprovalProofCredentials as aH,
-  GenIcon as aI,
-  HiMiniGlobeAlt as aJ,
-  HiMiniCube as aK,
-  HiMiniServerStack as aL,
-  HiMiniFolder as aM,
-  FaWindows as aN,
-  FaAws as aO,
-  approvalProofRecentlySatisfied as aP,
-  HiMiniArrowLeft as aQ,
-  HiMiniPlus as aR,
-  HiMiniNoSymbol as aS,
-  HiMiniArrowTopRightOnSquare as aT,
-  guardAwareHref as aU,
-  fetchApprovalPage as aV,
-  fetchPolicy as aW,
-  HiMiniHome as aX,
-  guardActionPresentation as aY,
-  DEFAULT_FILTER_STATE as aZ,
-  filterEvidence as a_,
+  Tag as aA,
+  approvalGateCooldownLabel as aB,
+  fetchLocalCliApi as aC,
+  fetchExtensionControlApi as aD,
+  useResolvedApprovalGate as aE,
+  HiMiniArrowPath as aF,
+  HiMiniInformationCircle as aG,
+  isApprovalProofSubmitDisabled as aH,
+  ApprovalProofFieldInputs as aI,
+  buildApprovalProofCredentials as aJ,
+  GenIcon as aK,
+  HiMiniGlobeAlt as aL,
+  HiMiniCube as aM,
+  HiMiniServerStack as aN,
+  HiMiniFolder as aO,
+  FaWindows as aP,
+  FaAws as aQ,
+  approvalProofRecentlySatisfied as aR,
+  HiMiniArrowLeft as aS,
+  HiMiniPlus as aT,
+  HiMiniNoSymbol as aU,
+  HiMiniArrowTopRightOnSquare as aV,
+  guardAwareHref as aW,
+  fetchApprovalPage as aX,
+  fetchPolicy as aY,
+  HiMiniHome as aZ,
+  guardActionPresentation as a_,
   HiMiniBellAlert as aa,
   HiMiniAdjustmentsHorizontal as ab,
   HiMiniCircleStack as ac,
   TabBar as ad,
-  resolveProtectionLevelCopy as ae,
-  fetchSettings as af,
-  fetchRuntimeSnapshot as ag,
-  clearPolicy as ah,
-  clearReviewQueue as ai,
-  revokeApprovalGateCooldown as aj,
-  disableApprovalGateTotp as ak,
-  importSettings as al,
-  resetSettings as am,
-  enrollApprovalGateTotp as an,
-  verifyApprovalGateTotp as ao,
-  clearEvidence as ap,
-  exportDiagnostics as aq,
-  repairApprovalCenter as ar,
-  exportSettings as as,
-  setupDesktopNotifications as at,
-  WorkspacePageHeader as au,
-  HiMiniMagnifyingGlass as av,
-  isProtectionPosture as aw,
-  deriveProtectionPosture as ax,
-  Tag as ay,
-  approvalGateCooldownLabel as az,
+  PRESENTATION_SCHEMA_VERSION as ae,
+  resolvePresentationMode as af,
+  resolveProtectionLevelCopy as ag,
+  fetchSettings as ah,
+  fetchRuntimeSnapshot as ai,
+  clearPolicy as aj,
+  clearReviewQueue as ak,
+  revokeApprovalGateCooldown as al,
+  disableApprovalGateTotp as am,
+  importSettings as an,
+  resetSettings as ao,
+  enrollApprovalGateTotp as ap,
+  verifyApprovalGateTotp as aq,
+  clearEvidence as ar,
+  exportDiagnostics as as,
+  repairApprovalCenter as at,
+  exportSettings as au,
+  setupDesktopNotifications as av,
+  WorkspacePageHeader as aw,
+  HiMiniMagnifyingGlass as ax,
+  isProtectionPosture as ay,
+  deriveProtectionPosture as az,
   HiMiniCommandLine as b,
-  fetchMcpPolicyRequest as b$,
-  computeMetrics as b0,
-  CommandActivityWorkspace as b1,
-  EvidenceFilterBar as b2,
-  EvidenceInsightStrip as b3,
-  EvidenceActionList as b4,
-  EvidenceActionDetail as b5,
-  policyIdentityKey as b6,
-  runHarnessAction as b7,
-  GuardHarnessActionError as b8,
-  HiMiniRocketLaunch as b9,
-  parseInterceptProofSnapshot as bA,
-  activatePackageFirewallRuntime as bB,
-  EntitlementNotice as bC,
-  fetchReceipts as bD,
-  lazyWorkspace as bE,
-  __vitePreload as bF,
-  scopeLabel as bG,
-  HiMiniDocumentText as bH,
-  HiMiniCloudArrowUp as bI,
-  HiMiniCheck as bJ,
-  HiMiniCodeBracket as bK,
-  HiMiniClipboardDocument as bL,
-  HiMiniUsers as bM,
-  HiMiniIdentification as bN,
-  policyActionLabel as bO,
-  createCloudExceptionRequest as bP,
-  HiMiniArrowRight as bQ,
-  HiMiniPuzzlePiece as bR,
-  fetchCloudExceptions as bS,
-  fetchCloudExceptionRequests as bT,
-  downloadBlob as bU,
-  PolicyStatField as bV,
-  PaginationControls as bW,
-  HiMiniArrowDownTray as bX,
-  HiMiniQueueList as bY,
-  Surface as bZ,
-  HiMiniCheckBadge as b_,
-  HiMiniTrash as ba,
-  clearLabelForScope as bb,
-  HiMiniChartBar as bc,
-  formatHarnessCommand as bd,
-  isSupplyChainAuditIncomplete as be,
-  isSupplyChainAuditEvidence as bf,
-  readString$1 as bg,
-  isRecord$2 as bh,
-  HiMiniClock as bi,
-  IconActionButton as bj,
-  HiMiniBeaker as bk,
-  ActivationSummary as bl,
-  ActionResultPanel as bm,
-  HiMiniBugAnt as bn,
-  GuardModalLayer as bo,
-  ConnectFlowCard as bp,
-  ApprovalProofInline as bq,
-  HiMiniCloudArrowDown as br,
-  fetchPackageFirewallStatus as bs,
-  runPackageAudit as bt,
-  resolveSupplyChainAuditFailure as bu,
-  runPackageSync as bv,
-  startPackageFirewallConnect as bw,
-  PACKAGE_FIREWALL_CONNECT_POPUP_BLOCKED_MESSAGE as bx,
-  repairSupplyChainProtection as by,
-  runPackageFirewallAction as bz,
+  Surface as b$,
+  filterEvidence as b0,
+  sortEvidence as b1,
+  computeMetrics as b2,
+  CommandActivityWorkspace as b3,
+  EvidenceFilterBar as b4,
+  EvidenceInsightStrip as b5,
+  EvidenceActionList as b6,
+  EvidenceActionDetail as b7,
+  policyIdentityKey as b8,
+  runHarnessAction as b9,
+  repairSupplyChainProtection as bA,
+  runPackageFirewallAction as bB,
+  parseInterceptProofSnapshot as bC,
+  activatePackageFirewallRuntime as bD,
+  EntitlementNotice as bE,
+  fetchReceipts as bF,
+  lazyWorkspace as bG,
+  __vitePreload as bH,
+  scopeLabel as bI,
+  HiMiniDocumentText as bJ,
+  HiMiniCloudArrowUp as bK,
+  HiMiniCheck as bL,
+  HiMiniCodeBracket as bM,
+  HiMiniClipboardDocument as bN,
+  HiMiniUsers as bO,
+  HiMiniIdentification as bP,
+  policyActionLabel as bQ,
+  createCloudExceptionRequest as bR,
+  HiMiniArrowRight as bS,
+  HiMiniPuzzlePiece as bT,
+  fetchCloudExceptions as bU,
+  fetchCloudExceptionRequests as bV,
+  downloadBlob as bW,
+  PolicyStatField as bX,
+  PaginationControls as bY,
+  HiMiniArrowDownTray as bZ,
+  HiMiniQueueList as b_,
+  GuardHarnessActionError as ba,
+  HiMiniRocketLaunch as bb,
+  HiMiniTrash as bc,
+  clearLabelForScope as bd,
+  HiMiniChartBar as be,
+  formatHarnessCommand as bf,
+  isSupplyChainAuditIncomplete as bg,
+  isSupplyChainAuditEvidence as bh,
+  readString$1 as bi,
+  isRecord$2 as bj,
+  HiMiniClock as bk,
+  IconActionButton as bl,
+  HiMiniBeaker as bm,
+  ActivationSummary as bn,
+  ActionResultPanel as bo,
+  HiMiniBugAnt as bp,
+  GuardModalLayer as bq,
+  ConnectFlowCard as br,
+  ApprovalProofInline as bs,
+  HiMiniCloudArrowDown as bt,
+  fetchPackageFirewallStatus as bu,
+  runPackageAudit as bv,
+  resolveSupplyChainAuditFailure as bw,
+  runPackageSync as bx,
+  startPackageFirewallConnect as by,
+  PACKAGE_FIREWALL_CONNECT_POPUP_BLOCKED_MESSAGE as bz,
   HiMiniChevronRight as c,
-  resolveMcpPolicyRequest as c0,
-  HiMiniDocumentPlus as c1,
-  HiMiniDocumentMagnifyingGlass as c2,
-  fetchSupplyChainBundle as c3,
-  isSupplyChainScannerEvidence as c4,
-  isBlockedGuardAction as c5,
-  HiMiniShieldExclamation as c6,
-  HiMiniComputerDesktop as c7,
-  HiMiniChevronLeft as c8,
-  HiMiniFunnel as c9,
-  HiMiniArrowDown as ca,
-  HiMiniArrowUp as cb,
-  runAuditRemediation as cc,
-  HiMiniSignal as cd,
+  HiMiniCheckBadge as c0,
+  fetchMcpPolicyRequest as c1,
+  resolveMcpPolicyRequest as c2,
+  HiMiniDocumentPlus as c3,
+  HiMiniDocumentMagnifyingGlass as c4,
+  fetchSupplyChainBundle as c5,
+  isSupplyChainScannerEvidence as c6,
+  isBlockedGuardAction as c7,
+  HiMiniShieldExclamation as c8,
+  HiMiniComputerDesktop as c9,
+  HiMiniChevronLeft as ca,
+  HiMiniFunnel as cb,
+  HiMiniArrowDown as cc,
+  HiMiniArrowUp as cd,
+  runAuditRemediation as ce,
+  HiMiniSignal as cf,
   createCommandActivityClient as d,
   updateSettings as e,
   fetchCommandActivityApi as f,

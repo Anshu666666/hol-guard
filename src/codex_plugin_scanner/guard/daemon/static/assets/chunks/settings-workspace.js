@@ -1,4 +1,4 @@
-import { a4 as PROTECTION_POSTURE_COPY, a5 as POSTURE_OUTCOME_COLUMNS, j as jsxRuntimeExports, r as reactExports, a6 as getDefaultExportFromCjs, a7 as React, K as useFocusTrap, a8 as HiMiniKey, S as SectionLabel, A as ActionButton, t as HiMiniShieldCheck, a9 as HiMiniLockClosed, aa as HiMiniBellAlert, ab as HiMiniAdjustmentsHorizontal, ac as HiMiniCircleStack, ad as TabBar, c as HiMiniChevronRight, ae as resolveProtectionLevelCopy, af as fetchSettings, ag as fetchRuntimeSnapshot, e as updateSettings, ah as clearPolicy, ai as clearReviewQueue, aj as revokeApprovalGateCooldown, ak as disableApprovalGateTotp, al as importSettings, am as resetSettings, an as enrollApprovalGateTotp, ao as verifyApprovalGateTotp, ap as clearEvidence, aq as exportDiagnostics, ar as repairApprovalCenter, as as exportSettings, at as setupDesktopNotifications, m as EmptyState, au as WorkspacePageHeader, W as WatchProtectionBanner, av as HiMiniMagnifyingGlass, C as HiMiniChevronDown, o as HiMiniCheckCircle, M as HiMiniExclamationTriangle, aw as isProtectionPosture, ax as deriveProtectionPosture, ay as Tag, az as approvalGateCooldownLabel, z as HiMiniXMark } from "../guard-dashboard.js";
+import { a4 as PROTECTION_POSTURE_COPY, a5 as POSTURE_OUTCOME_COLUMNS, j as jsxRuntimeExports, r as reactExports, a6 as getDefaultExportFromCjs, a7 as React, K as useFocusTrap, a8 as HiMiniKey, S as SectionLabel, A as ActionButton, t as HiMiniShieldCheck, a9 as HiMiniLockClosed, aa as HiMiniBellAlert, ab as HiMiniAdjustmentsHorizontal, ac as HiMiniCircleStack, ad as TabBar, c as HiMiniChevronRight, ae as PRESENTATION_SCHEMA_VERSION, af as resolvePresentationMode, ag as resolveProtectionLevelCopy, ah as fetchSettings, ai as fetchRuntimeSnapshot, e as updateSettings, aj as clearPolicy, ak as clearReviewQueue, al as revokeApprovalGateCooldown, am as disableApprovalGateTotp, an as importSettings, ao as resetSettings, ap as enrollApprovalGateTotp, aq as verifyApprovalGateTotp, ar as clearEvidence, as as exportDiagnostics, at as repairApprovalCenter, au as exportSettings, av as setupDesktopNotifications, m as EmptyState, aw as WorkspacePageHeader, W as WatchProtectionBanner, ax as HiMiniMagnifyingGlass, C as HiMiniChevronDown, o as HiMiniCheckCircle, M as HiMiniExclamationTriangle, ay as isProtectionPosture, az as deriveProtectionPosture, aA as Tag, aB as approvalGateCooldownLabel, z as HiMiniXMark } from "../guard-dashboard.js";
 import { f as filterSettingsBySearch, R as RISK_CONTROL_CONSEQUENCES } from "./app-catalog.js";
 const POSTURE_ORDER = ["protected", "extra_careful", "watch"];
 function ProtectionPosturePanel(props) {
@@ -2474,50 +2474,6 @@ function SettingsSelectRow({
       }
     )
   ] });
-}
-const PRESENTATION_SCHEMA_VERSION = 1;
-const LEGACY = {
-  simple: "everyday",
-  advanced: "technical",
-  developer: "technical"
-};
-function resolvePresentationMode(input) {
-  const revision = typeof input.revision === "number" && Number.isSafeInteger(input.revision) && input.revision >= 0 ? input.revision : 0;
-  const writable = input.writable !== false;
-  const resolved = (value, source, explicit, diagnostic2 = null) => ({
-    value,
-    source,
-    explicit,
-    writable,
-    schemaVersion: PRESENTATION_SCHEMA_VERSION,
-    revision,
-    diagnostic: diagnostic2
-  });
-  if (input.readError) return resolved("everyday", "read-error", false, "presentation_settings_unavailable");
-  if (input.sessionPreview === "everyday" || input.sessionPreview === "technical") {
-    return resolved(input.sessionPreview, "session-preview", true);
-  }
-  const unsupportedSchema = input.schemaVersion !== void 0 && input.schemaVersion !== PRESENTATION_SCHEMA_VERSION;
-  const persistedMode = !unsupportedSchema && (input.value === "everyday" || input.value === "technical") ? input.value : null;
-  if (persistedMode !== null && input.explicit === true) {
-    return resolved(persistedMode, "local-explicit", true);
-  }
-  if (!unsupportedSchema && typeof input.value === "string" && LEGACY[input.value]) {
-    return resolved(LEGACY[input.value], "migrated", true, `migrated_legacy_${input.value}_presentation_mode`);
-  }
-  if (input.cloudProfile === "everyday" || input.cloudProfile === "technical") {
-    return resolved(input.cloudProfile, "cloud-profile", false);
-  }
-  if (persistedMode !== null) {
-    return resolved(persistedMode, "default", false);
-  }
-  let diagnostic = null;
-  if (unsupportedSchema) {
-    diagnostic = "unsupported_presentation_schema_fell_back_to_everyday";
-  } else if (input.value !== void 0 && input.value !== null && input.value !== "") {
-    diagnostic = "unknown_presentation_mode_fell_back_to_everyday";
-  }
-  return resolved("everyday", "default", false, diagnostic);
 }
 const presentationModeOptions = [
   { value: "everyday", label: "Everyday Mode - clear summaries" },

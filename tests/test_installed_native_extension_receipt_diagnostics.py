@@ -3,11 +3,50 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+from contextlib import contextmanager
 
 import pytest
 
 from ci.native_runtime import probe_installed_native_extensions as probe
 from codex_plugin_scanner.guard.native_approval_errors import NATIVE_COMMAND_CONTROL_ERROR_CODES
+
+
+class _ReceiptStore:
+    def __init__(self, ids: tuple[str, ...]) -> None:
+        self._connection = sqlite3.connect(":memory:")
+        self._connection.row_factory = sqlite3.Row
+        self._connection.execute("create table native_hook_decision_receipts (decision_id text primary key)")
+        self._connection.executemany(
+            "insert into native_hook_decision_receipts (decision_id) values (?)", ((identity,) for identity in ids)
+        )
+        self._connection.commit()
+
+    @contextmanager
+    def _connect(self):  # type: ignore[no-untyped-def]
+        yield self._connection
+
+    def get_native_decision_receipt(self, identity: str) -> dict[str, object] | None:
+        row = self._connection.execute(
+            "select decision_id from native_hook_decision_receipts where decision_id = ?", (identity,)
+        ).fetchone()
+        return {"decision_id": identity, "authority": "rust"} if row is not None else None
+
+
+def test_persisted_receipt_correlation_uses_a_new_durable_identity() -> None:
+    store = _ReceiptStore(("prior", "current"))
+
+    assert probe.await_persisted_native_receipt(store, {"prior"}) == {
+        "decision_id": "current",
+        "authority": "rust",
+    }
+
+
+def test_persisted_receipt_correlation_rejects_multiple_unattributed_rows() -> None:
+    store = _ReceiptStore(("first", "second"))
+
+    with pytest.raises(RuntimeError, match="receipt_persistence_ambiguous"):
+        probe.await_persisted_native_receipt(store, set())
 
 
 @pytest.mark.parametrize("reason", sorted(NATIVE_COMMAND_CONTROL_ERROR_CODES))

@@ -236,6 +236,30 @@ def require(condition: bool, code: str) -> None:
         raise RuntimeError(f"installed_native_extensions_failed:{code}")
 
 
+def persisted_native_receipt_ids(store: GuardStore) -> set[str]:
+    """Return the durable receipt identities without exposing receipt contents."""
+
+    with store._connect() as connection:
+        rows = connection.execute("select decision_id from native_hook_decision_receipts").fetchall()
+    return {row["decision_id"] for row in rows if isinstance(row["decision_id"], str)}
+
+
+def await_persisted_native_receipt(store: GuardStore, known_ids: set[str]) -> dict[str, object]:
+    """Wait for the one receipt produced by the immediately preceding HTTP hook."""
+
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        new_ids = persisted_native_receipt_ids(store) - known_ids
+        if len(new_ids) > 1:
+            raise RuntimeError("installed_native_extensions_failed:receipt_persistence_ambiguous")
+        if new_ids:
+            receipt = store.get_native_decision_receipt(next(iter(new_ids)))
+            if receipt is not None:
+                return receipt
+        time.sleep(0.02)
+    raise RuntimeError("installed_native_extensions_failed:receipt_persistence_missing")
+
+
 def receipt_binding_diagnostic(
     response: Mapping[str, object], receipt: Mapping[str, object], expected: Mapping[str, object], seen: list[str]
 ) -> dict[str, object]:
@@ -529,10 +553,14 @@ def exercise(root: Path) -> dict[str, object]:
                 f"{label}:floor_below_{minimum_at_least}:{actual}",
             )
         require(result["decision"] == "deny", f"{label}:unsafe_allow")
+        known_receipt_ids = persisted_native_receipt_ids(store)
         response = request(daemon, home, workspace, "claude-code", "PreToolUse", payload)
         require(isinstance(response, dict), f"{label}:http_missing")
-        receipt = daemon._server.hook_worker.last_native_decision_receipt
-        require(isinstance(receipt, dict) and receipt.get("authority") == "rust", f"{label}:receipt_missing")
+        # Compatibility hooks execute in the isolated hook process. Its receipt
+        # reaches the parent through the evidence writer, so the parent
+        # worker's mutable last-receipt field cannot identify this request.
+        receipt = await_persisted_native_receipt(store, known_receipt_ids)
+        require(receipt.get("authority") == "rust", f"{label}:receipt_missing")
         if receipt.get("command_extensions") != extensions["binding"]:
             diagnostic = receipt_binding_diagnostic(response, receipt, extensions["binding"], all_receipts)
             print(json.dumps({"case": label, "completed_cases": len(rows), **diagnostic}, sort_keys=True), flush=True)

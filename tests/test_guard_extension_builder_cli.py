@@ -21,6 +21,20 @@ def invoke(arguments: list[str], capsys: pytest.CaptureFixture[str]) -> tuple[in
     return result, json.loads(capsys.readouterr().out)
 
 
+def write_external_trust_map(repository: Path, extension_id: str = "command.demo") -> None:
+    trust_map = repository / "contracts/extensions/trust-class-map.v1.json"
+    trust_map.parent.mkdir(parents=True, exist_ok=True)
+    trust_map.write_text(
+        canonical_json(
+            {
+                "schemaVersion": "guard.extension-trust-class-map.v1",
+                "classes": {"first-party": [], "trusted-library": [], "external": [extension_id]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 @pytest.mark.parametrize("program,prefix", [("hol-guard", []), ("plugin-scanner", ["guard"])])
 def test_both_entrypoint_families_support_authoring_without_state(
     tmp_path: Path,
@@ -180,6 +194,7 @@ def test_cli_handoff_runs_the_complete_repository_preparation_check(
     source_path.parent.mkdir(parents=True)
     fixture_path.parent.mkdir(parents=True)
     (tmp_path / "scripts").mkdir()
+    write_external_trust_map(tmp_path)
     source_path.write_text(canonical_json(source), encoding="utf-8")
     fixture_path.write_text("{}", encoding="utf-8")
     script = tmp_path / "scripts/prepare_extension_contribution.py"
@@ -273,6 +288,7 @@ def test_cli_handoff_fails_when_repository_preparation_rejects_the_input(
     source_path.parent.mkdir(parents=True)
     fixture_path.parent.mkdir(parents=True)
     (tmp_path / "scripts").mkdir()
+    write_external_trust_map(tmp_path)
     source_path.write_text(canonical_json(source), encoding="utf-8")
     fixture_path.write_text("{}", encoding="utf-8")
     (tmp_path / "scripts/prepare_extension_contribution.py").write_text("# invoked by the stub\n", encoding="utf-8")
@@ -296,6 +312,41 @@ def test_cli_handoff_fails_when_repository_preparation_rejects_the_input(
         capsys,
     )
     assert status == 2 and error["error"]["code"] == "handoff_validation"
+
+
+def test_cli_handoff_requires_an_external_trust_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["hol-guard"])
+    source = {
+        "schema": "guard.command-extension-source.v1",
+        "extension": {"extension_id": "command.demo"},
+    }
+    source_path = tmp_path / "contributions/command-sources/command.demo.json"
+    fixture_path = tmp_path / "tests/fixtures/command-source-demo.v1.json"
+    source_path.parent.mkdir(parents=True)
+    fixture_path.parent.mkdir(parents=True)
+    (tmp_path / "scripts").mkdir()
+    source_path.write_text(canonical_json(source), encoding="utf-8")
+    fixture_path.write_text("{}", encoding="utf-8")
+    (tmp_path / "scripts/prepare_extension_contribution.py").write_text("# should not run\n", encoding="utf-8")
+    write_external_trust_map(tmp_path, "command.other")
+
+    status, error = invoke(
+        [
+            "extensions",
+            "handoff",
+            "--repo",
+            str(tmp_path),
+            "--source",
+            str(source_path),
+            "--fixture",
+            str(fixture_path),
+            "--json",
+        ],
+        capsys,
+    )
+    assert status == 2 and error["error"]["code"] == "missing_external_trust"
 
 
 def test_cli_output_conflicts_have_dedicated_status(

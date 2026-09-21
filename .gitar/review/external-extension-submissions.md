@@ -5,7 +5,7 @@ For changes under `contributions/command-sources/`,
 `contracts/extensions/trust-class-map.v1.json`, verify that:
 
 - the source, fixture, external trust mapping, generated descriptor, native
-  program, and catalog identify the same extension;
+  program, catalog, and package-resource updates identify the same extension;
 - fixture bindings use the exact canonical source document;
 - the extension remains external and opt-in; and
 - any optional publisher listing contains public attribution only and does not

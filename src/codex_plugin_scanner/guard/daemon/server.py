@@ -6937,8 +6937,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 {
                     "error": "operation_in_progress",
                     "message": (
-                        "Guard is still finishing a package protection change. "
-                        "Check its status before retrying."
+                        "Guard is still finishing a package protection change. Check its status before retrying."
                     ),
                     "operation": operation,
                 },

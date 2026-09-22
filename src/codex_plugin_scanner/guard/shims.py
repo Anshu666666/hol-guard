@@ -769,13 +769,15 @@ def repair_package_shims(
         elif not bool(detail.get("path_active")):
             path_repair_required.append(manager)
     if not managers_to_repair:
+        profile = ensure_package_shim_path_in_shell_profile(context) if path_repair_required else None
         return {
             "repaired": [],
             "repaired_count": 0,
             "already_ok": status.get("installed_managers", []),
             "path_repair_required": path_repair_required,
+            "profile": profile,
             "shell_hints": status.get("shell_hints", {}),
-            "nothing_to_repair": True,
+            "nothing_to_repair": not path_repair_required,
         }
     result = install_package_shims(context, managers=tuple(managers_to_repair), path_env=path_env)
     return {

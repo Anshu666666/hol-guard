@@ -234,6 +234,19 @@ function withLocalProtectionDeadline<T>(
   });
 }
 
+function fetchLocalProtectionJson(
+  input: string,
+  init: RequestInit,
+  timeoutMs: number,
+  message: string,
+): Promise<{ response: Response; payload: unknown }> {
+  return withLocalProtectionDeadline(async (signal) => {
+    const response = await fetchGuardApi(input, { ...init, signal });
+    const payload = (await response.json().catch(() => null)) as unknown;
+    return { response, payload };
+  }, timeoutMs, message);
+}
+
 async function requestErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const payload = await response.clone().json();
@@ -3926,20 +3939,19 @@ export async function runPackageFirewallAction(
       ? { approval_totp_code: credentials.approval_totp_code }
       : {}),
   };
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi(`/v1/supply-chain/package-shims/${action}`, {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    `/v1/supply-chain/package-shims/${action}`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...guardAuthHeaders(),
       },
       body: JSON.stringify(payload),
-      signal,
-    }),
+    },
     45_000,
     "Guard is still checking this package tool. Refresh status before retrying the action.",
   );
-  const payloadBody = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -3950,23 +3962,22 @@ export async function runPackageFirewallAction(
 }
 
 export async function activatePackageFirewallRuntime(): Promise<void> {
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi("/v1/supply-chain/package-shims/activate", {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/package-shims/activate",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...guardAuthHeaders(),
       },
       body: JSON.stringify({}),
-      signal,
-    }),
+    },
     45_000,
     "Guard is still activating package protection. Refresh status before retrying.",
   );
   if (response.ok) {
     return;
   }
-  const payloadBody = (await response.json().catch(() => null)) as unknown;
   if (isRecord(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
     throw new Error(payloadBody.message);
   }
@@ -3993,8 +4004,9 @@ export async function runAuditRemediation(input: AuditRemediationInput): Promise
       status: "completed",
     };
   }
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi(`/v1/audit/remediations/${input.action}`, {
+  const { response, payload } = await fetchLocalProtectionJson(
+    `/v1/audit/remediations/${input.action}`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -4005,12 +4017,10 @@ export async function runAuditRemediation(input: AuditRemediationInput): Promise
         ...(input.approval_password !== undefined ? { approval_password: input.approval_password } : {}),
         ...(input.approval_totp_code !== undefined ? { approval_totp_code: input.approval_totp_code } : {}),
       }),
-      signal,
-    }),
+    },
     45_000,
     "Guard is still repairing this package tool. Refresh status before retrying.",
   );
-  const payload = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -4088,8 +4098,9 @@ export async function repairSupplyChainProtection(credentials?: {
       message: "Supply-chain protection restored and refreshed.",
     };
   }
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi("/v1/supply-chain/repair", {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/repair",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -4103,12 +4114,10 @@ export async function repairSupplyChainProtection(credentials?: {
           ? { approval_totp_code: credentials.approval_totp_code }
           : {}),
       }),
-      signal,
-    }),
+    },
     45_000,
     "Guard is still restoring package protection. Refresh status before retrying repair.",
   );
-  const payloadBody = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,

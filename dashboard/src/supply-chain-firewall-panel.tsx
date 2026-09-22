@@ -202,6 +202,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   const repairNeedsCloudConnectRef = useRef(false);
   const [panelLoad, setPanelLoad] = useState<PanelLoadState>({ phase: "loading" });
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [repairAwaitingRefresh, setRepairAwaitingRefresh] = useState<string | null>(null);
   const statusRequestId = useRef(0);
   const [pendingOp, setPendingOp] = useState<PendingOp | null>(null);
   const [lastCompleted, setLastCompleted] = useState<CompletedOp | null>(null);
@@ -253,6 +254,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
       const data = await fetchPackageFirewallStatus();
       if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRepairAwaitingRefresh(null);
     } catch (err) {
       if (requestId !== statusRequestId.current) return;
       const message =
@@ -271,6 +273,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
       const data = await fetchPackageFirewallStatus();
       if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRepairAwaitingRefresh(null);
       setRefreshError(null);
     } catch (err) {
       if (requestId !== statusRequestId.current) return;
@@ -726,6 +729,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
       try {
         const response = await runPackageFirewallAction(op, manager, credentials);
         setLastCompleted({ op, manager, response });
+        if (op === "repair" && manager !== null) setRepairAwaitingRefresh(manager);
         if (op === "test") {
           const proof = parseInterceptProofSnapshot(response);
           if (proof !== null) {
@@ -987,6 +991,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
           <FirewallControlsView
             data={panelLoad.data}
             pendingOp={pendingOp}
+            repairAwaitingRefresh={repairAwaitingRefresh}
             lastCompleted={lastCompleted}
             lastFailed={lastFailed}
             confirmRemoveManager={confirmRemoveManager}

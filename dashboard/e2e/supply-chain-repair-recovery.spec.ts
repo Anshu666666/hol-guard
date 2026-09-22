@@ -25,7 +25,7 @@ const packageStatus = {
   },
 };
 
-test("completed PATH repair releases controls while status refresh is pending", async ({ page }) => {
+test("completed PATH repair releases other controls without repeating stale repair", async ({ page }) => {
   let repairRequests = 0;
   let holdStatusRefresh = false;
   let releaseStatusRefresh: () => void = () => undefined;
@@ -71,7 +71,9 @@ test("completed PATH repair releases controls while status refresh is pending", 
     await fixPath.click();
     await expect(fixPath).toBeDisabled();
     await expect.poll(() => repairRequests).toBe(1);
-    await expect(fixPath).toBeEnabled({ timeout: 5_000 });
+    await expect(page.getByTestId("package-firewall-panel").getByRole("button", { name: "Remove" })).toBeEnabled({ timeout: 5_000 });
+    await expect(fixPath).toBeDisabled();
+    expect(repairRequests).toBe(1);
   } finally {
     releaseStatusRefresh();
   }

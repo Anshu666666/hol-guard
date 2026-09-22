@@ -15955,6 +15955,13 @@ function withLocalProtectionDeadline(operation, timeoutMs, message) {
     if (timer !== void 0) clearTimeout(timer);
   });
 }
+function fetchLocalProtectionJson(input, init, timeoutMs, message) {
+  return withLocalProtectionDeadline(async (signal) => {
+    const response = await fetchGuardApi(input, { ...init, signal });
+    const payload = await response.json().catch(() => null);
+    return { response, payload };
+  }, timeoutMs, message);
+}
 async function requestErrorMessage(response, fallback) {
   try {
     const payload = await response.clone().json();
@@ -18737,20 +18744,19 @@ async function runPackageFirewallAction(action, manager, credentials) {
     ...credentials?.approval_password !== void 0 ? { approval_password: credentials.approval_password } : {},
     ...credentials?.approval_totp_code !== void 0 ? { approval_totp_code: credentials.approval_totp_code } : {}
   };
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi(`/v1/supply-chain/package-shims/${action}`, {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    `/v1/supply-chain/package-shims/${action}`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...guardAuthHeaders()
       },
-      body: JSON.stringify(payload),
-      signal
-    }),
+      body: JSON.stringify(payload)
+    },
     45e3,
     "Guard is still checking this package tool. Refresh status before retrying the action."
   );
-  const payloadBody = await response.json().catch(() => null);
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -18760,23 +18766,22 @@ async function runPackageFirewallAction(action, manager, credentials) {
   return normalizePackageFirewallAction(payloadBody);
 }
 async function activatePackageFirewallRuntime() {
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi("/v1/supply-chain/package-shims/activate", {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/package-shims/activate",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...guardAuthHeaders()
       },
-      body: JSON.stringify({}),
-      signal
-    }),
+      body: JSON.stringify({})
+    },
     45e3,
     "Guard is still activating package protection. Refresh status before retrying."
   );
   if (response.ok) {
     return;
   }
-  const payloadBody = await response.json().catch(() => null);
   if (isRecord$2(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
     throw new Error(payloadBody.message);
   }
@@ -18793,8 +18798,9 @@ async function runAuditRemediation(input) {
       status: "completed"
     };
   }
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi(`/v1/audit/remediations/${input.action}`, {
+  const { response, payload } = await fetchLocalProtectionJson(
+    `/v1/audit/remediations/${input.action}`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -18804,13 +18810,11 @@ async function runAuditRemediation(input) {
         manager: input.manager,
         ...input.approval_password !== void 0 ? { approval_password: input.approval_password } : {},
         ...input.approval_totp_code !== void 0 ? { approval_totp_code: input.approval_totp_code } : {}
-      }),
-      signal
-    }),
+      })
+    },
     45e3,
     "Guard is still repairing this package tool. Refresh status before retrying."
   );
-  const payload = await response.json().catch(() => null);
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -18873,8 +18877,9 @@ async function repairSupplyChainProtection(credentials) {
       message: "Supply-chain protection restored and refreshed."
     };
   }
-  const response = await withLocalProtectionDeadline(
-    (signal) => fetchGuardApi("/v1/supply-chain/repair", {
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/repair",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -18883,13 +18888,11 @@ async function repairSupplyChainProtection(credentials) {
       body: JSON.stringify({
         ...credentials?.approval_password !== void 0 ? { approval_password: credentials.approval_password } : {},
         ...credentials?.approval_totp_code !== void 0 ? { approval_totp_code: credentials.approval_totp_code } : {}
-      }),
-      signal
-    }),
+      })
+    },
     45e3,
     "Guard is still restoring package protection. Refresh status before retrying repair."
   );
-  const payloadBody = await response.json().catch(() => null);
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -23341,6 +23344,22 @@ function parsePackageFirewallActionResult(op, body) {
   }
   if (op === "audit") {
     return parseAuditActionResult(result);
+  }
+  if (op === "repair") {
+    const pathRepairRequired = readStringArray(result.path_repair_required);
+    if (pathRepairRequired.length > 0) {
+      const profile = isRecord(result.profile) ? result.profile : null;
+      const manualPathRequired = profile?.manual_path_required === true;
+      return {
+        emptyState: false,
+        lines: [
+          `Affected tools: ${pathRepairRequired.join(", ")}.`,
+          manualPathRequired ? "Guard could not update the shell profile automatically. Check package-shims status for the PATH export, then open a new terminal." : "Open a new terminal and restart AI apps so they load the updated shell PATH."
+        ],
+        summary: manualPathRequired ? "PATH still needs a manual update." : "PATH is configured; a new shell is needed before protection can be verified.",
+        tone: "warning"
+      };
+    }
   }
   if (op === "sync") {
     return parseSyncActionResult(result);

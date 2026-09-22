@@ -735,6 +735,7 @@ function ManagerRow({
   shim,
   actions,
   anyPending,
+  repairAwaitingRefresh,
   isMine,
   isConfirmingRemove,
   onInstall,
@@ -844,7 +845,7 @@ function ManagerRow({
               label: "Fix PATH",
               icon: /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniWrenchScrewdriver, { className: "h-4 w-4" }),
               onClick: handleRepair,
-              disabled: anyPending
+              disabled: anyPending || repairAwaitingRefresh
             }
           ),
           showTest && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -921,6 +922,7 @@ function FirewallControlsView({
   activatingRuntime,
   data,
   pendingOp,
+  repairAwaitingRefresh,
   lastCompleted,
   lastFailed,
   confirmRemoveManager,
@@ -1044,6 +1046,7 @@ function FirewallControlsView({
           shim,
           actions: data.actions,
           anyPending,
+          repairAwaitingRefresh: repairAwaitingRefresh === manager,
           isMine: pendingOp?.manager === manager,
           isConfirmingRemove: confirmRemoveManager === manager,
           onInstall,
@@ -1613,6 +1616,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
   const repairNeedsCloudConnectRef = reactExports.useRef(false);
   const [panelLoad, setPanelLoad] = reactExports.useState({ phase: "loading" });
   const [refreshError, setRefreshError] = reactExports.useState(null);
+  const [repairAwaitingRefresh, setRepairAwaitingRefresh] = reactExports.useState(null);
   const statusRequestId = reactExports.useRef(0);
   const [pendingOp, setPendingOp] = reactExports.useState(null);
   const [lastCompleted, setLastCompleted] = reactExports.useState(null);
@@ -1660,6 +1664,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
       const data = await fetchPackageFirewallStatus();
       if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRepairAwaitingRefresh(null);
     } catch (err) {
       if (requestId !== statusRequestId.current) return;
       const message = err instanceof Error ? err.message : "Failed to load package firewall status.";
@@ -1675,6 +1680,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
       const data = await fetchPackageFirewallStatus();
       if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRepairAwaitingRefresh(null);
       setRefreshError(null);
     } catch (err) {
       if (requestId !== statusRequestId.current) return;
@@ -2091,6 +2097,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
       try {
         const response = await runPackageFirewallAction(op, manager, credentials);
         setLastCompleted({ op, manager, response });
+        if (op === "repair" && manager !== null) setRepairAwaitingRefresh(manager);
         if (op === "test") {
           const proof = parseInterceptProofSnapshot(response);
           if (proof !== null) {
@@ -2317,6 +2324,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
         {
           data: panelLoad.data,
           pendingOp,
+          repairAwaitingRefresh,
           lastCompleted,
           lastFailed,
           confirmRemoveManager,

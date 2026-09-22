@@ -230,12 +230,13 @@ class TestScrg266ShimAutoRepair:
         restored = (shim_dir / "npm").read_text(encoding="utf-8")
         assert restored == original
 
-    def test_repair_reports_nothing_when_all_ok(self, tmp_path: Path) -> None:
+    def test_repair_reports_manual_path_action_when_shim_is_intact(self, tmp_path: Path) -> None:
         ctx = _make_context(tmp_path)
         install_package_shims(ctx, managers=("npm",))
         result = repair_package_shims(ctx)
         assert result["repaired"] == []
-        assert result["nothing_to_repair"] is True
+        assert result["nothing_to_repair"] is False
+        assert result["profile"]["manual_path_required"] is True
 
     def test_repair_only_selected_managers(self, tmp_path: Path) -> None:
         ctx = _make_context(tmp_path)
@@ -266,6 +267,25 @@ class TestScrg266ShimAutoRepair:
         assert result["repaired"] == []
         assert result["path_repair_required"] == ["npm"]
         assert result["shell_hints"]["bash"].startswith("export PATH=")
+
+    def test_repair_restores_shell_profile_for_intact_shim(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        ctx = _make_context(tmp_path)
+        ctx.home_dir = tmp_path / "home"
+        ctx.home_dir.mkdir()
+        monkeypatch.setenv("SHELL", "/bin/bash")
+        monkeypatch.setattr("codex_plugin_scanner.guard.shims._is_transient_path", lambda _: False)
+        install_package_shims(ctx, managers=("npm",))
+        (ctx.home_dir / ".bashrc").unlink(missing_ok=True)
+        real_dir = tmp_path / "bin"
+        real_dir.mkdir()
+        (real_dir / "npm").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        result = repair_package_shims(ctx, managers=("npm",), path_env=str(real_dir))
+        assert result["repaired"] == []
+        assert result["nothing_to_repair"] is False
+        assert result["profile"]["changed"] is True
+        assert "package-shims" in (ctx.home_dir / ".bashrc").read_text(encoding="utf-8")
 
     def test_status_includes_shell_hints_for_path_repair(self, tmp_path: Path) -> None:
         ctx = _make_context(tmp_path)

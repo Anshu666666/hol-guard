@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.shims import (
+    activate_package_shims,
     build_shim_content_hash,
     get_path_order_status,
     get_real_binary_info,
@@ -230,13 +231,12 @@ class TestScrg266ShimAutoRepair:
         restored = (shim_dir / "npm").read_text(encoding="utf-8")
         assert restored == original
 
-    def test_repair_reports_manual_path_action_when_shim_is_intact(self, tmp_path: Path) -> None:
+    def test_repair_reports_nothing_when_all_ok(self, tmp_path: Path) -> None:
         ctx = _make_context(tmp_path)
         install_package_shims(ctx, managers=("npm",))
         result = repair_package_shims(ctx)
         assert result["repaired"] == []
-        assert result["nothing_to_repair"] is False
-        assert result["profile"]["manual_path_required"] is True
+        assert result["nothing_to_repair"] is True
 
     def test_repair_only_selected_managers(self, tmp_path: Path) -> None:
         ctx = _make_context(tmp_path)
@@ -281,9 +281,9 @@ class TestScrg266ShimAutoRepair:
         real_dir = tmp_path / "bin"
         real_dir.mkdir()
         (real_dir / "npm").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        result = repair_package_shims(ctx, managers=("npm",), path_env=str(real_dir))
+        monkeypatch.setenv("PATH", str(real_dir))
+        result = activate_package_shims(ctx, managers=("npm",), repair=True)
         assert result["repaired"] == []
-        assert result["nothing_to_repair"] is False
         assert result["profile"]["changed"] is True
         assert "package-shims" in (ctx.home_dir / ".bashrc").read_text(encoding="utf-8")
 

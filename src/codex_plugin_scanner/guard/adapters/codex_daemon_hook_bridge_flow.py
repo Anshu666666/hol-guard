@@ -17,8 +17,8 @@ from .codex_daemon_hook_auth import _DaemonResponseError
 from .codex_daemon_hook_transport import _daemon_response_once, _DaemonGenerationChangedError
 
 _DAEMON_START_TIMEOUT_SECONDS = 8
-_DAEMON_RPC_TIMEOUT_SECONDS = 3.0
-_FALLBACK_TIMEOUT_SECONDS = 2.0
+_DAEMON_RPC_TIMEOUT_SECONDS = 4.0
+_FALLBACK_TIMEOUT_SECONDS = 4.0
 _MINIMUM_OPERATION_SECONDS = 0.01
 _OVERLOAD_RESERVE_MS = 100
 

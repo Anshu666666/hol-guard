@@ -187,7 +187,7 @@ def availability_harness_response(
 ) -> dict[str, object]:
     """Render a schema-valid harness result when native review is unavailable."""
 
-    from .hook_availability_floor import hook_action_is_launcher_recovery_safe
+    from .hook_launcher_recovery import hook_action_is_launcher_recovery_safe
     from .hook_worker_responses import observe_lifecycle_fail_safe_response
 
     del guard_home, recording_only

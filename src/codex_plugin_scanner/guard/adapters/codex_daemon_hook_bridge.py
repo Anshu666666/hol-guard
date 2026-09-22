@@ -13,8 +13,8 @@ if __package__:
     from ..codex_hook_bridge_runtime import bounded_hook_input as _hook_input
     from ..codex_hook_bridge_runtime import bridge_config_from_argv as _parse_bridge_config
     from ..config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS
-    from ..daemon.hook_availability_floor import hook_action_is_launcher_recovery_safe
     from ..daemon.hook_availability_policy import hook_event_is_permission_request
+    from ..daemon.hook_launcher_recovery import hook_action_is_launcher_recovery_safe
     from ..live_process_identity import (
         CODEX_BROWSER_WAIT_PROCESS_KEY,
         CODEX_BROWSER_WAIT_TIMEOUT_SECONDS_KEY,
@@ -42,11 +42,11 @@ else:  # pragma: no cover - exercised by subprocess integration tests
         bridge_config_from_argv as _parse_bridge_config,
     )
     from codex_plugin_scanner.guard.config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS
-    from codex_plugin_scanner.guard.daemon.hook_availability_floor import (
-        hook_action_is_launcher_recovery_safe,
-    )
     from codex_plugin_scanner.guard.daemon.hook_availability_policy import (
         hook_event_is_permission_request,
+    )
+    from codex_plugin_scanner.guard.daemon.hook_launcher_recovery import (
+        hook_action_is_launcher_recovery_safe,
     )
     from codex_plugin_scanner.guard.live_process_identity import (
         CODEX_BROWSER_WAIT_PROCESS_KEY,

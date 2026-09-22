@@ -23,7 +23,7 @@ from codex_plugin_scanner.guard.config import load_guard_config
 from codex_plugin_scanner.guard.daemon import manager as daemon_manager
 from codex_plugin_scanner.guard.daemon import runtime_hook_deadline as runtime_hook_deadline_module
 from codex_plugin_scanner.guard.daemon import server as daemon_server_module
-from codex_plugin_scanner.guard.daemon.hook_availability_floor import (
+from codex_plugin_scanner.guard.daemon.hook_launcher_recovery import (
     hook_action_is_launcher_recovery_safe,
 )
 from codex_plugin_scanner.guard.daemon.server import GuardDaemonServer
@@ -325,7 +325,9 @@ def test_unauthenticated_payload_reference_is_not_a_repair() -> None:
         ("hol-guard install codex", True),
         ("hol-guard install cursor", True),
         ("hol-guard install claude-code", True),
-        ("/usr/local/bin/hol-guard install codex --json --dry-run", True),
+        ("bin/hol-guard install codex --json --dry-run", False),
+        ("./hol-guard update", False),
+        ("./plugin-guard daemon repair", False),
         ("hol-guard install not-a-harness", False),
         ("hol-guard install codex cursor", False),
         ("hol-guard update", True),

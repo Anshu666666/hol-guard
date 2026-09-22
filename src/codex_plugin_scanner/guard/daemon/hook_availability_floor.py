@@ -204,6 +204,26 @@ _PATH_KEYS = (
 
 _LAUNCHER_REPAIR_BINARIES = frozenset({"hol-guard", "plugin-guard"})
 _LAUNCHER_REPAIR_FLAGS = frozenset({"--dry-run", "--force-pypi-reinstall", "--json"})
+_LAUNCHER_REPAIR_HARNESSES = frozenset(
+    {
+        "antigravity",
+        "claude-code",
+        "cline",
+        "codex",
+        "copilot",
+        "cursor",
+        "gemini",
+        "grok",
+        "hermes",
+        "kimi",
+        "omp",
+        "openclaw",
+        "opencode",
+        "paseo",
+        "pi",
+        "zcode",
+    }
+)
 
 
 def hook_action_is_launcher_recovery_safe(
@@ -220,9 +240,14 @@ def hook_action_is_launcher_recovery_safe(
     stays blocked.
     """
 
+    if "guard_payload_ref" in payload:
+        return False
     if hook_action_is_emergency_safe(payload, workspace=workspace, home_dir=home_dir):
         return True
     if runtime_hook_event_name(payload) != "PreToolUse":
+        return False
+    tool_name = _tool_name(payload)
+    if tool_name in _MUTATING_TOOLS and tool_name not in {"bash", "shell"}:
         return False
     if _payload_source_events(payload) & _BLOCKED_SOURCE_EVENTS:
         return False
@@ -254,7 +279,7 @@ def _command_is_launcher_repair(command: str) -> bool:
             continue
         positional.append(token)
     if positional[:1] == ["install"]:
-        return positional[1:] == ["codex"]
+        return len(positional) == 2 and positional[1] in _LAUNCHER_REPAIR_HARNESSES
     if positional[:1] == ["update"]:
         return len(positional) == 1
     if positional[:1] == ["daemon"]:

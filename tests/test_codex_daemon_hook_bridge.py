@@ -297,11 +297,37 @@ def test_launcher_integrity_failure_denies_permission_request(
     assert response["hookSpecificOutput"]["decision"]["message"] == bridge._LAUNCH_INTEGRITY_REASON
 
 
+def test_launcher_repair_covers_every_managed_harness() -> None:
+    from codex_plugin_scanner.guard.adapters import list_adapters
+
+    for adapter in list_adapters():
+        payload = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Bash",
+            "tool_input": {"command": f"hol-guard install {adapter.harness}"},
+        }
+        assert hook_action_is_launcher_recovery_safe(payload) is True
+
+
+def test_unauthenticated_payload_reference_is_not_a_repair() -> None:
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": "hol-guard install cursor"},
+        "guard_payload_ref": {"version": 1},
+    }
+    assert hook_action_is_launcher_recovery_safe(payload) is False
+
+
 @pytest.mark.parametrize(
     ("command", "allowed"),
     [
         ("hol-guard install codex", True),
+        ("hol-guard install cursor", True),
+        ("hol-guard install claude-code", True),
         ("/usr/local/bin/hol-guard install codex --json --dry-run", True),
+        ("hol-guard install not-a-harness", False),
+        ("hol-guard install codex cursor", False),
         ("hol-guard update", True),
         ("hol-guard update --force-pypi-reinstall", True),
         ("hol-guard daemon repair", True),

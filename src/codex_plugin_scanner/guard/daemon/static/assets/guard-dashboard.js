@@ -31722,6 +31722,7 @@ function App() {
   const [approvalGate, setApprovalGate] = reactExports.useState(null);
   const [guardVersion, setGuardVersion] = reactExports.useState(null);
   const resolutionInFlight = reactExports.useRef(false);
+  const refreshSequence = reactExports.useRef(0);
   const bulkApproveInFlight = reactExports.useRef(false);
   const queuedItems = requests.kind === "ready" ? requests.items : [];
   const activeRequestId = requestId ?? queuedItems[0]?.request_id ?? null;
@@ -31959,12 +31960,14 @@ function App() {
     }
   }, []);
   const refreshStateAfterAction = reactExports.useCallback(async (requireComplete = false) => {
+    const sequence = ++refreshSequence.current;
     const [inboxResult, receiptsResult, policiesResult, inventoryResult] = await Promise.allSettled([
       fetchInboxState(),
       fetchReceipts(),
       fetchPolicies(),
       fetchInventory()
     ]);
+    if (sequence !== refreshSequence.current) return null;
     if (inboxResult.status === "fulfilled") {
       setRuntime({ kind: "ready", snapshot: inboxResult.value.snapshot });
       setRequests({ kind: "ready", items: inboxResult.value.items });

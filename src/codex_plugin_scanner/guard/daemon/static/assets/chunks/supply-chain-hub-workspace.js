@@ -1560,8 +1560,8 @@ function LoadingSkeleton() {
     }
   );
 }
-function ErrorBanner({ message, onRetry }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center justify-between gap-3 px-4 py-4", children: [
+function ErrorBanner({ message, onRetry, retryLabel = "Retry" }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-wrap items-center justify-between gap-3 px-4 py-4", role: "status", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start gap-2", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         HiMiniExclamationTriangle,
@@ -1572,7 +1572,7 @@ function ErrorBanner({ message, onRetry }) {
       ),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-brand-attention", children: message })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { variant: "outline", onClick: onRetry, children: "Retry" })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(ActionButton, { variant: "outline", onClick: onRetry, children: retryLabel })
   ] });
 }
 function RefreshButton({ disabled, spinning, onRefresh }) {
@@ -1612,6 +1612,8 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
   const recoveryConnectHandledRef = reactExports.useRef(false);
   const repairNeedsCloudConnectRef = reactExports.useRef(false);
   const [panelLoad, setPanelLoad] = reactExports.useState({ phase: "loading" });
+  const [refreshError, setRefreshError] = reactExports.useState(null);
+  const statusRequestId = reactExports.useRef(0);
   const [pendingOp, setPendingOp] = reactExports.useState(null);
   const [lastCompleted, setLastCompleted] = reactExports.useState(null);
   const [lastFailed, setLastFailed] = reactExports.useState(null);
@@ -1651,11 +1653,15 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     setAuditRecoveryError(null);
   }, []);
   const load = reactExports.useCallback(async () => {
+    const requestId = ++statusRequestId.current;
+    setRefreshError(null);
     setPanelLoad({ phase: "loading" });
     try {
       const data = await fetchPackageFirewallStatus();
+      if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
     } catch (err) {
+      if (requestId !== statusRequestId.current) return;
       const message = err instanceof Error ? err.message : "Failed to load package firewall status.";
       setPanelLoad({ phase: "error", message });
     }
@@ -1664,14 +1670,25 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     void load();
   }, [load]);
   const refreshAfterOp = reactExports.useCallback(async () => {
+    const requestId = ++statusRequestId.current;
     try {
       const data = await fetchPackageFirewallStatus();
+      if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRefreshError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to refresh package firewall status.";
-      setPanelLoad({ phase: "error", message });
+      if (requestId !== statusRequestId.current) return;
+      setRefreshError(
+        "Guard could not check the latest package status. The last known state is shown; check again before retrying a repair."
+      );
     }
   }, []);
+  const refreshInBackground = reactExports.useCallback(() => {
+    void refreshAfterOp();
+    if (onStateChanged !== void 0) {
+      void Promise.resolve().then(() => onStateChanged()).catch(() => void 0);
+    }
+  }, [onStateChanged, refreshAfterOp]);
   reactExports.useEffect(() => {
     if (panelLoad.phase !== "loaded") {
       return;
@@ -1910,11 +1927,10 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
       setPendingOp({ op: "fix_all", manager: null });
       try {
         const result = await repairSupplyChainProtection(credentials);
-        await refreshAfterOp();
-        await onStateChanged?.();
         const nextState = supplyChainFixAllStateFromRepair(result);
         repairNeedsCloudConnectRef.current = supplyChainFixAllNeedsCloudConnect(nextState);
         onFixAllStateChange?.(nextState);
+        refreshInBackground();
       } catch (error) {
         if (credentials === void 0 && isApprovalGateRequiredError(error)) {
           await resolveApprovalGate();
@@ -1948,9 +1964,8 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     [
       beginFixAllConnectRecovery,
       onFixAllStateChange,
-      onStateChanged,
       panelLoad,
-      refreshAfterOp,
+      refreshInBackground,
       resolveApprovalGate
     ]
   );
@@ -2083,8 +2098,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
             setInterceptProof(proof);
           }
         }
-        await refreshAfterOp();
-        await onStateChanged?.();
+        refreshInBackground();
       } catch (err) {
         if (credentials === void 0 && manager !== null && isApprovalGateRequiredError(err)) {
           await resolveApprovalGate();
@@ -2097,7 +2111,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
         setPendingOp(null);
       }
     },
-    [onStateChanged, refreshAfterOp, resolveApprovalGate]
+    [refreshInBackground, resolveApprovalGate]
   );
   const handleGlobalOp = reactExports.useCallback(
     async (op) => {
@@ -2198,14 +2212,13 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     setActivationAssistError(null);
     try {
       await activatePackageFirewallRuntime();
-      await refreshAfterOp();
-      await onStateChanged?.();
+      refreshInBackground();
     } catch (error) {
       setActivationAssistError(error instanceof Error ? error.message : "Unable to activate package protection.");
     } finally {
       setActivatingRuntime(false);
     }
-  }, [onStateChanged, refreshAfterOp]);
+  }, [refreshInBackground]);
   const handleApprovalCancel = reactExports.useCallback(() => {
     if (pendingApprovalOp?.op === "fix_all") {
       onFixAllStateChange?.({
@@ -2286,6 +2299,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     panelLoad.phase === "loading" && /* @__PURE__ */ jsxRuntimeExports.jsx(LoadingSkeleton, {}),
     panelLoad.phase === "error" && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBanner, { message: panelLoad.message, onRetry: handleRetry }),
     panelLoad.phase === "loaded" && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+      refreshError !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBanner, { message: refreshError, onRetry: handleRetry, retryLabel: "Check again" }),
       !panelLoad.data.entitlement.allowed && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-b border-slate-100", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         EntitlementNotice,
         {

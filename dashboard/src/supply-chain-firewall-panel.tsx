@@ -116,11 +116,12 @@ function LoadingSkeleton() {
 type ErrorBannerProps = {
   message: string;
   onRetry: () => void;
+  retryLabel?: string;
 };
 
-function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
+function ErrorBanner({ message, onRetry, retryLabel = "Retry" }: ErrorBannerProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4" role="status">
       <div className="flex items-start gap-2">
         <HiMiniExclamationTriangle
           className="mt-0.5 h-4 w-4 shrink-0 text-brand-attention"
@@ -129,7 +130,7 @@ function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
         <p className="text-sm text-brand-attention">{message}</p>
       </div>
       <ActionButton variant="outline" onClick={onRetry}>
-        Retry
+        {retryLabel}
       </ActionButton>
     </div>
   );
@@ -200,6 +201,8 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   const recoveryConnectHandledRef = useRef(false);
   const repairNeedsCloudConnectRef = useRef(false);
   const [panelLoad, setPanelLoad] = useState<PanelLoadState>({ phase: "loading" });
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const statusRequestId = useRef(0);
   const [pendingOp, setPendingOp] = useState<PendingOp | null>(null);
   const [lastCompleted, setLastCompleted] = useState<CompletedOp | null>(null);
   const [lastFailed, setLastFailed] = useState<FailedOp | null>(null);
@@ -243,11 +246,15 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   }, []);
 
   const load = useCallback(async () => {
+    const requestId = ++statusRequestId.current;
+    setRefreshError(null);
     setPanelLoad({ phase: "loading" });
     try {
       const data = await fetchPackageFirewallStatus();
+      if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
     } catch (err) {
+      if (requestId !== statusRequestId.current) return;
       const message =
         err instanceof Error ? err.message : "Failed to load package firewall status.";
       setPanelLoad({ phase: "error", message });
@@ -259,15 +266,26 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   }, [load]);
 
   const refreshAfterOp = useCallback(async () => {
+    const requestId = ++statusRequestId.current;
     try {
       const data = await fetchPackageFirewallStatus();
+      if (requestId !== statusRequestId.current) return;
       setPanelLoad({ phase: "loaded", data });
+      setRefreshError(null);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to refresh package firewall status.";
-      setPanelLoad({ phase: "error", message });
+      if (requestId !== statusRequestId.current) return;
+      setRefreshError(
+        "Guard could not check the latest package status. The last known state is shown; check again before retrying a repair.",
+      );
     }
   }, []);
+
+  const refreshInBackground = useCallback(() => {
+    void refreshAfterOp();
+    if (onStateChanged !== undefined) {
+      void Promise.resolve().then(() => onStateChanged()).catch(() => undefined);
+    }
+  }, [onStateChanged, refreshAfterOp]);
 
   useEffect(() => {
     if (panelLoad.phase !== "loaded") {
@@ -520,11 +538,10 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
       setPendingOp({ op: "fix_all", manager: null });
       try {
         const result = await repairSupplyChainProtection(credentials);
-        await refreshAfterOp();
-        await onStateChanged?.();
         const nextState = supplyChainFixAllStateFromRepair(result);
         repairNeedsCloudConnectRef.current = supplyChainFixAllNeedsCloudConnect(nextState);
         onFixAllStateChange?.(nextState);
+        refreshInBackground();
       } catch (error) {
         if (credentials === undefined && isApprovalGateRequiredError(error)) {
           await resolveApprovalGate();
@@ -558,9 +575,8 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
     [
       beginFixAllConnectRecovery,
       onFixAllStateChange,
-      onStateChanged,
       panelLoad,
-      refreshAfterOp,
+      refreshInBackground,
       resolveApprovalGate,
     ],
   );
@@ -717,8 +733,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
             setInterceptProof(proof);
           }
         }
-        await refreshAfterOp();
-        await onStateChanged?.();
+        refreshInBackground();
       } catch (err) {
         if (
           credentials === undefined &&
@@ -735,7 +750,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
         setPendingOp(null);
       }
     },
-    [onStateChanged, refreshAfterOp, resolveApprovalGate],
+    [refreshInBackground, resolveApprovalGate],
   );
 
   const handleGlobalOp = useCallback(
@@ -839,14 +854,13 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
     setActivationAssistError(null);
     try {
       await activatePackageFirewallRuntime();
-      await refreshAfterOp();
-      await onStateChanged?.();
+      refreshInBackground();
     } catch (error) {
       setActivationAssistError(error instanceof Error ? error.message : "Unable to activate package protection.");
     } finally {
       setActivatingRuntime(false);
     }
-  }, [onStateChanged, refreshAfterOp]);
+  }, [refreshInBackground]);
   const handleApprovalCancel = useCallback(() => {
     if (pendingApprovalOp?.op === "fix_all") {
       onFixAllStateChange?.({
@@ -954,6 +968,9 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
 
       {panelLoad.phase === "loaded" && (
         <>
+          {refreshError !== null && (
+            <ErrorBanner message={refreshError} onRetry={handleRetry} retryLabel="Check again" />
+          )}
           {!panelLoad.data.entitlement.allowed && (
             <div className="border-b border-slate-100">
               <EntitlementNotice

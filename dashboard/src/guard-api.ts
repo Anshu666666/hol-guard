@@ -209,6 +209,31 @@ async function readJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+export class GuardOperationTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GuardOperationTimeoutError";
+  }
+}
+
+function withLocalProtectionDeadline<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new GuardOperationTimeoutError(message));
+      controller.abort();
+    }, timeoutMs);
+  });
+  return Promise.race([Promise.resolve().then(() => operation(controller.signal)), deadline]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+}
+
 async function requestErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const payload = await response.clone().json();
@@ -974,7 +999,7 @@ async function fetchWithGuardAuth(input: RequestInfo, init?: RequestInit): Promi
   if (response.status !== 401 || !guardToken || input instanceof Request) {
     return response;
   }
-  const refreshedGuardToken = await refreshGuardDashboardSession(guardToken);
+  const refreshedGuardToken = await refreshGuardDashboardSession(guardToken, init?.signal);
   if (!refreshedGuardToken || refreshedGuardToken === guardToken) {
     return response;
   }
@@ -1031,7 +1056,7 @@ function parseDashboardSessionToken(payload: unknown): string | null {
   return typeof dashboardSessionToken === "string" && dashboardSessionToken.trim() ? dashboardSessionToken : null;
 }
 
-async function refreshGuardDashboardSession(guardToken: string): Promise<string | null> {
+async function refreshGuardDashboardSession(guardToken: string, signal?: AbortSignal | null): Promise<string | null> {
   try {
     const response = await fetch(guardApiInput("/v1/initialize"), {
       method: "POST",
@@ -1045,6 +1070,7 @@ async function refreshGuardDashboardSession(guardToken: string): Promise<string 
         supported_protocol_versions: [...GUARD_SURFACE_PROTOCOL_VERSIONS]
       }),
       redirect: "error",
+      signal,
     });
     if (!response.ok) {
       return null;
@@ -3856,7 +3882,12 @@ function normalizePackageFirewallAction(value: unknown): PackageFirewallActionRe
 }
 
 export async function fetchPackageFirewallStatus(): Promise<PackageFirewallStatusResponse> {
-  return normalizePackageFirewallStatus(await readJson<unknown>("/v1/supply-chain/package-shims"));
+  const status = await withLocalProtectionDeadline(
+    (signal) => readJson<unknown>("/v1/supply-chain/package-shims", { signal }),
+    15_000,
+    "Guard did not respond to the package status check. Check that Guard is running, then retry.",
+  );
+  return normalizePackageFirewallStatus(status);
 }
 
 export async function startPackageFirewallConnect(): Promise<PackageFirewallStatusResponse["connect_flow"]> {
@@ -3895,16 +3926,18 @@ export async function runPackageFirewallAction(
       ? { approval_totp_code: credentials.approval_totp_code }
       : {}),
   };
-  const response = await fetchGuardApi(
-    `/v1/supply-chain/package-shims/${action}`,
-    {
+  const response = await withLocalProtectionDeadline(
+    (signal) => fetchGuardApi(`/v1/supply-chain/package-shims/${action}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...guardAuthHeaders(),
       },
       body: JSON.stringify(payload),
-    },
+      signal,
+    }),
+    45_000,
+    "Guard is still checking this package tool. Refresh status before retrying the action.",
   );
   const payloadBody = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
@@ -3917,14 +3950,19 @@ export async function runPackageFirewallAction(
 }
 
 export async function activatePackageFirewallRuntime(): Promise<void> {
-  const response = await fetchGuardApi("/v1/supply-chain/package-shims/activate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...guardAuthHeaders(),
-    },
-    body: JSON.stringify({}),
-  });
+  const response = await withLocalProtectionDeadline(
+    (signal) => fetchGuardApi("/v1/supply-chain/package-shims/activate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...guardAuthHeaders(),
+      },
+      body: JSON.stringify({}),
+      signal,
+    }),
+    45_000,
+    "Guard is still activating package protection. Refresh status before retrying.",
+  );
   if (response.ok) {
     return;
   }
@@ -3955,9 +3993,8 @@ export async function runAuditRemediation(input: AuditRemediationInput): Promise
       status: "completed",
     };
   }
-  const response = await fetchGuardApi(
-    `/v1/audit/remediations/${input.action}`,
-    {
+  const response = await withLocalProtectionDeadline(
+    (signal) => fetchGuardApi(`/v1/audit/remediations/${input.action}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -3968,7 +4005,10 @@ export async function runAuditRemediation(input: AuditRemediationInput): Promise
         ...(input.approval_password !== undefined ? { approval_password: input.approval_password } : {}),
         ...(input.approval_totp_code !== undefined ? { approval_totp_code: input.approval_totp_code } : {}),
       }),
-    },
+      signal,
+    }),
+    45_000,
+    "Guard is still repairing this package tool. Refresh status before retrying.",
   );
   const payload = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
@@ -4048,21 +4088,26 @@ export async function repairSupplyChainProtection(credentials?: {
       message: "Supply-chain protection restored and refreshed.",
     };
   }
-  const response = await fetchGuardApi("/v1/supply-chain/repair", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...guardAuthHeaders(),
-    },
-    body: JSON.stringify({
-      ...(credentials?.approval_password !== undefined
-        ? { approval_password: credentials.approval_password }
-        : {}),
-      ...(credentials?.approval_totp_code !== undefined
-        ? { approval_totp_code: credentials.approval_totp_code }
-        : {}),
+  const response = await withLocalProtectionDeadline(
+    (signal) => fetchGuardApi("/v1/supply-chain/repair", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...guardAuthHeaders(),
+      },
+      body: JSON.stringify({
+        ...(credentials?.approval_password !== undefined
+          ? { approval_password: credentials.approval_password }
+          : {}),
+        ...(credentials?.approval_totp_code !== undefined
+          ? { approval_totp_code: credentials.approval_totp_code }
+          : {}),
+      }),
+      signal,
     }),
-  });
+    45_000,
+    "Guard is still restoring package protection. Refresh status before retrying repair.",
+  );
   const payloadBody = (await response.json().catch(() => null)) as unknown;
   if (!response.ok) {
     throw new GuardHarnessActionError(

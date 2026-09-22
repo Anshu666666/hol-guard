@@ -13,6 +13,7 @@ if __package__:
     from ..codex_hook_bridge_runtime import bounded_hook_input as _hook_input
     from ..codex_hook_bridge_runtime import bridge_config_from_argv as _parse_bridge_config
     from ..config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS
+    from ..daemon.hook_availability_floor import hook_action_is_launcher_recovery_safe
     from ..daemon.hook_availability_policy import hook_event_is_permission_request
     from ..live_process_identity import (
         CODEX_BROWSER_WAIT_PROCESS_KEY,
@@ -41,6 +42,9 @@ else:  # pragma: no cover - exercised by subprocess integration tests
         bridge_config_from_argv as _parse_bridge_config,
     )
     from codex_plugin_scanner.guard.config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS
+    from codex_plugin_scanner.guard.daemon.hook_availability_floor import (
+        hook_action_is_launcher_recovery_safe,
+    )
     from codex_plugin_scanner.guard.daemon.hook_availability_policy import (
         hook_event_is_permission_request,
     )
@@ -232,7 +236,7 @@ def main(
         )
         if response is None:
             if launch_integrity_failed:
-                response = _fail_closed(event_name, _LAUNCH_INTEGRITY_REASON)
+                response = _launcher_integrity_response(event_name, data)
             else:
                 failure_reason = _OVERLOAD_REASON if daemon_overloaded else _FAIL_CLOSED_REASON
                 response = _unavailable_response(event_name, failure_reason, data)
@@ -246,6 +250,17 @@ def main(
             )
         )
     return 0
+
+
+def _launcher_integrity_response(event_name: str, data: str) -> dict[str, object]:
+    """Keep a bad launcher from approving work, without locking out its repair."""
+
+    payload = _json_object(data)
+    if event_name == "PreToolUse" and payload is not None and hook_action_is_launcher_recovery_safe(payload):
+        return _unavailable_response(event_name, _LAUNCH_INTEGRITY_REASON, data)
+    if event_name in {"PreToolUse", "PermissionRequest"}:
+        return _fail_closed(event_name, _LAUNCH_INTEGRITY_REASON)
+    return _unavailable_response(event_name, _LAUNCH_INTEGRITY_REASON, data)
 
 
 def _bridge_output(

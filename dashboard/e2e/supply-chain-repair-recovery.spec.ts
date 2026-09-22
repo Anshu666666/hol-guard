@@ -51,6 +51,10 @@ test("completed PATH repair releases other controls without repeating stale repa
         status: "completed",
       };
     } else if (path === "/v1/runtime") {
+      if (holdStatusRefresh) {
+        await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+        return;
+      }
       payload = paidStateSnapshot;
     } else if (path === "/v1/receipts") {
       payload = emptyReceiptsPayload;
@@ -73,6 +77,9 @@ test("completed PATH repair releases other controls without repeating stale repa
     await expect.poll(() => repairRequests).toBe(1);
     await expect(page.getByTestId("package-firewall-panel").getByRole("button", { name: "Remove" })).toBeEnabled({ timeout: 5_000 });
     await expect(fixPath).toBeDisabled();
+    await page.getByRole("button", { name: "Open npm manager details" }).click();
+    await expect(page.getByRole("dialog", { name: "npm manager details" }).getByRole("button", { name: "Fix PATH" })).toBeDisabled();
+    await expect(page.getByText("Guard could not refresh the rest of the dashboard.", { exact: false })).toBeVisible();
     expect(repairRequests).toBe(1);
   } finally {
     releaseStatusRefresh();

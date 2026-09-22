@@ -562,7 +562,7 @@ export function App() {
     }
   }, []);
 
-  const refreshStateAfterAction = useCallback(async () => {
+  const refreshStateAfterAction = useCallback(async (requireComplete = false) => {
     const [inboxResult, receiptsResult, policiesResult, inventoryResult] = await Promise.allSettled([
       fetchInboxState(),
       fetchReceipts(),
@@ -572,7 +572,7 @@ export function App() {
     if (inboxResult.status === "fulfilled") {
       setRuntime({ kind: "ready", snapshot: inboxResult.value.snapshot });
       setRequests({ kind: "ready", items: inboxResult.value.items });
-    } else {
+    } else if (!requireComplete) {
       const message =
         inboxResult.reason instanceof Error ? inboxResult.reason.message : "Unable to load the local approval queue.";
       setRuntime({ kind: "error", message });
@@ -580,7 +580,7 @@ export function App() {
     }
     if (receiptsResult.status === "fulfilled") {
       setReceipts({ kind: "ready", items: receiptsResult.value });
-    } else {
+    } else if (!requireComplete) {
       setReceipts({
         kind: "error",
         message: receiptsResult.reason instanceof Error ? receiptsResult.reason.message : "Unable to load local approval history.",
@@ -588,7 +588,7 @@ export function App() {
     }
     if (policiesResult.status === "fulfilled") {
       setPolicies({ kind: "ready", items: policiesResult.value });
-    } else {
+    } else if (!requireComplete) {
       setPolicies({
         kind: "error",
         message: policiesResult.reason instanceof Error ? policiesResult.reason.message : "Unable to load remembered decisions.",
@@ -596,17 +596,22 @@ export function App() {
     }
     if (inventoryResult.status === "fulfilled") {
       setInventory({ kind: "ready", items: inventoryResult.value });
-    } else {
+    } else if (!requireComplete) {
       setInventory({
         kind: "error",
         message: inventoryResult.reason instanceof Error ? inventoryResult.reason.message : "Unable to load watched app inventory.",
       });
     }
+    if (requireComplete && [inboxResult, receiptsResult, policiesResult, inventoryResult].some(
+      (result) => result.status === "rejected",
+    )) {
+      throw new Error("Guard could not refresh every dashboard view.");
+    }
     return inboxResult.status === "fulfilled" ? inboxResult.value.snapshot : null;
   }, [setRuntime, setRequests, setReceipts, setPolicies, setInventory]);
 
   const refreshStateWithoutResult = useCallback(async () => {
-    await refreshStateAfterAction();
+    await refreshStateAfterAction(true);
   }, [refreshStateAfterAction]);
 
   const handleReconnectSession = useCallback(async () => {

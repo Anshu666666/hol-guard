@@ -202,6 +202,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   const repairNeedsCloudConnectRef = useRef(false);
   const [panelLoad, setPanelLoad] = useState<PanelLoadState>({ phase: "loading" });
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [sharedRefreshError, setSharedRefreshError] = useState<string | null>(null);
   const [repairAwaitingRefresh, setRepairAwaitingRefresh] = useState<string | null>(null);
   const statusRequestId = useRef(0);
   const [pendingOp, setPendingOp] = useState<PendingOp | null>(null);
@@ -283,12 +284,20 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
     }
   }, []);
 
+  const refreshSharedState = useCallback(async () => {
+    if (onStateChanged === undefined) return;
+    try {
+      await onStateChanged();
+      setSharedRefreshError(null);
+    } catch {
+      setSharedRefreshError("Guard could not refresh the rest of the dashboard. Check again before relying on other views.");
+    }
+  }, [onStateChanged]);
+
   const refreshInBackground = useCallback(() => {
     void refreshAfterOp();
-    if (onStateChanged !== undefined) {
-      void Promise.resolve().then(() => onStateChanged()).catch(() => undefined);
-    }
-  }, [onStateChanged, refreshAfterOp]);
+    void refreshSharedState();
+  }, [refreshAfterOp, refreshSharedState]);
 
   useEffect(() => {
     if (panelLoad.phase !== "loaded") {
@@ -975,6 +984,9 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
           {refreshError !== null && (
             <ErrorBanner message={refreshError} onRetry={handleRetry} retryLabel="Check again" />
           )}
+          {sharedRefreshError !== null && (
+            <ErrorBanner message={sharedRefreshError} onRetry={() => void refreshSharedState()} retryLabel="Check again" />
+          )}
           {!panelLoad.data.entitlement.allowed && (
             <div className="border-b border-slate-100">
               <EntitlementNotice
@@ -1039,6 +1051,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
           shim={managerDrawerShim}
           actions={panelLoad.data.actions}
           anyPending={anyPending}
+          repairAwaitingRefresh={repairAwaitingRefresh === managerDrawerTarget}
           isMine={pendingOp?.manager === managerDrawerTarget}
           actionHandlers={{
             install: handleInstall,

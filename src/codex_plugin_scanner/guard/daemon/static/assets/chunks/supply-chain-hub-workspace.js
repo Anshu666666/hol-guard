@@ -1164,6 +1164,7 @@ function SupplyChainManagerDrawer({
   shim,
   actions,
   anyPending,
+  repairAwaitingRefresh,
   isMine,
   actionHandlers,
   onClose
@@ -1254,7 +1255,7 @@ function SupplyChainManagerDrawer({
                   label: "Fix PATH",
                   icon: /* @__PURE__ */ jsxRuntimeExports.jsx(HiMiniWrenchScrewdriver, { className: "h-4 w-4" }),
                   onClick: () => actionHandlers.repair?.(manager),
-                  disabled: anyPending
+                  disabled: anyPending || repairAwaitingRefresh
                 }
               ) : null,
               showTest && actionHandlers.test !== void 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -1616,6 +1617,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
   const repairNeedsCloudConnectRef = reactExports.useRef(false);
   const [panelLoad, setPanelLoad] = reactExports.useState({ phase: "loading" });
   const [refreshError, setRefreshError] = reactExports.useState(null);
+  const [sharedRefreshError, setSharedRefreshError] = reactExports.useState(null);
   const [repairAwaitingRefresh, setRepairAwaitingRefresh] = reactExports.useState(null);
   const statusRequestId = reactExports.useRef(0);
   const [pendingOp, setPendingOp] = reactExports.useState(null);
@@ -1689,12 +1691,19 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
       );
     }
   }, []);
+  const refreshSharedState = reactExports.useCallback(async () => {
+    if (onStateChanged === void 0) return;
+    try {
+      await onStateChanged();
+      setSharedRefreshError(null);
+    } catch {
+      setSharedRefreshError("Guard could not refresh the rest of the dashboard. Check again before relying on other views.");
+    }
+  }, [onStateChanged]);
   const refreshInBackground = reactExports.useCallback(() => {
     void refreshAfterOp();
-    if (onStateChanged !== void 0) {
-      void Promise.resolve().then(() => onStateChanged()).catch(() => void 0);
-    }
-  }, [onStateChanged, refreshAfterOp]);
+    void refreshSharedState();
+  }, [refreshAfterOp, refreshSharedState]);
   reactExports.useEffect(() => {
     if (panelLoad.phase !== "loaded") {
       return;
@@ -2307,6 +2316,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
     panelLoad.phase === "error" && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBanner, { message: panelLoad.message, onRetry: handleRetry }),
     panelLoad.phase === "loaded" && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
       refreshError !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBanner, { message: refreshError, onRetry: handleRetry, retryLabel: "Check again" }),
+      sharedRefreshError !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(ErrorBanner, { message: sharedRefreshError, onRetry: () => void refreshSharedState(), retryLabel: "Check again" }),
       !panelLoad.data.entitlement.allowed && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-b border-slate-100", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
         EntitlementNotice,
         {
@@ -2368,6 +2378,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
         shim: managerDrawerShim,
         actions: panelLoad.data.actions,
         anyPending,
+        repairAwaitingRefresh: repairAwaitingRefresh === managerDrawerTarget,
         isMine: pendingOp?.manager === managerDrawerTarget,
         actionHandlers: {
           install: handleInstall,

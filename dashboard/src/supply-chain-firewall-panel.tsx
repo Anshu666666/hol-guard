@@ -174,7 +174,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   onAuditConnectGateChange?: (state: AuditConnectGateViewState | null) => void;
   onAuditErrorChange?: (message: string | null) => void;
   onAuditWorkspaceRequired?: () => void;
-  onStateChanged?: () => Promise<void> | void;
+  onStateChanged?: (requireComplete?: boolean) => Promise<void> | void;
   onAuditCompleted?: (resultDetail: Record<string, unknown>) => void;
   onAuditStarted?: () => void;
   onAuditRunningChange?: (running: boolean) => void;
@@ -287,7 +287,7 @@ export const PackageFirewallPanel = forwardRef(function PackageFirewallPanel(
   const refreshSharedState = useCallback(async () => {
     if (onStateChanged === undefined) return;
     try {
-      await onStateChanged();
+      await onStateChanged(true);
       setSharedRefreshError(null);
     } catch {
       setSharedRefreshError("Guard could not refresh the rest of the dashboard. Check again before relying on other views.");

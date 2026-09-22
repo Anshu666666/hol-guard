@@ -610,8 +610,8 @@ export function App() {
     return inboxResult.status === "fulfilled" ? inboxResult.value.snapshot : null;
   }, [setRuntime, setRequests, setReceipts, setPolicies, setInventory]);
 
-  const refreshStateWithoutResult = useCallback(async () => {
-    await refreshStateAfterAction(true);
+  const refreshStateWithoutResult = useCallback(async (requireComplete = false) => {
+    await refreshStateAfterAction(requireComplete);
   }, [refreshStateAfterAction]);
 
   const handleReconnectSession = useCallback(async () => {

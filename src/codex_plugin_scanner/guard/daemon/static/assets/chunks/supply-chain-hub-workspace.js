@@ -1694,7 +1694,7 @@ const PackageFirewallPanel = reactExports.forwardRef(function PackageFirewallPan
   const refreshSharedState = reactExports.useCallback(async () => {
     if (onStateChanged === void 0) return;
     try {
-      await onStateChanged();
+      await onStateChanged(true);
       setSharedRefreshError(null);
     } catch {
       setSharedRefreshError("Guard could not refresh the rest of the dashboard. Check again before relying on other views.");

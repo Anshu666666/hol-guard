@@ -32004,8 +32004,8 @@ function App() {
     }
     return inboxResult.status === "fulfilled" ? inboxResult.value.snapshot : null;
   }, [setRuntime, setRequests, setReceipts, setPolicies, setInventory]);
-  const refreshStateWithoutResult = reactExports.useCallback(async () => {
-    await refreshStateAfterAction(true);
+  const refreshStateWithoutResult = reactExports.useCallback(async (requireComplete = false) => {
+    await refreshStateAfterAction(requireComplete);
   }, [refreshStateAfterAction]);
   const handleReconnectSession = reactExports.useCallback(async () => {
     setRuntime({ kind: "loading" });

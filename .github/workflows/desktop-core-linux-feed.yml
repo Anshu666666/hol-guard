@@ -156,14 +156,20 @@ jobs:
           test -f "$WHEEL"
           BUNDLE="$TRUST_ASSETS/hol-guard-v${CORE_VERSION}.intoto.jsonl"
           test -s "$BUNDLE"
-          gh attestation verify "$WHEEL" \
-            --repo "$GITHUB_REPOSITORY" \
-            --bundle "$BUNDLE" \
-            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" \
-            --signer-digest "$SOURCE_SHA" \
-            --source-digest "$SOURCE_SHA" \
-            --source-ref "refs/tags/${CORE_TAG}" \
-            --deny-self-hosted-runners >/dev/null
+          verify_published_wheel() {
+            local source_ref="$1"
+            gh attestation verify "$WHEEL" \
+              --repo "$GITHUB_REPOSITORY" \
+              --bundle "$BUNDLE" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" \
+              --signer-digest "$SOURCE_SHA" \
+              --source-digest "$SOURCE_SHA" \
+              --source-ref "$source_ref" \
+              --deny-self-hosted-runners >/dev/null
+          }
+          if ! verify_published_wheel "refs/tags/${CORE_TAG}"; then
+            verify_published_wheel "refs/heads/${RELEASE_BRANCH}"
+          fi
           cp "$WHEEL" "$RUNNER_TEMP/attested-linux-x64.whl"
           test -f "$RUNNER_TEMP/attested-linux-x64.whl"
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"

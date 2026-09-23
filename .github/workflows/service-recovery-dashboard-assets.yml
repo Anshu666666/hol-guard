@@ -64,7 +64,9 @@ jobs:
           echo "PR_BASE_SHA=$PR_BASE_SHA" >> "$GITHUB_ENV"
           echo "REPORTED_PR_BASE_SHA=$REPORTED_PR_BASE_SHA" >> "$GITHUB_ENV"
           git fetch --no-tags origin "$PR_BASE_SHA"
-          if git merge --no-commit --no-ff "$PR_BASE_SHA"; then
+          if git -c user.name="HOL Guard CI" \
+            -c user.email="hol-guard-ci@users.noreply.github.com" \
+            merge --no-commit --no-ff "$PR_BASE_SHA"; then
             echo "PR source merge completed without conflicts"
           else
             conflicts="$(git diff --name-only --diff-filter=U)"

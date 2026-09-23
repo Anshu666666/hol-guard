@@ -12,7 +12,10 @@ from pathlib import Path
 BOOTSTRAP_SCHEMA = "guard-desktop-bootstrap.v1"
 MANIFEST_SCHEMA = "hol-guard-core-update.v1"
 MARKER_SCHEMA = "hol-guard-core-attestation.v3"
-_STABLE_TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+_STABLE_COMPONENT = r"(?:0|[1-9]\d*)"
+_STABLE_TAG = re.compile(
+    rf"^v({_STABLE_COMPONENT})\.({_STABLE_COMPONENT})\.({_STABLE_COMPONENT})$"
+)
 
 
 def _sha256(path: Path) -> str:

@@ -64,13 +64,14 @@ def test_feed_follows_the_newest_stable_release_and_wakes_after_main_publisher()
 
 def test_release_discovery_selects_the_newest_stable_release(tmp_path: Path, capsys) -> None:
     tags = tmp_path / "tags.txt"
-    tags.write_text("alpha/v3.0.7a1\nv3.4.2\nv3.0.193\nv10.0.0\n", encoding="utf-8")
+    tags.write_text("alpha/v3.0.7a1\nv04.2.0\nv4.1.0\nv3.0.193\n", encoding="utf-8")
     namespace = runpy.run_path(str(TOOL))
     namespace["discover_release"](tags)
     output = capsys.readouterr().out
-    assert "version=10.0.0" in output
-    assert "tag=v10.0.0" in output
-    assert "train=10.0" in output
+    assert "version=4.1.0" in output
+    assert "tag=v4.1.0" in output
+    assert "train=4.1" in output
+    assert "04.2.0" not in output
     assert "branch=main" in output
     assert "alpha" not in output
 

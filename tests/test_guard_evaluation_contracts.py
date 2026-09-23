@@ -294,6 +294,20 @@ def test_hostname_endpoint_cannot_rebind_outside_loopback(tmp_path: Path) -> Non
         validate_evaluation_profile(payload)
 
 
+def test_explicit_proxy_must_be_within_declared_target_scope(tmp_path: Path) -> None:
+    payload = _profile(tmp_path)
+    network = payload["network"]
+    assert isinstance(network, dict)
+    network["mode"] = "explicit"
+    network["proxyUrl"] = "http://127.0.0.1:8766/proxy"
+    with pytest.raises(EvaluationContractError, match="proxyUrl must be within"):
+        validate_evaluation_profile(payload)
+    scope = payload["targetScope"]
+    assert isinstance(scope, dict)
+    scope["allowedEndpoints"].append(network["proxyUrl"])
+    validate_evaluation_profile(payload)
+
+
 def test_result_witness_must_stay_in_profile_scope(tmp_path: Path) -> None:
     profile_payload = _profile(tmp_path)
     result_payload = _result(profile_payload)

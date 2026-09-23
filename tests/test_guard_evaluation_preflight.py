@@ -13,6 +13,7 @@ from codex_plugin_scanner.guard.evaluation_preflight import (
     preflight_evaluation,
     setup_evaluation,
 )
+from codex_plugin_scanner.guard.evaluation_witness import LocalSideEffectWitness
 
 
 def _host_os() -> str:
@@ -313,3 +314,49 @@ def test_setup_rejects_non_temporary_parent_without_touching_it(tmp_path: Path) 
     assert setup.report.status == "blocked_environment"
     assert setup.report.reason == "setup_parent_outside_profile_scope"
     assert unrelated.read_text(encoding="utf-8") == "preserve"
+
+
+def test_setup_rejects_publicly_writable_temporary_parent(tmp_path: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("POSIX mode check")
+    executable = _fake_host(tmp_path)
+    artifact = _artifact(tmp_path)
+    parent = tmp_path / "public-parent"
+    parent.mkdir()
+    parent.chmod(0o777)
+    profile = _profile(tmp_path, executable)
+    scope = profile["targetScope"]
+    assert isinstance(scope, dict)
+    scope["rootPath"] = str(parent)
+    scope["allowedPaths"] = [str(parent / "workspace")]
+
+    setup = setup_evaluation(
+        profile,
+        artifact_paths=_artifact_paths(artifact),
+        parent_dir=parent,
+        allow_host_execution=True,
+    )
+    assert setup.report.status == "blocked_environment"
+    assert setup.report.reason == "setup_parent_outside_profile_scope"
+    assert list(parent.iterdir()) == []
+
+
+def test_witness_uses_owned_setup_workspace_and_rejects_tampered_owner(tmp_path: Path) -> None:
+    executable = _fake_host(tmp_path)
+    artifact = _artifact(tmp_path)
+    setup = setup_evaluation(
+        _profile(tmp_path, executable),
+        artifact_paths=_artifact_paths(artifact),
+        parent_dir=tmp_path,
+        allow_host_execution=True,
+    )
+    assert setup.workspace is not None and setup.root_path is not None and setup.marker_token is not None
+    with LocalSideEffectWitness(setup=setup) as witness:
+        assert witness.root.parent == setup.workspace
+        assert witness.check_file_ready()
+    marker = setup.root_path / ".hol-guard-evaluation-owned"
+    marker.write_text("tampered", encoding="utf-8")
+    with pytest.raises(ValueError, match="owned evaluation setup"), LocalSideEffectWitness(setup=setup):
+        pass
+    marker.write_text(setup.marker_token, encoding="utf-8")
+    assert setup.cleanup() is True

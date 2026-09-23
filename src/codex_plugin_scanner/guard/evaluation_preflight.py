@@ -33,7 +33,6 @@ EvaluationSetupStatus = Literal["passed", "blocked_environment", "not_run"]
 EvaluationPhase = Literal["preflight", "setup"]
 EVALUATION_SETUP_SCHEMA_VERSION = "guard.evaluation-setup.v1"
 
-_POSIX_TEMP_ROOTS = ("/tmp", "/private/tmp", "/var/tmp", "/var/folders")
 _OWNED_ROOT_PREFIX = "hol-guard-eval-"
 _MARKER_NAME = ".hol-guard-evaluation-owned"
 _VERSION_TIMEOUT_SECONDS = 2.0
@@ -193,7 +192,7 @@ def _observed_privilege() -> str:
 
 
 def _safe_temp_parent(path: Path) -> bool:
-    """Return whether ``path`` is an existing directory below a temp root."""
+    """Require a private owned directory below the process temporary root."""
 
     try:
         if "\x00" in str(path) or path.is_symlink() or not path.is_dir():
@@ -212,15 +211,14 @@ def _safe_temp_parent(path: Path) -> bool:
         except ValueError:
             return False
 
-    normalized = os.path.normpath(candidate)
-    for raw_root in _POSIX_TEMP_ROOTS:
-        root = os.path.realpath(raw_root)
-        try:
-            if os.path.commonpath((normalized, root)) == root:
-                return True
-        except ValueError:
-            continue
-    return False
+    root = os.path.realpath(tempfile.gettempdir())
+    try:
+        if os.path.commonpath((candidate, root)) != root or candidate == root:
+            return False
+        details = path.stat()
+        return details.st_uid == os.getuid() and stat.S_IMODE(details.st_mode) & 0o077 == 0
+    except (OSError, ValueError):
+        return False
 
 
 def _resolve_host_executable(value: str) -> Path | None:

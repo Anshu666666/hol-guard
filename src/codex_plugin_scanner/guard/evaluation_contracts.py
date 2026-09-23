@@ -49,8 +49,6 @@ EVIDENCE_TYPES: frozenset[str] = frozenset(
     }
 )
 
-_POSIX_TEMP_ROOTS = ("/tmp", "/private/tmp", "/var/tmp", "/var/folders")
-
 
 class EvaluationContractError(ValueError):
     """A profile or result failed structural or local-scope validation."""
@@ -105,8 +103,8 @@ def _is_posix_temp_path(path: str) -> bool:
     if "\x00" in path or not os.path.isabs(path):
         return False
     candidate = os.path.realpath(path)
-    roots = {os.path.realpath(root) for root in _POSIX_TEMP_ROOTS}
-    return any(candidate.startswith(f"{root}{os.sep}") for root in roots)
+    root = os.path.realpath(tempfile.gettempdir())
+    return candidate.startswith(f"{root}{os.sep}")
 
 
 def _is_windows_temp_path(path: str) -> bool:

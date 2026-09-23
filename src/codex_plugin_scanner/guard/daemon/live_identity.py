@@ -208,15 +208,12 @@ def probe_live_guard_daemon_identity(
         refreshed_token,
         timeout=refreshed_health_timeout,
     )
-    if (
-        not _state_identity_matches(
-            state,
-            refreshed_state,
-            guard_home,
-            require_markers=True,
-        )
-        or not _health_details_match(refreshed_details, refreshed_state, guard_home)
-    ):
+    if not _state_identity_matches(
+        state,
+        refreshed_state,
+        guard_home,
+        require_markers=True,
+    ) or not _health_details_match(refreshed_details, refreshed_state, guard_home):
         return identity, "identity_unverified"
     return identity, "healthy"
 

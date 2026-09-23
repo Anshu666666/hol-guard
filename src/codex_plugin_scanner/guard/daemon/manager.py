@@ -161,6 +161,7 @@ def _launch_nonce_is_valid(value: object) -> bool:
         and re.fullmatch(r"[0-9a-f]+", value) is not None
     )
 
+
 GuardDaemonHookFailureKind = Literal[
     "authenticated-control-plane-failure",
     "overload",
@@ -799,15 +800,12 @@ def retire_all_guard_daemons_for_home(
             if retirement_identity is None:
                 continue
             expected_start_marker, expected_owner_marker = retirement_identity
-            if (
-                _retire_guard_daemon_pid(
-                    pid,
-                    expected_guard_home=guard_home,
-                    expected_start_marker=expected_start_marker,
-                    expected_owner_marker=expected_owner_marker,
-                )
-                and _guard_daemon_pid_is_proven_dead(pid)
-            ):
+            if _retire_guard_daemon_pid(
+                pid,
+                expected_guard_home=guard_home,
+                expected_start_marker=expected_start_marker,
+                expected_owner_marker=expected_owner_marker,
+            ) and _guard_daemon_pid_is_proven_dead(pid):
                 handled_pids.add(pid)
                 if pid not in retired:
                     retired.append(pid)
@@ -2072,10 +2070,13 @@ def _guard_daemon_containment_receipt_matches_launch(
     )
     if not (direct_launch_match or child_launch_match):
         return False
-    return _guard_daemon_containment_receipt_child_generations(
-        pending,
-        receipt,
-    ) is not None
+    return (
+        _guard_daemon_containment_receipt_child_generations(
+            pending,
+            receipt,
+        )
+        is not None
+    )
 
 
 def _guard_daemon_containment_receipt_child_generations(

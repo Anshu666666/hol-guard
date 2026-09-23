@@ -160,9 +160,7 @@ def write_private_state(guard_home: Path, name: str, payload: bytes, maximum_byt
 
 
 @contextmanager
-def hold_owner_private_lock(
-    guard_home: Path, name: str, *, timeout_seconds: float = 1.0
-) -> Iterator[None]:
+def hold_owner_private_lock(guard_home: Path, name: str, *, timeout_seconds: float = 1.0) -> Iterator[None]:
     """Serialize one owner-private transaction without taking lifecycle authority.
 
     The lock is a separate regular file under the validated Guard home.  It is
@@ -171,12 +169,7 @@ def hold_owner_private_lock(
     lifecycle mutation.
     """
 
-    if (
-        not name
-        or len(name) > _PRIVATE_LOCK_NAME_LIMIT
-        or Path(name).name != name
-        or name in {".", ".."}
-    ):
+    if not name or len(name) > _PRIVATE_LOCK_NAME_LIMIT or Path(name).name != name or name in {".", ".."}:
         raise _invalid()
     deadline = time.monotonic() + max(0.0, timeout_seconds)
     if os.name == "nt":

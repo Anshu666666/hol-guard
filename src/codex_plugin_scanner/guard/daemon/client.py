@@ -64,9 +64,7 @@ def read_guard_health_details(
         # HTTPConnection neither consults proxy environment variables nor follows
         # redirects. Never forward the daemon token to a redirected authority.
         deadline = time.monotonic() + probe_timeout
-        with closing(
-            HTTPConnection(parsed.hostname, parsed.port, timeout=probe_timeout)
-        ) as connection:
+        with closing(HTTPConnection(parsed.hostname, parsed.port, timeout=probe_timeout)) as connection:
             connection.connect()
             stream = connection.sock
             remaining = deadline - time.monotonic()

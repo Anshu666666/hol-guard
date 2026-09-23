@@ -170,9 +170,7 @@ _MAX_COMPLETED_OPERATIONS = 64
 # A fresh inspected identity and a positive death/containment check are still
 # required below. Read-only progress receipts are ignored after the lifecycle
 # lock is acquired so a new authenticated request can re-inspect and proceed.
-_UNRESOLVED_SNAPSHOT_PHASES = frozenset(
-    {"stopping", "starting", "verifying", "failed", "timed_out_waiting"}
-)
+_UNRESOLVED_SNAPSHOT_PHASES = frozenset({"stopping", "starting", "verifying", "failed", "timed_out_waiting"})
 
 
 class _RecoveryOwnershipTimeoutError(RuntimeError):
@@ -193,8 +191,7 @@ def _operation_key(home_key: str, operation_id: uuid.UUID | str) -> tuple[str, s
 
 def _is_recovery_lock_timeout(error: BaseException) -> bool:
     return isinstance(error, TimeoutError) or (
-        isinstance(error, RuntimeError)
-        and str(error) == "Timed out waiting for Guard daemon recovery ownership."
+        isinstance(error, RuntimeError) and str(error) == "Timed out waiting for Guard daemon recovery ownership."
     )
 
 
@@ -229,11 +226,7 @@ def _normal_service(value: object) -> str:
 
 
 def _normal_protection(value: object) -> str:
-    return (
-        value
-        if isinstance(value, str) and value in {"unknown", "verified", "needs_attention", "off"}
-        else "unknown"
-    )
+    return value if isinstance(value, str) and value in {"unknown", "verified", "needs_attention", "off"} else "unknown"
 
 
 def _normal_check_result(value: object) -> str:
@@ -298,11 +291,7 @@ def _identity_matches(left: ProcessIdentity | None, right: ProcessIdentity | Non
         homes_match = left.guard_home == right.guard_home == guard_home
     if not homes_match or left.pid != right.pid or left.generation != right.generation or left.runtime != right.runtime:
         return False
-    if (
-        left.start_marker is None
-        or right.start_marker is None
-        or left.start_marker != right.start_marker
-    ):
+    if left.start_marker is None or right.start_marker is None or left.start_marker != right.start_marker:
         return False
     if left.user is None or right.user is None or left.user != right.user:
         return False

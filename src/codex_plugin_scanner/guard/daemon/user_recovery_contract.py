@@ -118,8 +118,10 @@ def validate_recovery_snapshot(payload: object, *, allow_inspection: bool = True
     if payload.get("schema") != SCHEMA:
         raise RecoveryContractError("unsupported_protocol")
     capabilities = payload.get("capabilities")
-    if not isinstance(capabilities, list) or not capabilities or not all(
-        isinstance(item, str) and item in CAPABILITIES for item in capabilities
+    if (
+        not isinstance(capabilities, list)
+        or not capabilities
+        or not all(isinstance(item, str) and item in CAPABILITIES for item in capabilities)
     ):
         raise RecoveryContractError("recovery_capabilities_invalid")
     if len(set(capabilities)) != len(capabilities):

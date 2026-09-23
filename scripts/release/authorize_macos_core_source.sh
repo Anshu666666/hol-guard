@@ -47,7 +47,7 @@ gh attestation verify "$WHEEL" \
   --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" \
   --signer-digest "$SOURCE_SHA" \
   --source-digest "$SOURCE_SHA" \
-  --source-ref "refs/heads/${RELEASE_BRANCH}" \
+  --source-ref "refs/tags/${CORE_TAG}" \
   --deny-self-hosted-runners >/dev/null
 cp "$WHEEL" "$RUNNER_TEMP/attested-macos-arm64.whl"
 test -f "$RUNNER_TEMP/attested-macos-arm64.whl"

@@ -2935,7 +2935,8 @@ def _retire_guard_daemon_process(payload: dict[str, object]) -> bool:
     expected_guard_home = Path(guard_home) if isinstance(guard_home, str) and guard_home.strip() else None
     expected_start_marker = payload.get("process_start_marker")
     if not isinstance(expected_start_marker, str) or not expected_start_marker:
-        return False
+        # Legacy/markerless state: never signal, but a dead PID is already retired.
+        return _guard_daemon_pid_is_proven_dead(pid)
     return _retire_guard_daemon_pid(
         pid,
         expected_guard_home=expected_guard_home,

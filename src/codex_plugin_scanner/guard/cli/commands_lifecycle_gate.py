@@ -9,7 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO, cast
 
-from ..approval_gate import ApprovalGateError, public_config, recent_totp_satisfied, require_high_risk
+from ..approval_gate import (
+    ApprovalGateError,
+    ApprovalGateGrant,
+    public_config,
+    recent_totp_satisfied,
+    require_high_risk,
+    validate_grant,
+)
 from ..config import resolve_guard_home_for_user_home
 from ..harness_disconnect_gate import disconnect_requires_fresh_authenticator
 from ..windows_paths import trusted_windows_user_profile
@@ -42,6 +49,18 @@ _CANONICAL_AUTHORITY_ACTION_PREFIXES = (
 class LifecycleGateRequirement:
     action: str
     subject: str
+
+
+@dataclass(frozen=True, slots=True)
+class LifecycleGateContext:
+    """Silent action-scoped proof context carried to lifecycle mutations."""
+
+    authority_home: Path
+    action: str
+    scope: str
+    subject: str
+    grant: ApprovalGateGrant | None
+    was_enabled: bool
 
 
 def lifecycle_gate_requirement(args: argparse.Namespace) -> LifecycleGateRequirement | None:
@@ -89,15 +108,16 @@ def enforce_lifecycle_gate(
     *,
     guard_home: Path,
     error_stream: TextIO | None = None,
-) -> None:
+) -> LifecycleGateContext | None:
     requirement = lifecycle_gate_requirement(args)
     if requirement is None:
-        return
+        return None
     authority_home = lifecycle_authority_home(guard_home, requirement=requirement)
     gate = public_config(authority_home)
-    if _bool_attribute(args, "approval_proof_stdin"):
-        desktop_proof = consume_desktop_lifecycle_stdin(totp_enabled=gate.totp_enabled)
-    else:
+    desktop_proof = None
+    if not _bool_attribute(args, "approval_proof_stdin"):
+        # Clear Desktop child environment factors even when the advisory gate
+        # is disabled; stdin proof is deliberately not read until enabled.
         desktop_proof = consume_desktop_lifecycle_env(
             totp_enabled=gate.totp_enabled,
             use_cooldown=False,
@@ -105,7 +125,16 @@ def enforce_lifecycle_gate(
         )
     if not gate.enabled:
         print(_ENROLLMENT_NOTICE, file=error_stream or sys.stderr)
-        return
+        return LifecycleGateContext(
+            authority_home=authority_home,
+            action=requirement.action,
+            scope="local-protection",
+            subject=requirement.subject,
+            grant=None,
+            was_enabled=False,
+        )
+    if _bool_attribute(args, "approval_proof_stdin"):
+        desktop_proof = consume_desktop_lifecycle_stdin(totp_enabled=gate.totp_enabled)
     if requirement.action == "apps.disconnect" and not _apps_disconnect_confirmation_matches(args):
         return
     require_fresh_totp = gate.totp_enabled and disconnect_requires_fresh_authenticator(requirement.action)
@@ -121,7 +150,7 @@ def enforce_lifecycle_gate(
         )
     if require_fresh_totp and not ((gate_input.totp_code if gate_input is not None else None) or "").strip():
         raise ApprovalGateError("approval_gate_totp_required", "TOTP code is required.")
-    _ = require_high_risk(
+    grant = require_high_risk(
         authority_home,
         purpose="protection_lifecycle",
         approval_gate_input=gate_input,
@@ -129,6 +158,39 @@ def enforce_lifecycle_gate(
         scope="local-protection",
         subject=requirement.subject,
     )
+    return LifecycleGateContext(
+        authority_home=authority_home,
+        action=requirement.action,
+        scope="local-protection",
+        subject=requirement.subject,
+        grant=grant,
+        was_enabled=True,
+    )
+
+
+def validate_lifecycle_gate_context(context: LifecycleGateContext) -> bool:
+    """Revalidate an existing grant without prompting or consuming it."""
+
+    gate = public_config(context.authority_home)
+    if not gate.enabled:
+        # A gate disabled after proof acquisition does not create a new
+        # authorization requirement.  Re-enabling it does.
+        return True
+    if context.grant is None:
+        return False
+    try:
+        validate_grant(
+            context.authority_home,
+            context.grant,
+            purpose="protection_lifecycle",
+            strict=True,
+            action=context.action,
+            scope=context.scope,
+            subject=context.subject,
+        )
+    except ApprovalGateError:
+        return False
+    return True
 
 
 def lifecycle_authority_home(
@@ -217,10 +279,12 @@ def _bool_attribute(args: argparse.Namespace, name: str) -> bool:
 
 
 __all__ = [
+    "LifecycleGateContext",
     "LifecycleGateRequirement",
     "canonical_lifecycle_home",
     "enforce_lifecycle_gate",
     "lifecycle_authority_home",
     "lifecycle_gate_requirement",
     "trusted_user_home",
+    "validate_lifecycle_gate_context",
 ]

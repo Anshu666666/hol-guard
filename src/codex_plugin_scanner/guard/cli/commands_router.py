@@ -170,7 +170,8 @@ def run_guard_command(
         workspace_override_explicit=bool(getattr(args, "workspace", None)),
     )
     try:
-        enforce_lifecycle_gate(args, guard_home=guard_home)
+        lifecycle_gate_context = enforce_lifecycle_gate(args, guard_home=guard_home)
+        args._lifecycle_gate_context = lifecycle_gate_context
     except ApprovalGateError as error:
         payload = approval_gate_cli_payload(error)
         if bool(getattr(args, "json", False)):

@@ -118,7 +118,9 @@ def validate_recovery_snapshot(payload: object, *, allow_inspection: bool = True
     if payload.get("schema") != SCHEMA:
         raise RecoveryContractError("unsupported_protocol")
     capabilities = payload.get("capabilities")
-    if not isinstance(capabilities, list) or not capabilities or any(item not in CAPABILITIES for item in capabilities):
+    if not isinstance(capabilities, list) or not capabilities or not all(
+        isinstance(item, str) and item in CAPABILITIES for item in capabilities
+    ):
         raise RecoveryContractError("recovery_capabilities_invalid")
     if len(set(capabilities)) != len(capabilities):
         raise RecoveryContractError("recovery_capabilities_invalid")
@@ -171,10 +173,10 @@ def encode_recovery_event(payload: object) -> bytes:
 def validate_event_sequence(previous: Mapping[str, object] | None, current: object) -> dict[str, object]:
     """Reject late or cross-operation events before they can replace UI state."""
 
-    snapshot = validate_recovery_snapshot(current)
+    snapshot = validate_recovery_snapshot(current, allow_inspection=False)
     if previous is None:
         return snapshot
-    previous_snapshot = validate_recovery_snapshot(previous)
+    previous_snapshot = validate_recovery_snapshot(previous, allow_inspection=False)
     if previous_snapshot["operationId"] != snapshot["operationId"]:
         raise RecoveryContractError("recovery_operation_changed")
     current_sequence = snapshot["sequence"]
@@ -193,7 +195,14 @@ def _validate_check(value: object) -> dict[str, str]:
     check_id = value.get("id")
     result = value.get("result")
     reason = value.get("reasonCode")
-    if check_id not in CHECK_IDS or result not in CHECK_RESULTS or reason not in REASON_CODES:
+    if (
+        not isinstance(check_id, str)
+        or not isinstance(result, str)
+        or not isinstance(reason, str)
+        or check_id not in CHECK_IDS
+        or result not in CHECK_RESULTS
+        or reason not in REASON_CODES
+    ):
         raise RecoveryContractError("recovery_check_invalid")
     return {"id": str(check_id), "result": str(result), "reasonCode": str(reason)}
 
@@ -224,7 +233,8 @@ def _reject_forbidden_keys(value: Mapping[object, object]) -> None:
 
 
 def _require_member(payload: Mapping[object, object], field: str, allowed: frozenset[str]) -> None:
-    if payload.get(field) not in allowed:
+    value = payload.get(field)
+    if not isinstance(value, str) or value not in allowed:
         raise RecoveryContractError(f"recovery_{field}_invalid")
 
 

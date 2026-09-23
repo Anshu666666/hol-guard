@@ -51,8 +51,33 @@ if (originalWindow) {
 }
 
 const missing = getRecoveryCapabilities({ bridge: null, installMode: "browser-only" });
-assert(missing.kind === "fallback", "T06: missing bridge falls back instead of guessing a native action");
+assert(
+  missing.kind === "fallback" && missing.reason === "bridge_missing",
+  "T06: a null bridge is classified as missing rather than malformed",
+);
 assert(missing.installMode === "browser-only", "T06: browser-only fallback preserves install mode");
+
+const daemonProtocolBridge = {
+  ...nativeBridge,
+  schema: SERVICE_RECOVERY_PROTOCOL,
+};
+const daemonProtocol = getRecoveryCapabilities({ bridge: daemonProtocolBridge });
+assert(
+  daemonProtocol.kind === "fallback" && daemonProtocol.reason === "unsupported_protocol",
+  "T06: daemon protocol IDs are not accepted as dashboard bridge schemas",
+);
+
+const missingProtocol = getRecoveryCapabilities({
+  bridge: {
+    schema: SERVICE_RECOVERY_BRIDGE_SCHEMA,
+    capabilities: ["open_recovery"],
+    openRecovery: () => undefined,
+  },
+});
+assert(
+  missingProtocol.kind === "fallback" && missingProtocol.reason === "unsupported_protocol",
+  "T06: a missing bridge protocol cannot expose native recovery",
+);
 
 const unsupported = getRecoveryCapabilities({
   bridge: { schema: "old-recovery.v0", capabilities: ["open_recovery"], openRecovery: () => undefined },
@@ -74,6 +99,18 @@ assert(handoff.kind === "opened" && opened, "T06: native handoff invokes only th
 
 const noHandoff = await openRecoveryView({ bridge: null, installMode: "browser-only" });
 assert(noHandoff.kind === "fallback", "T06: unsupported browser handoff does not claim recovery started");
+
+let daemonProtocolOpened = false;
+const rejectedDaemonProtocolHandoff = await openRecoveryView({
+  bridge: {
+    ...daemonProtocolBridge,
+    openRecovery: () => { daemonProtocolOpened = true; },
+  },
+});
+assert(
+  rejectedDaemonProtocolHandoff.kind === "fallback" && !daemonProtocolOpened,
+  "T06: incompatible daemon protocol callbacks are never invoked",
+);
 
 const nativeMarkup = renderToStaticMarkup(createElement(ServiceRecoveryPanel, {
   bridge: nativeBridge,

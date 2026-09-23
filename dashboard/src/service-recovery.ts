@@ -56,11 +56,6 @@ export type RecoveryInstructions = {
 
 type UnknownRecord = Record<string, unknown>;
 
-const BRIDGE_SCHEMAS = new Set<string>([
-  SERVICE_RECOVERY_BRIDGE_SCHEMA,
-  SERVICE_RECOVERY_PROTOCOL,
-]);
-
 const RECOVERY_CAPABILITY_NAMES = new Set([
   SERVICE_RECOVERY_BRIDGE_CAPABILITY,
   "recovery_view",
@@ -131,13 +126,7 @@ function bridgeInstallMode(value: UnknownRecord): RecoveryInstallMode {
 }
 
 function bridgeSchemaSupported(value: UnknownRecord): boolean {
-  const schema = value.schema;
-  const protocol = value.protocol;
-  return (
-    typeof schema === "string" &&
-    BRIDGE_SCHEMAS.has(schema) &&
-    (protocol === undefined || protocol === SERVICE_RECOVERY_PROTOCOL)
-  );
+  return value.schema === SERVICE_RECOVERY_BRIDGE_SCHEMA && value.protocol === SERVICE_RECOVERY_PROTOCOL;
 }
 
 function bridgeHasRecoveryCapability(value: UnknownRecord): boolean {
@@ -189,7 +178,7 @@ export function getRecoveryCapabilities(options?: {
   }
 
   let reason: "bridge_missing" | "invalid_bridge" | "unsupported_protocol" = "bridge_missing";
-  if (rawCandidate !== undefined) {
+  if (rawCandidate !== undefined && rawCandidate !== null) {
     reason = isRecord(rawCandidate) && !bridgeSchemaSupported(rawCandidate)
       ? "unsupported_protocol"
       : "invalid_bridge";

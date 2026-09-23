@@ -135,6 +135,8 @@ class RecoveryHooks:
     start_process: Hook | None = None
     verify_ready: Hook | None = None
     protection_health: Hook | None = None
+    load_snapshot: Hook | None = None
+    load_receipt: Hook | None = None
     persist_snapshot: Hook | None = None
 
 
@@ -150,17 +152,50 @@ class _Operation:
     operation_id: uuid.UUID
     request_id: uuid.UUID
     started_monotonic: float
+    deadline_monotonic: float
     started_at: str
     sequence: int = -1
     latest: dict[str, object] | None = None
     events: list[dict[str, object]] = field(default_factory=list)
+    unresolved_identity: ProcessIdentity | None = None
+    unresolved_owner: bool = False
 
 
 _OPERATIONS_LOCK = RLock()
 _ACTIVE_BY_HOME: dict[str, _Operation] = {}
-_ACTIVE_BY_ID: dict[str, _Operation] = {}
-_COMPLETED_BY_ID: dict[str, _Operation] = {}
+_ACTIVE_BY_ID: dict[tuple[str, str], _Operation] = {}
+_COMPLETED_BY_ID: dict[tuple[str, str], _Operation] = {}
 _MAX_COMPLETED_OPERATIONS = 64
+# Persisted phases after an attempted mutation are only unresolved-work hints.
+# A fresh inspected identity and a positive death/containment check are still
+# required below. Read-only progress receipts are ignored after the lifecycle
+# lock is acquired so a new authenticated request can re-inspect and proceed.
+_UNRESOLVED_SNAPSHOT_PHASES = frozenset(
+    {"stopping", "starting", "verifying", "failed", "timed_out_waiting"}
+)
+
+
+class _RecoveryOwnershipTimeoutError(RuntimeError):
+    """The cross-process recovery lock could not be acquired in time."""
+
+
+class _RecoveryLockUnavailableError(RuntimeError):
+    """The recovery lock could not be opened for a non-timeout reason."""
+
+
+class _RecoveryReceiptUnavailableError(RuntimeError):
+    """A persisted request receipt could not be trusted or read."""
+
+
+def _operation_key(home_key: str, operation_id: uuid.UUID | str) -> tuple[str, str]:
+    return (home_key, str(operation_id))
+
+
+def _is_recovery_lock_timeout(error: BaseException) -> bool:
+    return isinstance(error, TimeoutError) or (
+        isinstance(error, RuntimeError)
+        and str(error) == "Timed out waiting for Guard daemon recovery ownership."
+    )
 
 
 def _manager():
@@ -224,25 +259,34 @@ def _identity_from_value(value: object, guard_home: Path) -> ProcessIdentity | N
         return None
     generation = value.get("generation", value.get("state_id"))
     runtime = value.get("runtime", value.get("runtime_fingerprint"))
-    candidate_home = _safe_path(value.get("guard_home")) or guard_home
-    if not isinstance(generation, str) or not generation or not isinstance(runtime, str) or not runtime:
+    raw_home = value.get("guard_home")
+    candidate_home = _safe_path(raw_home)
+    if (
+        candidate_home is None
+        or not isinstance(generation, str)
+        or not generation
+        or not isinstance(runtime, str)
+        or not runtime
+    ):
         return None
     user = value.get("user", value.get("uid"))
     start_marker = value.get("start_marker", value.get("process_start_marker"))
+    if not isinstance(user, str) or not user.strip() or not isinstance(start_marker, str) or not start_marker.strip():
+        return None
     return ProcessIdentity(
         pid=pid,
         generation=generation,
         runtime=runtime,
         guard_home=candidate_home,
-        user=str(user) if user is not None else _current_user_marker(),
-        start_marker=(str(start_marker) if start_marker is not None else None),
+        user=user,
+        start_marker=start_marker,
     )
 
 
-def _current_user_marker() -> str:
-    if hasattr(os, "geteuid"):
-        return f"uid:{os.geteuid()}"
-    return "current-user"
+def _current_user_marker() -> str | None:
+    from ..live_process_identity import process_owner_marker
+
+    return process_owner_marker(os.getpid())
 
 
 def _identity_matches(left: ProcessIdentity | None, right: ProcessIdentity | None, guard_home: Path) -> bool:
@@ -254,9 +298,32 @@ def _identity_matches(left: ProcessIdentity | None, right: ProcessIdentity | Non
         homes_match = left.guard_home == right.guard_home == guard_home
     if not homes_match or left.pid != right.pid or left.generation != right.generation or left.runtime != right.runtime:
         return False
-    if left.start_marker is not None and right.start_marker is not None and left.start_marker != right.start_marker:
+    if (
+        left.start_marker is None
+        or right.start_marker is None
+        or left.start_marker != right.start_marker
+    ):
         return False
-    return not (left.user is not None and right.user is not None and left.user != right.user)
+    if left.user is None or right.user is None or left.user != right.user:
+        return False
+    if right.user.startswith("sid:"):
+        from ..live_process_identity import process_owner_marker
+
+        if process_owner_marker(right.pid) != right.user:
+            return False
+    return left.user == _current_user_marker()
+
+
+def _identity_os_evidence_matches(identity: ProcessIdentity) -> bool:
+    """Confirm the selected PID still has the persisted generation and owner."""
+    from ..live_process_identity import process_owner_marker, process_start_token
+
+    if identity.start_marker is None or identity.user is None:
+        return False
+    return (
+        process_start_token(identity.pid) == identity.start_marker
+        and process_owner_marker(identity.pid) == identity.user
+    )
 
 
 def _coerce_service(value: object, guard_home: Path, state: Mapping[str, object] | None) -> ServiceInspection:
@@ -287,13 +354,17 @@ def _coerce_service(value: object, guard_home: Path, state: Mapping[str, object]
         reason = "healthy"
     if reason == "unknown" and service == "unavailable":
         reason = "service_unresponsive"
+    raw_authenticated = value.get("authenticated")
+    authenticated = raw_authenticated if isinstance(raw_authenticated, bool) else service == "ready"
+    raw_dashboard_ready = value.get("dashboard_ready")
+    dashboard_ready = raw_dashboard_ready if isinstance(raw_dashboard_ready, bool) else service == "ready"
     return ServiceInspection(
         service=service,
         reason_code=reason,
         identity=identity,
         process_running=value.get("process_running") is True or identity is not None,
-        authenticated=value.get("authenticated") is True or service == "ready",
-        dashboard_ready=value.get("dashboard_ready") is True or service == "ready",
+        authenticated=authenticated,
+        dashboard_ready=dashboard_ready,
         protection=_normal_protection(value.get("protection")),
         checks=tuple(_coerce_checks(value.get("checks"))),
     )
@@ -462,21 +533,43 @@ class UserRecoveryCoordinator:
 
     def status(self, operation_id: str | uuid.UUID) -> dict[str, object]:
         parsed = self._parse_uuid(operation_id, field="operation_id")
+        home_key = str(self.guard_home)
         with _OPERATIONS_LOCK:
-            operation = _ACTIVE_BY_ID.get(str(parsed)) or _COMPLETED_BY_ID.get(str(parsed))
-            if operation is None or operation.latest is None:
+            operation = _ACTIVE_BY_ID.get(_operation_key(home_key, parsed)) or _COMPLETED_BY_ID.get(
+                _operation_key(home_key, parsed)
+            )
+            latest = operation.latest if operation is not None else None
+            if latest is None:
+                operation = None
+        if operation is None:
+            snapshot = self._load_request_receipt(parsed)
+            if snapshot is None:
                 raise KeyError(str(parsed))
-            return dict(operation.latest)
+            return dict(snapshot)
+        assert latest is not None
+        return dict(latest)
 
     def diagnostics(self, operation_id: str | uuid.UUID) -> dict[str, object]:
         """Return a bounded privacy-safe report for one known operation."""
 
         parsed = self._parse_uuid(operation_id, field="operation_id")
+        home_key = str(self.guard_home)
         with _OPERATIONS_LOCK:
-            operation = _ACTIVE_BY_ID.get(str(parsed)) or _COMPLETED_BY_ID.get(str(parsed))
-            if operation is None or operation.latest is None:
+            operation = _ACTIVE_BY_ID.get(_operation_key(home_key, parsed)) or _COMPLETED_BY_ID.get(
+                _operation_key(home_key, parsed)
+            )
+            latest = operation.latest if operation is not None else None
+            if latest is None:
+                operation = None
+            events = list(operation.events) if operation is not None else []
+            if operation is not None and not events:
+                assert latest is not None
+                events = [dict(latest)]
+        if not events:
+            snapshot = self._load_request_receipt(parsed)
+            if snapshot is None:
                 raise KeyError(str(parsed))
-            events = list(operation.events) or [dict(operation.latest)]
+            events = [dict(snapshot)]
         from .recovery_diagnostics import build_recovery_diagnostics
 
         return build_recovery_diagnostics(events)
@@ -486,33 +579,100 @@ class UserRecoveryCoordinator:
     def restart(self, request_id: str | uuid.UUID | None = None, *, emit: Hook | None = None) -> dict[str, object]:
         parsed_request = self._parse_uuid(request_id, field="request_id") if request_id is not None else uuid.uuid4()
         home_key = str(self.guard_home)
+        operation_key = _operation_key(home_key, parsed_request)
         with _OPERATIONS_LOCK:
-            active = _ACTIVE_BY_HOME.get(home_key)
-            if active is not None:
-                if active.request_id == parsed_request or active.latest is None:
-                    return dict(active.latest or {})
-                return dict(active.latest)
-            operation = _Operation(
-                operation_id=parsed_request,
-                request_id=parsed_request,
-                started_monotonic=self._clock() if self.hooks.clock else time.monotonic(),
-                started_at=self._now_timestamp(),
-            )
+            active_for_request = _ACTIVE_BY_ID.get(operation_key)
+            completed = _COMPLETED_BY_ID.get(operation_key)
+            if completed is not None and completed.latest is not None and completed.latest.get("phase") == "complete":
+                return self._return_cached(completed.latest, emit)
+            if active_for_request is not None and not active_for_request.unresolved_owner:
+                return self._return_cached(active_for_request.latest or {}, emit)
+        while True:
+            with _OPERATIONS_LOCK:
+                active = _ACTIVE_BY_HOME.get(home_key)
+                unresolved_identity = (
+                    active.unresolved_identity if active is not None and active.unresolved_owner else None
+                )
+                if active is None:
+                    break
+                if unresolved_identity is None:
+                    return self._return_cached(active.latest or {}, emit)
+            try:
+                reconciled = bool(self._process_dead(unresolved_identity))
+            except (OSError, RuntimeError, TimeoutError):
+                reconciled = False
+            with _OPERATIONS_LOCK:
+                if _ACTIVE_BY_HOME.get(home_key) is not active:
+                    continue
+                if not reconciled:
+                    return self._return_cached(active.latest or {}, emit)
+                self._complete_operation_locked(home_key, active)
+                break
+        with _OPERATIONS_LOCK:
+            completed = _COMPLETED_BY_ID.get(operation_key)
+            if completed is not None and completed.latest is not None and completed.latest.get("phase") == "complete":
+                return self._return_cached(completed.latest, emit)
+        started_monotonic = self._clock()
+        operation = _Operation(
+            operation_id=parsed_request,
+            request_id=parsed_request,
+            started_monotonic=started_monotonic,
+            # The active recovery budget starts only after authorization.  The
+            # initial value keeps the operation structurally complete while
+            # inspection and approval are still in progress.
+            deadline_monotonic=started_monotonic,
+            started_at=self._now_timestamp(),
+        )
+        with _OPERATIONS_LOCK:
             _ACTIVE_BY_HOME[home_key] = operation
-            _ACTIVE_BY_ID[str(operation.operation_id)] = operation
+            _ACTIVE_BY_ID[operation_key] = operation
         try:
             return self._run(operation, emit)
         finally:
             with _OPERATIONS_LOCK:
-                _ACTIVE_BY_HOME.pop(home_key, None)
-                _ACTIVE_BY_ID.pop(str(operation.operation_id), None)
-                _COMPLETED_BY_ID[str(operation.operation_id)] = operation
-                while len(_COMPLETED_BY_ID) > _MAX_COMPLETED_OPERATIONS:
-                    _COMPLETED_BY_ID.pop(next(iter(_COMPLETED_BY_ID)))
+                if not operation.unresolved_owner:
+                    self._complete_operation_locked(home_key, operation)
+
+    def _complete_operation_locked(self, home_key: str, operation: _Operation) -> None:
+        if _ACTIVE_BY_HOME.get(home_key) is operation:
+            _ACTIVE_BY_HOME.pop(home_key, None)
+        operation_key = _operation_key(home_key, operation.operation_id)
+        if _ACTIVE_BY_ID.get(operation_key) is operation:
+            _ACTIVE_BY_ID.pop(operation_key, None)
+        _COMPLETED_BY_ID[operation_key] = operation
+        while len(_COMPLETED_BY_ID) > _MAX_COMPLETED_OPERATIONS:
+            _COMPLETED_BY_ID.pop(next(iter(_COMPLETED_BY_ID)))
+
+    def _return_cached(self, snapshot: dict[str, object], emit: Hook | None) -> dict[str, object]:
+        result = dict(snapshot)
+        if emit is not None:
+            with suppress(Exception):
+                _call_hook(emit, result)
+        return result
+
+    def _replay_receipt(
+        self,
+        operation: _Operation,
+        receipt: dict[str, object],
+        emit: Hook | None,
+    ) -> dict[str, object]:
+        sequence = receipt.get("sequence")
+        operation.sequence = sequence if isinstance(sequence, int) else 0
+        operation.latest = dict(receipt)
+        operation.events.append(dict(receipt))
+        return self._return_cached(receipt, emit)
 
     def _run(self, operation: _Operation, emit: Hook | None) -> dict[str, object]:
         initial = self._inspect()
-        self._emit(operation, emit, phase="checking", inspection=initial, worker_active=True, retry_allowed=False)
+        self._emit(
+            operation,
+            emit,
+            phase="checking",
+            inspection=initial,
+            worker_active=True,
+            retry_allowed=False,
+            persist_snapshot=False,
+        )
         if initial.protection_posture != "on":
             return self._finish_action(
                 operation,
@@ -555,12 +715,94 @@ class UserRecoveryCoordinator:
                 retry_allowed=False,
                 requires_human_action=True,
             )
+        # Approval and all preflight inspection happen before the active
+        # recovery budget.  Reset the single monotonic deadline immediately
+        # before waiting on lifecycle ownership.
+        self._begin_budget(operation)
         remaining = self._remaining(operation)
         if remaining <= 0.0:
-            return self._timeout(operation, emit, initial)
+            return self._deadline_exceeded(operation, emit, initial)
         try:
-            with self._recovery_lock(remaining):
+            with self._recovery_lock(operation):
+                if self._remaining(operation) <= 0.0:
+                    return self._deadline_exceeded(operation, emit, initial)
+                try:
+                    receipt = self._load_request_receipt(operation.request_id)
+                except _RecoveryReceiptUnavailableError:
+                    return self._finish_action(
+                        operation,
+                        emit,
+                        phase="failed",
+                        inspection=initial,
+                        reason_code="unknown",
+                        worker_active=True,
+                        retry_allowed=False,
+                        requires_human_action=True,
+                        persist_snapshot=False,
+                    )
+                if receipt is not None and receipt.get("phase") == "complete":
+                    return self._replay_receipt(operation, receipt, emit)
+                if receipt is not None and receipt.get("phase") in _UNRESOLVED_SNAPSHOT_PHASES:
+                    # A prior mutating request with this UUID is resumable only
+                    # for observation/reconciliation.  Even when a fresh
+                    # probe proves its old generation inactive, the same UUID
+                    # cannot start a new lifecycle mutation; callers must send
+                    # a new request ID for intentional retry.
+                    current = self._inspect()
+                    if current.service.identity is not None:
+                        with suppress(OSError, RuntimeError, TimeoutError):
+                            self._process_dead(current.service.identity)
+                    sequence = receipt.get("sequence")
+                    operation.sequence = sequence if isinstance(sequence, int) else 0
+                    operation.latest = dict(receipt)
+                    operation.events.append(dict(receipt))
+                    return self._return_cached(receipt, emit)
+                authorization_failure = self._authorization_failure(operation, emit, initial)
+                if authorization_failure is not None:
+                    return authorization_failure
                 current = self._inspect()
+                pending_snapshot = self._pending_snapshot_state()
+                if pending_snapshot == "unavailable":
+                    return self._finish_action(
+                        operation,
+                        emit,
+                        phase="failed",
+                        inspection=current,
+                        reason_code="unknown",
+                        worker_active=True,
+                        retry_allowed=False,
+                        requires_human_action=True,
+                        persist_snapshot=False,
+                    )
+                fresh_ready_identity = current.service.service == "ready" and current.service.identity is not None
+                if pending_snapshot == "pending" and not fresh_ready_identity:
+                    identity = current.service.identity
+                    if identity is None:
+                        return self._finish_action(
+                            operation,
+                            emit,
+                            phase="waiting_for_owner",
+                            inspection=current,
+                            reason_code="operation_busy",
+                            worker_active=True,
+                            retry_allowed=False,
+                            persist_snapshot=False,
+                        )
+                    try:
+                        reconciled = bool(self._process_dead(identity))
+                    except (OSError, RuntimeError, TimeoutError):
+                        reconciled = False
+                    if not reconciled:
+                        return self._finish_action(
+                            operation,
+                            emit,
+                            phase="waiting_for_owner",
+                            inspection=current,
+                            reason_code="operation_busy",
+                            worker_active=True,
+                            retry_allowed=False,
+                            persist_snapshot=False,
+                        )
                 self._emit(
                     operation, emit, phase="checking", inspection=current, worker_active=True, retry_allowed=False
                 )
@@ -597,7 +839,7 @@ class UserRecoveryCoordinator:
                 if current.service.reason_code == "service_unresponsive":
                     return self._replace(operation, emit, current)
                 return self._start_missing(operation, emit, current)
-        except (TimeoutError, RuntimeError, OSError):
+        except _RecoveryOwnershipTimeoutError:
             return self._finish_action(
                 operation,
                 emit,
@@ -606,14 +848,42 @@ class UserRecoveryCoordinator:
                 reason_code="operation_busy",
                 worker_active=False,
                 retry_allowed=False,
+                persist_snapshot=False,
+            )
+        except _RecoveryLockUnavailableError:
+            return self._finish_action(
+                operation,
+                emit,
+                phase="failed",
+                inspection=initial,
+                reason_code="unknown",
+                worker_active=False,
+                retry_allowed=False,
+                requires_human_action=True,
+                persist_snapshot=False,
+            )
+        except (TimeoutError, RuntimeError, OSError):
+            return self._finish_action(
+                operation,
+                emit,
+                phase="failed",
+                inspection=initial,
+                reason_code="unknown",
+                worker_active=False,
+                retry_allowed=False,
+                requires_human_action=True,
             )
 
     def _reconnect(self, operation: _Operation, emit: Hook | None, inspection: _Inspection) -> dict[str, object]:
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         self._emit(
             operation, emit, phase="reconnecting", inspection=inspection, worker_active=True, retry_allowed=False
         )
         ready = self._verify_ready(inspection.service.identity, self._remaining(operation))
         if not ready.ready:
+            if ready.reason_code == "deadline_exceeded" or self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
             return self._finish_action(
                 operation,
                 emit,
@@ -622,16 +892,40 @@ class UserRecoveryCoordinator:
                 reason_code=ready.reason_code,
                 requires_human_action=ready.reason_code in {"session_invalid", "approval_required"},
             )
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
+        expected_identity = inspection.service.identity
+        ready_identity = ready.identity
+        if (
+            expected_identity is None
+            or ready_identity is None
+            or not _identity_matches(expected_identity, ready_identity, self.guard_home)
+        ):
+            return self._finish_action(
+                operation,
+                emit,
+                phase="needs_action",
+                inspection=inspection,
+                reason_code="identity_unverified",
+                service="ready",
+                worker_active=False,
+                retry_allowed=True,
+                requires_human_action=True,
+            )
         return self._verify_protection(
             operation,
             emit,
             inspection,
-            ready.identity or inspection.service.identity,
+            ready_identity,
             outcome="reconnected",
         )
 
     def _replace(self, operation: _Operation, emit: Hook | None, inspection: _Inspection) -> dict[str, object]:
-        with self._start_lock_scope(self._remaining(operation), already_held=False):
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection)
+        with self._start_lock_scope(operation, already_held=False):
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection)
             target = inspection.service.identity
             if target is None:
                 return self._finish_action(
@@ -652,6 +946,12 @@ class UserRecoveryCoordinator:
                     reason_code="identity_unverified",
                     requires_human_action=True,
                 )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, rechecked)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, rechecked)
+            if authorization_failure is not None:
+                return authorization_failure
             # A final read immediately before the stop protects against PID
             # reuse or generation changes while the progress event is emitted.
             before_stop = self._inspect()
@@ -664,13 +964,33 @@ class UserRecoveryCoordinator:
                     reason_code="identity_unverified",
                     requires_human_action=True,
                 )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, before_stop)
+            if precondition_failure is not None:
+                return precondition_failure
             self._emit(
                 operation, emit, phase="stopping", inspection=before_stop, worker_active=True, retry_allowed=False
             )
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, before_stop)
+            last_before_stop = _Inspection(
+                before_stop.service,
+                self._protection_posture(),
+                self._update_busy(),
+            )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, last_before_stop)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, last_before_stop)
+            if authorization_failure is not None:
+                return authorization_failure
+            operation.unresolved_identity = target
             try:
                 stop = _coerce_stop(self._stop_process(target, self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
                 stop = StopResult(False, "worker_exit_unconfirmed")
+            if stop.reason_code == "deadline_exceeded":
+                operation.unresolved_identity = None
+                return self._deadline_exceeded(operation, emit, before_stop)
             if not stop.exit_confirmed:
                 try:
                     exited = bool(_call_hook(self._process_dead, target))
@@ -678,10 +998,31 @@ class UserRecoveryCoordinator:
                     exited = False
                 if not exited:
                     return self._timeout(operation, emit, before_stop)
-            return self._start_after_stop(operation, emit, before_stop, outcome="restarted")
+            operation.unresolved_identity = None
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, before_stop)
+            after_stop = self._inspect()
+            if after_stop.service.identity is not None and not _identity_matches(
+                target,
+                after_stop.service.identity,
+                self.guard_home,
+            ):
+                return self._finish_action(
+                    operation,
+                    emit,
+                    phase="needs_action",
+                    inspection=after_stop,
+                    reason_code="identity_unverified",
+                    requires_human_action=True,
+                )
+            return self._start_after_stop(operation, emit, after_stop, outcome="restarted")
 
     def _start_missing(self, operation: _Operation, emit: Hook | None, inspection: _Inspection) -> dict[str, object]:
-        with self._start_lock_scope(self._remaining(operation), already_held=False):
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection)
+        with self._start_lock_scope(operation, already_held=False):
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection)
             rechecked = self._inspect()
             if rechecked.service.service == "ready":
                 return self._reconnect(operation, emit, rechecked)
@@ -694,7 +1035,26 @@ class UserRecoveryCoordinator:
                     reason_code=rechecked.service.reason_code,
                     requires_human_action=True,
                 )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, rechecked)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, rechecked)
+            if authorization_failure is not None:
+                return authorization_failure
             self._emit(operation, emit, phase="starting", inspection=rechecked, worker_active=True, retry_allowed=False)
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, rechecked)
+            last_before_start = _Inspection(
+                rechecked.service,
+                self._protection_posture(),
+                self._update_busy(),
+            )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, last_before_start)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, last_before_start)
+            if authorization_failure is not None:
+                return authorization_failure
             try:
                 started = _coerce_start(self._start_process(self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
@@ -708,6 +1068,8 @@ class UserRecoveryCoordinator:
                     reason_code=started.reason_code,
                     requires_human_action=True,
                 )
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, rechecked, worker_active=started.started)
             return self._start_after_stop(operation, emit, rechecked, outcome="started", started=started)
 
     def _start_after_stop(
@@ -720,9 +1082,35 @@ class UserRecoveryCoordinator:
         started: StartResult | None = None,
     ) -> dict[str, object]:
         if started is None:
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection)
+            current = _Inspection(
+                inspection.service,
+                self._protection_posture(),
+                self._update_busy(),
+            )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, current)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, current)
+            if authorization_failure is not None:
+                return authorization_failure
             self._emit(
                 operation, emit, phase="starting", inspection=inspection, worker_active=True, retry_allowed=False
             )
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection)
+            last_before_start = _Inspection(
+                inspection.service,
+                self._protection_posture(),
+                self._update_busy(),
+            )
+            precondition_failure = self._mutation_precondition_failure(operation, emit, last_before_start)
+            if precondition_failure is not None:
+                return precondition_failure
+            authorization_failure = self._authorization_failure(operation, emit, last_before_start)
+            if authorization_failure is not None:
+                return authorization_failure
             try:
                 started = _coerce_start(self._start_process(self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
@@ -736,15 +1124,38 @@ class UserRecoveryCoordinator:
                     reason_code=started.reason_code,
                     requires_human_action=True,
                 )
+            if self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection, worker_active=started.started)
+        elif self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=started.started)
+        if started is not None and started.started:
+            operation.unresolved_owner = True
+            operation.unresolved_identity = started.identity
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         self._emit(
-            operation, emit, phase="reconnecting", inspection=inspection, worker_active=True, retry_allowed=False
+            operation,
+            emit,
+            phase="reconnecting",
+            inspection=inspection,
+            worker_active=True,
+            retry_allowed=False,
+            # After a successful start, retain the persisted ``starting``
+            # receipt until readiness is proven.  ``reconnecting`` is a
+            # read-only receipt and cannot prove ownership if final timeout
+            # persistence fails or the worker crashes at this point.
+            persist_snapshot=False,
         )
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         identity = started.identity if started is not None else None
         try:
             ready = self._verify_ready(identity, self._remaining(operation))
         except (ImportError, OSError, RuntimeError, TimeoutError, TypeError, ValueError):
             ready = ReadyResult(False, None, "startup_failed")
         if not ready.ready:
+            if ready.reason_code == "deadline_exceeded" or self._remaining(operation) <= 0.0:
+                return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
             return self._finish_action(
                 operation,
                 emit,
@@ -753,13 +1164,41 @@ class UserRecoveryCoordinator:
                 reason_code=ready.reason_code,
                 service="unknown",
                 protection="unknown",
+                worker_active=True,
+                retry_allowed=False,
+                requires_human_action=True,
+            )
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
+        expected_identity = identity
+        ready_identity = ready.identity
+        if (
+            expected_identity is None
+            or ready_identity is None
+            or not _identity_matches(expected_identity, ready_identity, self.guard_home)
+        ):
+            operation.unresolved_owner = True
+            # Keep ownership bound to the generation this request actually
+            # launched. A different readiness identity is evidence of an
+            # unverifiable handoff, never a target to adopt or terminate.
+            operation.unresolved_identity = expected_identity
+            return self._finish_action(
+                operation,
+                emit,
+                phase="needs_action",
+                inspection=inspection,
+                reason_code="identity_unverified",
+                service="unknown",
+                protection="unknown",
+                worker_active=True,
+                retry_allowed=False,
                 requires_human_action=True,
             )
         return self._verify_protection(
             operation,
             emit,
             inspection,
-            ready.identity or identity,
+            ready_identity,
             outcome=outcome,
         )
 
@@ -772,11 +1211,17 @@ class UserRecoveryCoordinator:
         *,
         outcome: str,
     ) -> dict[str, object]:
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         self._emit(operation, emit, phase="verifying", inspection=inspection, worker_active=True, retry_allowed=False)
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         try:
             protection = _coerce_protection(self._protection_health(identity, self._remaining(operation)))
         except (OSError, RuntimeError, TimeoutError):
             protection = ProtectionResult("unknown", "unknown")
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         checks = self._checks(inspection)
         self._set_check(checks, "authenticated_service", "pass", "healthy")
         self._set_check(checks, "dashboard_ready", "pass", "healthy")
@@ -788,6 +1233,8 @@ class UserRecoveryCoordinator:
             else ("fail" if protection.state == "needs_attention" else "unknown"),
             protection.reason_code,
         )
+        operation.unresolved_owner = False
+        operation.unresolved_identity = None
         final = self._emit(
             operation,
             emit,
@@ -819,6 +1266,7 @@ class UserRecoveryCoordinator:
         protection: str | None = None,
         outcome: str = "not_recovered",
         checks: list[dict[str, str]] | None = None,
+        persist_snapshot: bool = True,
     ) -> dict[str, object]:
         return self._emit(
             operation,
@@ -833,9 +1281,11 @@ class UserRecoveryCoordinator:
             retry_allowed=retry_allowed,
             requires_human_action=requires_human_action,
             checks=checks,
+            persist_snapshot=persist_snapshot,
         )
 
     def _timeout(self, operation: _Operation, emit: Hook | None, inspection: _Inspection) -> dict[str, object]:
+        operation.unresolved_owner = True
         return self._finish_action(
             operation,
             emit,
@@ -845,6 +1295,31 @@ class UserRecoveryCoordinator:
             service="unknown",
             protection="unknown",
             worker_active=True,
+            retry_allowed=False,
+            requires_human_action=True,
+        )
+
+    def _deadline_exceeded(
+        self,
+        operation: _Operation,
+        emit: Hook | None,
+        inspection: _Inspection,
+        *,
+        worker_active: bool = False,
+    ) -> dict[str, object]:
+        if worker_active:
+            operation.unresolved_owner = True
+            if operation.unresolved_identity is None:
+                operation.unresolved_identity = inspection.service.identity
+        return self._finish_action(
+            operation,
+            emit,
+            phase="failed",
+            inspection=inspection,
+            reason_code="deadline_exceeded",
+            service="unknown" if not worker_active else inspection.service.service,
+            protection="unknown" if not worker_active else self._inspection_protection(inspection),
+            worker_active=worker_active,
             retry_allowed=False,
             requires_human_action=True,
         )
@@ -864,6 +1339,7 @@ class UserRecoveryCoordinator:
         outcome: str = "pending",
         requires_human_action: bool = False,
         checks: list[dict[str, str]] | None = None,
+        persist_snapshot: bool = True,
     ) -> dict[str, object]:
         operation.sequence += 1
         snapshot = self._snapshot(
@@ -883,7 +1359,7 @@ class UserRecoveryCoordinator:
         )
         operation.latest = snapshot
         operation.events.append(snapshot)
-        if self.hooks.persist_snapshot is not None:
+        if persist_snapshot and self.hooks.persist_snapshot is not None:
             _call_hook(self.hooks.persist_snapshot, self.guard_home, snapshot)
         if emit is not None:
             with suppress(Exception):
@@ -996,58 +1472,143 @@ class UserRecoveryCoordinator:
             return AuthorizationDecision(False, True, "approval_required")
         return _coerce_authorization(_call_hook(self.hooks.authorize, self.guard_home))
 
-    @contextmanager
-    def _recovery_lock(self, remaining: float):
-        if self.hooks.recovery_lock is not None:
-            lock = _call_hook(self.hooks.recovery_lock, self.guard_home, min(remaining, self.lock_timeout_seconds))
-            with cast(Any, lock):
-                yield
-            return
-        with _manager()._guard_daemon_recovery_lock(
-            self.guard_home,
-            timeout_seconds=min(remaining, self.lock_timeout_seconds),
-        ):
-            yield
+    def _authorization_failure(
+        self,
+        operation: _Operation,
+        emit: Hook | None,
+        inspection: _Inspection,
+    ) -> dict[str, object] | None:
+        decision = self._authorize()
+        if decision.allowed:
+            return None
+        return self._finish_action(
+            operation,
+            emit,
+            phase="awaiting_approval" if decision.requires_human_action else "needs_action",
+            inspection=inspection,
+            reason_code=decision.reason_code,
+            worker_active=False,
+            retry_allowed=False,
+            requires_human_action=True,
+        )
+
+    def _mutation_precondition_failure(
+        self,
+        operation: _Operation,
+        emit: Hook | None,
+        inspection: _Inspection,
+    ) -> dict[str, object] | None:
+        if self._remaining(operation) <= 0.0:
+            return self._deadline_exceeded(operation, emit, inspection)
+        if inspection.protection_posture != "on":
+            return self._finish_action(
+                operation,
+                emit,
+                phase="needs_action",
+                inspection=inspection,
+                reason_code="protection_off" if inspection.protection_posture == "off" else "unknown",
+                requires_human_action=True,
+            )
+        if inspection.update_busy:
+            return self._finish_action(
+                operation,
+                emit,
+                phase="waiting_for_owner",
+                inspection=inspection,
+                reason_code="update_busy",
+                worker_active=False,
+                retry_allowed=False,
+            )
+        return None
 
     @contextmanager
-    def _start_lock(self, remaining: float):
+    def _recovery_lock(self, operation: _Operation):
+        timeout = min(self._remaining(operation), self.lock_timeout_seconds)
+        if self.hooks.recovery_lock is not None:
+            try:
+                lock = _call_hook(self.hooks.recovery_lock, self.guard_home, timeout)
+            except (OSError, TimeoutError, RuntimeError) as error:
+                if _is_recovery_lock_timeout(error):
+                    raise _RecoveryOwnershipTimeoutError from error
+                raise _RecoveryLockUnavailableError from error
+            entered = False
+            try:
+                with cast(Any, lock):
+                    entered = True
+                    yield
+            except (OSError, TimeoutError, RuntimeError) as error:
+                if not entered and _is_recovery_lock_timeout(error):
+                    raise _RecoveryOwnershipTimeoutError from error
+                if not entered:
+                    raise _RecoveryLockUnavailableError from error
+                raise
+            return
+        entered = False
+        try:
+            with _manager()._guard_daemon_recovery_lock(
+                self.guard_home,
+                timeout_seconds=timeout,
+            ):
+                entered = True
+                yield
+        except (OSError, TimeoutError, RuntimeError) as error:
+            if not entered and _is_recovery_lock_timeout(error):
+                raise _RecoveryOwnershipTimeoutError from error
+            if not entered:
+                raise _RecoveryLockUnavailableError from error
+            raise
+
+    @contextmanager
+    def _start_lock(self, operation: _Operation):
+        remaining = self._remaining(operation)
         if self.hooks.start_lock is not None:
             lock = _call_hook(self.hooks.start_lock, self.guard_home, remaining)
             with cast(Any, lock):
                 yield
             return
-        deadline = self._clock() + max(0.0, remaining)
-        with _manager()._guard_daemon_start_lock(self.guard_home, deadline=deadline):
+        with _manager()._guard_daemon_start_lock(self.guard_home, deadline=operation.deadline_monotonic):
             yield
 
     @contextmanager
-    def _start_lock_scope(self, remaining: float, *, already_held: bool):
+    def _start_lock_scope(self, operation: _Operation, *, already_held: bool):
         if already_held:
             with nullcontext():
                 yield
             return
-        with self._start_lock(remaining):
+        with self._start_lock(operation):
             yield
 
     def _stop_process(self, identity: ProcessIdentity, remaining: float) -> object:
+        if remaining <= 0.0:
+            return StopResult(False, "deadline_exceeded")
+        if (
+            identity.start_marker is None
+            or not identity.start_marker
+            or identity.user is None
+            or identity.user != _current_user_marker()
+        ):
+            return False
         if self.hooks.stop_process is not None:
             return _call_hook(self.hooks.stop_process, identity, remaining)
         manager = _manager()
-        if identity.start_marker is not None:
-            from ..live_process_identity import process_start_token
+        from ..live_process_identity import process_owner_marker, process_start_token
 
-            if process_start_token(identity.pid) != identity.start_marker:
-                return StopResult(False, "worker_exit_unconfirmed")
+        if process_start_token(identity.pid) != identity.start_marker:
+            return False
+        if process_owner_marker(identity.pid) != identity.user:
+            return False
         expected_creation_time = None
-        if identity.start_marker is not None and identity.start_marker.startswith("windows:"):
+        if identity.start_marker.startswith("windows:"):
             try:
                 expected_creation_time = int(identity.start_marker.removeprefix("windows:"))
             except ValueError:
-                return StopResult(False, "worker_exit_unconfirmed")
+                return False
         return manager._retire_guard_daemon_pid(
             identity.pid,
             expected_guard_home=self.guard_home,
             expected_creation_time=expected_creation_time,
+            expected_start_marker=identity.start_marker,
+            timeout=remaining,
         )
 
     def _process_dead(self, identity: ProcessIdentity) -> object:
@@ -1056,6 +1617,8 @@ class UserRecoveryCoordinator:
         return _manager()._guard_daemon_pid_is_proven_dead(identity.pid)
 
     def _start_process(self, remaining: float) -> object:
+        if remaining <= 0.0:
+            return StartResult(False, None, "deadline_exceeded")
         if self.hooks.start_process is not None:
             return _call_hook(self.hooks.start_process, self.guard_home, remaining)
         manager = _manager()
@@ -1071,16 +1634,25 @@ class UserRecoveryCoordinator:
         )
 
     def _verify_ready(self, identity: ProcessIdentity | None, remaining: float) -> ReadyResult:
+        if remaining <= 0.0:
+            return ReadyResult(False, None, "deadline_exceeded")
         if self.hooks.verify_ready is not None:
             return _coerce_ready(_call_hook(self.hooks.verify_ready, self.guard_home, identity, remaining))
-        service = _default_inspect_service(self.guard_home, self._load_state())
+        service = _default_inspect_service(
+            self.guard_home,
+            self._load_state(),
+            timeout=min(1.0, remaining),
+        )
+        ready = service.service == "ready" and service.authenticated and service.dashboard_ready
         return ReadyResult(
-            service.service == "ready" and service.authenticated and service.dashboard_ready,
+            ready,
             service.identity,
-            "healthy" if service.service == "ready" else service.reason_code,
+            "healthy" if ready else service.reason_code,
         )
 
     def _protection_health(self, identity: ProcessIdentity | None, remaining: float) -> object:
+        if remaining <= 0.0:
+            return ProtectionResult("unknown", "deadline_exceeded")
         if self.hooks.protection_health is not None:
             return _call_hook(self.hooks.protection_health, self.guard_home, identity, remaining)
         if identity is None or remaining <= 0:
@@ -1110,11 +1682,65 @@ class UserRecoveryCoordinator:
     def _clock(self) -> float:
         return (self.hooks.clock or time.monotonic)()
 
+    def _begin_budget(self, operation: _Operation) -> None:
+        operation.started_monotonic = self._clock()
+        operation.deadline_monotonic = operation.started_monotonic + self.active_budget_seconds
+
+    def _pending_snapshot_state(self) -> str:
+        if self.hooks.load_snapshot is None:
+            return "none"
+        try:
+            snapshot = _call_hook(self.hooks.load_snapshot, self.guard_home)
+        except (OSError, RuntimeError, ValueError, TypeError):
+            return "unavailable"
+        if snapshot is None:
+            return "none"
+        if not isinstance(snapshot, Mapping):
+            return "unavailable"
+        try:
+            snapshot = validate_recovery_snapshot(snapshot, allow_inspection=False)
+        except RecoveryContractError:
+            return "unavailable"
+        if snapshot.get("workerActive") is True and snapshot.get("retryAllowed") is False:
+            phase = snapshot.get("phase")
+            if phase in _UNRESOLVED_SNAPSHOT_PHASES:
+                return "pending"
+        return "none"
+
+    def _load_request_receipt(self, operation_id: uuid.UUID) -> dict[str, object] | None:
+        """Load one validated durable record as a replay hint.
+
+        The receipt is intentionally limited to a public DTO.  It is consulted
+        only after fresh authorization and lifecycle ownership are held; it
+        cannot establish process identity, protection, or approval.
+        """
+
+        if self.hooks.load_receipt is None:
+            return None
+        try:
+            raw = _call_hook(self.hooks.load_receipt, self.guard_home, operation_id)
+        except (OSError, RuntimeError, TypeError, ValueError) as error:
+            raise _RecoveryReceiptUnavailableError("recovery_receipt_unavailable") from error
+        if raw is None:
+            return None
+        if not isinstance(raw, Mapping):
+            raise _RecoveryReceiptUnavailableError("recovery_receipt_invalid")
+        candidate = raw.get("snapshot", raw)
+        if not isinstance(candidate, Mapping):
+            raise _RecoveryReceiptUnavailableError("recovery_receipt_invalid")
+        try:
+            snapshot = validate_recovery_snapshot(candidate, allow_inspection=False)
+        except RecoveryContractError as error:
+            raise _RecoveryReceiptUnavailableError("recovery_receipt_invalid") from error
+        if snapshot.get("operationId") != str(operation_id):
+            raise _RecoveryReceiptUnavailableError("recovery_receipt_mismatch")
+        return snapshot
+
     def _now_timestamp(self) -> str:
         return _timestamp((self.hooks.wall_clock or _utc_now)())
 
     def _remaining(self, operation: _Operation) -> float:
-        return max(0.0, self.active_budget_seconds - (self._clock() - operation.started_monotonic))
+        return max(0.0, operation.deadline_monotonic - self._clock())
 
     def _inspection_reason(self, inspection: _Inspection) -> str:
         if inspection.protection_posture == "off":
@@ -1192,7 +1818,12 @@ class UserRecoveryCoordinator:
         raise ValueError(f"{field} must be a UUID")
 
 
-def _default_inspect_service(guard_home: Path, state: Mapping[str, object] | None) -> ServiceInspection:
+def _default_inspect_service(
+    guard_home: Path,
+    state: Mapping[str, object] | None,
+    *,
+    timeout: float = 1.0,
+) -> ServiceInspection:
     manager = _manager()
     if state is None:
         try:
@@ -1219,17 +1850,34 @@ def _default_inspect_service(guard_home: Path, state: Mapping[str, object] | Non
             return ServiceInspection("unavailable", "endpoint_conflict", identity, process_running=True)
         if command_identity is not True:
             return ServiceInspection("unavailable", "identity_unverified", identity, process_running=True)
-        from .live_identity import verified_live_guard_daemon_identity
+        if not _identity_os_evidence_matches(identity):
+            return ServiceInspection("unavailable", "identity_unverified", identity, process_running=True)
+        from .live_identity import probe_live_guard_daemon_identity
 
-        live = verified_live_guard_daemon_identity(guard_home)
+        live, live_reason = probe_live_guard_daemon_identity(
+            guard_home,
+            session_timeout=max(0.0, timeout),
+        )
     except (OSError, RuntimeError, ValueError):
-        live = None
+        live, live_reason = None, "service_unresponsive"
     if live is None:
         return ServiceInspection("unavailable", "service_unresponsive", identity, process_running=True)
+    live_identity = _identity_from_value(live, guard_home) or identity
+    if not _identity_os_evidence_matches(live_identity):
+        return ServiceInspection("unavailable", "identity_unverified", live_identity, process_running=True)
+    if live_reason != "healthy":
+        return ServiceInspection(
+            "ready",
+            live_reason,
+            live_identity,
+            process_running=True,
+            authenticated=True,
+            dashboard_ready=False,
+        )
     return ServiceInspection(
         "ready",
         "healthy",
-        _identity_from_value(live, guard_home) or identity,
+        live_identity,
         process_running=True,
         authenticated=True,
         dashboard_ready=True,

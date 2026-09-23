@@ -8,7 +8,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
-from ..native_command_control_authority_io import read_private_state, write_private_state
+from ..native_command_control_authority_io import (
+    hold_owner_private_lock,
+    read_private_state,
+    write_private_state,
+)
 from .user_recovery_contract import (
     RecoveryContractError,
     validate_event_sequence,
@@ -22,6 +26,7 @@ DIAGNOSTICS_ARCHIVE_SCHEMA = "hol-guard-recovery-diagnostics-archive.v1"
 MAX_RETAINED_INCIDENTS = 20
 MAX_RETENTION_AGE = timedelta(days=7)
 _MAX_REPORT_BYTES = 60 * 1024
+_DIAGNOSTICS_LOCK_NAME = "daemon-recovery-diagnostics.lock"
 
 _REPORT_FIELDS = frozenset(
     {
@@ -248,10 +253,11 @@ def _load_archive(guard_home: Path) -> list[dict[str, object]]:
         return [validate_recovery_diagnostics(decoded)]
     if not isinstance(decoded, Mapping) or set(decoded) != {"schema", "reports"}:
         raise RecoveryDiagnosticsError("recovery_diagnostics_state_invalid")
-    if decoded.get("schema") != DIAGNOSTICS_ARCHIVE_SCHEMA or not isinstance(decoded.get("reports"), list):
+    raw_reports = decoded.get("reports")
+    if decoded.get("schema") != DIAGNOSTICS_ARCHIVE_SCHEMA or not isinstance(raw_reports, list):
         raise RecoveryDiagnosticsError("recovery_diagnostics_state_invalid")
     try:
-        return [validate_recovery_diagnostics(report) for report in decoded["reports"]]
+        return [validate_recovery_diagnostics(report) for report in raw_reports]
     except RecoveryDiagnosticsError as error:
         raise RecoveryDiagnosticsError("recovery_diagnostics_state_invalid") from error
 
@@ -275,6 +281,19 @@ def _retention_now(value: datetime | None = None) -> datetime:
     return current.astimezone(timezone.utc)
 
 
+def _report_sort_key(candidate: Mapping[str, object]) -> tuple[datetime, str]:
+    generated_at = candidate.get("generatedAt")
+    if not isinstance(generated_at, str):
+        raise RecoveryDiagnosticsError("recovery_diagnostics_timestamp_invalid")
+    try:
+        parsed = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise RecoveryDiagnosticsError("recovery_diagnostics_timestamp_invalid") from error
+    if parsed.tzinfo is None:
+        raise RecoveryDiagnosticsError("recovery_diagnostics_timestamp_invalid")
+    return parsed.astimezone(timezone.utc), str(candidate["operationId"])
+
+
 def _prune_archive(
     guard_home: Path,
     reports: list[dict[str, object]],
@@ -282,12 +301,8 @@ def _prune_archive(
     now: datetime | None = None,
 ) -> list[dict[str, object]]:
     cutoff = _retention_now(now) - MAX_RETENTION_AGE
-    retained = [
-        candidate
-        for candidate in reports
-        if datetime.fromisoformat(str(candidate["generatedAt"]).replace("Z", "+00:00")).astimezone(timezone.utc)
-        >= cutoff
-    ]
+    retained = [candidate for candidate in reports if _report_sort_key(candidate)[0] >= cutoff]
+    retained.sort(key=_report_sort_key)
     if len(retained) != len(reports):
         write_private_state(guard_home, DIAGNOSTICS_STATE_NAME, _encode_archive(retained), MAX_DIAGNOSTICS_BYTES)
     return retained
@@ -302,38 +317,41 @@ def persist_recovery_diagnostics(
     """Atomically retain a bounded, owner-private incident archive."""
 
     report = build_recovery_diagnostics(snapshots, generated_at=generated_at)
-    now = _retention_now()
-    reports = []
-    for candidate in _prune_archive(guard_home, _load_archive(guard_home), now=now):
-        if candidate["operationId"] != report["operationId"]:
-            reports.append(candidate)
-    reports.append(report)
-    reports.sort(key=lambda candidate: str(candidate["generatedAt"]))
-    reports = reports[-MAX_RETAINED_INCIDENTS:]
-    while reports:
-        try:
-            payload = _encode_archive(reports)
-            break
-        except RecoveryDiagnosticsError as error:
-            if error.args != ("recovery_diagnostics_archive_too_large",) or len(reports) == 1:
-                raise
-            reports.pop(0)
-    else:
-        raise RecoveryDiagnosticsError("recovery_diagnostics_archive_empty")
-    write_private_state(guard_home, DIAGNOSTICS_STATE_NAME, payload, MAX_DIAGNOSTICS_BYTES)
+    with hold_owner_private_lock(guard_home, _DIAGNOSTICS_LOCK_NAME):
+        now = _retention_now()
+        reports = []
+        for candidate in _prune_archive(guard_home, _load_archive(guard_home), now=now):
+            if candidate["operationId"] != report["operationId"]:
+                reports.append(candidate)
+        reports.append(report)
+        reports.sort(key=_report_sort_key)
+        reports = reports[-MAX_RETAINED_INCIDENTS:]
+        while reports:
+            try:
+                payload = _encode_archive(reports)
+                break
+            except RecoveryDiagnosticsError as error:
+                if error.args != ("recovery_diagnostics_archive_too_large",) or len(reports) == 1:
+                    raise
+                reports.pop(0)
+        else:
+            raise RecoveryDiagnosticsError("recovery_diagnostics_archive_empty")
+        write_private_state(guard_home, DIAGNOSTICS_STATE_NAME, payload, MAX_DIAGNOSTICS_BYTES)
     return report
 
 
 def load_recovery_diagnostics(guard_home: Path) -> dict[str, object] | None:
-    reports = _prune_archive(guard_home, _load_archive(guard_home))
+    with hold_owner_private_lock(guard_home, _DIAGNOSTICS_LOCK_NAME):
+        reports = _prune_archive(guard_home, _load_archive(guard_home))
     return reports[-1] if reports else None
 
 
 def recovery_diagnostics_for_operation(guard_home: Path, operation_id: str) -> dict[str, object]:
     expected = _canonical_uuid(operation_id)
-    for report in reversed(_prune_archive(guard_home, _load_archive(guard_home))):
-        if report.get("operationId") == expected:
-            return report
+    with hold_owner_private_lock(guard_home, _DIAGNOSTICS_LOCK_NAME):
+        for report in reversed(_prune_archive(guard_home, _load_archive(guard_home))):
+            if report.get("operationId") == expected:
+                return report
     raise KeyError(expected)
 
 

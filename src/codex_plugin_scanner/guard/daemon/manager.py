@@ -33,7 +33,7 @@ from ..frozen_runtime_commands import (
     decode_frozen_daemon_serve_payload,
     frozen_daemon_serve_command,
 )
-from ..live_process_identity import process_start_token
+from ..live_process_identity import process_owner_marker, process_start_token
 from ..mdm.file_lock import release_file_lock
 from ..private_file_io import private_regular_file_is_valid, read_private_regular_text
 from ..windows_paths import (
@@ -1316,6 +1316,7 @@ def write_guard_daemon_state(
     _ensure_private_directory(state_path.parent)
     with _guard_daemon_state_write_lock(guard_home):
         discovery_key = ensure_daemon_discovery_key(guard_home)
+        state_pid = pid if isinstance(pid, int) and pid > 0 else os.getpid()
         state_payload: dict[str, object] = {
             "guard_home": str(guard_home.resolve()),
             "host": host,
@@ -1324,11 +1325,17 @@ def write_guard_daemon_state(
             "package_version": __version__,
             "source_root": _current_guard_daemon_source_root(),
             "runtime_fingerprint": _current_guard_daemon_runtime_fingerprint(),
-            "pid": pid if isinstance(pid, int) and pid > 0 else os.getpid(),
+            "pid": state_pid,
             "started_at": started_at or datetime.now(timezone.utc).isoformat(),
             "state_id": state_id or secrets.token_hex(16),
             "auth_token_id": hashlib.sha256(auth_token.encode("utf-8")).hexdigest(),
         }
+        process_marker = process_start_token(state_pid)
+        if isinstance(process_marker, str) and process_marker:
+            state_payload["process_start_marker"] = process_marker
+        process_owner = process_owner_marker(state_pid)
+        if isinstance(process_owner, str) and process_owner:
+            state_payload["user"] = process_owner
         if trust_status is not None:
             state_payload["trust_status"] = trust_status
         daemon_state = authenticate_daemon_state(
@@ -2926,7 +2933,14 @@ def _retire_guard_daemon_process(payload: dict[str, object]) -> bool:
         return False
     guard_home = payload.get("guard_home")
     expected_guard_home = Path(guard_home) if isinstance(guard_home, str) and guard_home.strip() else None
-    return _retire_guard_daemon_pid(pid, expected_guard_home=expected_guard_home)
+    expected_start_marker = payload.get("process_start_marker")
+    if not isinstance(expected_start_marker, str) or not expected_start_marker:
+        return False
+    return _retire_guard_daemon_pid(
+        pid,
+        expected_guard_home=expected_guard_home,
+        expected_start_marker=expected_start_marker,
+    )
 
 
 def _terminate_spawned_guard_daemon(process: subprocess.Popen[bytes]) -> bool:
@@ -2972,11 +2986,43 @@ def _retire_guard_daemon_pid(
     *,
     expected_guard_home: Path | None = None,
     expected_creation_time: int | None = None,
+    expected_start_marker: str | None = None,
+    timeout: float | None = None,
 ) -> bool:
+    retirement_deadline = None if timeout is None else time.monotonic() + max(0.0, timeout)
+
+    def start_marker_matches() -> bool:
+        if expected_start_marker is None:
+            return True
+        actual_start_marker = process_start_token(pid)
+        return isinstance(actual_start_marker, str) and secrets.compare_digest(
+            actual_start_marker,
+            expected_start_marker,
+        )
+
+    def wait_for_death() -> bool:
+        if retirement_deadline is None:
+            return _wait_for_guard_daemon_pid_death(pid)
+        return _wait_for_guard_daemon_pid_death(
+            pid,
+            timeout=max(0.0, retirement_deadline - time.monotonic()),
+        )
+
+    def terminate_exact(creation_time: int) -> bool:
+        if not start_marker_matches():
+            return False
+        if retirement_deadline is None:
+            return windows_terminate_process_if_creation_time(pid, creation_time)
+        return windows_terminate_process_if_creation_time(
+            pid,
+            creation_time,
+            timeout=max(0.0, retirement_deadline - time.monotonic()),
+        )
+
     if _guard_daemon_pid_is_proven_dead(pid):
         return True
     if os.name == "nt" and expected_creation_time is not None:
-        return windows_terminate_process_if_creation_time(pid, expected_creation_time)
+        return terminate_exact(expected_creation_time)
     observed_creation_time: int | None = None
     if os.name == "nt":
         observed_creation_time = windows_process_creation_time(pid)
@@ -2991,15 +3037,23 @@ def _retire_guard_daemon_pid(
         return identity is False
     if os.name == "nt":
         assert observed_creation_time is not None
-        return windows_terminate_process_if_creation_time(pid, observed_creation_time)
+        return terminate_exact(observed_creation_time)
+    if retirement_deadline is not None and time.monotonic() >= retirement_deadline:
+        return _guard_daemon_pid_is_proven_dead(pid)
+    if not start_marker_matches():
+        return False
     try:
         os.kill(pid, signal.SIGTERM)
     except ProcessLookupError:
         return True
     except OSError:
         return _guard_daemon_pid_is_proven_dead(pid)
-    if _wait_for_guard_daemon_pid_death(pid):
+    if wait_for_death():
         return True
+    if retirement_deadline is not None and time.monotonic() >= retirement_deadline:
+        return _guard_daemon_pid_is_proven_dead(pid)
+    if not start_marker_matches():
+        return False
     sigkill = getattr(signal, "SIGKILL", None)
     if sigkill is None:
         return False
@@ -3009,7 +3063,7 @@ def _retire_guard_daemon_pid(
         return True
     except OSError:
         return _guard_daemon_pid_is_proven_dead(pid)
-    return _wait_for_guard_daemon_pid_death(pid)
+    return wait_for_death()
 
 
 def _wait_for_started_guard_daemon_url(

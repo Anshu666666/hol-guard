@@ -108,7 +108,8 @@ def test_privileged_feed_is_main_bound_and_pins_candidate_provenance() -> None:
     assert "merge-base --is-ancestor" in provenance
     assert '--signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml"' in provenance
     assert '--signer-digest "$SOURCE_SHA"' in provenance
-    assert '--source-ref "refs/heads/${RELEASE_BRANCH}"' in provenance
+    assert '--source-ref "refs/tags/${CORE_TAG}"' in provenance
+    assert "refs/heads/${RELEASE_BRANCH}" not in provenance.split("--source-ref", 1)[1]
     assert "--deny-self-hosted-runners" in provenance
 
 
@@ -279,6 +280,8 @@ def test_linux_feed_publishes_digest_verified_gnu_sidecar() -> None:
     assert job["permissions"] == {"contents": "write", "id-token": "write", "attestations": "write"}
     assert 'test "$(uname -m)" = "x86_64"' in text
     assert '--pattern "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl"' in text
+    assert '--source-ref "refs/tags/${CORE_TAG}"' in text
+    assert '--source-ref "refs/heads/${RELEASE_BRANCH}"' not in text
     assert '-name "hol_guard-${CORE_VERSION}-*-manylinux_*_x86_64.whl"' in text
     assert 'cp "$WHEEL" "$RUNNER_TEMP/attested-linux-x64.whl"' in text
     assert '--wheel "$RUNNER_TEMP/attested-linux-x64.whl"' in build_run

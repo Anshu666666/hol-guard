@@ -9,6 +9,7 @@ export GIT_TERMINAL_PROMPT=0
 : "${CORE_TAG:?}"
 : "${CORE_VERSION:?}"
 : "${RELEASE_BRANCH:?}"
+[[ "$CORE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
 : "${GITHUB_REPOSITORY:?}"
 : "${GITHUB_OUTPUT:?}"
 : "${RUNNER_TEMP:?}"
@@ -47,7 +48,7 @@ gh attestation verify "$WHEEL" \
   --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" \
   --signer-digest "$SOURCE_SHA" \
   --source-digest "$SOURCE_SHA" \
-  --source-ref "refs/heads/${RELEASE_BRANCH}" \
+  --source-ref "refs/tags/${CORE_TAG}" \
   --deny-self-hosted-runners >/dev/null
 cp "$WHEEL" "$RUNNER_TEMP/attested-macos-arm64.whl"
 test -f "$RUNNER_TEMP/attested-macos-arm64.whl"

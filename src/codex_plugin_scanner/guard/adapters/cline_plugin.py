@@ -363,7 +363,7 @@ const plugin = {{
     async beforeTool({{ toolCall, input }}) {{
       const active = activeTransport();
       if (active !== "plugin") {{
-        if (active === "native") return undefined;
+        if (active === "hooks") return undefined;
         proof("pretool", "blocked");
         return {{
           skip: true,
@@ -385,7 +385,7 @@ const plugin = {{
     async afterTool({{ toolCall, input, result }}) {{
       const active = activeTransport();
       if (active !== "plugin") {{
-        if (active === "native") {{
+        if (active === "hooks") {{
           proof("posttool", "unchanged");
           return undefined;
         }}

@@ -186,6 +186,28 @@ function guardBlocks(payload) {{
   return false;
 }}
 
+function guardExplicitlyAllows(payload) {{
+  if (!payload || typeof payload !== "object" || guardBlocks(payload)) return false;
+  const decision = typeof payload.decision === "string" ? payload.decision.toLowerCase() : undefined;
+  const actionValue = payload.policy_action ?? payload.policyAction;
+  const action = typeof actionValue === "string" ? actionValue.toLowerCase() : undefined;
+  const specific = payload.hookSpecificOutput;
+  const permission = specific && typeof specific === "object" && typeof specific.permissionDecision === "string"
+    ? specific.permissionDecision.toLowerCase()
+    : undefined;
+  const nestedDecision = specific && typeof specific === "object"
+    && specific.decision && typeof specific.decision === "object"
+    && typeof specific.decision.behavior === "string"
+    ? specific.decision.behavior.toLowerCase()
+    : undefined;
+  if (decision !== undefined && decision !== "allow") return false;
+  if (action !== undefined && !["allow", "warn"].includes(action)) return false;
+  if (permission !== undefined && permission !== "allow") return false;
+  if (nestedDecision !== undefined && nestedDecision !== "allow") return false;
+  return decision === "allow" || action === "allow" || action === "warn"
+    || permission === "allow" || nestedDecision === "allow";
+}}
+
 function reviewedOutput(payload) {{
   if (!payload || typeof payload !== "object") return undefined;
   for (const key of ["reviewed_output", "reviewedOutput", "safe_output", "safeOutput", "replacement", "excerpt"]) {{
@@ -263,22 +285,40 @@ function invokeGuard(eventName, toolCall, input, result) {{
   if (eventName === "PreToolUse" && jsonBytes(input) > MAX_PRETOOL_INPUT_BYTES) {{
     return {{ ok: false, reason: "HOL Guard rejected an oversized Cline pre-tool request." }};
   }}
+  let payloads;
+  try {{
+    payloads = payloadsForGuard(eventName, toolCall, input, result);
+  }} catch {{
+    return {{ ok: false, reason: "HOL Guard could not serialize this Cline action for review." }};
+  }}
   let lastPayload;
-  for (const payload of payloadsForGuard(eventName, toolCall, input, result)) {{
-    const encoded = JSON.stringify(payload);
+  for (const payload of payloads) {{
+    let encoded;
+    try {{
+      encoded = JSON.stringify(payload);
+    }} catch {{
+      return {{ ok: false, reason: "HOL Guard could not serialize this Cline action for review." }};
+    }}
     if (Buffer.byteLength(encoded, "utf8") > MAX_BYTES) {{
       return {{ ok: false, reason: "HOL Guard rejected an oversized Cline plugin request." }};
     }}
-    const child = spawnSync(GUARD_CLI[0], [...GUARD_CLI.slice(1), "--harness", "cline", "--json"], {{
-      input: encoded,
-      encoding: "utf8",
-      timeout: TIMEOUT_MS,
-      maxBuffer: MAX_BYTES * 2,
-      windowsHide: true,
-    }});
-    const badExit = typeof child.status === "number" && child.status !== 0;
+    let child;
+    try {{
+      child = spawnSync(GUARD_CLI[0], [...GUARD_CLI.slice(1), "--harness", "cline", "--json"], {{
+        input: encoded,
+        encoding: "utf8",
+        timeout: TIMEOUT_MS,
+        maxBuffer: MAX_BYTES * 2,
+        windowsHide: true,
+      }});
+    }} catch {{
+      return {{
+        ok: false,
+        reason: "HOL Guard evaluation was unavailable; this Cline action was not allowed to proceed.",
+      }};
+    }}
     const missingOutput = !String(child.stdout ?? "").trim();
-    if (child.error || child.signal || (badExit && missingOutput)) {{
+    if (child.error || child.signal || ![0, 1].includes(child.status) || missingOutput) {{
       return {{
         ok: false,
         reason: "HOL Guard evaluation was unavailable; this Cline action was not allowed to proceed.",
@@ -291,15 +331,24 @@ function invokeGuard(eventName, toolCall, input, result) {{
         reason: "HOL Guard returned an invalid decision; this Cline action was not allowed to proceed.",
       }};
     }}
+    if (child.status === 1) {{
+      if (guardBlocks(parsed)) return {{ ok: true, payload: parsed }};
+      return {{
+        ok: false,
+        reason: "HOL Guard evaluation failed; this Cline action was not allowed to proceed.",
+      }};
+    }}
     lastPayload = parsed;
     if (guardBlocks(parsed)) return {{ ok: true, payload: parsed }};
+    if (!guardExplicitlyAllows(parsed)) {{
+      return {{ ok: false, reason: "HOL Guard returned an ambiguous decision; this action was withheld." }};
+    }}
   }}
   return {{ ok: true, payload: lastPayload ?? {{}} }};
 }}
 
-function blockedResult(reason, metadata) {{
+function blockedResult(reason) {{
   const safeResult = {{ output: reason, isError: true }};
-  if (metadata) safeResult.metadata = metadata;
   return {{ result: safeResult }};
 }}
 
@@ -314,7 +363,7 @@ const plugin = {{
     async beforeTool({{ toolCall, input }}) {{
       const active = activeTransport();
       if (active !== "plugin") {{
-        if (active !== undefined) return undefined;
+        if (active === "native") return undefined;
         proof("pretool", "blocked");
         return {{
           skip: true,
@@ -336,26 +385,30 @@ const plugin = {{
     async afterTool({{ toolCall, input, result }}) {{
       const active = activeTransport();
       if (active !== "plugin") {{
-        proof("posttool", "unchanged");
-        return undefined;
+        if (active === "native") {{
+          proof("posttool", "unchanged");
+          return undefined;
+        }}
+        proof("posttool", "withheld");
+        return blockedResult("HOL Guard Cline transport state is unavailable, so this tool result was withheld.");
       }}
       const decision = invokeGuard("PostToolUse", toolCall, input, result);
       if (!decision.ok) {{
-        proof("posttool", "unchanged");
-        return undefined;
+        proof("posttool", "withheld");
+        return blockedResult("HOL Guard could not review this tool result, so it was withheld.");
       }}
       const replacement = reviewedOutput(decision.payload);
       if (guardBlocks(decision.payload)) {{
         proof("posttool", "replaced");
         const reason = guardReason(decision.payload) || "HOL Guard withheld this tool result.";
-        return blockedResult(reason, result?.metadata);
+        return blockedResult(reason);
       }}
       if (replacement !== undefined) {{
         proof("posttool", "replaced");
-        return {{ result: {{ ...result, output: replacement }} }};
+        return {{ result: {{ output: replacement, isError: result?.isError === true }} }};
       }}
-      proof("posttool", "unchanged");
-      return undefined;
+      proof("posttool", "filtered");
+      return {{ result: {{ output: result?.output, isError: result?.isError === true }} }};
     }},
   }},
 }};

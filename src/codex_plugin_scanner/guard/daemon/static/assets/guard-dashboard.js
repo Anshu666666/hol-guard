@@ -18782,7 +18782,7 @@ async function activatePackageFirewallRuntime() {
   if (response.ok) {
     return;
   }
-  if (isRecord$2(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
+  if (isRecord$3(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
     throw new Error(payloadBody.message);
   }
   throw new Error("Unable to activate package protection.");
@@ -23348,7 +23348,7 @@ function parsePackageFirewallActionResult(op, body) {
   if (op === "repair") {
     const pathRepairRequired = readStringArray(result.path_repair_required);
     if (pathRepairRequired.length > 0) {
-      const profile = isRecord(result.profile) ? result.profile : null;
+      const profile = isRecord$1(result.profile) ? result.profile : null;
       const manualPathRequired = profile?.manual_path_required === true;
       return {
         emptyState: false,
@@ -31552,10 +31552,6 @@ function useRouteFocus(view, mainSelector = "main#main-content") {
 const SERVICE_RECOVERY_PROTOCOL = "hol-guard-recovery.v1";
 const SERVICE_RECOVERY_BRIDGE_SCHEMA = "hol-guard-dashboard-recovery.v1";
 const SERVICE_RECOVERY_BRIDGE_CAPABILITY = "open_recovery";
-const BRIDGE_SCHEMAS = /* @__PURE__ */ new Set([
-  SERVICE_RECOVERY_BRIDGE_SCHEMA,
-  SERVICE_RECOVERY_PROTOCOL
-]);
 const RECOVERY_CAPABILITY_NAMES = /* @__PURE__ */ new Set([
   SERVICE_RECOVERY_BRIDGE_CAPABILITY,
   "recovery_view",
@@ -31612,9 +31608,7 @@ function bridgeInstallMode(value) {
   return explicit === "unknown" ? defaultInstallMode() : explicit;
 }
 function bridgeSchemaSupported(value) {
-  const schema = value.schema;
-  const protocol = value.protocol;
-  return typeof schema === "string" && BRIDGE_SCHEMAS.has(schema) && (protocol === void 0 || protocol === SERVICE_RECOVERY_PROTOCOL);
+  return value.schema === SERVICE_RECOVERY_BRIDGE_SCHEMA && value.protocol === SERVICE_RECOVERY_PROTOCOL;
 }
 function bridgeHasRecoveryCapability(value) {
   return Array.isArray(value.capabilities) && value.capabilities.some((entry) => typeof entry === "string" && RECOVERY_CAPABILITY_NAMES.has(entry));
@@ -31651,7 +31645,7 @@ function getRecoveryCapabilities(options) {
     };
   }
   let reason = "bridge_missing";
-  if (rawCandidate !== void 0) {
+  if (rawCandidate !== void 0 && rawCandidate !== null) {
     reason = isRecord(rawCandidate) && !bridgeSchemaSupported(rawCandidate) ? "unsupported_protocol" : "invalid_bridge";
   }
   return { kind: "fallback", installMode: resolvedInstallMode, reason };
@@ -32611,77 +32605,77 @@ export {
   Badge as Z,
   HiMiniMinusCircle as _,
   EvidenceActivityHeatmapMini as a,
-  HiMiniCheck as a$,
-  openPackageFirewallAuthorizeFallback as a0,
-  waitForCloudConnection as a1,
-  activeFailedHarnesses as a2,
-  HiMiniWrenchScrewdriver as a3,
-  HiMiniExclamationCircle as a4,
-  ProofStrip as a5,
-  HiMiniEye as a6,
-  HiMiniXCircle as a7,
-  HiMiniClipboardDocumentCheck as a8,
-  HiMiniClipboard as a9,
-  clearEvidence as aA,
-  exportDiagnostics as aB,
-  repairApprovalCenter as aC,
-  exportSettings as aD,
-  setupDesktopNotifications as aE,
-  WorkspacePageHeader as aF,
-  HiMiniMagnifyingGlass as aG,
-  isProtectionPosture as aH,
-  deriveProtectionPosture as aI,
-  Tag as aJ,
-  approvalGateCooldownLabel as aK,
-  fetchLocalCliApi as aL,
-  fetchExtensionControlApi as aM,
-  HiMiniNoSymbol as aN,
-  useResolvedApprovalGate as aO,
-  HiMiniInformationCircle as aP,
-  buildApprovalProofCredentials as aQ,
-  GenIcon as aR,
-  HiMiniGlobeAlt as aS,
-  HiMiniCube as aT,
-  HiMiniServerStack as aU,
-  HiMiniFolder as aV,
-  FaWindows as aW,
-  FaAws as aX,
-  approvalProofRecentlySatisfied as aY,
-  HiMiniArrowLeft as aZ,
-  HiMiniPlus as a_,
-  PROTECTION_POSTURE_COPY as aa,
-  POSTURE_OUTCOME_COLUMNS as ab,
-  getDefaultExportFromCjs as ac,
-  React as ad,
-  HiMiniKey as ae,
-  HiMiniLockClosed as af,
-  HiMiniBellAlert as ag,
-  HiMiniAdjustmentsHorizontal as ah,
-  HiMiniCircleStack as ai,
-  TabBar as aj,
-  fetchCloudReviewSettings as ak,
-  isApprovalProofSubmitDisabled as al,
-  HiMiniArrowPath as am,
-  ApprovalProofFieldInputs as an,
-  changeCloudReviewSettings as ao,
-  resolveProtectionLevelCopy as ap,
-  fetchSettings as aq,
-  fetchRuntimeSnapshot as ar,
-  clearPolicy as as,
-  clearReviewQueue as at,
-  revokeApprovalGateCooldown as au,
-  disableApprovalGateTotp as av,
-  importSettings as aw,
-  resetSettings as ax,
-  enrollApprovalGateTotp as ay,
-  verifyApprovalGateTotp as az,
+  FaWindows as a$,
+  isUnsupportedPlatformCheck as a0,
+  remainingProtectionRepairParts as a1,
+  ProtectionRepairFlowError as a2,
+  waitForAuthorizeUrl as a3,
+  startOrRecoverCloudConnect as a4,
+  safeCloudConnectUrl as a5,
+  openPackageFirewallAuthorizeFallback as a6,
+  waitForCloudConnection as a7,
+  activeFailedHarnesses as a8,
+  HiMiniWrenchScrewdriver as a9,
+  disableApprovalGateTotp as aA,
+  importSettings as aB,
+  resetSettings as aC,
+  enrollApprovalGateTotp as aD,
+  verifyApprovalGateTotp as aE,
+  clearEvidence as aF,
+  exportDiagnostics as aG,
+  repairApprovalCenter as aH,
+  exportSettings as aI,
+  setupDesktopNotifications as aJ,
+  WorkspacePageHeader as aK,
+  HiMiniMagnifyingGlass as aL,
+  isProtectionPosture as aM,
+  deriveProtectionPosture as aN,
+  Tag as aO,
+  approvalGateCooldownLabel as aP,
+  fetchLocalCliApi as aQ,
+  fetchExtensionControlApi as aR,
+  HiMiniNoSymbol as aS,
+  useResolvedApprovalGate as aT,
+  HiMiniInformationCircle as aU,
+  buildApprovalProofCredentials as aV,
+  GenIcon as aW,
+  HiMiniGlobeAlt as aX,
+  HiMiniCube as aY,
+  HiMiniServerStack as aZ,
+  HiMiniFolder as a_,
+  HiMiniExclamationCircle as aa,
+  ProofStrip as ab,
+  HiMiniEye as ac,
+  HiMiniXCircle as ad,
+  HiMiniClipboardDocumentCheck as ae,
+  HiMiniClipboard as af,
+  PROTECTION_POSTURE_COPY as ag,
+  POSTURE_OUTCOME_COLUMNS as ah,
+  getDefaultExportFromCjs as ai,
+  React as aj,
+  HiMiniKey as ak,
+  HiMiniLockClosed as al,
+  HiMiniBellAlert as am,
+  HiMiniAdjustmentsHorizontal as an,
+  HiMiniCircleStack as ao,
+  TabBar as ap,
+  fetchCloudReviewSettings as aq,
+  isApprovalProofSubmitDisabled as ar,
+  ApprovalProofFieldInputs as as,
+  changeCloudReviewSettings as at,
+  resolveProtectionLevelCopy as au,
+  fetchSettings as av,
+  fetchRuntimeSnapshot as aw,
+  clearPolicy as ax,
+  clearReviewQueue as ay,
+  revokeApprovalGateCooldown as az,
   HiMiniCommandLine as b,
   HiMiniCodeBracket as b$,
-  approvalProofRecentlySatisfied as b0,
-  HiMiniArrowLeft as b1,
-  HiMiniPlus as b2,
-  HiMiniCheck as b3,
-  HiMiniNoSymbol as b4,
+  FaAws as b0,
+  approvalProofRecentlySatisfied as b1,
+  HiMiniArrowLeft as b2,
+  HiMiniPlus as b3,
+  HiMiniCheck as b4,
   startGuardCloudConnect as b5,
   HiMiniArrowTopRightOnSquare as b6,
   guardAwareHref as b7,

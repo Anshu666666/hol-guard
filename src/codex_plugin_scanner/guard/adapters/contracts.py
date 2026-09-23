@@ -614,7 +614,7 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "Extension or Guard runtime failure returns a bounded fail-closed prompt decision.",
             "Pi must load the current managed Guard extension and forward input events to the Guard runtime.",
             ("Package installation and update flows happen outside the runtime extension bridge.",),
-            "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on(\"input\")",
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("input")',
         ),
         _capability(
             "pi",
@@ -625,7 +625,7 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "Extension or Guard runtime failure returns a bounded fail-closed tool decision.",
             "Pi must load the current managed Guard extension and forward tool_call events to Guard before execution.",
             ("A present extension file alone does not prove Pi loaded it or suppressed a live tool call.",),
-            "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on(\"tool_call\")",
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("tool_call")',
         ),
         _capability(
             "pi",
@@ -636,7 +636,7 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "Unavailable or failed review withholds the tool result; reviewed content may replace it.",
             "Pi must load the current managed Guard extension and forward tool_result events before model delivery.",
             ("A synthetic extension canary does not prove live Pi model-visible replacement.",),
-            "src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on(\"tool_result\")",
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("tool_result")',
         ),
     ),
 }
@@ -682,9 +682,7 @@ def _default_capability_events(contract: HarnessProtectionContract) -> tuple[Har
 HARNESS_CONTRACTS: tuple[HarnessProtectionContract, ...] = tuple(
     replace(
         contract,
-        capability_events=_CAPABILITY_EVENTS_BY_HARNESS.get(
-            contract.harness, _default_capability_events(contract)
-        ),
+        capability_events=_CAPABILITY_EVENTS_BY_HARNESS.get(contract.harness, _default_capability_events(contract)),
     )
     for contract in _LEGACY_HARNESS_CONTRACTS
 )

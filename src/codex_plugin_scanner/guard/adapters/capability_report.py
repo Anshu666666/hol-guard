@@ -218,9 +218,7 @@ def validate_capability_report(
         }
         for field, expected in expected_scope.items():
             if capability.get(field) != expected or expected in {"unknown", ""}:
-                raise ValueError(
-                    f"capabilities[{index}] live proof requires exact {field} matching the declared scope"
-                )
+                raise ValueError(f"capabilities[{index}] live proof requires exact {field} matching the declared scope")
         for field in ("denied_witness_reference", "allowed_witness_reference"):
             value = capability.get(field)
             if not isinstance(value, str) or not value.strip():

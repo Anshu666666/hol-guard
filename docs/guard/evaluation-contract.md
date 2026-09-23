@@ -1,6 +1,6 @@
 # Local evaluation contract boundary
 
-The v1 `evaluation_contracts.py` schemas validate identities, complete profile case coverage, scope, and the declared proof level. A `passed` enforcement case requires a live installed-host proof type and a side-effect witness reference. These are caller-supplied records, not authenticated host telemetry. An independent reviewer must correlate denied and allowed host attempts with the exact artifact and receiver before promoting a case to live evidence. This package contains no runner that performs that correlation.
+The v1 `evaluation_contracts.py` schemas validate identities, complete profile case coverage, scope, and the declared proof level. A `passed` enforcement case requires a live installed-host proof type and distinct denied and allowed side-effect targets within the declared scope. These are caller-supplied records, not authenticated host telemetry. An independent reviewer must correlate both host attempts with the exact artifact and receiver before promoting a case to live evidence. This package contains no runner that performs that correlation.
 
 `evaluation_witness.py` supplies disposable file and loopback targets. Its `receiver_conditions_met` value only describes receiver observations and does not identify which process caused a side effect. Standalone witnesses are synthetic; a witness tied to an `EvaluationSetup` can share the owned temporary workspace, but it still needs an installed-host attempt trace and an allowed counterpart.
 

@@ -158,7 +158,22 @@ def test_passed_enforcement_requires_live_host_witness(tmp_path: Path) -> None:
         EvaluationResult.from_dict(result_payload, profile=profile)
     result_payload["evidenceIdentity"]["evidenceType"] = "live_installed_host_test"
     result_payload["cases"][0]["proofType"] = "live_installed_host_test"
-    with pytest.raises(EvaluationContractError, match="side-effect witness"):
+    with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
+    root = Path(profile_payload["targetScope"]["rootPath"])  # type: ignore[index]
+    result_payload["cases"][0]["witness"] = {  # type: ignore[index]
+        "kind": "local_file",
+        "path": str(root / "workspace" / "denied"),
+    }
+    with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace" / "denied")  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace" / "allowed")  # type: ignore[index]
+    EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "outside" / "allowed")  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="outside the profile target scope"):
         EvaluationResult.from_dict(result_payload, profile=profile)
 
 
@@ -273,9 +288,7 @@ def test_result_status_vocabulary_is_closed(tmp_path: Path) -> None:
         {"expectedAction": "unsupported", "observedAction": "unsupported"},
     ],
 )
-def test_passed_case_cannot_hide_missing_or_mismatched_proof(
-    tmp_path: Path, case_change: dict[str, object]
-) -> None:
+def test_passed_case_cannot_hide_missing_or_mismatched_proof(tmp_path: Path, case_change: dict[str, object]) -> None:
     profile_payload = _profile(tmp_path)
     result_payload = _result(profile_payload)
     result_payload["cases"][0].update(case_change)  # type: ignore[index]

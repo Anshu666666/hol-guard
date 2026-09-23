@@ -227,8 +227,12 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         witness = _mapping(case["witness"], "cases[].witness")
         if witness.get("path") is not None:
             _ = _validate_local_path(witness["path"], "cases[].witness.path")
+        if witness.get("allowedPath") is not None:
+            _ = _validate_local_path(witness["allowedPath"], "cases[].witness.allowedPath")
         if witness.get("endpoint") is not None:
             _ = _validate_local_endpoint(witness["endpoint"], "cases[].witness.endpoint")
+        if witness.get("allowedEndpoint") is not None:
+            _ = _validate_local_endpoint(witness["allowedEndpoint"], "cases[].witness.allowedEndpoint")
         if case_status == "passed" and case["expectedAction"] in {
             "block",
             "approval",
@@ -240,8 +244,15 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
                 or evidence["evidenceType"] != "live_installed_host_test"
             ):
                 raise EvaluationContractError("passed enforcement case requires live installed host evidence")
-            if witness["kind"] == "none" or not (witness.get("path") or witness.get("endpoint")):
-                raise EvaluationContractError("passed enforcement case requires a side-effect witness")
+            kind = witness["kind"]
+            if kind in {"local_file", "local_database"}:
+                denied, allowed = witness.get("path"), witness.get("allowedPath")
+            elif kind == "loopback_receiver":
+                denied, allowed = witness.get("endpoint"), witness.get("allowedEndpoint")
+            else:
+                denied, allowed = None, None
+            if not isinstance(denied, str) or not isinstance(allowed, str) or denied == allowed:
+                raise EvaluationContractError("passed enforcement case requires distinct denied and allowed witnesses")
     if result["status"] == "passed" and any(status != "passed" for status in case_statuses):
         raise EvaluationContractError("passed evaluation result cannot include an unpassed case")
 
@@ -278,15 +289,17 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         if case["expectedAction"] != expected_capabilities[cast(str, case["caseId"])]:
             raise EvaluationContractError("result case expected action differs from the profile")
         witness = _mapping(case["witness"], "cases[].witness")
-        if witness.get("path") is not None:
-            witness_path = cast(str, witness["path"])
-            if not _path_is_within(witness_path, root_path) or not any(
-                _path_is_within(witness_path, allowed_path) for allowed_path in allowed_paths
-            ):
-                raise EvaluationContractError("result witness path is outside the profile target scope")
-        endpoint = witness.get("endpoint")
-        if endpoint is not None and endpoint not in allowed_endpoints:
-            raise EvaluationContractError("result witness endpoint is outside the profile target scope")
+        for field in ("path", "allowedPath"):
+            if witness.get(field) is not None:
+                witness_path = cast(str, witness[field])
+                if not _path_is_within(witness_path, root_path) or not any(
+                    _path_is_within(witness_path, allowed_path) for allowed_path in allowed_paths
+                ):
+                    raise EvaluationContractError("result witness path is outside the profile target scope")
+        for field in ("endpoint", "allowedEndpoint"):
+            endpoint = witness.get(field)
+            if endpoint is not None and endpoint not in allowed_endpoints:
+                raise EvaluationContractError("result witness endpoint is outside the profile target scope")
 
 
 def validate_evaluation_result(payload: object, profile: object | None = None) -> None:

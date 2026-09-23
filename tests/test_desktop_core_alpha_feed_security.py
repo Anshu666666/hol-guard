@@ -49,31 +49,30 @@ def linux_publish_job() -> dict[str, object]:
     return publish_job("publish-linux-x64", linux=True)
 
 
-def test_feed_is_stable_3_0_only_and_wakes_after_main_publisher() -> None:
+def test_feed_follows_the_newest_stable_release_and_wakes_after_main_publisher() -> None:
     text = workflow_text()
-    namespace = runpy.run_path(str(TOOL))
     trusted_push = """push:
     branches: [main]
     paths:
       - .github/workflows/desktop-core-alpha-feed.yml
       - scripts/release/desktop_core_alpha_feed.py"""
-    assert namespace["SUPPORTED_TRAINS"] == {"3.0"}
     assert trusted_push in text
     assert "branches: [main]" in text
     assert 'workflows: ["Publish to PyPI"]' in text
     assert "workflow_run.conclusion == 'success'" in text
 
 
-def test_release_discovery_ignores_prereleases_and_3_1(tmp_path: Path, capsys) -> None:
+def test_release_discovery_selects_the_newest_stable_release(tmp_path: Path, capsys) -> None:
     tags = tmp_path / "tags.txt"
-    tags.write_text("alpha/v3.0.7a1\nv3.1.0\nv3.0.6\nv3.0.7\n", encoding="utf-8")
+    tags.write_text("alpha/v3.0.7a1\nv3.4.2\nv3.0.193\nv10.0.0\n", encoding="utf-8")
     namespace = runpy.run_path(str(TOOL))
     namespace["discover_release"](tags)
     output = capsys.readouterr().out
-    assert "version=3.0.7" in output
-    assert "tag=v3.0.7" in output
+    assert "version=10.0.0" in output
+    assert "tag=v10.0.0" in output
+    assert "train=10.0" in output
     assert "branch=main" in output
-    assert "3.1" not in output
+    assert "alpha" not in output
 
 
 def test_release_discovery_can_backfill_an_exact_stable_version(tmp_path: Path, capsys) -> None:

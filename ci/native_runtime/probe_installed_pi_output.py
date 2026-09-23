@@ -1274,17 +1274,22 @@ def _run_probe(*, json_path: Path | None = None) -> dict[str, Any]:
             home=negative_home,
             settings_path=root / "negative-settings.json",
         )
-        negative_cases_path = root / "negative-cases.json"
         negative_cases = _negative_cases()
-        negative_cases_path.write_text(json.dumps(negative_cases, ensure_ascii=True), encoding="utf-8")
-        negative_results, _ = _run_node_cases(
-            node=node,
-            extension=negative_extension,
-            runner=runner,
-            cases=negative_cases_path,
-            cwd=negative_workspace,
-            env=_isolated_env(home=negative_home, python_path=python_path),
-        )
+        negative_results = []
+        for case in negative_cases:
+            # Each malformed fallback must start with a fresh extension runtime.
+            # A timed-out child can leave containment state set for that process.
+            negative_cases_path = root / f"{case['id']}-cases.json"
+            negative_cases_path.write_text(json.dumps([case], ensure_ascii=True), encoding="utf-8")
+            case_results, _ = _run_node_cases(
+                node=node,
+                extension=negative_extension,
+                runner=runner,
+                cases=negative_cases_path,
+                cwd=negative_workspace,
+                env=_isolated_env(home=negative_home, python_path=python_path),
+            )
+            negative_results.extend(case_results)
         negative_evidence = _assert_negative_results(negative_results, _read_records(negative_log))
         receipt = {
             "schema": "hol-guard.installed-pi-native-output.v1",

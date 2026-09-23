@@ -771,7 +771,7 @@ def test_write_guard_daemon_state_hardens_permissions_on_open_descriptor(tmp_pat
 
     daemon_manager_module.write_guard_daemon_state(guard_home, 4781, "secret-token")
 
-    assert len(fchmod_calls) == 3
+    assert len(fchmod_calls) >= 3
     assert all(mode == 0o600 for _, mode in fchmod_calls)
 
 

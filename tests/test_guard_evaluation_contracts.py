@@ -170,11 +170,53 @@ def test_passed_enforcement_requires_live_host_witness(tmp_path: Path) -> None:
     result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace" / "denied")  # type: ignore[index]
     with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
         EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace") + "/./denied"  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
     result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace" / "allowed")  # type: ignore[index]
     EvaluationResult.from_dict(result_payload, profile=profile)
     result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "outside" / "allowed")  # type: ignore[index]
     with pytest.raises(EvaluationContractError, match="outside the profile target scope"):
         EvaluationResult.from_dict(result_payload, profile=profile)
+
+
+def test_passed_enforcement_rejects_equivalent_loopback_urls(tmp_path: Path) -> None:
+    profile_payload = _profile(tmp_path)
+    profile_payload["expectedCapabilities"][0]["expectedAction"] = "block"
+    result_payload = _result(profile_payload)
+    result_payload["evidenceIdentity"]["evidenceType"] = "live_installed_host_test"
+    case = result_payload["cases"][0]
+    case.update(
+        {
+            "expectedAction": "block",
+            "observedAction": "block",
+            "proofType": "live_installed_host_test",
+            "witness": {
+                "kind": "loopback_receiver",
+                "endpoint": "http://127.0.0.1:8765/receiver",
+                "allowedEndpoint": "http://127.0.0.1:8765/receiver/",
+            },
+        }
+    )
+    with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
+        EvaluationResult.from_dict(result_payload, profile=EvaluationProfile.from_dict(profile_payload))
+
+
+def test_result_summary_counts_must_match_cases(tmp_path: Path) -> None:
+    profile_payload = _profile(tmp_path)
+    result_payload = _result(profile_payload)
+    result_payload["summary"] = {
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "blockedEnvironment": 0,
+        "notRun": 0,
+    }
+    profile = EvaluationProfile.from_dict(profile_payload)
+    with pytest.raises(EvaluationContractError, match="summary does not match"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["summary"]["passed"] = 1
+    EvaluationResult.from_dict(result_payload, profile=profile)
 
 
 def test_unknown_profile_fields_are_rejected(tmp_path: Path) -> None:

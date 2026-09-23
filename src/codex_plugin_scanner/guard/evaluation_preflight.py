@@ -272,7 +272,13 @@ def _isolated_version_environment(probe_root: Path) -> dict[str, str]:
 
 
 def _version_matches(output: str, expected_version: str) -> bool:
-    pattern = rf"(?<![A-Za-z0-9_.-]){re.escape(expected_version)}(?![A-Za-z0-9_.-])"
+    core = (
+        expected_version[1:]
+        if expected_version[:1] in {"v", "V"} and expected_version[1:2].isdigit()
+        else expected_version
+    )
+    prefix = "[vV]?" if core[0].isdigit() else ""
+    pattern = rf"(?<![A-Za-z0-9_.-]){prefix}{re.escape(core)}(?![A-Za-z0-9_.-])"
     return re.search(pattern, output) is not None
 
 

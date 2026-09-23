@@ -139,9 +139,7 @@ def test_preflight_rejects_unavailable_required_privilege(tmp_path: Path) -> Non
     profile = _profile(tmp_path, executable)
     host = profile["hostIdentity"]
     assert isinstance(host, dict)
-    host["requiredPrivilege"] = (
-        "standard_user" if host["requiredPrivilege"] == "administrator" else "administrator"
-    )
+    host["requiredPrivilege"] = "standard_user" if host["requiredPrivilege"] == "administrator" else "administrator"
     report = preflight_evaluation(profile, artifact_paths=_artifact_paths(artifact))
     assert report.status == "blocked_environment"
     assert report.reason == "privilege_mismatch"
@@ -203,6 +201,16 @@ def test_mismatched_host_version_is_blocked(tmp_path: Path) -> None:
 
     assert report.status == "blocked_environment"
     assert report.reason == "host_version_mismatch"
+
+
+@pytest.mark.parametrize("printed,expected", [("v0.1.0", "0.1.0"), ("0.1.0", "v0.1.0")])
+def test_common_v_prefixed_host_versions_match(tmp_path: Path, printed: str, expected: str) -> None:
+    executable = _fake_host(tmp_path, version=printed)
+    artifact = _artifact(tmp_path)
+    profile = _profile(tmp_path, executable)
+    profile["hostIdentity"]["version"] = expected  # type: ignore[index]
+    report = preflight_evaluation(profile, artifact_paths=_artifact_paths(artifact), allow_host_execution=True)
+    assert report.status == "passed"
 
 
 def test_missing_artifact_is_blocked_after_host_checks(tmp_path: Path) -> None:

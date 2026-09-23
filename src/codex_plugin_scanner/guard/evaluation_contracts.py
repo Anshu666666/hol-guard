@@ -152,6 +152,18 @@ def _validate_local_endpoint(value: object, name: str) -> str:
     return value
 
 
+def _endpoint_identity(value: str) -> tuple[str, str | None, int, str, str]:
+    parsed = urllib.parse.urlsplit(value)
+    default_port = 443 if parsed.scheme.lower() == "https" else 80
+    return (
+        parsed.scheme.lower(),
+        parsed.hostname,
+        parsed.port or default_port,
+        parsed.path.rstrip("/") or "/",
+        parsed.query,
+    )
+
+
 def _validate_profile_semantics(profile: Mapping[str, object]) -> None:
     build = _mapping(profile["buildIdentity"], "buildIdentity")
     artifacts = [_mapping(item, "installedArtifacts[]") for item in cast(list[object], profile["installedArtifacts"])]
@@ -251,10 +263,28 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
                 denied, allowed = witness.get("endpoint"), witness.get("allowedEndpoint")
             else:
                 denied, allowed = None, None
-            if not isinstance(denied, str) or not isinstance(allowed, str) or denied == allowed:
+            if not isinstance(denied, str) or not isinstance(allowed, str):
+                raise EvaluationContractError("passed enforcement case requires distinct denied and allowed witnesses")
+            same_target = (
+                os.path.realpath(denied) == os.path.realpath(allowed)
+                if kind in {"local_file", "local_database"}
+                else _endpoint_identity(denied) == _endpoint_identity(allowed)
+            )
+            if same_target:
                 raise EvaluationContractError("passed enforcement case requires distinct denied and allowed witnesses")
     if result["status"] == "passed" and any(status != "passed" for status in case_statuses):
         raise EvaluationContractError("passed evaluation result cannot include an unpassed case")
+    if result.get("summary") is not None:
+        summary = _mapping(result["summary"], "summary")
+        keys = {
+            "passed": "passed",
+            "failed": "failed",
+            "unsupported": "unsupported",
+            "blocked_environment": "blockedEnvironment",
+            "not_run": "notRun",
+        }
+        if any(summary[key] != case_statuses.count(status) for status, key in keys.items()):
+            raise EvaluationContractError("result summary does not match cases")
 
     if profile is None:
         if result["status"] == "passed" or "passed" in case_statuses:

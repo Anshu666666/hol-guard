@@ -94,6 +94,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -124,6 +125,10 @@ if not isinstance(helper_owner, str) or not helper_owner:
     json.dumps({{"pid": helper.pid, "process_start_marker": helper_start_marker, "owner": helper_owner}}),
     encoding="utf-8",
 )
+def reap_helper():
+    helper.wait()
+
+threading.Thread(target=reap_helper, daemon=True).start()
 if {publish_containment_receipt!r}:
     launch_nonce = os.environ["HOL_GUARD_DAEMON_LAUNCH_NONCE"]
     launch_start_marker = process_start_token(os.getpid())
@@ -195,9 +200,20 @@ def _wait_for_verified_process_death(
     owner: str,
     timeout: float = 5.0,
 ) -> bool:
+    def dead_or_reaped() -> bool:
+        if not daemon_manager_module._guard_daemon_pid_is_proven_dead(pid):
+            return False
+        if not daemon_manager_module._guard_daemon_pid_is_running(pid):
+            return True
+        return _reap_verified_posix_direct_child(
+            pid,
+            start_marker=start_marker,
+            owner=owner,
+        )
+
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if not daemon_manager_module._guard_daemon_pid_is_running(pid):
+        if dead_or_reaped():
             return True
         if (
             daemon_manager_module.process_start_token(pid) != start_marker
@@ -205,7 +221,28 @@ def _wait_for_verified_process_death(
         ):
             return not daemon_manager_module._guard_daemon_pid_is_running(pid)
         time.sleep(0.05)
-    return not daemon_manager_module._guard_daemon_pid_is_running(pid)
+    return dead_or_reaped()
+
+
+def _reap_verified_posix_direct_child(pid: int, *, start_marker: str, owner: str) -> bool:
+    """Reap one exact test-owned direct child after PPID and identity proof."""
+
+    if os.name == "nt" or daemon_manager_module._guard_daemon_parent_pid(pid) != os.getpid():
+        return False
+    actual_start_marker = daemon_manager_module.process_start_token(pid)
+    actual_owner = daemon_manager_module.process_owner_marker(pid)
+    if (
+        not isinstance(actual_start_marker, str)
+        or actual_start_marker != start_marker
+        or not isinstance(actual_owner, str)
+        or actual_owner != owner
+    ):
+        return False
+    try:
+        waited_pid, _status = os.waitpid(pid, os.WNOHANG)
+    except (ChildProcessError, OSError, ValueError):
+        return False
+    return waited_pid == pid
 
 
 def _terminate_verified_posix_process(pid: int, *, start_marker: str, owner: str) -> None:
@@ -2030,14 +2067,16 @@ def test_real_production_worker_spawn_writes_containment_receipt_and_bounds_retr
             assert isinstance(child_owner, str) and child_owner == root_owner
             worker_identities.append((child_pid, child_start_marker, child_owner))
 
-        if not daemon_manager_module._guard_daemon_pending_launch_state_is_resolved(guard_home):
-            with pytest.raises(RuntimeError, match="previous Guard daemon launch could not be retired safely"):
-                daemon_manager_module.ensure_guard_daemon(
-                    guard_home,
-                    home_dir=home_dir,
-                    executable=handoff_wrapper,
-                    start_timeout=5.0,
-                )
+        retry_url: str | None = None
+        try:
+            retry_url = daemon_manager_module.ensure_guard_daemon(
+                guard_home,
+                home_dir=home_dir,
+                executable=handoff_wrapper,
+                start_timeout=5.0,
+            )
+        except RuntimeError as error:
+            assert "previous Guard daemon launch could not be retired safely" in str(error)
             for child_pid, child_start_marker, child_owner in worker_identities:
                 if daemon_manager_module._guard_daemon_pid_is_running(child_pid):
                     _terminate_verified_posix_process_group(
@@ -2045,13 +2084,20 @@ def test_real_production_worker_spawn_writes_containment_receipt_and_bounds_retr
                         start_marker=child_start_marker,
                         owner=child_owner,
                     )
+            assert daemon_manager_module._guard_daemon_pending_launch_state_is_resolved(guard_home)
+            assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is None
+        else:
+            assert daemon_manager_module._guard_daemon_pending_launch_state_is_resolved(guard_home)
+            assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is None
 
-        url = daemon_manager_module.ensure_guard_daemon(
-            guard_home,
-            home_dir=home_dir,
-            executable=handoff_wrapper,
-            start_timeout=45.0,
-        )
+        if retry_url is None:
+            retry_url = daemon_manager_module.ensure_guard_daemon(
+                guard_home,
+                home_dir=home_dir,
+                executable=handoff_wrapper,
+                start_timeout=45.0,
+            )
+        url = retry_url
         assert url.startswith("http://127.0.0.1:")
         state = load_authenticated_daemon_state(guard_home)
         assert state is not None
@@ -3907,6 +3953,38 @@ def test_daemon_death_wait_observes_exact_exited_child_without_poll_delay(monkey
         assert process.wait(timeout=5) == 17
     finally:
         process.wait(timeout=5)
+
+
+@pytest.mark.skipif(
+    sys.platform != "linux"
+    or not all(hasattr(os, name) for name in ("waitid", "P_PID", "WEXITED", "WNOHANG", "WNOWAIT")),
+    reason="requires POSIX waitid",
+)
+def test_daemon_cleanup_reaps_only_verified_direct_child() -> None:
+    process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    reaped = False
+    process_start_marker = daemon_manager_module.process_start_token(process.pid)
+    process_owner = daemon_manager_module.process_owner_marker(process.pid)
+    assert isinstance(process_start_marker, str) and process_start_marker
+    assert isinstance(process_owner, str) and process_owner
+    try:
+        os.kill(process.pid, signal.SIGTERM)
+        deadline = time.monotonic() + 5.0
+        while not daemon_manager_module._guard_daemon_pid_is_proven_dead(process.pid) and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert daemon_manager_module._guard_daemon_pid_is_proven_dead(process.pid)
+        assert daemon_manager_module._guard_daemon_pid_is_running(process.pid)
+        assert _reap_verified_posix_direct_child(
+            process.pid,
+            start_marker=process_start_marker,
+            owner=process_owner,
+        )
+        reaped = True
+        assert not daemon_manager_module._guard_daemon_pid_is_running(process.pid)
+    finally:
+        if not reaped:
+            process.kill()
+            process.wait(timeout=5)
 
 
 @pytest.mark.skipif(os.name == "nt", reason="requires POSIX child processes")

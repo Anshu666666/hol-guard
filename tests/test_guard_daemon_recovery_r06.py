@@ -322,12 +322,32 @@ diagnostics.persist_recovery_diagnostics(home, snapshot, generated_at=diagnostic
 
 def test_uppercase_operation_id_lookup_is_canonicalized(tmp_path: Path) -> None:
     snapshot = _snapshot()
-    operation_id = str(snapshot["operationId"])
+    operation_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    snapshot["operationId"] = operation_id
     diagnostics.persist_recovery_diagnostics(tmp_path, snapshot)
 
     report = recovery_diagnostics_for_operation(tmp_path, operation_id.upper())
 
     assert report["operationId"] == operation_id
+
+
+def test_uppercase_recovery_snapshot_is_persisted_with_canonical_id(tmp_path: Path) -> None:
+    snapshot = _snapshot()
+    operation_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    snapshot["operationId"] = operation_id.upper()
+
+    saved = diagnostics.persist_recovery_diagnostics(tmp_path, snapshot)
+    loaded = diagnostics.load_recovery_diagnostics(tmp_path)
+
+    assert saved["operationId"] == operation_id
+    assert loaded is not None
+    latest = loaded["latest"]
+    events = loaded["events"]
+    assert isinstance(latest, dict)
+    assert isinstance(events, list)
+    assert loaded["operationId"] == operation_id
+    assert latest["operationId"] == operation_id
+    assert all(isinstance(event, dict) and event["operationId"] == operation_id for event in events)
 
 
 @pytest.mark.parametrize("command", ["status", "diagnostics"])

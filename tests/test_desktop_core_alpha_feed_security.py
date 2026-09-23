@@ -64,7 +64,7 @@ def test_feed_follows_the_newest_stable_release_and_wakes_after_main_publisher()
 
 def test_release_discovery_selects_the_newest_stable_release(tmp_path: Path, capsys) -> None:
     tags = tmp_path / "tags.txt"
-    tags.write_text("alpha/v3.0.7a1\nv04.2.0\nv4.1.0\nv3.0.193\n", encoding="utf-8")
+    tags.write_text("alpha/v3.0.7a1\nv04.2.0\nv4٤.2.0\nv4.1.0\nv3.0.193\n", encoding="utf-8")
     namespace = runpy.run_path(str(TOOL))
     namespace["discover_release"](tags)
     output = capsys.readouterr().out

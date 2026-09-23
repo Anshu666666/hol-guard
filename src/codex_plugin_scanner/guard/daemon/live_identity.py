@@ -155,6 +155,7 @@ def probe_live_guard_daemon_identity(
         or not isinstance(host, str)
         or host not in {"127.0.0.1", "::1"}
         or not isinstance(port, int)
+        or isinstance(port, bool)
         or not 1 <= port <= 65_535
         or state.get("compatibility_version") != GUARD_DAEMON_COMPATIBILITY_VERSION
         or not isinstance(runtime_fingerprint, str)
@@ -166,7 +167,8 @@ def probe_live_guard_daemon_identity(
     ):
         return None, "identity_unverified"
     url_host = f"[{host}]" if host == "::1" else host
-    daemon_url = f"http://{url_host}:{port}"
+    # S5332 is a false positive: the authenticated local IPC host is loopback-only above.
+    daemon_url = f"http://{url_host}:{port}"  # NOSONAR(S5332)
     health_timeout = remaining()
     if health_timeout <= 0.0:
         return None, "service_unresponsive"
@@ -191,15 +193,31 @@ def probe_live_guard_daemon_identity(
     refreshed_state = load_authenticated_daemon_state(guard_home)
     if not isinstance(refreshed_state, dict):
         return identity, "identity_unverified"
-    refreshed_token = load_guard_daemon_auth_token(guard_home)
-    if not isinstance(refreshed_token, str) or not refreshed_token:
+    if not _state_identity_matches(
+        state,
+        refreshed_state,
+        guard_home,
+        require_markers=True,
+    ):
+        # Do not send the freshly loaded bearer token to an authority that
+        # differs from the process generation which passed the first probe.
         return identity, "identity_unverified"
     refreshed_host = refreshed_state.get("host")
     refreshed_port = refreshed_state.get("port")
-    if not isinstance(refreshed_host, str) or not isinstance(refreshed_port, int):
+    if (
+        not isinstance(refreshed_host, str)
+        or refreshed_host not in {"127.0.0.1", "::1"}
+        or not isinstance(refreshed_port, int)
+        or isinstance(refreshed_port, bool)
+        or not 1 <= refreshed_port <= 65_535
+    ):
+        return identity, "identity_unverified"
+    refreshed_token = load_guard_daemon_auth_token(guard_home)
+    if not isinstance(refreshed_token, str) or not refreshed_token:
         return identity, "identity_unverified"
     refreshed_url_host = f"[{refreshed_host}]" if refreshed_host == "::1" else refreshed_host
-    refreshed_url = f"http://{refreshed_url_host}:{refreshed_port}"
+    # S5332 is a false positive: the refreshed host and generation are verified above.
+    refreshed_url = f"http://{refreshed_url_host}:{refreshed_port}"  # NOSONAR(S5332)
     refreshed_health_timeout = remaining()
     if refreshed_health_timeout <= 0.0:
         return identity, "identity_unverified"
@@ -208,12 +226,7 @@ def probe_live_guard_daemon_identity(
         refreshed_token,
         timeout=refreshed_health_timeout,
     )
-    if not _state_identity_matches(
-        state,
-        refreshed_state,
-        guard_home,
-        require_markers=True,
-    ) or not _health_details_match(refreshed_details, refreshed_state, guard_home):
+    if not _health_details_match(refreshed_details, refreshed_state, guard_home):
         return identity, "identity_unverified"
     return identity, "healthy"
 

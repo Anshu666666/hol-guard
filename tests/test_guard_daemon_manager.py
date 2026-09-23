@@ -2179,6 +2179,250 @@ def test_real_matching_handoff_keeps_only_nonce_bound_daemon_alive(tmp_path):
             )
 
 
+def _write_containment_pending_launch(
+    guard_home: Path,
+    *,
+    launch_pid: int,
+    launch_nonce: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> dict[int, tuple[str, str]]:
+    identities: dict[int, tuple[str, str]] = {
+        launch_pid: ("launcher-generation", "test-owner"),
+    }
+
+    def process_start_marker(pid: int) -> str | None:
+        identity = identities.get(pid)
+        return identity[0] if identity is not None else None
+
+    def process_owner(pid: int) -> str | None:
+        identity = identities.get(pid)
+        return identity[1] if identity is not None else None
+
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", process_start_marker)
+    monkeypatch.setattr(daemon_manager_module, "process_owner_marker", process_owner)
+    launch = SimpleNamespace(
+        process=SimpleNamespace(pid=launch_pid),
+        launch_nonce=launch_nonce,
+        deadline=time.monotonic() + 1.0,
+    )
+    assert (
+        daemon_manager_module._record_guard_daemon_pending_launch(
+            guard_home,
+            launch=launch,
+            port=5_432,
+        )
+        is None
+    )
+    assert daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home) is not None
+    return identities
+
+
+def test_record_guard_daemon_launch_containment_child_writes_direct_launcher_receipt(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 1
+    nonce = "a" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+
+    receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert receipt is not None
+    assert receipt["launch_nonce"] == nonce
+    assert receipt["launch_pid"] == launch_pid
+    assert receipt["launch_process_start_marker"] == "launcher-generation"
+    assert receipt["launch_owner"] == "test-owner"
+    assert receipt["children"] == [
+        {
+            "pid": child_pid,
+            "process_start_marker": "worker-generation",
+            "owner": "test-owner",
+        }
+    ]
+    assert "launch_parent_pid" not in receipt
+
+
+def test_record_guard_daemon_launch_containment_child_writes_parent_bound_receipt(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    parent_pid = os.getpid() + 1_000
+    launch_pid = parent_pid + 1
+    child_pid = parent_pid + 2
+    nonce = "b" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=parent_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[launch_pid] = ("child-launcher-generation", "test-owner")
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setattr(daemon_manager_module.os, "getpid", lambda: launch_pid)
+    monkeypatch.setattr(daemon_manager_module.os, "getppid", lambda: parent_pid)
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+
+    receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert receipt is not None
+    assert receipt["launch_nonce"] == nonce
+    assert receipt["launch_pid"] == launch_pid
+    assert receipt["launch_process_start_marker"] == "child-launcher-generation"
+    assert receipt["launch_parent_pid"] == parent_pid
+    assert receipt["launch_parent_process_start_marker"] == "launcher-generation"
+    assert receipt["launch_parent_owner"] == "test-owner"
+    assert receipt["children"] == [
+        {
+            "pid": child_pid,
+            "process_start_marker": "worker-generation",
+            "owner": "test-owner",
+        }
+    ]
+
+
+def test_record_guard_daemon_launch_containment_child_is_idempotent_for_duplicate_child(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 3
+    nonce = "c" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+    first_receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert first_receipt is not None
+
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+    second_receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert second_receipt is not None
+    assert second_receipt["children"] == first_receipt["children"]
+
+
+def test_record_guard_daemon_launch_containment_child_refuses_stale_nonce(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 4
+    pending_nonce = "d" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=pending_nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setattr(daemon_manager_module.time, "sleep", lambda _seconds: None)
+    monkeypatch.setenv(
+        daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV,
+        "e" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH,
+    )
+
+    assert not daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+    assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is None
+
+
+def test_record_guard_daemon_launch_containment_child_refuses_owner_mismatch(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 5
+    nonce = "f" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "different-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+
+    assert not daemon_manager_module.record_guard_daemon_launch_containment_child(
+        guard_home,
+        pid=child_pid,
+    )
+    assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is None
+
+
+def test_record_guard_daemon_launch_containment_child_refuses_stale_receipt_for_new_generation(
+    tmp_path,
+    monkeypatch,
+):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 6
+    first_nonce = "1" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=first_nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, first_nonce)
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(guard_home, pid=child_pid)
+    first_receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert first_receipt is not None
+
+    second_nonce = "2" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=second_nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, second_nonce)
+
+    assert not daemon_manager_module.record_guard_daemon_launch_containment_child(guard_home, pid=child_pid)
+    assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) == first_receipt
+
+
 def test_launch_handoff_requires_every_generation_binding(tmp_path, monkeypatch):
     guard_home = tmp_path / "guard-home"
     guard_home.mkdir()
@@ -3751,6 +3995,87 @@ def test_failed_pending_record_never_releases_gate_and_reaps_exact_child(tmp_pat
     assert process.poll() == 1
 
 
+def test_missing_pending_launch_process_marker_keeps_gate_closed_and_reaps_exact_child(tmp_path, monkeypatch):
+    guard_home = tmp_path / "guard-home"
+    home_dir = tmp_path / "home"
+    guard_home.mkdir()
+    home_dir.mkdir()
+    events: list[str] = []
+    marker_probes: list[int] = []
+    owner_probes: list[int] = []
+
+    _configure_isolated_windows_daemon_start(monkeypatch)
+
+    class UnreleasedGate:
+        def write(self, _payload: bytes) -> int:
+            raise AssertionError("the launch gate must remain withheld")
+
+        def flush(self) -> None:
+            raise AssertionError("the launch gate must remain withheld")
+
+        def close(self) -> None:
+            events.append("gate-closed")
+
+    class FakeProcess:
+        pid = 54_322
+        stdin = UnreleasedGate()
+
+        def __init__(self) -> None:
+            self.returncode: int | None = None
+
+        def poll(self) -> int | None:
+            return self.returncode
+
+        def terminate(self) -> None:
+            events.append("terminate")
+            self.returncode = 1
+
+        def wait(self, *, timeout: float) -> int:
+            events.append(f"wait:{timeout}")
+            assert self.returncode is not None
+            return self.returncode
+
+        def kill(self) -> None:
+            raise AssertionError("terminate should reap the exact child")
+
+    process = FakeProcess()
+    monkeypatch.setattr(daemon_manager_module, "_live_or_newer_daemon_url", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_launch_command",
+        lambda *_args, **_kwargs: ["trusted-python", "gated-bootstrap"],
+    )
+    monkeypatch.setattr(daemon_manager_module.subprocess, "Popen", lambda *_args, **_kwargs: process)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "process_start_token",
+        lambda pid: marker_probes.append(pid) or None,
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "process_owner_marker",
+        lambda pid: owner_probes.append(pid) or "unexpected-owner-probe",
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_wait_for_started_guard_daemon_url",
+        lambda *_args, **_kwargs: pytest.fail("unidentified daemon must not be released or observed"),
+    )
+
+    with pytest.raises(RuntimeError, match="process start marker could not be recorded"):
+        daemon_manager_module.ensure_guard_daemon(
+            guard_home,
+            home_dir=home_dir,
+            start_timeout=60.0,
+            allow_windows_job_breakaway=True,
+        )
+
+    assert marker_probes == [process.pid] * 10
+    assert owner_probes == []
+    assert events == ["gate-closed", "terminate", "wait:1.0"]
+    assert process.poll() == 1
+
+
 def test_existing_active_pending_launch_is_retired_or_blocks_before_spawn(tmp_path, monkeypatch):
     guard_home = tmp_path / "guard-home"
     guard_home.mkdir()
@@ -3787,6 +4112,49 @@ def test_existing_active_pending_launch_is_retired_or_blocks_before_spawn(tmp_pa
         daemon_manager_module.ensure_guard_daemon(guard_home)
 
     assert events == ["retire-attempted", "pending-still-active"]
+
+
+def test_late_generation_bound_pending_launch_blocks_replacement_inside_start_lock(tmp_path, monkeypatch):
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_nonce = "a" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    pending = {
+        "state_kind": "daemon_launch_pending",
+        "pid": 64_321,
+        "port": 5410,
+        "launch_nonce": launch_nonce,
+        "launch_generation": launch_nonce,
+        "generation": launch_nonce,
+    }
+    pending_reads: list[Path] = []
+    resolution_checks: list[Path] = []
+
+    def load_pending(home: Path) -> dict[str, object] | None:
+        pending_reads.append(home)
+        return None if len(pending_reads) == 1 else pending
+
+    monkeypatch.setattr(daemon_manager_module, "_schedule_stale_ephemeral_guard_daemon_reap", lambda **_kwargs: None)
+    monkeypatch.setattr(daemon_manager_module, "_live_or_newer_daemon_url", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(daemon_manager_module, "_adopt_existing_guard_daemon", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_start_in_progress", lambda _home: False)
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", load_pending)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_pending_launch_state_is_resolved",
+        lambda home: resolution_checks.append(home) or False,
+    )
+    monkeypatch.setattr(
+        daemon_manager_module.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must not replace an unresolved launch")),
+    )
+
+    with pytest.raises(RuntimeError, match="previous Guard daemon launch could not be retired safely"):
+        daemon_manager_module.ensure_guard_daemon(guard_home)
+
+    assert pending_reads == [guard_home, guard_home]
+    assert resolution_checks == [guard_home]
+    assert not daemon_manager_module._pending_launch_path(guard_home).exists()
 
 
 @pytest.mark.parametrize(
@@ -4410,3 +4778,215 @@ def test_guard_daemon_retirement_completeness_accepts_explicitly_empty_state(tmp
     )
 
     assert daemon_manager_module.guard_daemon_retirement_is_complete(guard_home)
+
+
+def test_retire_all_blocks_on_unresolved_generation_bound_pending_receipt(tmp_path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_nonce = "ab" * 32
+    pending = {
+        "pid": 66_601,
+        "port": 5410,
+        "process_creation_time": 7_001,
+        "launch_nonce": launch_nonce,
+        "launch_generation": launch_nonce,
+        "generation": launch_nonce,
+    }
+    pending_path = daemon_manager_module._pending_launch_path(guard_home)
+    pending_path.write_text(json.dumps(pending), encoding="utf-8")
+    signals: list[tuple[int, int]] = []
+    waits: list[int] = []
+
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: pending)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pending_launch_state_is_resolved", lambda _home: False)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "load_authenticated_daemon_state",
+        lambda _home: pytest.fail("unresolved launch must stop before authenticated state"),
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_process_inventory_for_guard_home",
+        lambda _home: pytest.fail("unresolved launch must stop before inventory"),
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_retire_guard_daemon_pid",
+        lambda *_args, **_kwargs: pytest.fail("unresolved launch must not signal"),
+    )
+    monkeypatch.setattr(daemon_manager_module.os, "kill", lambda pid, sent_signal: signals.append((pid, sent_signal)))
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_wait_for_guard_daemon_pid_death",
+        lambda pid: waits.append(pid) or True,
+    )
+
+    assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
+    assert pending_path.is_file()
+    assert signals == []
+    assert waits == []
+
+
+def test_retire_all_clears_pending_receipt_when_creation_generation_is_replaced(tmp_path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    pending = {
+        "pid": 66_602,
+        "port": 5410,
+        "process_creation_time": 7_002,
+    }
+    pending_path = daemon_manager_module._pending_launch_path(guard_home)
+    pending_path.write_text(json.dumps(pending), encoding="utf-8")
+    clear_calls: list[tuple[int, int]] = []
+    signals: list[tuple[int, int]] = []
+    waits: list[int] = []
+
+    monkeypatch.setattr(daemon_manager_module, "os", _WindowsOSProxy())
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_daemon_state", lambda _home: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "load_authenticated_guard_daemon_pending_launch",
+        lambda _home: pending,
+    )
+    monkeypatch.setattr(daemon_manager_module, "windows_process_creation_time", lambda _pid: 8_002)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: False)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_clear_guard_daemon_pending_launch_if_current",
+        lambda _home, *, pid, creation_time: (
+            clear_calls.append((pid, creation_time)) or pending_path.unlink() or True
+        ),
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_retire_guard_daemon_pid",
+        lambda *_args, **_kwargs: pytest.fail("replaced generation must not be signaled"),
+    )
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_process_inventory_for_guard_home", lambda _home: [])
+    monkeypatch.setattr(daemon_manager_module, "_reconcile_invalid_daemon_lifecycle_artifacts", lambda _home: True)
+    monkeypatch.setattr(daemon_manager_module.os, "kill", lambda pid, sent_signal: signals.append((pid, sent_signal)))
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_wait_for_guard_daemon_pid_death",
+        lambda pid: waits.append(pid) or True,
+    )
+
+    assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
+    assert clear_calls == [(66_602, 7_002)]
+    assert not pending_path.exists()
+    assert signals == []
+    assert waits == []
+
+
+def test_retire_all_signals_and_waits_for_exact_authenticated_generation(tmp_path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    pid = 66_603
+    start_marker = "linux:exact-generation"
+    owner_marker = "uid:501"
+    state = {
+        "pid": pid,
+        "port": 5410,
+        "guard_home": str(guard_home),
+        "process_start_marker": start_marker,
+        "user": owner_marker,
+    }
+    dead = {"value": False}
+    signals: list[tuple[int, int]] = []
+    waits: list[int] = []
+    state_clears: list[int] = []
+
+    monkeypatch.setattr(daemon_manager_module, "os", _PosixOSProxy())
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_daemon_state", lambda _home: state)
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _pid: start_marker)
+    monkeypatch.setattr(daemon_manager_module, "process_owner_marker", lambda _pid: owner_marker)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: dead["value"])
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_matches_command", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(daemon_manager_module, "record_daemon_lifecycle_event", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_clear_authenticated_guard_daemon_state_if_current",
+        lambda _home, *, expected_state: state_clears.append(expected_state["pid"]) or True,
+    )
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_process_inventory_for_guard_home", lambda _home: [])
+    monkeypatch.setattr(daemon_manager_module, "_reconcile_invalid_daemon_lifecycle_artifacts", lambda _home: True)
+
+    def kill(pid_value: int, sent_signal: int) -> None:
+        signals.append((pid_value, sent_signal))
+        if sent_signal == signal.SIGKILL:
+            dead["value"] = True
+
+    monkeypatch.setattr(daemon_manager_module.os, "kill", kill)
+
+    def wait(pid_value: int) -> bool:
+        waits.append(pid_value)
+        return len(waits) == 2
+
+    monkeypatch.setattr(daemon_manager_module, "_wait_for_guard_daemon_pid_death", wait)
+
+    retired = daemon_manager_module.retire_all_guard_daemons_for_home(guard_home)
+
+    assert retired == [pid]
+    assert signals == [(pid, signal.SIGTERM), (pid, signal.SIGKILL)]
+    assert waits == [pid, pid]
+    assert state_clears == [pid]
+
+
+@pytest.mark.parametrize(
+    ("actual_start_marker", "actual_owner_marker"),
+    (
+        ("linux:recycled-generation", "uid:501"),
+        ("linux:exact-generation", "uid:foreign"),
+    ),
+)
+def test_retire_all_never_signals_after_generation_or_owner_mismatch(
+    tmp_path,
+    monkeypatch,
+    actual_start_marker,
+    actual_owner_marker,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    pid = 66_604
+    state = {
+        "pid": pid,
+        "port": 5410,
+        "guard_home": str(guard_home),
+        "process_start_marker": "linux:exact-generation",
+        "user": "uid:501",
+    }
+    signals: list[tuple[int, int]] = []
+    waits: list[int] = []
+    state_clears: list[int] = []
+
+    monkeypatch.setattr(daemon_manager_module, "os", _PosixOSProxy())
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_daemon_state", lambda _home: state)
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _pid: actual_start_marker)
+    monkeypatch.setattr(daemon_manager_module, "process_owner_marker", lambda _pid: actual_owner_marker)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: False)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_matches_command", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(daemon_manager_module, "record_daemon_lifecycle_event", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_clear_authenticated_guard_daemon_state_if_current",
+        lambda _home, *, expected_state: state_clears.append(expected_state["pid"]) or True,
+    )
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_process_inventory_for_guard_home", lambda _home: [])
+    monkeypatch.setattr(daemon_manager_module, "_reconcile_invalid_daemon_lifecycle_artifacts", lambda _home: True)
+    monkeypatch.setattr(
+        daemon_manager_module.os,
+        "kill",
+        lambda pid_value, sent_signal: signals.append((pid_value, sent_signal)),
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_wait_for_guard_daemon_pid_death",
+        lambda pid_value: waits.append(pid_value),
+    )
+
+    assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
+    assert signals == []
+    assert waits == []
+    assert state_clears == []

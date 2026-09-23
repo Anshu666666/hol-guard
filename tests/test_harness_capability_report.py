@@ -240,6 +240,38 @@ def test_invalid_and_stale_evidence_are_rejected_without_upgrading_canaries() ->
         validate_capability_report(source_claim, now=datetime(2026, 9, 23, tzinfo=timezone.utc))
 
 
+@pytest.mark.parametrize(
+    "observed_at,expires_at,error",
+    [
+        ("not-a-time", "2026-09-30T00:00:00Z", "RFC3339"),
+        ("2026-09-22T00:00:00", "2026-09-30T00:00:00Z", "timezone"),
+        ("2026-09-22T00:00:00Z", "2026-09-22T00:00:00Z", "after observation"),
+    ],
+)
+def test_evidence_timestamps_must_be_parseable_zoned_and_ordered(observed_at: str, expires_at: str, error: str) -> None:
+    payload = _report_payload()
+    row = _rows(payload)[0]
+    row.update(
+        {
+            "evidence_level": "synthetic_canary",
+            "observed_at": observed_at,
+            "expires_at": expires_at,
+            "evidence_reference": "tests/fixtures/generic-canary.json",
+        }
+    )
+    with pytest.raises(ValueError, match=error):
+        validate_capability_report(payload, now=datetime(2026, 9, 23, tzinfo=timezone.utc))
+
+
+def test_report_rejects_ambiguous_build_identity_and_empty_commit() -> None:
+    with pytest.raises(ValueError, match="must match"):
+        build_capability_report(build_id="one", build="two")
+    with pytest.raises(ValueError, match="non-empty"):
+        build_capability_report(build_id=" ")
+    with pytest.raises(ValueError, match="non-empty"):
+        build_capability_report(commit=" ")
+
+
 def test_checked_in_schema_accepts_generated_report() -> None:
     schema_path = Path(__file__).parents[1] / "docs" / "guard" / "schemas" / "harness-capability-report.v1.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))

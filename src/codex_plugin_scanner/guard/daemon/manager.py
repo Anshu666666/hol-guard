@@ -3685,6 +3685,7 @@ def _wait_for_started_guard_daemon_url(
             guard_home,
             timeout=timeout,
             process=process,
+            expected_pid=getattr(process, "pid", None),
             expected_launch_nonce=launch_nonce if isinstance(launch_nonce, str) else None,
         )
     return _wait_for_guard_daemon_url(

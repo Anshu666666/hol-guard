@@ -1520,6 +1520,121 @@ def test_ensure_guard_daemon_advances_ports_after_early_process_exit(tmp_path, m
     assert [command[-1] for command in launched_commands] == ["5410", "5411"]
 
 
+def test_ensure_guard_daemon_accepts_nonce_bound_default_launch_handoff_only_for_launcher_pid(
+    tmp_path,
+    monkeypatch,
+):
+    """The default launch path must bind a signed handoff to its Popen PID."""
+
+    guard_home = tmp_path / "guard-home"
+    port = 5_416
+    launch_pid = 54_216
+    process_marker = "launcher-generation"
+    process_owner = "test-owner"
+
+    class FakeProcess:
+        pid = launch_pid
+        stdin = None
+
+        def __init__(self) -> None:
+            self.terminated = False
+
+        def poll(self) -> int | None:
+            return 0 if self.terminated else None
+
+        def terminate(self) -> None:
+            self.terminated = True
+
+        def wait(self, *, timeout: float) -> int:
+            del timeout
+            return 0
+
+    process = FakeProcess()
+    record_pending_launch = daemon_manager_module._record_guard_daemon_pending_launch
+
+    def record_pending(*_args, launch, port: int, **_kwargs):
+        pending_creation_time = record_pending_launch(
+            guard_home,
+            launch=launch,
+            port=port,
+        )
+        monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, launch.launch_nonce)
+        try:
+            daemon_manager_module.write_guard_daemon_state(
+                guard_home,
+                port,
+                "test-token",
+                pid=launch.process.pid,
+            )
+        finally:
+            monkeypatch.delenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, raising=False)
+        return pending_creation_time
+
+    original_handoff_match = daemon_manager_module._guard_daemon_handoff_matches_launch
+    observed_handoffs: list[tuple[int, str, int | None]] = []
+
+    def observe_handoff_match(
+        handoff_home: Path,
+        *,
+        launch_nonce: str,
+        expected_pid: int,
+        expected_port: int | None = None,
+    ) -> bool:
+        observed_handoffs.append((expected_pid, launch_nonce, expected_port))
+        return original_handoff_match(
+            handoff_home,
+            launch_nonce=launch_nonce,
+            expected_pid=expected_pid,
+            expected_port=expected_port,
+        )
+
+    _disable_daemon_adoption(monkeypatch)
+    _disable_duplicate_retire(monkeypatch)
+    monkeypatch.setattr(daemon_manager_module, "_schedule_stale_ephemeral_guard_daemon_reap", lambda **_kwargs: None)
+    monkeypatch.setattr(daemon_manager_module, "_load_state", lambda _guard_home, **_kwargs: None)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_start_in_progress", lambda _guard_home: False)
+    monkeypatch.setattr(daemon_manager_module, "_candidate_ports", lambda _guard_home, **_kwargs: [port])
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_launch_command",
+        lambda *_args, **_kwargs: ["guard-daemon"],
+    )
+    monkeypatch.setattr(daemon_manager_module.subprocess, "Popen", lambda *_args, **_kwargs: process)
+    monkeypatch.setattr(daemon_manager_module, "_record_guard_daemon_pending_launch", record_pending)
+    monkeypatch.setattr(daemon_manager_module, "_release_guard_daemon_launch_gate", lambda _process: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_clear_spawned_guard_daemon_pending_launch",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "load_guard_daemon_url",
+        lambda _guard_home: f"http://127.0.0.1:{port}"
+        if daemon_manager_module._pending_launch_path(guard_home).is_file()
+        else None,
+    )
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _pid: process_marker)
+    monkeypatch.setattr(daemon_manager_module, "process_owner_marker", lambda _pid: process_owner)
+    monkeypatch.setattr(daemon_manager_module, "windows_process_creation_time", lambda _pid: 13_371)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_handoff_matches_launch", observe_handoff_match)
+
+    url = daemon_manager_module.ensure_guard_daemon(guard_home, start_timeout=1.0)
+
+    assert url == f"http://127.0.0.1:{port}"
+    assert observed_handoffs
+    assert {expected_pid for expected_pid, _nonce, _port in observed_handoffs} == {launch_pid}
+    pending = daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home)
+    assert pending is not None
+    assert {nonce for _pid, nonce, _port in observed_handoffs} == {pending["launch_nonce"]}
+    assert not original_handoff_match(
+        guard_home,
+        launch_nonce=str(pending["launch_nonce"]),
+        expected_pid=launch_pid + 1,
+        expected_port=port,
+    )
+
+
 @pytest.mark.skipif(
     os.name == "nt",
     reason="its fake Popen omits the native Windows process identity required by daemon launch",

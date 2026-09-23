@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import io
 import json
+import math
 import socket
 import time
 import urllib.error
@@ -36,9 +37,17 @@ def _interrupt_health_socket(stream: socket.socket) -> None:
         stream.shutdown(socket.SHUT_RDWR)
 
 
-def read_guard_health_details(daemon_url: str, auth_token: str) -> dict[str, object] | None:
+def read_guard_health_details(
+    daemon_url: str,
+    auth_token: str,
+    *,
+    timeout: float | None = None,
+) -> dict[str, object] | None:
     """Read bounded authenticated health details over direct, non-redirecting loopback IPC."""
     try:
+        probe_timeout = _HEALTH_PROBE_DEADLINE_SECONDS if timeout is None else float(timeout)
+        if not math.isfinite(probe_timeout) or probe_timeout <= 0.0:
+            return None
         parsed = urlsplit(daemon_url)
         if (
             parsed.scheme != "http"
@@ -54,9 +63,9 @@ def read_guard_health_details(daemon_url: str, auth_token: str) -> dict[str, obj
             return None
         # HTTPConnection neither consults proxy environment variables nor follows
         # redirects. Never forward the daemon token to a redirected authority.
-        deadline = time.monotonic() + _HEALTH_PROBE_DEADLINE_SECONDS
+        deadline = time.monotonic() + probe_timeout
         with closing(
-            HTTPConnection(parsed.hostname, parsed.port, timeout=_HEALTH_PROBE_DEADLINE_SECONDS)
+            HTTPConnection(parsed.hostname, parsed.port, timeout=probe_timeout)
         ) as connection:
             connection.connect()
             stream = connection.sock
@@ -80,7 +89,7 @@ def read_guard_health_details(daemon_url: str, auth_token: str) -> dict[str, obj
             return None
         payload = json.loads(content.decode("utf-8"))
         return payload if isinstance(payload, dict) else None
-    except (OSError, ValueError, HTTPException):
+    except (OSError, TypeError, ValueError, OverflowError, HTTPException):
         return None
 
 
@@ -318,6 +327,9 @@ class GuardSurfaceDaemonClient:
 
     def preview_extension_controls(self, payload: dict[str, object]) -> dict[str, object]:
         return self._post("/v1/extension-controls/preview", payload)
+
+    def inspect_command(self, payload: dict[str, object]) -> dict[str, object]:
+        return self._post("/v1/extension-controls/inspect", payload)
 
     def apply_extension_controls(self, payload: dict[str, object]) -> dict[str, object]:
         return self._post("/v1/extension-controls/apply", payload)

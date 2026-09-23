@@ -43,6 +43,10 @@ _CANONICAL_AUTHORITY_ACTION_PREFIXES = (
     "uninstall",
     "update",
 )
+_DESKTOP_APPROVAL_FACTOR_ENV_VARS = (
+    "HOL_GUARD_APPROVAL_PASSWORD",
+    "HOL_GUARD_APPROVAL_TOTP_CODE",
+)
 
 
 @dataclass(frozen=True)
@@ -114,16 +118,11 @@ def enforce_lifecycle_gate(
         return None
     authority_home = lifecycle_authority_home(guard_home, requirement=requirement)
     gate = public_config(authority_home)
-    desktop_proof = None
-    if not _bool_attribute(args, "approval_proof_stdin"):
-        # Clear Desktop child environment factors even when the advisory gate
-        # is disabled; stdin proof is deliberately not read until enabled.
-        desktop_proof = consume_desktop_lifecycle_env(
-            totp_enabled=gate.totp_enabled,
-            use_cooldown=False,
-            cooldown_seconds=gate.cooldown_seconds,
-        )
     if not gate.enabled:
+        # An advisory disabled gate must not validate proof that is irrelevant
+        # to this command, but child processes still must not inherit it.
+        for name in _DESKTOP_APPROVAL_FACTOR_ENV_VARS:
+            os.environ.pop(name, None)
         print(_ENROLLMENT_NOTICE, file=error_stream or sys.stderr)
         return LifecycleGateContext(
             authority_home=authority_home,
@@ -132,6 +131,21 @@ def enforce_lifecycle_gate(
             subject=requirement.subject,
             grant=None,
             was_enabled=False,
+        )
+
+    desktop_proof = None
+    if _bool_attribute(args, "approval_proof_stdin"):
+        # Stdin proof replaces Desktop env proof; clear unused factors before
+        # the downstream handler can launch a child process.
+        for name in _DESKTOP_APPROVAL_FACTOR_ENV_VARS:
+            os.environ.pop(name, None)
+    else:
+        # Clear Desktop child environment factors even when the advisory gate
+        # is disabled; stdin proof is deliberately not read until enabled.
+        desktop_proof = consume_desktop_lifecycle_env(
+            totp_enabled=gate.totp_enabled,
+            use_cooldown=False,
+            cooldown_seconds=gate.cooldown_seconds,
         )
     if _bool_attribute(args, "approval_proof_stdin"):
         desktop_proof = consume_desktop_lifecycle_stdin(totp_enabled=gate.totp_enabled)

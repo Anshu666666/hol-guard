@@ -4,7 +4,9 @@ import os
 import subprocess
 import sys
 import textwrap
+import threading
 import time
+import uuid
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
@@ -28,7 +30,9 @@ from codex_plugin_scanner.guard.daemon.user_recovery import (
 
 
 def _current_owner_marker() -> str:
-    return f"uid:{os.geteuid()}" if hasattr(os, "geteuid") else "current-user"
+    marker = live_process_identity.process_owner_marker(os.getpid())
+    assert marker is not None
+    return marker
 
 
 def _identity(guard_home: Path, *, pid: int = 41, generation: str = "generation-1") -> ProcessIdentity:
@@ -92,10 +96,10 @@ def _coordinator(
     guard_home.mkdir()
     observed = calls if calls is not None else []
 
-    def inspect(_home: Path, _state: object) -> ServiceInspection:
+    def inspect(_home: Path, _state: object, timeout: float | None = None) -> ServiceInspection:
         observed.append("inspect")
         if inspect_service is not None:
-            return inspect_service()
+            return recovery_module._call_hook(inspect_service, timeout)
         return service
 
     hooks = RecoveryHooks(
@@ -146,6 +150,39 @@ def test_inspection_is_read_only_and_classifies_missing_service(tmp_path: Path) 
     assert calls == ["inspect"]
 
 
+def test_active_operation_without_latest_snapshot_returns_contract_snapshot(tmp_path: Path) -> None:
+    request_id = "12121212-1212-4212-8212-121212121212"
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+    )
+    operation_id = uuid.UUID(request_id)
+    operation = recovery_module._Operation(
+        operation_id=operation_id,
+        request_id=operation_id,
+        started_monotonic=100.0,
+        deadline_monotonic=160.0,
+        started_at="2026-09-20T12:00:00+00:00",
+    )
+    home_key = str(coordinator.guard_home)
+    operation_key = recovery_module._operation_key(home_key, operation_id)
+    with recovery_module._OPERATIONS_LOCK:
+        recovery_module._ACTIVE_BY_HOME[home_key] = operation
+        recovery_module._ACTIVE_BY_ID[operation_key] = operation
+    try:
+        result = coordinator.restart(request_id)
+    finally:
+        with recovery_module._OPERATIONS_LOCK:
+            recovery_module._ACTIVE_BY_HOME.pop(home_key, None)
+            recovery_module._ACTIVE_BY_ID.pop(operation_key, None)
+
+    assert result["operationId"] == request_id
+    assert result["phase"] == "waiting_for_owner"
+    assert result["reasonCode"] == "operation_busy"
+    assert result["workerActive"] is True
+    assert result["retryAllowed"] is False
+
+
 def test_healthy_service_reconnects_without_stop_or_start(tmp_path: Path) -> None:
     guard_home = tmp_path / "guard-home"
     identity = _identity(guard_home)
@@ -168,6 +205,27 @@ def test_healthy_service_reconnects_without_stop_or_start(tmp_path: Path) -> Non
     assert "stop" not in calls
     assert "start" not in calls
     assert [event["phase"] for event in events] == ["checking", "checking", "reconnecting", "verifying", "complete"]
+
+
+def test_completed_request_uuid_replay_returns_cached_result_without_starting_again(tmp_path: Path) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, pid=81, generation="replay-generation")
+    starts: list[str] = []
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        start_process=lambda *_args: starts.append("start") or StartResult(True, identity),
+        verify_ready=lambda *_args: ReadyResult(True, identity),
+        protection_health=lambda *_args: ProtectionResult("verified", "healthy"),
+    )
+    request_id = "81818181-8181-4181-8181-818181818181"
+
+    first = coordinator.restart(request_id)
+    replay = coordinator.restart(request_id)
+
+    assert first["phase"] == "complete"
+    assert replay == first
+    assert starts == ["start"]
 
 
 def test_dashboard_session_failure_preserves_healthy_daemon(tmp_path: Path) -> None:
@@ -246,21 +304,53 @@ def test_start_rejects_readiness_identity_replacement(tmp_path: Path) -> None:
     assert active.unresolved_identity == started
 
 
-def test_reconnected_daemon_reports_protection_attention_separately(tmp_path: Path) -> None:
+@pytest.mark.parametrize("protection_state", ("unknown", "needs_attention"))
+def test_reconnected_daemon_does_not_complete_without_verified_protection(
+    tmp_path: Path,
+    protection_state: str,
+) -> None:
     guard_home = tmp_path / "guard-home"
     identity = _identity(guard_home)
     coordinator = _coordinator(
         tmp_path,
         ServiceInspection("ready", "healthy", identity, True, True, True),
-        protection_health=lambda *_args: ProtectionResult("needs_attention", "protection_unhealthy"),
+        protection_health=lambda *_args: ProtectionResult(protection_state, "unknown"),
     )
 
     result = coordinator.restart("18181818-1818-4818-8818-181818181818")
 
-    assert result["phase"] == "complete"
+    assert result["phase"] == "needs_action"
+    assert result["outcome"] == "not_recovered"
     assert result["service"] == "ready"
-    assert result["protection"] == "needs_attention"
+    assert result["protection"] == protection_state
     assert result["requiresHumanAction"] is True
+    assert result["workerActive"] is False
+    assert str(guard_home) not in recovery_module._ACTIVE_BY_HOME
+
+
+@pytest.mark.parametrize("protection_state", ("unknown", "needs_attention"))
+def test_started_daemon_does_not_complete_without_verified_protection(
+    tmp_path: Path,
+    protection_state: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home)
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        start_process=lambda *_args: StartResult(True, identity),
+        protection_health=lambda *_args: ProtectionResult(protection_state, "unknown"),
+    )
+
+    result = coordinator.restart("1a1a1a1a-1a1a-41a1-81a1-1a1a1a1a1a1a")
+
+    assert result["phase"] == "needs_action"
+    assert result["outcome"] == "not_recovered"
+    assert result["service"] == "ready"
+    assert result["protection"] == protection_state
+    assert result["requiresHumanAction"] is True
+    assert result["workerActive"] is False
+    assert str(guard_home) not in recovery_module._ACTIVE_BY_HOME
 
 
 def test_same_generation_session_reconnect_uses_remaining_budget(tmp_path: Path) -> None:
@@ -280,6 +370,41 @@ def test_same_generation_session_reconnect_uses_remaining_budget(tmp_path: Path)
     assert result["phase"] == "complete"
     assert result["service"] == "ready"
     assert observed_remaining and 0.0 < observed_remaining[0] <= 0.5
+
+
+def test_post_budget_inspection_and_readiness_use_remaining_deadline(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    clock = {"value": 100.0}
+    inspection_timeouts: list[float | None] = []
+    readiness_timeouts: list[float] = []
+
+    def inspect(timeout: float | None = None) -> ServiceInspection:
+        inspection_timeouts.append(timeout)
+        if timeout is not None:
+            clock["value"] += 0.25
+        return ServiceInspection("ready", "healthy", identity, True, True, True)
+
+    def verify_ready(_home: Path, _identity: ProcessIdentity | None, remaining: float) -> ReadyResult:
+        readiness_timeouts.append(remaining)
+        return ReadyResult(True, identity)
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("ready", "healthy", identity, True, True, True),
+        inspect_service=inspect,
+        verify_ready=verify_ready,
+        clock=lambda: clock["value"],
+        active_budget_seconds=1.0,
+    )
+
+    result = coordinator.restart("19191919-1919-4919-8919-191919191919")
+
+    assert result["phase"] == "complete"
+    assert inspection_timeouts[0] is None
+    assert len(inspection_timeouts) >= 2
+    assert any(timeout is not None for timeout in inspection_timeouts[1:])
+    assert all(timeout is None or 0.0 < timeout <= 1.0 for timeout in inspection_timeouts)
+    assert readiness_timeouts and 0.0 < readiness_timeouts[0] <= 1.0
 
 
 def test_mapping_inspection_preserves_explicit_dashboard_session_failure(tmp_path: Path) -> None:
@@ -488,10 +613,20 @@ def test_default_inspector_rechecks_os_generation_after_session_probe(
 def test_owned_unresponsive_service_is_stopped_then_started(tmp_path: Path) -> None:
     guard_home = tmp_path / "guard-home"
     identity = _identity(guard_home)
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_missing", identity),
+        ]
+    )
     calls: list[str] = []
     coordinator = _coordinator(
         tmp_path,
         ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        inspect_service=lambda: next(inspections),
         calls=calls,
         stop_process=lambda _identity, _remaining: calls.append("stop") or StopResult(True),
         start_process=lambda _home, _remaining: calls.append("start") or StartResult(True, identity),
@@ -726,6 +861,35 @@ def test_generation_change_after_confirmed_stop_refuses_replacement_start(tmp_pa
     assert [call for call in calls if call in {"stop", "start"}] == ["stop"]
 
 
+def test_ambiguous_endpoint_after_confirmed_stop_refuses_replacement_start(tmp_path: Path) -> None:
+    guard_home = tmp_path / "guard-home"
+    target = _identity(guard_home)
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_unresponsive", target, True),
+            ServiceInspection("unavailable", "service_unresponsive", target, True),
+            ServiceInspection("unavailable", "service_unresponsive", target, True),
+            ServiceInspection("unavailable", "service_unresponsive", target, True),
+            ServiceInspection("unavailable", "endpoint_conflict", target, True),
+        ]
+    )
+    calls: list[str] = []
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_unresponsive", target, True),
+        inspect_service=lambda: next(inspections),
+        calls=calls,
+        stop_process=lambda *_args: calls.append("stop") or StopResult(True),
+        start_process=lambda *_args: calls.append("start") or StartResult(True, target),
+    )
+
+    result = coordinator.restart("48484848-4848-4484-8484-484848484848")
+
+    assert result["phase"] == "needs_action"
+    assert result["reasonCode"] == "endpoint_conflict"
+    assert [call for call in calls if call in {"stop", "start"}] == ["stop"]
+
+
 def test_protection_off_after_start_lock_prevents_start(tmp_path: Path) -> None:
     state = {"posture": "on"}
     calls: list[str] = []
@@ -902,9 +1066,18 @@ def test_unresolved_timeout_reconciles_before_a_second_stop(tmp_path: Path) -> N
     identity = _identity(guard_home)
     dead = {"value": False}
     calls: list[str] = []
+    inspection_count = 0
+
+    def inspect() -> ServiceInspection:
+        nonlocal inspection_count
+        inspection_count += 1
+        reason_code = "service_missing" if dead["value"] and inspection_count >= 9 else "service_unresponsive"
+        return ServiceInspection("unavailable", reason_code, identity, reason_code != "service_missing")
+
     coordinator = _coordinator(
         tmp_path,
         ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        inspect_service=inspect,
         calls=calls,
         stop_process=lambda *_args: calls.append("stop") or StopResult(False, "worker_exit_unconfirmed"),
         process_dead=lambda _identity: dead["value"],
@@ -1012,9 +1185,19 @@ def test_helper_timeouts_are_never_greater_than_remaining_budget(tmp_path: Path)
         observed["ready"] = remaining
         return ReadyResult(True, identity)
 
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_missing", identity),
+        ]
+    )
     coordinator = _coordinator(
         tmp_path,
         ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        inspect_service=lambda: next(inspections),
         clock=lambda: clock["value"],
         active_budget_seconds=1.0,
         lock_timeout_seconds=10.0,
@@ -1152,6 +1335,61 @@ def test_stale_verifying_receipt_blocks_missing_identity(tmp_path: Path) -> None
     assert not any(call in {"stop", "start"} for call in calls)
 
 
+def test_pending_snapshot_expires_only_after_fresh_missing_inventory(tmp_path: Path) -> None:
+    calls: list[str] = []
+    persisted: list[dict[str, object]] = []
+    identity = _identity(tmp_path / "guard-home")
+
+    def load_snapshot(_home: Path) -> dict[str, object]:
+        return persisted[-1] if persisted else _pending_snapshot("verifying")
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing", None, False),
+        calls=calls,
+        load_snapshot=load_snapshot,
+        persist_snapshot=lambda _home, snapshot: persisted.append(dict(snapshot)),
+        start_process=lambda *_args: calls.append("start") or StartResult(True, identity),
+    )
+
+    result = coordinator.restart("1b1b1b1b-1b1b-41b1-81b1-1b1b1b1b1b1b")
+
+    assert result["phase"] == "complete"
+    assert result["outcome"] == "started"
+    assert calls.count("start") == 1
+    assert persisted
+    assert any(snapshot["phase"] == "needs_action" and snapshot["workerActive"] is False for snapshot in persisted)
+
+
+def test_pending_snapshot_retains_owner_when_dead_proof_is_still_ambiguous(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    calls: list[str] = []
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        ]
+    )
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        inspect_service=lambda: next(inspections),
+        calls=calls,
+        load_snapshot=lambda _home: _pending_snapshot("verifying"),
+        process_dead=lambda _identity: True,
+        stop_process=lambda *_args: calls.append("stop") or StopResult(True),
+        start_process=lambda *_args: calls.append("start") or StartResult(True, identity),
+    )
+
+    result = coordinator.restart("1f1f1f1f-1f1f-41f1-81f1-1f1f1f1f1f1f")
+
+    assert result["phase"] == "waiting_for_owner"
+    assert result["workerActive"] is True
+    assert result["retryAllowed"] is False
+    assert not any(call in {"stop", "start"} for call in calls)
+
+
 def test_unrelated_recovery_lock_failure_is_safe_and_does_not_persist(tmp_path: Path) -> None:
     persisted: list[dict[str, object]] = []
 
@@ -1197,6 +1435,35 @@ def test_started_worker_remains_active_when_readiness_times_out(tmp_path: Path) 
     assert result["retryAllowed"] is False
 
 
+def test_unresolved_worker_survives_final_persistence_failure(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    persisted: list[str] = []
+
+    def persist(_home: Path, snapshot: dict[str, object]) -> None:
+        persisted.append(str(snapshot["phase"]))
+        if snapshot["phase"] == "timed_out_waiting":
+            raise OSError("simulated final snapshot write failure")
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        stop_process=lambda *_args: StopResult(False, "worker_exit_unconfirmed"),
+        process_dead=lambda _identity: False,
+        persist_snapshot=persist,
+    )
+
+    result = coordinator.restart("1c1c1c1c-1c1c-41c1-81c1-1c1c1c1c1c1c")
+
+    assert result["phase"] == "failed"
+    assert result["workerActive"] is True
+    assert result["retryAllowed"] is False
+    assert result["requiresHumanAction"] is True
+    assert persisted == ["checking", "stopping", "timed_out_waiting"]
+    active = recovery_module._ACTIVE_BY_HOME.get(str(coordinator.guard_home))
+    assert active is not None
+    assert active.unresolved_owner is True
+
+
 def test_default_stop_passes_remaining_to_bounded_retirement(tmp_path: Path, monkeypatch) -> None:
     identity = _identity(tmp_path / "guard-home")
     captured: dict[str, object] = {}
@@ -1226,6 +1493,158 @@ def test_default_stop_passes_remaining_to_bounded_retirement(tmp_path: Path, mon
         "expected_start_marker": identity.start_marker,
         "timeout": 0.25,
     }
+
+
+def test_default_start_returns_authenticated_generation_identity(tmp_path: Path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    identity = _identity(guard_home, pid=47, generation="generation-start")
+    state = {
+        "pid": identity.pid,
+        "generation": identity.generation,
+        "runtime": identity.runtime,
+        "guard_home": str(identity.guard_home),
+        "user": identity.user,
+        "start_marker": identity.start_marker,
+    }
+
+    class FakeManager:
+        @staticmethod
+        def ensure_guard_daemon(*_args: object, **_kwargs: object) -> str:
+            return "http://127.0.0.1:5417"
+
+        @staticmethod
+        def load_authenticated_daemon_state(_home: Path) -> dict[str, object]:
+            return state
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+    coordinator = UserRecoveryCoordinator(
+        guard_home,
+        home_dir=tmp_path / "home",
+        hooks=RecoveryHooks(load_state=lambda _home: None),
+    )
+
+    started = coordinator._start_process(1.0)
+
+    assert isinstance(started, StartResult)
+    assert started.started is True
+    assert started.identity == identity
+
+
+def test_unverified_default_start_retains_owner_and_blocks_duplicate_start(tmp_path: Path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    starts = 0
+    live = False
+
+    class FakeManager:
+        @staticmethod
+        def ensure_guard_daemon(*_args: object, **_kwargs: object) -> str:
+            nonlocal starts
+            starts += 1
+            return "http://127.0.0.1:5417"
+
+        @staticmethod
+        def load_authenticated_daemon_state(_home: Path) -> None:
+            return None
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+
+    def inspect(_home: Path, _state: object) -> ServiceInspection:
+        return (
+            ServiceInspection("unavailable", "service_unresponsive", None, True)
+            if live
+            else ServiceInspection("unavailable", "service_missing")
+        )
+
+    def verify_ready(_home: Path, _identity: ProcessIdentity | None, _remaining: float) -> ReadyResult:
+        nonlocal live
+        live = True
+        return ReadyResult(False, None, "identity_unverified")
+
+    hooks = RecoveryHooks(
+        clock=lambda: 100.0,
+        wall_clock=lambda: __import__("datetime").datetime(
+            2026, 9, 20, tzinfo=__import__("datetime").timezone.utc
+        ),
+        load_state=lambda _home: None,
+        inspect_service=inspect,
+        protection_posture=lambda _home: "on",
+        update_busy=lambda _home: False,
+        authorize=lambda _home: True,
+        recovery_lock=lambda *_args: nullcontext(),
+        start_lock=lambda *_args: nullcontext(),
+        verify_ready=verify_ready,
+    )
+    coordinator = UserRecoveryCoordinator(guard_home, hooks=hooks)
+
+    first = coordinator.restart("1d1d1d1d-1d1d-41d1-81d1-1d1d1d1d1d1d")
+    second = coordinator.restart("1e1e1e1e-1e1e-41e1-81e1-1e1e1e1e1e1e")
+
+    assert first["phase"] == "failed"
+    assert first["reasonCode"] == "identity_unverified"
+    assert first["workerActive"] is True
+    assert first["retryAllowed"] is False
+    assert second["operationId"] == first["operationId"]
+    assert second["workerActive"] is True
+    assert second["retryAllowed"] is False
+    assert starts == 1
+
+
+def test_same_home_barrier_requests_register_one_mutation(tmp_path: Path) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home)
+    registration_barrier = threading.Barrier(2)
+    state_lock = threading.Lock()
+    clock_calls = 0
+    starts = 0
+    results: list[dict[str, object]] = []
+    errors: list[BaseException] = []
+
+    def clock() -> float:
+        nonlocal clock_calls
+        with state_lock:
+            clock_calls += 1
+            call_number = clock_calls
+        if call_number <= 2:
+            registration_barrier.wait(timeout=5.0)
+        return 100.0 + call_number
+
+    def start(_home: Path, _remaining: float) -> StartResult:
+        nonlocal starts
+        with state_lock:
+            starts += 1
+        return StartResult(True, identity)
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        clock=clock,
+        start_process=start,
+    )
+
+    def run(request_id: str) -> None:
+        try:
+            results.append(coordinator.restart(request_id))
+        except BaseException as exc:  # pragma: no cover - assertion below reports the error
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=run, args=(request_id,))
+        for request_id in (
+            "51515151-5151-4515-8515-515151515151",
+            "52525252-5252-4525-8525-525252525252",
+        )
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10.0)
+
+    assert all(not thread.is_alive() for thread in threads)
+    assert errors == []
+    assert len(results) == 2
+    assert starts == 1
 
 
 def test_started_worker_timeout_blocks_second_request_until_proven_dead(tmp_path: Path) -> None:
@@ -1297,6 +1716,7 @@ def test_cross_process_unresolved_stop_receipt_blocks_second_stop_until_proven_d
         import time
         from pathlib import Path
 
+        from codex_plugin_scanner.guard import live_process_identity
         from codex_plugin_scanner.guard.cli import commands_daemon_recovery as cli
         from codex_plugin_scanner.guard.daemon import manager
         from codex_plugin_scanner.guard.daemon.user_recovery import (
@@ -1319,12 +1739,15 @@ def test_cross_process_unresolved_stop_receipt_blocks_second_stop_until_proven_d
         dead_check_log = Path(sys.argv[7])
         request_id = sys.argv[8]
         lock_timeout = float(sys.argv[9])
+        stopped = {"value": False}
+        owner_marker = live_process_identity.process_owner_marker(os.getpid())
+        assert owner_marker is not None
         identity = ProcessIdentity(
             pid=41,
             generation="target-generation",
             runtime="runtime-1",
             guard_home=guard_home,
-            user=f"uid:{os.geteuid()}" if hasattr(os, "geteuid") else "current-user",
+            user=owner_marker,
             start_marker="start-target",
         )
 
@@ -1337,6 +1760,7 @@ def test_cross_process_unresolved_stop_receipt_blocks_second_stop_until_proven_d
             if role == "owner":
                 ready_path.write_text("ready", encoding="utf-8")
                 return StopResult(False, "worker_exit_unconfirmed")
+            stopped["value"] = True
             return StopResult(True)
 
         def process_dead(_identity):
@@ -1348,13 +1772,25 @@ def test_cross_process_unresolved_stop_receipt_blocks_second_stop_until_proven_d
                 raise AssertionError("reconciliation identity changed")
             with dead_check_log.open("a", encoding="utf-8") as stream:
                 stream.write(f"{_identity.pid} {_identity.generation} {_identity.start_marker}\\n")
-            return dead_path.exists()
+            stopped["value"] = dead_path.exists()
+            return stopped["value"]
+
+        def inspect(_home, _state):
+            reason_code = (
+                "service_missing"
+                if role == "contender" and stopped["value"]
+                else "service_unresponsive"
+            )
+            return ServiceInspection(
+                "unavailable",
+                reason_code,
+                None if reason_code == "service_missing" else identity,
+                reason_code != "service_missing",
+            )
 
         hooks = RecoveryHooks(
             load_state=lambda _home: {"state": "fixture"},
-            inspect_service=lambda _home, _state: ServiceInspection(
-                "unavailable", "service_unresponsive", identity, True
-            ),
+            inspect_service=inspect,
             protection_posture=lambda _home: "on",
             update_busy=lambda _home: False,
             authorize=lambda _home: True,
@@ -1473,7 +1909,9 @@ def test_cross_process_unresolved_stop_receipt_blocks_second_stop_until_proven_d
         )
         assert reconciler.returncode == 0, reconciler.stderr
         assert reconciler.stdout.strip() == "0"
-        assert "contender stopping" in persisted_log.read_text(encoding="utf-8")
+        persisted = persisted_log.read_text(encoding="utf-8")
+        assert "contender starting" in persisted
+        assert "contender stopping" not in persisted
         assert all(
             line == "41 target-generation start-target"
             for line in dead_check_log.read_text(encoding="utf-8").splitlines()
@@ -1505,6 +1943,7 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
         import time
         from pathlib import Path
 
+        from codex_plugin_scanner.guard import live_process_identity
         from codex_plugin_scanner.guard.cli import commands_daemon_recovery as cli
         from codex_plugin_scanner.guard.daemon import manager
         from codex_plugin_scanner.guard.daemon.user_recovery import (
@@ -1528,12 +1967,15 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
         persisted_log = Path(sys.argv[8])
         request_id = sys.argv[9]
         lock_timeout = float(sys.argv[10])
+        stopped = {"value": False}
+        owner_marker = live_process_identity.process_owner_marker(os.getpid())
+        assert owner_marker is not None
         identity = ProcessIdentity(
             pid=41,
             generation="target-generation",
             runtime="runtime-1",
             guard_home=guard_home,
-            user=f"uid:{os.geteuid()}" if hasattr(os, "geteuid") else "current-user",
+            user=owner_marker,
             start_marker="start-target",
         )
 
@@ -1553,7 +1995,8 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
                 raise AssertionError("reconciliation identity changed")
             with dead_check_log.open("a", encoding="utf-8") as stream:
                 stream.write(f"{current.pid} {current.generation} {current.start_marker}\\n")
-            return worker_dead.exists()
+            stopped["value"] = worker_dead.exists()
+            return stopped["value"]
 
         def stop(_identity, _remaining):
             with mutation_log.open("a", encoding="utf-8") as stream:
@@ -1561,13 +2004,21 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
             if role == "owner":
                 owner_ready.write_text("ready", encoding="utf-8")
                 return StopResult(False, "worker_exit_unconfirmed")
+            stopped["value"] = True
             return StopResult(True)
+
+        def inspect(_home, _state):
+            reason_code = "service_missing" if stopped["value"] else "service_unresponsive"
+            return ServiceInspection(
+                "unavailable",
+                reason_code,
+                None if reason_code == "service_missing" else identity,
+                reason_code != "service_missing",
+            )
 
         hooks = RecoveryHooks(
             load_state=lambda _home: {"state": "fixture"},
-            inspect_service=lambda _home, _state: ServiceInspection(
-                "unavailable", "service_unresponsive", identity, True
-            ),
+            inspect_service=inspect,
             protection_posture=lambda _home: "on",
             update_busy=lambda _home: False,
             authorize=lambda _home: True,
@@ -1693,7 +2144,9 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
         )
         assert reconciler.returncode == 0, reconciler.stderr
         assert reconciler.stdout.strip() == "0"
-        assert "contender stop" in mutation_log.read_text(encoding="utf-8")
+        mutation = mutation_log.read_text(encoding="utf-8")
+        assert "contender stop" not in mutation
+        assert "contender starting" in persisted_log.read_text(encoding="utf-8")
         assert all(
             line == "41 target-generation start-target"
             for line in dead_check_log.read_text(encoding="utf-8").splitlines()
@@ -1702,7 +2155,7 @@ def test_cli_stopping_receipt_blocks_retry_when_timeout_persistence_fails(tmp_pa
         release_owner.write_text("release", encoding="utf-8")
         stdout, stderr = owner.communicate(timeout=5)
         assert owner.returncode == 0, stderr
-        assert stdout.strip() == "2"
+        assert stdout.strip() == "3"
 
 
 def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_path: Path) -> None:
@@ -1725,6 +2178,7 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
         import time
         from pathlib import Path
 
+        from codex_plugin_scanner.guard import live_process_identity
         from codex_plugin_scanner.guard.cli import commands_daemon_recovery as cli
         from codex_plugin_scanner.guard.daemon import manager
         from codex_plugin_scanner.guard.daemon.user_recovery import (
@@ -1749,12 +2203,15 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
         request_id = sys.argv[9]
         lock_timeout = float(sys.argv[10])
         clock = {"value": 100.0}
+        stopped = {"value": False}
+        owner_marker = live_process_identity.process_owner_marker(os.getpid())
+        assert owner_marker is not None
         identity = ProcessIdentity(
             pid=42,
             generation="started-generation",
             runtime="runtime-1",
             guard_home=guard_home,
-            user=f"uid:{os.geteuid()}" if hasattr(os, "geteuid") else "current-user",
+            user=owner_marker,
             start_marker="start-started",
         )
 
@@ -1766,7 +2223,13 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
         def inspect(_home, _state):
             if role == "owner":
                 return ServiceInspection("unavailable", "service_missing")
-            return ServiceInspection("unavailable", "service_unresponsive", identity, True)
+            reason_code = "service_missing" if stopped["value"] else "service_unresponsive"
+            return ServiceInspection(
+                "unavailable",
+                reason_code,
+                None if reason_code == "service_missing" else identity,
+                reason_code != "service_missing",
+            )
 
         def process_dead(current):
             if (
@@ -1777,7 +2240,8 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
                 raise AssertionError("reconciliation identity changed")
             with dead_check_log.open("a", encoding="utf-8") as stream:
                 stream.write(f"{current.pid} {current.generation} {current.start_marker}\\n")
-            return worker_dead.exists()
+            stopped["value"] = worker_dead.exists()
+            return stopped["value"]
 
         def start(_home, _remaining):
             with mutation_log.open("a", encoding="utf-8") as stream:
@@ -1787,6 +2251,7 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
         def stop(_identity, _remaining):
             with mutation_log.open("a", encoding="utf-8") as stream:
                 stream.write(f"{role} stop\\n")
+            stopped["value"] = True
             return StopResult(True)
 
         def ready(_home, current, _remaining):
@@ -1927,7 +2392,6 @@ def test_cli_started_worker_receipt_blocks_second_start_until_proven_dead(tmp_pa
         assert reconciler.returncode == 0, reconciler.stderr
         assert reconciler.stdout.strip() == "0"
         mutation = mutation_log.read_text(encoding="utf-8")
-        assert "contender stop" in mutation
         assert "contender start" in mutation
         assert all(
             line == "42 started-generation start-started"

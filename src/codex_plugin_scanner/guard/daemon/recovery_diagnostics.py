@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
@@ -304,7 +305,15 @@ def _prune_archive(
     retained = [candidate for candidate in reports if _report_sort_key(candidate)[0] >= cutoff]
     retained.sort(key=_report_sort_key)
     if len(retained) != len(reports):
-        write_private_state(guard_home, DIAGNOSTICS_STATE_NAME, _encode_archive(retained), MAX_DIAGNOSTICS_BYTES)
+        # Retention compaction is optional during reads. Keep the bounded
+        # in-memory view usable even when the archive cannot be rewritten.
+        with suppress(OSError):
+            write_private_state(
+                guard_home,
+                DIAGNOSTICS_STATE_NAME,
+                _encode_archive(retained),
+                MAX_DIAGNOSTICS_BYTES,
+            )
     return retained
 
 

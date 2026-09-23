@@ -15936,6 +15936,32 @@ async function readJson(input, init) {
   }
   return await response.json();
 }
+class GuardOperationTimeoutError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GuardOperationTimeoutError";
+  }
+}
+function withLocalProtectionDeadline(operation, timeoutMs, message) {
+  const controller = new AbortController();
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new GuardOperationTimeoutError(message));
+      controller.abort();
+    }, timeoutMs);
+  });
+  return Promise.race([Promise.resolve().then(() => operation(controller.signal)), deadline]).finally(() => {
+    if (timer !== void 0) clearTimeout(timer);
+  });
+}
+function fetchLocalProtectionJson(input, init, timeoutMs, message) {
+  return withLocalProtectionDeadline(async (signal) => {
+    const response = await fetchGuardApi(input, { ...init, signal });
+    const payload = await response.json().catch(() => null);
+    return { response, payload };
+  }, timeoutMs, message);
+}
 async function requestErrorMessage(response, fallback) {
   try {
     const payload = await response.clone().json();
@@ -16558,7 +16584,7 @@ async function fetchWithGuardAuth(input, init) {
   if (response.status !== 401 || !guardToken || input instanceof Request) {
     return response;
   }
-  const refreshedGuardToken = await refreshGuardDashboardSession(guardToken);
+  const refreshedGuardToken = await refreshGuardDashboardSession(guardToken, init?.signal);
   if (!refreshedGuardToken || refreshedGuardToken === guardToken) {
     return response;
   }
@@ -16602,7 +16628,7 @@ function parseDashboardSessionToken(payload) {
   const dashboardSessionToken = payload["dashboard_session_token"];
   return typeof dashboardSessionToken === "string" && dashboardSessionToken.trim() ? dashboardSessionToken : null;
 }
-async function refreshGuardDashboardSession(guardToken) {
+async function refreshGuardDashboardSession(guardToken, signal) {
   try {
     const response = await fetch(guardApiInput("/v1/initialize"), {
       method: "POST",
@@ -16615,7 +16641,8 @@ async function refreshGuardDashboardSession(guardToken) {
         surface: "dashboard",
         supported_protocol_versions: [...GUARD_SURFACE_PROTOCOL_VERSIONS]
       }),
-      redirect: "error"
+      redirect: "error",
+      signal
     });
     if (!response.ok) {
       return null;
@@ -18684,7 +18711,12 @@ function normalizePackageFirewallAction(value) {
   };
 }
 async function fetchPackageFirewallStatus() {
-  return normalizePackageFirewallStatus(await readJson("/v1/supply-chain/package-shims"));
+  const status = await withLocalProtectionDeadline(
+    (signal) => readJson("/v1/supply-chain/package-shims", { signal }),
+    15e3,
+    "Guard did not respond to the package status check. Check that Guard is running, then retry."
+  );
+  return normalizePackageFirewallStatus(status);
 }
 async function startPackageFirewallConnect() {
   return normalizePackageFirewallConnectFlow(
@@ -18712,7 +18744,7 @@ async function runPackageFirewallAction(action, manager, credentials) {
     ...credentials?.approval_password !== void 0 ? { approval_password: credentials.approval_password } : {},
     ...credentials?.approval_totp_code !== void 0 ? { approval_totp_code: credentials.approval_totp_code } : {}
   };
-  const response = await fetchGuardApi(
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
     `/v1/supply-chain/package-shims/${action}`,
     {
       method: "POST",
@@ -18721,9 +18753,10 @@ async function runPackageFirewallAction(action, manager, credentials) {
         ...guardAuthHeaders()
       },
       body: JSON.stringify(payload)
-    }
+    },
+    45e3,
+    "Guard is still checking this package tool. Refresh status before retrying the action."
   );
-  const payloadBody = await response.json().catch(() => null);
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -18733,19 +18766,23 @@ async function runPackageFirewallAction(action, manager, credentials) {
   return normalizePackageFirewallAction(payloadBody);
 }
 async function activatePackageFirewallRuntime() {
-  const response = await fetchGuardApi("/v1/supply-chain/package-shims/activate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...guardAuthHeaders()
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/package-shims/activate",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...guardAuthHeaders()
+      },
+      body: JSON.stringify({})
     },
-    body: JSON.stringify({})
-  });
+    45e3,
+    "Guard is still activating package protection. Refresh status before retrying."
+  );
   if (response.ok) {
     return;
   }
-  const payloadBody = await response.json().catch(() => null);
-  if (isRecord$3(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
+  if (isRecord$2(payloadBody) && typeof payloadBody.message === "string" && payloadBody.message.trim()) {
     throw new Error(payloadBody.message);
   }
   throw new Error("Unable to activate package protection.");
@@ -18761,7 +18798,7 @@ async function runAuditRemediation(input) {
       status: "completed"
     };
   }
-  const response = await fetchGuardApi(
+  const { response, payload } = await fetchLocalProtectionJson(
     `/v1/audit/remediations/${input.action}`,
     {
       method: "POST",
@@ -18774,9 +18811,10 @@ async function runAuditRemediation(input) {
         ...input.approval_password !== void 0 ? { approval_password: input.approval_password } : {},
         ...input.approval_totp_code !== void 0 ? { approval_totp_code: input.approval_totp_code } : {}
       })
-    }
+    },
+    45e3,
+    "Guard is still repairing this package tool. Refresh status before retrying."
   );
-  const payload = await response.json().catch(() => null);
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -18839,18 +18877,22 @@ async function repairSupplyChainProtection(credentials) {
       message: "Supply-chain protection restored and refreshed."
     };
   }
-  const response = await fetchGuardApi("/v1/supply-chain/repair", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...guardAuthHeaders()
+  const { response, payload: payloadBody } = await fetchLocalProtectionJson(
+    "/v1/supply-chain/repair",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...guardAuthHeaders()
+      },
+      body: JSON.stringify({
+        ...credentials?.approval_password !== void 0 ? { approval_password: credentials.approval_password } : {},
+        ...credentials?.approval_totp_code !== void 0 ? { approval_totp_code: credentials.approval_totp_code } : {}
+      })
     },
-    body: JSON.stringify({
-      ...credentials?.approval_password !== void 0 ? { approval_password: credentials.approval_password } : {},
-      ...credentials?.approval_totp_code !== void 0 ? { approval_totp_code: credentials.approval_totp_code } : {}
-    })
-  });
-  const payloadBody = await response.json().catch(() => null);
+    45e3,
+    "Guard is still restoring package protection. Refresh status before retrying repair."
+  );
   if (!response.ok) {
     throw new GuardHarnessActionError(
       response.status,
@@ -23302,6 +23344,22 @@ function parsePackageFirewallActionResult(op, body) {
   }
   if (op === "audit") {
     return parseAuditActionResult(result);
+  }
+  if (op === "repair") {
+    const pathRepairRequired = readStringArray(result.path_repair_required);
+    if (pathRepairRequired.length > 0) {
+      const profile = isRecord(result.profile) ? result.profile : null;
+      const manualPathRequired = profile?.manual_path_required === true;
+      return {
+        emptyState: false,
+        lines: [
+          `Affected tools: ${pathRepairRequired.join(", ")}.`,
+          manualPathRequired ? "Guard could not update the shell profile automatically. Check package-shims status for the PATH export, then open a new terminal." : "Open a new terminal and restart AI apps so they load the updated shell PATH."
+        ],
+        summary: manualPathRequired ? "PATH still needs a manual update." : "PATH is configured; a new shell is needed before protection can be verified.",
+        tone: "warning"
+      };
+    }
   }
   if (op === "sync") {
     return parseSyncActionResult(result);
@@ -31852,6 +31910,8 @@ function App() {
   const [approvalGate, setApprovalGate] = reactExports.useState(null);
   const [guardVersion, setGuardVersion] = reactExports.useState(null);
   const resolutionInFlight = reactExports.useRef(false);
+  const refreshSequence = reactExports.useRef(0);
+  const latestRefresh = reactExports.useRef(null);
   const bulkApproveInFlight = reactExports.useRef(false);
   const queuedItems = requests.kind === "ready" ? requests.items : [];
   const activeRequestId = requestId ?? queuedItems[0]?.request_id ?? null;
@@ -32089,49 +32149,66 @@ function App() {
       navigate(`/apps/${encodeURIComponent(slug)}`);
     }
   }, []);
-  const refreshStateAfterAction = reactExports.useCallback(async () => {
-    const [inboxResult, receiptsResult, policiesResult, inventoryResult] = await Promise.allSettled([
-      fetchInboxState(),
-      fetchReceipts(),
-      fetchPolicies(),
-      fetchInventory()
-    ]);
-    if (inboxResult.status === "fulfilled") {
-      setRuntime({ kind: "ready", snapshot: inboxResult.value.snapshot });
-      setRequests({ kind: "ready", items: inboxResult.value.items });
-    } else {
-      const message = inboxResult.reason instanceof Error ? inboxResult.reason.message : "Unable to load the local approval queue.";
-      setRuntime({ kind: "error", message });
-      setRequests({ kind: "error", message });
+  const refreshStateAfterAction = reactExports.useCallback(async (requireComplete = false) => {
+    const sequence = ++refreshSequence.current;
+    const refresh = (async () => {
+      const [inboxResult, receiptsResult, policiesResult, inventoryResult] = await Promise.allSettled([
+        fetchInboxState(),
+        fetchReceipts(),
+        fetchPolicies(),
+        fetchInventory()
+      ]);
+      if (sequence !== refreshSequence.current) {
+        return latestRefresh.current;
+      }
+      if (inboxResult.status === "fulfilled") {
+        setRuntime({ kind: "ready", snapshot: inboxResult.value.snapshot });
+        setRequests({ kind: "ready", items: inboxResult.value.items });
+      } else if (!requireComplete) {
+        const message = inboxResult.reason instanceof Error ? inboxResult.reason.message : "Unable to load the local approval queue.";
+        setRuntime({ kind: "error", message });
+        setRequests({ kind: "error", message });
+      }
+      if (receiptsResult.status === "fulfilled") {
+        setReceipts({ kind: "ready", items: receiptsResult.value });
+      } else if (!requireComplete) {
+        setReceipts({
+          kind: "error",
+          message: receiptsResult.reason instanceof Error ? receiptsResult.reason.message : "Unable to load local approval history."
+        });
+      }
+      if (policiesResult.status === "fulfilled") {
+        setPolicies({ kind: "ready", items: policiesResult.value });
+      } else if (!requireComplete) {
+        setPolicies({
+          kind: "error",
+          message: policiesResult.reason instanceof Error ? policiesResult.reason.message : "Unable to load remembered decisions."
+        });
+      }
+      if (inventoryResult.status === "fulfilled") {
+        setInventory({ kind: "ready", items: inventoryResult.value });
+      } else if (!requireComplete) {
+        setInventory({
+          kind: "error",
+          message: inventoryResult.reason instanceof Error ? inventoryResult.reason.message : "Unable to load watched app inventory."
+        });
+      }
+      return {
+        snapshot: inboxResult.status === "fulfilled" ? inboxResult.value.snapshot : null,
+        complete: [inboxResult, receiptsResult, policiesResult, inventoryResult].every(
+          (result) => result.status === "fulfilled"
+        )
+      };
+    })();
+    latestRefresh.current = refresh;
+    const outcome = await refresh;
+    if (requireComplete && !outcome.complete) {
+      throw new Error("Guard could not refresh every dashboard view.");
     }
-    if (receiptsResult.status === "fulfilled") {
-      setReceipts({ kind: "ready", items: receiptsResult.value });
-    } else {
-      setReceipts({
-        kind: "error",
-        message: receiptsResult.reason instanceof Error ? receiptsResult.reason.message : "Unable to load local approval history."
-      });
-    }
-    if (policiesResult.status === "fulfilled") {
-      setPolicies({ kind: "ready", items: policiesResult.value });
-    } else {
-      setPolicies({
-        kind: "error",
-        message: policiesResult.reason instanceof Error ? policiesResult.reason.message : "Unable to load remembered decisions."
-      });
-    }
-    if (inventoryResult.status === "fulfilled") {
-      setInventory({ kind: "ready", items: inventoryResult.value });
-    } else {
-      setInventory({
-        kind: "error",
-        message: inventoryResult.reason instanceof Error ? inventoryResult.reason.message : "Unable to load watched app inventory."
-      });
-    }
-    return inboxResult.status === "fulfilled" ? inboxResult.value.snapshot : null;
+    return outcome.snapshot;
   }, [setRuntime, setRequests, setReceipts, setPolicies, setInventory]);
-  const refreshStateWithoutResult = reactExports.useCallback(async () => {
-    await refreshStateAfterAction();
+  const refreshStateWithoutResult = reactExports.useCallback(async (requireComplete = false) => {
+    await refreshStateAfterAction(requireComplete);
   }, [refreshStateAfterAction]);
   const handleReconnectSession = reactExports.useCallback(async () => {
     setRuntime({ kind: "loading" });
@@ -32534,70 +32611,70 @@ export {
   Badge as Z,
   HiMiniMinusCircle as _,
   EvidenceActivityHeatmapMini as a,
-  FaAws as a$,
-  isUnsupportedPlatformCheck as a0,
-  remainingProtectionRepairParts as a1,
-  ProtectionRepairFlowError as a2,
-  waitForAuthorizeUrl as a3,
-  startOrRecoverCloudConnect as a4,
-  safeCloudConnectUrl as a5,
-  openPackageFirewallAuthorizeFallback as a6,
-  waitForCloudConnection as a7,
-  activeFailedHarnesses as a8,
-  HiMiniWrenchScrewdriver as a9,
-  disableApprovalGateTotp as aA,
-  importSettings as aB,
-  resetSettings as aC,
-  enrollApprovalGateTotp as aD,
-  verifyApprovalGateTotp as aE,
-  clearEvidence as aF,
-  exportDiagnostics as aG,
-  repairApprovalCenter as aH,
-  exportSettings as aI,
-  setupDesktopNotifications as aJ,
-  WorkspacePageHeader as aK,
-  HiMiniMagnifyingGlass as aL,
-  isProtectionPosture as aM,
-  deriveProtectionPosture as aN,
-  Tag as aO,
-  approvalGateCooldownLabel as aP,
-  fetchLocalCliApi as aQ,
-  fetchExtensionControlApi as aR,
-  useResolvedApprovalGate as aS,
-  HiMiniInformationCircle as aT,
-  buildApprovalProofCredentials as aU,
-  GenIcon as aV,
-  HiMiniGlobeAlt as aW,
-  HiMiniCube as aX,
-  HiMiniServerStack as aY,
-  HiMiniFolder as aZ,
-  FaWindows as a_,
-  HiMiniExclamationCircle as aa,
-  ProofStrip as ab,
-  HiMiniEye as ac,
-  HiMiniXCircle as ad,
-  HiMiniClipboardDocumentCheck as ae,
-  HiMiniClipboard as af,
-  PROTECTION_POSTURE_COPY as ag,
-  POSTURE_OUTCOME_COLUMNS as ah,
-  getDefaultExportFromCjs as ai,
-  React as aj,
-  HiMiniKey as ak,
-  HiMiniLockClosed as al,
-  HiMiniBellAlert as am,
-  HiMiniAdjustmentsHorizontal as an,
-  HiMiniCircleStack as ao,
-  TabBar as ap,
-  fetchCloudReviewSettings as aq,
-  isApprovalProofSubmitDisabled as ar,
-  ApprovalProofFieldInputs as as,
-  changeCloudReviewSettings as at,
-  resolveProtectionLevelCopy as au,
-  fetchSettings as av,
-  fetchRuntimeSnapshot as aw,
-  clearPolicy as ax,
-  clearReviewQueue as ay,
-  revokeApprovalGateCooldown as az,
+  HiMiniCheck as a$,
+  openPackageFirewallAuthorizeFallback as a0,
+  waitForCloudConnection as a1,
+  activeFailedHarnesses as a2,
+  HiMiniWrenchScrewdriver as a3,
+  HiMiniExclamationCircle as a4,
+  ProofStrip as a5,
+  HiMiniEye as a6,
+  HiMiniXCircle as a7,
+  HiMiniClipboardDocumentCheck as a8,
+  HiMiniClipboard as a9,
+  clearEvidence as aA,
+  exportDiagnostics as aB,
+  repairApprovalCenter as aC,
+  exportSettings as aD,
+  setupDesktopNotifications as aE,
+  WorkspacePageHeader as aF,
+  HiMiniMagnifyingGlass as aG,
+  isProtectionPosture as aH,
+  deriveProtectionPosture as aI,
+  Tag as aJ,
+  approvalGateCooldownLabel as aK,
+  fetchLocalCliApi as aL,
+  fetchExtensionControlApi as aM,
+  HiMiniNoSymbol as aN,
+  useResolvedApprovalGate as aO,
+  HiMiniInformationCircle as aP,
+  buildApprovalProofCredentials as aQ,
+  GenIcon as aR,
+  HiMiniGlobeAlt as aS,
+  HiMiniCube as aT,
+  HiMiniServerStack as aU,
+  HiMiniFolder as aV,
+  FaWindows as aW,
+  FaAws as aX,
+  approvalProofRecentlySatisfied as aY,
+  HiMiniArrowLeft as aZ,
+  HiMiniPlus as a_,
+  PROTECTION_POSTURE_COPY as aa,
+  POSTURE_OUTCOME_COLUMNS as ab,
+  getDefaultExportFromCjs as ac,
+  React as ad,
+  HiMiniKey as ae,
+  HiMiniLockClosed as af,
+  HiMiniBellAlert as ag,
+  HiMiniAdjustmentsHorizontal as ah,
+  HiMiniCircleStack as ai,
+  TabBar as aj,
+  fetchCloudReviewSettings as ak,
+  isApprovalProofSubmitDisabled as al,
+  HiMiniArrowPath as am,
+  ApprovalProofFieldInputs as an,
+  changeCloudReviewSettings as ao,
+  resolveProtectionLevelCopy as ap,
+  fetchSettings as aq,
+  fetchRuntimeSnapshot as ar,
+  clearPolicy as as,
+  clearReviewQueue as at,
+  revokeApprovalGateCooldown as au,
+  disableApprovalGateTotp as av,
+  importSettings as aw,
+  resetSettings as ax,
+  enrollApprovalGateTotp as ay,
+  verifyApprovalGateTotp as az,
   HiMiniCommandLine as b,
   HiMiniCodeBracket as b$,
   approvalProofRecentlySatisfied as b0,

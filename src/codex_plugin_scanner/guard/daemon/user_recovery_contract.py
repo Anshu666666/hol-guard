@@ -154,6 +154,8 @@ def validate_recovery_snapshot(payload: object, *, allow_inspection: bool = True
     if len(set(check_ids)) != len(check_ids):
         raise RecoveryContractError("recovery_checks_duplicate")
     normalized = dict(payload)
+    if isinstance(operation_id, str):
+        normalized["operationId"] = str(UUID(operation_id))
     normalized["capabilities"] = list(capabilities)
     normalized["checks"] = validated_checks
     _validate_terminal_invariants(normalized)

@@ -15,7 +15,12 @@ from pathlib import Path
 
 import pytest
 
-from codex_plugin_scanner.guard.approval_gate import ApprovalGateError
+from codex_plugin_scanner.guard.approval_gate import (
+    ApprovalGateError,
+    ApprovalGateInput,
+    require_high_risk,
+    update_settings,
+)
 from codex_plugin_scanner.guard.cli import commands_daemon_recovery as cli
 from codex_plugin_scanner.guard.cli.approval_gate_prompt import consume_desktop_lifecycle_stdin
 from codex_plugin_scanner.guard.cli.commands_lifecycle_gate import (
@@ -140,6 +145,91 @@ def test_direct_restart_rejects_legacy_authorization_without_gate_context(tmp_pa
     )
     assert result == 2
     assert "awaiting_approval" in output.getvalue()
+
+
+@pytest.mark.parametrize(
+    ("authority_home_kind", "action", "scope", "subject"),
+    [
+        ("guard", "daemon.stop", "local-protection", "local-daemon"),
+        ("guard", "daemon.restart", "other-scope", "local-daemon"),
+        ("guard", "daemon.restart", "local-protection", "other-daemon"),
+        ("other", "daemon.restart", "local-protection", "local-daemon"),
+    ],
+    ids=["wrong-action", "wrong-scope", "wrong-subject", "wrong-authority-home"],
+)
+def test_direct_restart_rejects_valid_grant_outside_recovery_scope(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    authority_home_kind: str,
+    action: str,
+    scope: str,
+    subject: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    authority_home = guard_home if authority_home_kind == "guard" else tmp_path / "other-home"
+    guard_home.mkdir()
+    authority_home.mkdir(exist_ok=True)
+    password = "correct horse battery staple"
+    update_settings(
+        authority_home,
+        {"enabled": True, "new_password": password, "confirm_password": password},
+    )
+    grant = require_high_risk(
+        authority_home,
+        purpose="protection_lifecycle",
+        approval_gate_input=ApprovalGateInput(password=password),
+        action=action,
+        scope=scope,
+        subject=subject,
+    )
+    assert grant is not None
+    context = LifecycleGateContext(
+        authority_home=authority_home,
+        action=action,
+        scope=scope,
+        subject=subject,
+        grant=grant,
+        was_enabled=True,
+    )
+    decisions: list[bool] = []
+
+    class FakeCoordinator:
+        def __init__(self, _home: Path, *, hooks: RecoveryHooks, **_kwargs: object) -> None:
+            self.hooks = hooks
+
+        def restart(self, *, request_id: object, emit: object = None) -> dict[str, object]:
+            del emit
+            authorize = self.hooks.authorize
+            assert authorize is not None
+            decision = authorize(guard_home)
+            decisions.append(decision.allowed)
+            operation_id = uuid.UUID(str(request_id))
+            return _snapshot(
+                operation_id,
+                phase="complete" if decision.allowed else "awaiting_approval",
+            )
+
+    monkeypatch.setattr(cli, "UserRecoveryCoordinator", FakeCoordinator)
+    output = io.StringIO()
+    error = io.StringIO()
+    result = cli.dispatch_daemon_recovery(
+        argparse.Namespace(
+            daemon_recovery_command="restart",
+            request_id=str(uuid.uuid4()),
+            json_lines=False,
+        ),
+        guard_home=guard_home,
+        home_dir=None,
+        lifecycle_authorized=True,
+        lifecycle_context=context,
+        stdout=output,
+        stderr=error,
+    )
+
+    assert result == 2
+    assert decisions == [False]
+    assert "awaiting_approval" in output.getvalue()
+    assert error.getvalue() == ""
 
 
 def _install_counting_recovery_coordinator(

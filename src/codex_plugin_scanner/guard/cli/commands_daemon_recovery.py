@@ -34,6 +34,9 @@ _MAX_RECEIPT_BYTES = 64 * 1024
 _MAX_RECEIPTS = 64
 _RECEIPT_SCHEMA = "hol-guard-recovery.receipts.v1"
 _RECEIPT_PHASES = frozenset({"stopping", "starting", "verifying", "timed_out_waiting", "complete"})
+_RECOVERY_LIFECYCLE_ACTION = "daemon.restart"
+_RECOVERY_LIFECYCLE_SCOPE = "local-protection"
+_RECOVERY_LIFECYCLE_SUBJECT = "local-daemon"
 
 
 def _uuid(value: object, *, field: str) -> uuid.UUID:
@@ -202,6 +205,23 @@ def _write_human(snapshot: dict[str, object], stream: TextIO) -> None:
     stream.flush()
 
 
+def _recovery_lifecycle_context_matches(
+    context: LifecycleGateContext,
+    guard_home: Path,
+) -> bool:
+    try:
+        authority_home = Path(context.authority_home).expanduser().resolve()
+        expected_home = Path(guard_home).expanduser().resolve()
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return False
+    return (
+        authority_home == expected_home
+        and context.action == _RECOVERY_LIFECYCLE_ACTION
+        and context.scope == _RECOVERY_LIFECYCLE_SCOPE
+        and context.subject == _RECOVERY_LIFECYCLE_SUBJECT
+    )
+
+
 def dispatch_daemon_recovery(
     args: object,
     *,
@@ -238,14 +258,13 @@ def dispatch_daemon_recovery(
             request_id = _uuid(request_value, field="request_id") if request_value else uuid.uuid4()
 
             def authorize(_home: Path) -> AuthorizationDecision:
-                if lifecycle_context is not None:
-                    if validate_lifecycle_gate_context(lifecycle_context):
-                        return AuthorizationDecision(True)
+                if lifecycle_context is None or not _recovery_lifecycle_context_matches(
+                    lifecycle_context,
+                    guard_home,
+                ):
                     return AuthorizationDecision(False, True, "approval_required")
-                if lifecycle_authorized:
-                    # The legacy boolean cannot carry the action-scoped grant
-                    # that must be revalidated after lifecycle lock waits.
-                    return AuthorizationDecision(False, True, "approval_required")
+                if validate_lifecycle_gate_context(lifecycle_context):
+                    return AuthorizationDecision(True)
                 return AuthorizationDecision(False, True, "approval_required")
 
             hooks = RecoveryHooks(

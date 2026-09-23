@@ -129,6 +129,84 @@ def test_disabled_lifecycle_gate_does_not_consume_proof_input(
     assert "This notice is advisory and does not block the current command." in error_stream.getvalue()
 
 
+def test_disabled_lifecycle_gate_does_not_validate_desktop_environment_proof(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    error_stream = io.StringIO()
+    monkeypatch.setattr(commands_lifecycle_gate, "canonical_lifecycle_home", lambda: tmp_path)
+    monkeypatch.setenv("HOL_GUARD_DESKTOP", "1")
+    monkeypatch.setenv("HOL_GUARD_APPROVAL_PASSWORD", "stale-unused-proof")
+
+    def proof_must_not_be_validated(**_kwargs: object) -> None:
+        raise AssertionError("disabled approval gate validated Desktop environment proof")
+
+    monkeypatch.setattr(commands_lifecycle_gate, "consume_desktop_lifecycle_env", proof_must_not_be_validated)
+
+    context = enforce_lifecycle_gate(
+        argparse.Namespace(guard_command="update"),
+        guard_home=tmp_path,
+        error_stream=error_stream,
+    )
+
+    assert context is not None
+    assert context.was_enabled is False
+    assert "This notice is advisory and does not block the current command." in error_stream.getvalue()
+    assert "HOL_GUARD_APPROVAL_PASSWORD" not in os.environ
+
+
+def test_cli_stdin_proof_clears_desktop_factors_before_handler_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    password = "correct horse battery staple"
+    monkeypatch.setattr(commands_lifecycle_gate, "canonical_lifecycle_home", lambda: tmp_path)
+    _ = update_settings(
+        tmp_path,
+        {"enabled": True, "new_password": password, "confirm_password": password},
+    )
+    monkeypatch.setenv("HOL_GUARD_DESKTOP", "1")
+    monkeypatch.setenv("HOL_GUARD_APPROVAL_PASSWORD", "stale desktop password")
+    monkeypatch.setenv("HOL_GUARD_APPROVAL_TOTP_CODE", "654321")
+    proof_stream = io.TextIOWrapper(
+        io.BytesIO(json.dumps({"password": password, "totpCode": None}).encode("utf-8")),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("sys.stdin", proof_stream)
+
+    from codex_plugin_scanner.guard.cli import commands_router
+
+    inherited: dict[str, str | None] = {}
+
+    def downstream_handler(*_args: object, **_kwargs: object) -> int:
+        inherited.update(
+            {
+                "password": os.environ.get("HOL_GUARD_APPROVAL_PASSWORD"),
+                "totp": os.environ.get("HOL_GUARD_APPROVAL_TOTP_CODE"),
+            }
+        )
+        return 0
+
+    monkeypatch.setattr(commands_router, "_run_guard_daemon_command", downstream_handler, raising=False)
+    parser = argparse.ArgumentParser()
+    add_guard_root_parser(parser)
+    args = parser.parse_args(
+        [
+            "daemon",
+            "recovery",
+            "restart",
+            "--guard-home",
+            str(tmp_path),
+            "--approval-proof-stdin",
+        ]
+    )
+
+    exit_code = run_guard_command(args, output_stream=io.StringIO())
+
+    assert exit_code == 0
+    assert inherited == {"password": None, "totp": None}
+
+
 def test_lifecycle_gate_requires_fresh_password_when_enabled(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -254,6 +332,33 @@ def test_daemon_recovery_revalidates_action_grant_without_reprompting(
     assert context.subject == "local-daemon"
     assert context.grant is not None
     assert context.grant.action == "daemon.restart"
+
+
+def test_router_preserves_recovery_error_stream_on_error_path(
+    tmp_path: Path,
+) -> None:
+    parser = argparse.ArgumentParser()
+    add_guard_root_parser(parser)
+    args = parser.parse_args(
+        [
+            "daemon",
+            "recovery",
+            "status",
+            "--guard-home",
+            str(tmp_path),
+            "--operation-id",
+            "11111111-1111-4111-8111-111111111111",
+            "--json",
+        ]
+    )
+    output = io.StringIO()
+    error = io.StringIO()
+
+    exit_code = run_guard_command(args, output_stream=output, error_stream=error)
+
+    assert exit_code == 2
+    assert output.getvalue() == ""
+    assert error.getvalue().startswith("HOL Guard recovery failed:")
 
 
 @pytest.mark.parametrize("override_flag", ["--home", "--guard-home"])
@@ -519,3 +624,25 @@ def test_desktop_child_env_is_cleared_when_the_gate_is_disabled(
     )
 
     assert "HOL_GUARD_APPROVAL_PASSWORD" not in os.environ
+
+
+def test_approval_prompt_tells_the_user_it_is_waiting(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from codex_plugin_scanner.guard.cli.approval_gate_prompt import prompt_for_approval_gate
+
+    password = "correct horse battery staple"
+    _ = update_settings(
+        tmp_path,
+        {"enabled": True, "new_password": password, "confirm_password": password},
+    )
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("getpass.getpass", lambda _prompt: password)
+
+    result = prompt_for_approval_gate(tmp_path)
+
+    assert result is not None
+    assert result.password == password
+    assert "waiting for your approval password" in capsys.readouterr().err

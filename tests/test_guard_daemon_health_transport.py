@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import threading
 import time
+from contextlib import suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -57,6 +59,82 @@ def test_health_probe_is_bounded_proxy_free_and_does_not_follow_redirects(
         finally:
             server.shutdown()
             thread.join(timeout=2)
+
+
+def test_live_identity_shares_remaining_deadline_across_health_and_session_transport(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The default authenticated probe cannot restart its deadline for the dashboard session."""
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    state = {
+        "package_version": "3.0.34",
+        "host": "127.0.0.1",
+        "port": 0,
+        "pid": 321,
+        "compatibility_version": live_identity.GUARD_DAEMON_COMPATIBILITY_VERSION,
+        "runtime_fingerprint": "fingerprint",
+        "generation": "generation-1",
+        "user": "uid:501",
+        "start_marker": "start-generation-1",
+        "guard_home": str(guard_home),
+    }
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            requests.append(self.path)
+            if self.path == "/v1/healthz/details":
+                time.sleep(0.15)
+                body = {**state, "ok": True}
+            elif self.path == "/v1/capabilities":
+                body = {"capabilities": ["dashboard"]}
+            else:
+                self.send_error(404)
+                return
+            encoded = json.dumps(body).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            with suppress(OSError):
+                self.wfile.write(encoded)
+
+        def do_POST(self) -> None:
+            requests.append(self.path)
+            if self.path != "/v1/initialize":
+                self.send_error(404)
+                return
+            time.sleep(0.4)
+            encoded = b'{"dashboard_session_token":"fresh-session"}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            with suppress(OSError):
+                self.wfile.write(encoded)
+
+        def log_message(self, *_args: object) -> None:
+            return None
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+        state["port"] = server.server_port
+        monkeypatch.setattr(live_identity, "load_authenticated_daemon_state", lambda _home: state)
+        monkeypatch.setattr(live_identity, "load_guard_daemon_auth_token", lambda _home: "private-auth-token")
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
+        thread.start()
+        try:
+            started = time.monotonic()
+            _identity, reason = live_identity.probe_live_guard_daemon_identity(
+                guard_home,
+                session_timeout=0.5,
+            )
+            elapsed = time.monotonic() - started
+        finally:
+            server.shutdown()
+            thread.join(timeout=2)
+
+    assert reason == "session_invalid"
+    assert elapsed < 0.75
+    assert requests == ["/v1/healthz/details", "/v1/initialize"]
 
 
 @pytest.mark.security_critical

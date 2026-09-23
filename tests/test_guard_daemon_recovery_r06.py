@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -18,6 +18,7 @@ from codex_plugin_scanner.guard.cli import commands_dispatch_cloud as router
 from codex_plugin_scanner.guard.cli import commands_support_service as service
 from codex_plugin_scanner.guard.daemon import recovery_diagnostics as diagnostics
 from codex_plugin_scanner.guard.daemon.recovery_diagnostics import (
+    DIAGNOSTICS_ARCHIVE_SCHEMA,
     DIAGNOSTICS_STATE_NAME,
     MAX_DIAGNOSTICS_BYTES,
     RecoveryDiagnosticsError,
@@ -34,6 +35,13 @@ from codex_plugin_scanner.guard.native_command_control_authority_io import write
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
 
 FIXTURES = Path(__file__).parent / "fixtures" / "daemon_recovery_v1"
+FIXED_DIAGNOSTICS_NOW = datetime.now(timezone.utc).replace(microsecond=0)
+
+
+@pytest.fixture
+def fixed_diagnostics_clock(monkeypatch: pytest.MonkeyPatch) -> datetime:
+    monkeypatch.setattr(diagnostics, "_retention_now", lambda _value=None: FIXED_DIAGNOSTICS_NOW)
+    return FIXED_DIAGNOSTICS_NOW
 
 
 def _snapshot(name: str = "valid_timeout.json") -> dict[str, object]:
@@ -119,14 +127,66 @@ def test_malformed_archive_is_optional_at_cli_boundary(tmp_path: Path) -> None:
     assert json.loads(output.getvalue())["operationId"] == str(operation_id)
 
 
-def test_diagnostics_writer_serializes_read_modify_write_transactions(
+def test_compaction_oserror_is_optional_at_cli_boundary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    snapshot = _snapshot()
+    operation_id = uuid.UUID(str(snapshot["operationId"]))
+    cli._persist_snapshot(tmp_path, snapshot)
+
+    stale_report = build_recovery_diagnostics(
+        snapshot,
+        generated_at=datetime.now(timezone.utc) - timedelta(days=8),
+    )
+    stale_archive = json.dumps(
+        {"schema": DIAGNOSTICS_ARCHIVE_SCHEMA, "reports": [stale_report]},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    write_private_state(tmp_path, DIAGNOSTICS_STATE_NAME, stale_archive, MAX_DIAGNOSTICS_BYTES)
+
+    original_write = diagnostics.write_private_state
+    compaction_attempted = False
+
+    def fail_compaction(
+        guard_home: Path, name: str, payload: bytes, maximum_bytes: int
+    ) -> None:
+        nonlocal compaction_attempted
+        if name == DIAGNOSTICS_STATE_NAME:
+            decoded = json.loads(payload)
+            if decoded == {"schema": DIAGNOSTICS_ARCHIVE_SCHEMA, "reports": []}:
+                compaction_attempted = True
+                raise OSError("diagnostics compaction unavailable")
+        original_write(guard_home, name, payload, maximum_bytes)
+
+    monkeypatch.setattr(diagnostics, "write_private_state", fail_compaction)
+    output = io.StringIO()
+    error = io.StringIO()
+    result = cli.dispatch_daemon_recovery(
+        argparse.Namespace(daemon_recovery_command="diagnostics", operation_id=str(operation_id)),
+        guard_home=tmp_path,
+        home_dir=None,
+        stdout=output,
+        stderr=error,
+    )
+
+    assert result == 0
+    assert error.getvalue() == ""
+    report = json.loads(output.getvalue())
+    assert compaction_attempted is True
+    assert report["operationId"] == snapshot["operationId"]
+    assert report["latest"] == snapshot
+    assert report["eventCount"] == report["retainedEventCount"] == 1
+    assert report["truncated"] is False
+
+
+def test_diagnostics_writer_serializes_read_modify_write_transactions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fixed_diagnostics_clock: datetime
 ) -> None:
     first = _snapshot()
     first["operationId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     second = _snapshot()
     second["operationId"] = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
-    generated = datetime(2026, 9, 22, tzinfo=timezone.utc)
+    generated = fixed_diagnostics_clock
     archive: dict[str, object] = {"reports": []}
     first_write_started = threading.Event()
     second_loaded = threading.Event()
@@ -190,10 +250,12 @@ def test_diagnostics_writer_serializes_separate_processes(tmp_path: Path) -> Non
     first["operationId"] = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
     second = _snapshot()
     second["operationId"] = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+    process_clock = FIXED_DIAGNOSTICS_NOW + timedelta(days=8)
     script = """
 import json
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 from codex_plugin_scanner.guard.daemon import recovery_diagnostics as diagnostics
@@ -202,6 +264,8 @@ home = Path(sys.argv[1])
 snapshot = json.loads(sys.argv[2])
 marker = Path(sys.argv[3])
 release = Path(sys.argv[4])
+process_clock = datetime.fromisoformat(sys.argv[6])
+diagnostics._retention_now = lambda _value=None: process_clock
 original_write = diagnostics.write_private_state
 
 def delayed_write(guard_home, name, payload, maximum_bytes):
@@ -222,10 +286,11 @@ diagnostics.persist_recovery_diagnostics(home, snapshot, generated_at=diagnostic
         json.dumps(first),
         str(marker),
         str(release),
-        "2026-09-22T00:00:00+00:00",
+        process_clock.isoformat(),
+        process_clock.isoformat(),
     ]
     first_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    deadline = time.monotonic() + 5.0
+    deadline = time.monotonic() + 20.0
     while not marker.exists() and time.monotonic() < deadline:
         time.sleep(0.01)
     assert marker.exists()
@@ -237,7 +302,8 @@ diagnostics.persist_recovery_diagnostics(home, snapshot, generated_at=diagnostic
         json.dumps(second),
         str(marker),
         str(release),
-        "2026-09-22T00:01:00+00:00",
+        (process_clock + timedelta(minutes=1)).isoformat(),
+        process_clock.isoformat(),
     ]
     second_process = subprocess.Popen(second_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     time.sleep(0.15)
@@ -264,33 +330,102 @@ def test_uppercase_operation_id_lookup_is_canonicalized(tmp_path: Path) -> None:
     assert report["operationId"] == operation_id
 
 
-def test_diagnostics_archive_orders_by_utc_instant_then_operation_id(tmp_path: Path) -> None:
+@pytest.mark.parametrize("command", ["status", "diagnostics"])
+def test_cli_accepts_legacy_snapshot_with_uppercase_operation_id(
+    tmp_path: Path, command: str
+) -> None:
+    snapshot = _snapshot()
+    operation_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    snapshot["operationId"] = operation_id.upper()
+    write_private_state(
+        tmp_path,
+        cli._STATE_NAME,
+        json.dumps(snapshot, separators=(",", ":")).encode("utf-8"),
+        cli._MAX_STATE_BYTES,
+    )
+
+    output = io.StringIO()
+    error = io.StringIO()
+    result = cli.dispatch_daemon_recovery(
+        argparse.Namespace(daemon_recovery_command=command, operation_id=operation_id),
+        guard_home=tmp_path,
+        home_dir=None,
+        stdout=output,
+        stderr=error,
+    )
+
+    assert result == 0, error.getvalue()
+    report = json.loads(output.getvalue())
+    assert report["operationId"] == operation_id
+
+
+def test_diagnostics_archive_orders_by_utc_instant_then_operation_id(
+    tmp_path: Path, fixed_diagnostics_clock: datetime
+) -> None:
     first = _snapshot()
     first["operationId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     second = _snapshot()
     second["operationId"] = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
     third = _snapshot()
     third["operationId"] = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+    same_instant = fixed_diagnostics_clock.replace(hour=0, minute=0, second=0, microsecond=0)
 
     persist = diagnostics.persist_recovery_diagnostics
     persist(
         tmp_path,
         first,
-        generated_at=datetime.fromisoformat("2026-09-22T01:00:00+01:00"),
+        generated_at=same_instant.astimezone(timezone(timedelta(hours=1))),
     )
     persist(
         tmp_path,
         second,
-        generated_at=datetime.fromisoformat("2026-09-22T00:00:00+00:00"),
+        generated_at=same_instant,
     )
     assert load_recovery_diagnostics(tmp_path)["operationId"] == second["operationId"]  # type: ignore[index]
 
     persist(
         tmp_path,
         third,
-        generated_at=datetime.fromisoformat("2026-09-22T00:30:00+00:00"),
+        generated_at=same_instant + timedelta(minutes=30),
     )
     assert load_recovery_diagnostics(tmp_path)["operationId"] == third["operationId"]  # type: ignore[index]
+
+
+def test_diagnostics_read_survives_optional_archive_compaction_oserror(
+    tmp_path: Path,
+    fixed_diagnostics_clock: datetime,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stale = _snapshot()
+    stale["operationId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    current = _snapshot()
+    current["operationId"] = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    reports = [
+        build_recovery_diagnostics(
+            stale,
+            generated_at=fixed_diagnostics_clock - timedelta(days=365),
+        ),
+        build_recovery_diagnostics(
+            current,
+            generated_at=fixed_diagnostics_clock,
+        ),
+    ]
+    write_private_state(
+        tmp_path,
+        DIAGNOSTICS_STATE_NAME,
+        diagnostics._encode_archive(reports),
+        MAX_DIAGNOSTICS_BYTES,
+    )
+
+    def fail_optional_compaction(*_args: object, **_kwargs: object) -> None:
+        raise OSError("archive compaction unavailable")
+
+    monkeypatch.setattr(diagnostics, "write_private_state", fail_optional_compaction)
+
+    report = load_recovery_diagnostics(tmp_path)
+
+    assert report is not None
+    assert report["operationId"] == current["operationId"]
 
 
 def test_diagnostics_dispatch_uses_caller_output_stream(tmp_path: Path) -> None:

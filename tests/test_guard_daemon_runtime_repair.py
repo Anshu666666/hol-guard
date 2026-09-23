@@ -453,7 +453,7 @@ def test_live_identity_rejects_empty_health_guard_home(
     monkeypatch.setattr(
         live_identity,
         "_proxy_disabled_health_details",
-        lambda _url, _token: {**state, "ok": True, "guard_home": ""},
+        lambda _url, _token, **_kwargs: {**state, "ok": True, "guard_home": ""},
     )
 
     assert live_identity.verified_live_guard_daemon_identity(tmp_path) is None
@@ -476,7 +476,7 @@ def test_live_identity_rejects_health_only_when_dashboard_session_is_invalid(
     monkeypatch.setattr(
         live_identity,
         "_proxy_disabled_health_details",
-        lambda _url, _token: {**state, "ok": True, "guard_home": str(tmp_path)},
+        lambda _url, _token, **_kwargs: {**state, "ok": True, "guard_home": str(tmp_path)},
     )
     # This helper is the narrow normal-dashboard/session probe used after
     # authenticated health details. A rejected/expired session retains the
@@ -524,7 +524,7 @@ def test_live_identity_rechecks_generation_after_dashboard_session(
     monkeypatch.setattr(
         live_identity,
         "_proxy_disabled_health_details",
-        lambda url, _token: health_calls.append(url) or details.pop(0),
+        lambda url, _token, **_kwargs: health_calls.append(url) or details.pop(0),
     )
     monkeypatch.setattr(
         live_identity,

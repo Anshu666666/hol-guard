@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+import time
 from pathlib import Path
 
 from .discovery import load_authenticated_daemon_state
@@ -88,11 +90,16 @@ def _health_details_match(details: object, state: dict[str, object], guard_home:
         return False
 
 
-def _proxy_disabled_health_details(url: str, auth_token: str) -> dict[str, object] | None:
+def _proxy_disabled_health_details(
+    url: str,
+    auth_token: str,
+    *,
+    timeout: float | None = None,
+) -> dict[str, object] | None:
     """Use the bounded loopback client without changing authenticated identity checks."""
     from .client import read_guard_health_details
 
-    return read_guard_health_details(url, auth_token)
+    return read_guard_health_details(url, auth_token, timeout=timeout)
 
 
 def _proxy_dashboard_session_capabilities(
@@ -123,6 +130,17 @@ def probe_live_guard_daemon_identity(
     recovery can report a reconnect issue without replacing the healthy
     process.
     """
+    try:
+        probe_timeout = float(session_timeout)
+    except (TypeError, ValueError, OverflowError):
+        return None, "service_unresponsive"
+    if not math.isfinite(probe_timeout) or probe_timeout <= 0.0:
+        return None, "service_unresponsive"
+    deadline = time.monotonic() + probe_timeout
+
+    def remaining() -> float:
+        return max(0.0, deadline - time.monotonic())
+
     state = load_authenticated_daemon_state(guard_home)
     if not isinstance(state, dict):
         return None, "identity_unverified"
@@ -149,17 +167,23 @@ def probe_live_guard_daemon_identity(
         return None, "identity_unverified"
     url_host = f"[{host}]" if host == "::1" else host
     daemon_url = f"http://{url_host}:{port}"
-    details = _proxy_disabled_health_details(daemon_url, token)
+    health_timeout = remaining()
+    if health_timeout <= 0.0:
+        return None, "service_unresponsive"
+    details = _proxy_disabled_health_details(daemon_url, token, timeout=health_timeout)
     if not _health_details_match(details, state, guard_home):
         return None, "service_unresponsive"
     identity = {**state, "daemon_url": daemon_url}
     if not verify_dashboard:
         return identity, "healthy"
+    session_timeout_remaining = remaining()
+    if session_timeout_remaining <= 0.0:
+        return identity, "session_invalid"
     if (
         _proxy_dashboard_session_capabilities(
             daemon_url,
             token,
-            timeout=max(0.0, session_timeout),
+            timeout=session_timeout_remaining,
         )
         is None
     ):
@@ -176,7 +200,14 @@ def probe_live_guard_daemon_identity(
         return identity, "identity_unverified"
     refreshed_url_host = f"[{refreshed_host}]" if refreshed_host == "::1" else refreshed_host
     refreshed_url = f"http://{refreshed_url_host}:{refreshed_port}"
-    refreshed_details = _proxy_disabled_health_details(refreshed_url, refreshed_token)
+    refreshed_health_timeout = remaining()
+    if refreshed_health_timeout <= 0.0:
+        return identity, "identity_unverified"
+    refreshed_details = _proxy_disabled_health_details(
+        refreshed_url,
+        refreshed_token,
+        timeout=refreshed_health_timeout,
+    )
     if (
         not _state_identity_matches(
             state,

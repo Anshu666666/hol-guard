@@ -36,9 +36,7 @@ EvidenceType = Literal[
     "not_run",
 ]
 
-EVALUATION_STATUSES: frozenset[str] = frozenset(
-    {"passed", "failed", "unsupported", "blocked_environment", "not_run"}
-)
+EVALUATION_STATUSES: frozenset[str] = frozenset({"passed", "failed", "unsupported", "blocked_environment", "not_run"})
 EVIDENCE_TYPES: frozenset[str] = frozenset(
     {
         "source_inspection",
@@ -232,7 +230,10 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         if witness.get("endpoint") is not None:
             _ = _validate_local_endpoint(witness["endpoint"], "cases[].witness.endpoint")
         if case_status == "passed" and case["expectedAction"] in {
-            "block", "approval", "rewrite", "redact-before-forward"
+            "block",
+            "approval",
+            "rewrite",
+            "redact-before-forward",
         }:
             if (
                 case["proofType"] != "live_installed_host_test"
@@ -254,8 +255,7 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
     if result["buildIdentity"] != profile["buildIdentity"]:
         raise EvaluationContractError("result.buildIdentity does not match the supplied profile")
     profile_artifacts = {
-        _mapping(item, "installedArtifacts[]")["digest"]
-        for item in cast(list[object], profile["installedArtifacts"])
+        _mapping(item, "installedArtifacts[]")["digest"] for item in cast(list[object], profile["installedArtifacts"])
     }
     if artifact_digest not in profile_artifacts:
         raise EvaluationContractError("result.artifactIdentity is not installed by the supplied profile")

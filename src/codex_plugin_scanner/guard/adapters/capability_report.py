@@ -424,7 +424,6 @@ def render_capability_report_markdown(report: HarnessCapabilityReport | Mapping[
             "Evidence host/version scope | Evidence OS/arch | Denied witness | Allowed witness | "
             "Compatibility verified |"
         ),
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     fields = (
         "harness",
@@ -452,6 +451,7 @@ def render_capability_report_markdown(report: HarnessCapabilityReport | Mapping[
         "allowed_witness_reference",
         "compatibility_verified",
     )
+    lines.append("| " + " | ".join("---" for _ in fields) + " |")
     for capability in capabilities:
         if not isinstance(capability, Mapping):  # pragma: no cover - schema catches this
             continue

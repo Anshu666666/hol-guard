@@ -69,6 +69,10 @@ def test_json_and_markdown_are_deterministic_views_of_the_same_rows() -> None:
     assert "unverified" in first_markdown
     assert "not_run" in first_markdown
     assert "synthetic canaries do not establish a live block" in first_markdown
+    lines = first_markdown.splitlines()
+    header_index = next(index for index, line in enumerate(lines) if line.startswith("| Harness | Adapter |"))
+    assert lines[header_index].count("|") == lines[header_index + 1].count("|")
+    assert lines[header_index + 1].count("---") == len(json_payload["capabilities"][0])
 
 
 def test_host_scope_cannot_be_applied_to_every_registered_host() -> None:

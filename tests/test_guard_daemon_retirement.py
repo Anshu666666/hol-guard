@@ -39,11 +39,14 @@ def test_posix_daemon_retirement_waits_for_sigkill_to_finish(monkeypatch) -> Non
     )
     monkeypatch.setattr(daemon_manager_module.os, "kill", lambda _pid, sig: signals.append(sig))
 
-    assert daemon_manager_module._retire_guard_daemon_pid(
-        pid,
-        expected_start_marker="linux:terminate-generation",
-        expected_owner_marker="uid:501",
-    ) is True
+    assert (
+        daemon_manager_module._retire_guard_daemon_pid(
+            pid,
+            expected_start_marker="linux:terminate-generation",
+            expected_owner_marker="uid:501",
+        )
+        is True
+    )
     assert signals == [signal.SIGTERM, sigkill]
 
 
@@ -59,9 +62,7 @@ def test_retirement_process_refuses_missing_generation_marker_for_live_unresolva
         lambda _pid, expected_guard_home=None: None,
     )
 
-    assert daemon_manager_module._retire_guard_daemon_process(
-        {"pid": 62_228, "guard_home": "/tmp/guard-home"}
-    ) is False
+    assert daemon_manager_module._retire_guard_daemon_process({"pid": 62_228, "guard_home": "/tmp/guard-home"}) is False
 
 
 def test_retirement_process_accepts_proven_dead_markerless_pid_without_signaling(monkeypatch) -> None:
@@ -71,9 +72,7 @@ def test_retirement_process_accepts_proven_dead_markerless_pid_without_signaling
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: True)
     monkeypatch.setattr(daemon_manager_module, "_retire_guard_daemon_pid", retire)
 
-    assert daemon_manager_module._retire_guard_daemon_process(
-        {"pid": 62_229, "guard_home": "/tmp/guard-home"}
-    ) is True
+    assert daemon_manager_module._retire_guard_daemon_process({"pid": 62_229, "guard_home": "/tmp/guard-home"}) is True
 
 
 def test_posix_retirement_refuses_unbound_live_pid_before_signaling(monkeypatch) -> None:
@@ -82,11 +81,37 @@ def test_posix_retirement_refuses_unbound_live_pid_before_signaling(monkeypatch)
     monkeypatch.setattr(daemon_manager_module, "os", _PosixOSProxy())
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: False)
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_matches_command", lambda *_args: True)
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _pid: "linux:live-generation")
     monkeypatch.setattr(daemon_manager_module, "process_owner_marker", lambda _pid: "uid:501")
     monkeypatch.setattr(daemon_manager_module, "_wait_for_guard_daemon_pid_death", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(daemon_manager_module.os, "kill", lambda _pid, sig: signals.append(sig))
 
     assert daemon_manager_module._retire_guard_daemon_pid(pid) is False
+    assert signals == []
+
+
+def test_generation_retirement_rejects_owner_mismatch_before_signal(monkeypatch) -> None:
+    pid = 62_236
+    signals: list[int] = []
+    monkeypatch.setattr(daemon_manager_module, "os", _PosixOSProxy())
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: False)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_matches_command", lambda *_args: True)
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _pid: "linux:daemon-generation")
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "process_owner_marker",
+        lambda candidate: "uid:501" if candidate == os.getpid() else "uid:502",
+    )
+    monkeypatch.setattr(daemon_manager_module.os, "kill", lambda _pid, sig: signals.append(sig))
+
+    assert (
+        daemon_manager_module._retire_guard_daemon_pid(
+            pid,
+            expected_start_marker="linux:daemon-generation",
+            expected_owner_marker="uid:501",
+        )
+        is False
+    )
     assert signals == []
 
 
@@ -116,11 +141,30 @@ def test_authenticated_retirement_forwards_stored_generation_and_owner(
     monkeypatch.setattr(daemon_manager_module, "_retire_guard_daemon_pid", retire)
 
     assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == [pid]
-    assert calls == [{
-        "expected_guard_home": guard_home,
-        "expected_start_marker": "linux:state-generation",
-        "expected_owner_marker": "uid:501",
-    }]
+    assert calls == [
+        {
+            "expected_guard_home": guard_home,
+            "expected_start_marker": "linux:state-generation",
+            "expected_owner_marker": "uid:501",
+        }
+    ]
+
+
+def test_authenticated_markerless_live_state_is_not_signaled(tmp_path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    state = {"pid": 62_231, "port": 4781, "guard_home": str(guard_home)}
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_daemon_state", lambda _home: state)
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_process_inventory_for_guard_home", lambda _home: [])
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_proven_dead", lambda _pid: False)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_retire_guard_daemon_pid",
+        lambda *_args, **_kwargs: pytest.fail("markerless live authenticated state must not be signaled"),
+    )
+    monkeypatch.setattr(daemon_manager_module, "_reconcile_invalid_daemon_lifecycle_artifacts", lambda _home: True)
+
+    assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
 
 
 def test_inventory_retirement_forwards_captured_generation_and_owner(tmp_path, monkeypatch) -> None:
@@ -147,11 +191,36 @@ def test_inventory_retirement_forwards_captured_generation_and_owner(tmp_path, m
     monkeypatch.setattr(daemon_manager_module, "_retire_guard_daemon_pid", retire)
 
     assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == [pid]
-    assert calls == [{
-        "expected_guard_home": guard_home,
-        "expected_start_marker": "linux:inventory-generation",
-        "expected_owner_marker": "uid:501",
-    }]
+    assert calls == [
+        {
+            "expected_guard_home": guard_home,
+            "expected_start_marker": "linux:inventory-generation",
+            "expected_owner_marker": "uid:501",
+        }
+    ]
+
+
+def test_inventory_retirement_skips_process_without_identity_evidence(tmp_path, monkeypatch) -> None:
+    guard_home = tmp_path / "guard-home"
+    pid = 62_237
+    inventories = iter(([(pid, 4781)], [], []))
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_daemon_state", lambda _home: None)
+    monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_process_inventory_for_guard_home",
+        lambda _home: next(inventories),
+    )
+    monkeypatch.setattr(daemon_manager_module, "process_start_token", lambda _candidate: None)
+    monkeypatch.setattr(daemon_manager_module, "process_owner_marker", lambda _candidate: "uid:501")
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_retire_guard_daemon_pid",
+        lambda *_args, **_kwargs: pytest.fail("inventory without identity evidence must not be signaled"),
+    )
+    monkeypatch.setattr(daemon_manager_module, "_reconcile_invalid_daemon_lifecycle_artifacts", lambda _home: True)
+
+    assert daemon_manager_module.retire_all_guard_daemons_for_home(guard_home) == []
 
 
 def test_duplicate_retirement_forwards_generation_and_owner(tmp_path, monkeypatch) -> None:
@@ -175,11 +244,13 @@ def test_duplicate_retirement_forwards_generation_and_owner(tmp_path, monkeypatc
     monkeypatch.setattr(daemon_manager_module, "_retire_guard_daemon_pid", retire)
 
     daemon_manager_module._retire_duplicate_guard_daemons_unlocked(guard_home, keep_port=4781)
-    assert calls == [{
-        "expected_guard_home": guard_home,
-        "expected_start_marker": "linux:duplicate-generation",
-        "expected_owner_marker": "uid:501",
-    }]
+    assert calls == [
+        {
+            "expected_guard_home": guard_home,
+            "expected_start_marker": "linux:duplicate-generation",
+            "expected_owner_marker": "uid:501",
+        }
+    ]
 
 
 def test_ephemeral_retirement_forwards_generation_and_owner(tmp_path, monkeypatch) -> None:
@@ -204,11 +275,13 @@ def test_ephemeral_retirement_forwards_generation_and_owner(tmp_path, monkeypatc
 
     monkeypatch.setattr(daemon_manager_module, "_retire_guard_daemon_pid", retire)
     daemon_manager_module._reap_stale_ephemeral_guard_daemons(force=True)
-    assert calls == [{
-        "expected_guard_home": guard_home,
-        "expected_start_marker": "linux:ephemeral-generation",
-        "expected_owner_marker": "uid:501",
-    }]
+    assert calls == [
+        {
+            "expected_guard_home": guard_home,
+            "expected_start_marker": "linux:ephemeral-generation",
+            "expected_owner_marker": "uid:501",
+        }
+    ]
 
 
 def test_posix_daemon_retirement_bounds_both_escalation_waits(monkeypatch) -> None:
@@ -237,12 +310,15 @@ def test_posix_daemon_retirement_bounds_both_escalation_waits(monkeypatch) -> No
     monkeypatch.setattr(daemon_manager_module, "_wait_for_guard_daemon_pid_death", wait)
     monkeypatch.setattr(daemon_manager_module.os, "kill", lambda _pid, sig: signals.append(sig))
 
-    assert daemon_manager_module._retire_guard_daemon_pid(
-        pid,
-        expected_start_marker="linux:bounded-generation",
-        expected_owner_marker="uid:501",
-        timeout=0.25,
-    ) is True
+    assert (
+        daemon_manager_module._retire_guard_daemon_pid(
+            pid,
+            expected_start_marker="linux:bounded-generation",
+            expected_owner_marker="uid:501",
+            timeout=0.25,
+        )
+        is True
+    )
     assert signals == [signal.SIGTERM, sigkill]
     assert waits == pytest.approx([0.25, 0.05])
     assert clock["value"] == pytest.approx(100.25)
@@ -297,11 +373,14 @@ def test_windows_daemon_retirement_passes_remaining_to_exact_generation_terminat
     monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_matches_command", lambda *_args: True)
     monkeypatch.setattr(daemon_manager_module, "windows_terminate_process_if_creation_time", terminate)
 
-    assert daemon_manager_module._retire_guard_daemon_pid(
-        pid,
-        expected_owner_marker="sid:S-1-5-21",
-        timeout=0.25,
-    ) is True
+    assert (
+        daemon_manager_module._retire_guard_daemon_pid(
+            pid,
+            expected_owner_marker="sid:S-1-5-21",
+            timeout=0.25,
+        )
+        is True
+    )
     assert captured == {"pid": pid, "creation_time": 123, "timeout": 0.25}
 
 

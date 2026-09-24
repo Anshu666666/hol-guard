@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,11 @@ from codex_plugin_scanner.guard.evaluation_contracts import (
     evaluation_profile_schema,
     evaluation_result_schema,
     validate_evaluation_profile,
+)
+from codex_plugin_scanner.guard.evaluation_evidence_package import (
+    build_evaluation_evidence_package,
+    verify_evaluation_evidence_package,
+    write_evaluation_evidence_package,
 )
 
 
@@ -139,6 +145,81 @@ def test_result_cannot_omit_a_profile_capability(tmp_path: Path) -> None:
     profile_payload["expectedCapabilities"].append({"capabilityId": "synthetic.shell", "expectedAction": "block"})
     with pytest.raises(EvaluationContractError, match="cover exactly"):
         EvaluationResult.from_dict(_result(profile_payload), profile=EvaluationProfile.from_dict(profile_payload))
+
+
+def test_evidence_package_is_reproducible_and_keeps_caller_proof_unverified(tmp_path: Path) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    first = build_evaluation_evidence_package(profile, result)
+    second = build_evaluation_evidence_package(profile, result)
+
+    assert first == second
+    manifest = verify_evaluation_evidence_package(first)
+    assert manifest["profileId"] == profile["profileId"]
+    assert manifest["resultId"] == result["resultId"]
+    assert manifest["proofBoundary"] == "caller_supplied_unverified"
+
+
+def test_evidence_package_rejects_tampering_and_output_limit(tmp_path: Path) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    packaged = build_evaluation_evidence_package(profile, result)
+    corrupted = bytearray(packaged)
+    index = corrupted.index(b"synthetic-local-v1")
+    corrupted[index] = ord("x")
+    with pytest.raises(EvaluationContractError, match=r"could not be read|manifest does not match"):
+        verify_evaluation_evidence_package(bytes(corrupted))
+
+    limits = profile["resourceLimits"]
+    assert isinstance(limits, dict)
+    limits["maxOutputBytes"] = 32
+    with pytest.raises(EvaluationContractError, match="exceeds the declared output limit"):
+        build_evaluation_evidence_package(profile, result)
+
+
+def test_evidence_package_write_is_private_and_never_overwrites(tmp_path: Path) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    root = Path(profile["targetScope"]["rootPath"])  # type: ignore[index]
+    root.mkdir(mode=0o700)
+    unrelated = root / "user-config.json"
+    unrelated.write_bytes(b"preserve")
+
+    saved = write_evaluation_evidence_package(profile, result, output_dir=root)
+    assert saved.path.is_file()
+    assert saved.path.read_bytes() == build_evaluation_evidence_package(profile, result)
+    assert saved.digest.startswith("sha256:")
+    if os.name != "nt":
+        assert stat.S_IMODE(saved.path.stat().st_mode) == 0o600
+    with pytest.raises(EvaluationContractError, match="without overwriting"):
+        write_evaluation_evidence_package(profile, result, output_dir=root)
+    assert unrelated.read_bytes() == b"preserve"
+
+    other = tmp_path / "different-private-root"
+    other.mkdir(mode=0o700)
+    with pytest.raises(EvaluationContractError, match="profile's private temporary root"):
+        write_evaluation_evidence_package(profile, result, output_dir=other)
+    assert unrelated.read_bytes() == b"preserve"
+
+
+def test_evidence_package_failed_write_removes_only_its_incomplete_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    root = Path(profile["targetScope"]["rootPath"])  # type: ignore[index]
+    root.mkdir(mode=0o700)
+    unrelated = root / "user-config.json"
+    unrelated.write_bytes(b"preserve")
+
+    def fail_sync(_descriptor: int) -> None:
+        raise OSError("synthetic sync failure")
+
+    monkeypatch.setattr("codex_plugin_scanner.guard.evaluation_evidence_package.os.fsync", fail_sync)
+    with pytest.raises(EvaluationContractError, match="unable to write"):
+        write_evaluation_evidence_package(profile, result, output_dir=root)
+    assert list(root.glob("hol-guard-eval-evidence-*.zip")) == []
+    assert unrelated.read_bytes() == b"preserve"
 
 
 def test_passed_result_requires_a_profile_for_coverage(tmp_path: Path) -> None:

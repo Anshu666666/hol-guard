@@ -100,8 +100,8 @@ def is_guard_managed_hook_command(command: object) -> bool:
     )
 
 
-def _strip_jsonc_comments(text: str) -> str:
-    """Remove ``//`` and ``/* */`` comments that appear outside strings."""
+def _strip_jsonc_syntax(text: str) -> str:
+    """Remove ``//``/``/* */`` comments and trailing commas outside strings."""
 
     output: list[str] = []
     index = 0
@@ -137,39 +137,26 @@ def _strip_jsonc_comments(text: str) -> str:
                     index += 1
                 index += 2
                 continue
-        output.append(char)
-        index += 1
-    return "".join(output)
-
-
-def _strip_trailing_commas(text: str) -> str:
-    """Remove commas that directly precede ``]`` or ``}`` outside strings."""
-
-    output: list[str] = []
-    index = 0
-    in_string = False
-    length = len(text)
-    while index < length:
-        char = text[index]
-        if in_string:
-            output.append(char)
-            if char == "\\" and index + 1 < length:
-                output.append(text[index + 1])
-                index += 2
-                continue
-            if char == '"':
-                in_string = False
-            index += 1
-            continue
-        if char == '"':
-            in_string = True
-            output.append(char)
-            index += 1
-            continue
         if char == ",":
             lookahead = index + 1
-            while lookahead < length and text[lookahead] in " \t\r\n":
-                lookahead += 1
+            while lookahead < length:
+                if text[lookahead] in " \t\r\n":
+                    lookahead += 1
+                    continue
+                if text[lookahead] == "/" and lookahead + 1 < length:
+                    nxt = text[lookahead + 1]
+                    if nxt == "/":
+                        lookahead += 2
+                        while lookahead < length and text[lookahead] not in "\r\n":
+                            lookahead += 1
+                        continue
+                    if nxt == "*":
+                        lookahead += 2
+                        while lookahead + 1 < length and not (text[lookahead] == "*" and text[lookahead + 1] == "/"):
+                            lookahead += 1
+                        lookahead += 2
+                        continue
+                break
             if lookahead < length and text[lookahead] in "]}":
                 index += 1
                 continue
@@ -213,7 +200,7 @@ def load_devin_jsonc(path: Path) -> DevinJsonDocument:
         if isinstance(payload, dict):
             return DevinJsonDocument(payload=payload, had_comments=False, parse_failed=False, exists=True)
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=True, exists=True)
-    stripped = _strip_trailing_commas(_strip_jsonc_comments(text))
+    stripped = _strip_jsonc_syntax(text)
     if not stripped.strip():
         return DevinJsonDocument(payload={}, had_comments=True, parse_failed=False, exists=True)
     try:

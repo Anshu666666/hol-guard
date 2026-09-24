@@ -64,6 +64,27 @@ _DEVIN_MANAGED_HOOK_TIMEOUT_SECONDS = 30
 _DEVIN_MANAGED_HOOK_TIMEOUT_GRACE_SECONDS = 5
 
 
+def _adapter_result(
+    harness: str,
+    *,
+    active: bool,
+    config_path: Path,
+    shim_manifest: dict[str, object],
+    notes: list[str],
+) -> dict[str, object]:
+    raw_notes = shim_manifest.get("notes")
+    shim_notes = (
+        [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
+    )
+    return {
+        "harness": harness,
+        "active": active,
+        "config_path": str(config_path),
+        **shim_manifest,
+        "notes": [*notes, *shim_notes],
+    }
+
+
 class DevinHarnessAdapter(HarnessAdapter):
     """Discover Devin settings, hooks, MCP, and skills; manage Guard protection."""
 
@@ -372,21 +393,16 @@ class DevinHarnessAdapter(HarnessAdapter):
             encoding="utf-8",
         )
 
-        raw_notes = shim_manifest.get("notes")
-        shim_notes = (
-            [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
-        )
-        return {
-            "harness": self.harness,
-            "active": True,
-            "config_path": str(config_path),
-            **shim_manifest,
-            "notes": [
+        return _adapter_result(
+            self.harness,
+            active=True,
+            config_path=config_path,
+            shim_manifest=shim_manifest,
+            notes=[
                 "Guard hook entries added to ~/.config/devin/config.json under the hooks section",
                 "User permissions, read_config_from, MCP servers, and any pre-existing hooks were preserved",
-                *shim_notes,
             ],
-        }
+        )
 
     def uninstall(self, context: HarnessContext) -> dict[str, object]:
         shim_manifest = remove_guard_shim(
@@ -432,10 +448,6 @@ class DevinHarnessAdapter(HarnessAdapter):
         if state_path.is_file():
             state_path.unlink()
 
-        raw_notes = shim_manifest.get("notes")
-        shim_notes = (
-            [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
-        )
         if config_unreadable:
             hook_notes = ["Devin config could not be parsed; Guard left the file untouched."]
         elif managed_hooks_left_in_place:
@@ -448,13 +460,13 @@ class DevinHarnessAdapter(HarnessAdapter):
                 "Guard-managed hook entries removed from ~/.config/devin/config.json",
                 "User permissions, read_config_from, MCP servers, and any pre-existing hooks were preserved",
             ]
-        return {
-            "harness": self.harness,
-            "active": False,
-            "config_path": str(config_path),
-            **shim_manifest,
-            "notes": [*hook_notes, *shim_notes],
-        }
+        return _adapter_result(
+            self.harness,
+            active=False,
+            config_path=config_path,
+            shim_manifest=shim_manifest,
+            notes=hook_notes,
+        )
 
     def _sync_managed_hook_groups(
         self,

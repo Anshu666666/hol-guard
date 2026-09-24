@@ -29,18 +29,20 @@ export async function runInstalledPlaywright(
       }),
       "dashboard dependency install",
     );
-    requireSuccess(
-      await runner(["bun", "run", "test:e2e:installed"], {
-        cwd: resolve(REPO_ROOT, "dashboard"),
-        env: {
-          GUARD_INSTALLED_ACTIVITY_COUNT: String(expectedActivityCount),
-          GUARD_INSTALLED_DASHBOARD_SESSION: session,
-          GUARD_INSTALLED_ORIGIN: origin,
-          PLAYWRIGHT_PROOF_DIR: proofDir,
-        },
-      }),
-      "installed dashboard Playwright",
-    );
+    const playwright = await runner(["bun", "run", "test:e2e:installed"], {
+      cwd: resolve(REPO_ROOT, "dashboard"),
+      env: {
+        GUARD_INSTALLED_ACTIVITY_COUNT: String(expectedActivityCount),
+        GUARD_INSTALLED_DASHBOARD_SESSION: session,
+        GUARD_INSTALLED_ORIGIN: origin,
+        PLAYWRIGHT_PROOF_DIR: proofDir,
+      },
+    });
+    if (playwright.exitCode !== 0) {
+      throw new Error(
+        `installed dashboard Playwright failed (${playwright.exitCode})\n${playwright.stdout}\n${playwright.stderr}`,
+      );
+    }
   } catch (error) {
     playwrightFailure = error;
   }

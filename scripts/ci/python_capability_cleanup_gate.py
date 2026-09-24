@@ -49,6 +49,7 @@ from scripts.ci.python_capability_cleanup_analysis import (  # noqa: E402
     reachable as _reachable,
 )
 from scripts.ci.python_runtime_retirement import validate_retired_modules  # noqa: E402
+from scripts.ci.runtime_retirement_ledger import validate_retirement_ledger  # noqa: E402
 
 SCHEMA: Final = "hol-guard.python-capability-cleanup.v1"
 CONTRACT: Final = "docs/guard/contracts/python-capability-ownership.v1.json"
@@ -354,6 +355,8 @@ def run(root: Path, wheel: Path | None = None, *, artifacts: Sequence[Path] = ()
     if not isinstance(oracle_modules, list) or not all(isinstance(item, str) for item in oracle_modules):
         raise RuntimeError("lazy_oracle_modules must be a list")
     retired_evidence = validate_retired_modules(root, contract, analysis=import_analysis, artifacts=checked_artifacts)
+    if contract.get("retired_modules"):
+        validate_retirement_ledger(root, contract)
     retired_modules = [str(record["module"]) for record in retired_evidence]
     _verify_import_surface(root, oracle_modules, candidate_modules + retired_modules)
     source_loc, reached, dynamic_imports, dynamic_unbounded = _source_analysis(root, owners, import_analysis)

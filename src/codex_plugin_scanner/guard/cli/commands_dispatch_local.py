@@ -149,15 +149,17 @@ def _run_guard_command_inspection_command(
             from ..daemon.manager import ensure_guard_daemon
 
             try:
-                _client(guard_home)
+                payload = _client(guard_home).inspect_command({
+                    "command": command_text, "cwd": str(workspace), "home_dir": str(home),
+                })
             except GuardDaemonRequestError:
                 try:
                     ensure_guard_daemon(guard_home, home_dir=home)
                 except RuntimeError as error:
                     raise GuardDaemonRequestError(str(error)) from error
-            payload = _client(guard_home).inspect_command({
-                "command": command_text, "cwd": str(workspace), "home_dir": str(home),
-            })
+                payload = _client(guard_home).inspect_command({
+                    "command": command_text, "cwd": str(workspace), "home_dir": str(home),
+                })
         except GuardDaemonRequestError:
             payload = unavailable_command_inspection(command_text, cwd=workspace, home_dir=home)
     except ValueError as error:

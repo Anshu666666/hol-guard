@@ -99,12 +99,11 @@ pub fn parse_command(request: &CommandModelRequestV1) -> Result<CanonicalCommand
     if raw.is_empty() {
         return Err("command_text_empty".to_owned());
     }
-    // cmd and PowerShell keep backslash as a path separator. A Windows build
-    // does the same for posix-labeled requests, because that is the dialect
-    // the current runtime client sends.
-    let preserve_backslash = matches!(request.dialect.as_str(), "cmd" | "powershell")
-        || (cfg!(windows) && request.dialect == "posix");
-    if (!preserve_backslash && request.dialect != "posix") || request.transport != "shell_string" {
+    // Unquoted Windows paths keep backslash separators. Quoted POSIX escapes
+    // stay intact, and cmd/PowerShell stay uncertain until they have their own
+    // separator and quoting rules.
+    let preserve_unquoted_backslash = cfg!(windows) && request.dialect == "posix";
+    if request.dialect != "posix" || request.transport != "shell_string" {
         return Ok(uncertain(request, raw, "unsupported_dialect_or_transport"));
     }
     if raw.chars().count() > MAX_COMMAND_BYTES || raw.len() > MAX_COMMAND_BYTES {
@@ -128,7 +127,7 @@ pub fn parse_command(request: &CommandModelRequestV1) -> Result<CanonicalCommand
     let mut total_tokens = 0usize;
     for raw_segment in raw_segments {
         let text: String = chars[raw_segment.start..raw_segment.end].iter().collect();
-        let tokens = match shell_tokens(&text, preserve_backslash) {
+        let tokens = match shell_tokens(&text, preserve_unquoted_backslash) {
             Ok(value) => value,
             Err(reason) => return Ok(uncertain(request, raw, reason)),
         };
@@ -526,7 +525,7 @@ fn shell_tokens(command: &str, preserve_backslash: bool) -> Result<Vec<String>, 
             Quote::Double => {
                 if current == '"' {
                     quote = Quote::None;
-                } else if current == '\\' && !preserve_backslash {
+                } else if current == '\\' {
                     escaped = true;
                     token_started = true;
                 } else {
@@ -793,6 +792,14 @@ mod tests {
                 "x\u{00a0}y"
             ]
         );
+    }
+
+    #[test]
+    fn unquoted_backslash_preservation_keeps_quoted_escapes() {
+        let tokens = shell_tokens(r#"printf "%s" "a\q" "a\$b" "a\"b" "a\\b""#, true).unwrap();
+        assert_eq!(tokens, ["printf", "%s", "a\\q", "a\\$b", "a\"b", "a\\b"]);
+        let path = shell_tokens(r"cmd /c echo C:\Work\file.txt", true).unwrap();
+        assert_eq!(path, ["cmd", "/c", "echo", r"C:\Work\file.txt"]);
     }
 
     #[test]

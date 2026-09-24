@@ -195,10 +195,15 @@ def load_devin_jsonc(path: Path) -> DevinJsonDocument:
 
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError:
+    except FileNotFoundError:
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=False)
-    except ValueError:
+    except UnicodeDecodeError:
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=True, exists=True)
+    except OSError:
+        # A read failure on an existing file (permission denied, I/O error)
+        # must fail closed so install() refuses rather than rewriting it.
+        exists = path.exists()
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=exists, exists=exists)
     if not text.strip():
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=True)
     try:

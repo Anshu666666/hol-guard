@@ -395,6 +395,49 @@ class TestDevinWindowsPaths:
         windows_script = "C:\\guard\\managed\\bounded-hooks\\devin.py"
         assert is_guard_managed_hook_command(f"C:\\Python\\python.exe -I {windows_script}")
 
+    def test_unreadable_existing_config_fails_closed(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text("{}", encoding="utf-8")
+        original_bytes = config_path.read_bytes()
+
+        def _deny(*_args: object, **_kwargs: object) -> str:
+            raise PermissionError("denied")
+
+        monkeypatch.setattr(Path, "read_text", _deny)
+        result = DevinHarnessAdapter().detect(ctx)
+        assert str(config_path) in result.config_paths
+        assert any("could not be parsed" in warning for warning in result.warnings)
+        with pytest.raises(ValueError, match="could not be parsed"):
+            DevinHarnessAdapter().install(ctx)
+        monkeypatch.undo()
+        assert config_path.read_bytes() == original_bytes
+
+    def test_missing_config_still_counts_as_absent(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        missing = _user_config_path(ctx)
+        assert not missing.exists()
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.adapters.devin.install_guard_shim",
+            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-devin"), "notes": []},
+        )
+        DevinHarnessAdapter().install(ctx)
+        assert json.loads(missing.read_text(encoding="utf-8"))["hooks"]
+
+    def test_install_writes_config_atomically_without_leftover_temps(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.adapters.devin.install_guard_shim",
+            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-devin"), "notes": []},
+        )
+        DevinHarnessAdapter().install(ctx)
+        config_path = _user_config_path(ctx)
+        assert json.loads(config_path.read_text(encoding="utf-8"))["hooks"]
+        assert not list(config_path.parent.glob("*.tmp"))
+        assert not list(config_path.parent.glob("*.guard-tmp"))
+        assert not list(config_path.parent.glob(".*.tmp"))
+
 
 class TestDevinInstallUninstall:
     def _patch_shims(self, monkeypatch, ctx: HarnessContext) -> None:

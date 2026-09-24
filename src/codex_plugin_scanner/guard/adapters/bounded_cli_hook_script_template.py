@@ -318,13 +318,14 @@ def _to_native(daemon_response: dict[str, object], event_name: str) -> tuple[str
         stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
         return stdout, "", 2 if decision == "block" else 0
     if "hookSpecificOutput" in daemon_response or "decision" in daemon_response:
-        policy = str(daemon_response.get("policy_action") or "block")
+        native_response = dict(daemon_response)
+        policy = str(native_response.get("policy_action") or "block")
         exit_code = 2 if _should_exit_block(event_name, policy) else 0
         if HARNESS == "devin" and exit_code == 2:
-            daemon_response["decision"] = "block"
-            if not daemon_response.get("reason"):
-                daemon_response["reason"] = f"HOL Guard blocked this action ({policy})"
-        stdout = json.dumps(daemon_response, ensure_ascii=True, separators=(",", ":"))
+            native_response["decision"] = "block"
+            if not native_response.get("reason"):
+                native_response["reason"] = f"HOL Guard blocked this action ({policy})"
+        stdout = json.dumps(native_response, ensure_ascii=True, separators=(",", ":"))
         return stdout, "", exit_code
     policy_action = str(daemon_response.get("policy_action") or "block")
     reason = str(daemon_response.get("reason") or daemon_response.get("permission_decision_reason") or "")

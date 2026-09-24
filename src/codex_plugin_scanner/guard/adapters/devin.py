@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 
 from ..aibom_detection import extend_detection_with_workspace_aibom
+from ..codex_hook_integrity import atomic_write_text
 from ..config import MAX_APPROVAL_WAIT_TIMEOUT_SECONDS, load_guard_config
 from ..models import GuardArtifact, HarnessDetection
 from ..shims import install_guard_shim, remove_guard_shim
@@ -62,6 +63,11 @@ from .hook_group_merge import merge_hook_entry, prune_managed_hook_entries
 _GUARD_HOOK_INTERNAL_TIMEOUT_SECONDS = 25
 _DEVIN_MANAGED_HOOK_TIMEOUT_SECONDS = 30
 _DEVIN_MANAGED_HOOK_TIMEOUT_GRACE_SECONDS = 5
+
+
+def _write_json_atomic(path: Path, payload: dict[str, object]) -> None:
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o600
+    atomic_write_text(path, json.dumps(payload, indent=2) + "\n", mode=mode)
 
 
 def _adapter_result(
@@ -230,14 +236,14 @@ class DevinHarnessAdapter(HarnessAdapter):
                         f"Devin config at {hooks_v1_path} could not be parsed; "
                         "hooks and MCP servers in it were not inventoried."
                     )
-                payload = document.payload
-                # hooks.v1.json is the hooks object itself, not wrapped.
-                append_devin_hook_artifacts(
-                    artifacts=artifacts,
-                    hooks=payload,
-                    config_path=hooks_v1_path,
-                    scope="project",
-                )
+                else:
+                    # hooks.v1.json is the hooks object itself, not wrapped.
+                    append_devin_hook_artifacts(
+                        artifacts=artifacts,
+                        hooks=document.payload,
+                        config_path=hooks_v1_path,
+                        scope="project",
+                    )
 
         for mcp_path, scope in self._mcp_candidates(context):
             if not mcp_path.is_file():
@@ -248,6 +254,7 @@ class DevinHarnessAdapter(HarnessAdapter):
                 warnings.append(
                     f"Devin config at {mcp_path} could not be parsed; hooks and MCP servers in it were not inventoried."
                 )
+                continue
             payload = document.payload
             append_mcp_server_artifacts(
                 harness=self.harness,
@@ -397,12 +404,9 @@ class DevinHarnessAdapter(HarnessAdapter):
         payload["hooks"] = hooks
 
         self._sync_managed_hook_groups(context, hooks, hook_command)
-        config_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        _write_json_atomic(config_path, payload)
 
-        state_path.write_text(
-            json.dumps({"managed_config_path": str(config_path)}, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        _write_json_atomic(state_path, {"managed_config_path": str(config_path)})
 
         return _adapter_result(
             self.harness,
@@ -455,7 +459,7 @@ class DevinHarnessAdapter(HarnessAdapter):
                         payload.pop("hooks", None)
                     else:
                         payload["hooks"] = hooks
-                    config_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+                    _write_json_atomic(config_path, payload)
 
         _state_dir, _backup_path, state_path = self._managed_state_paths(context)
         if state_path.is_file():

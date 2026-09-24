@@ -19,6 +19,7 @@ MCP servers are read from ``~/.config/devin/mcp_config.json``,
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from ..aibom_detection import enrich_mcp_server_metadata
@@ -169,30 +170,51 @@ def _strip_trailing_commas(text: str) -> str:
     return "".join(output)
 
 
-def load_devin_jsonc(path: Path) -> tuple[dict[str, object], bool]:
+@dataclass(frozen=True)
+class DevinJsonDocument:
+    """Result of tolerantly reading a Devin JSON/JSONC file."""
+
+    payload: dict[str, object]
+    had_comments: bool
+    parse_failed: bool
+    exists: bool
+
+
+def load_devin_jsonc(path: Path) -> DevinJsonDocument:
     """Read a Devin JSONC config for inventory only.
 
-    Returns ``(payload, had_comments)``. ``had_comments`` is True when strict
-    JSON parsing failed but the tolerant JSONC parse (``//``/``/* */``
-    comments and trailing commas stripped) succeeded, meaning the file must
-    never be rewritten by Guard. When both parses fail the result is
-    ``({}, False)``, matching the lenient ``_json_payload`` convention.
+    ``had_comments`` is True when strict JSON parsing failed but the tolerant
+    JSONC parse (``//``/``/* */`` comments and trailing commas stripped)
+    succeeded, meaning the file must never be rewritten by Guard.
+    ``parse_failed`` is True when both parses fail, or when the parsed
+    top-level value is not a JSON object; an empty or whitespace-only file
+    counts as an empty parseable document.
     """
 
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
-        return {}, False
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=False)
+    if not text.strip():
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=True)
     try:
         payload = json.loads(text)
-        return (payload if isinstance(payload, dict) else {}), False
     except json.JSONDecodeError:
         pass
+    else:
+        if isinstance(payload, dict):
+            return DevinJsonDocument(payload=payload, had_comments=False, parse_failed=False, exists=True)
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=True, exists=True)
+    stripped = _strip_trailing_commas(_strip_jsonc_comments(text))
+    if not stripped.strip():
+        return DevinJsonDocument(payload={}, had_comments=True, parse_failed=False, exists=True)
     try:
-        payload = json.loads(_strip_trailing_commas(_strip_jsonc_comments(text)))
+        payload = json.loads(stripped)
     except json.JSONDecodeError:
-        return {}, False
-    return (payload if isinstance(payload, dict) else {}), True
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=True, exists=True)
+    if isinstance(payload, dict):
+        return DevinJsonDocument(payload=payload, had_comments=True, parse_failed=False, exists=True)
+    return DevinJsonDocument(payload={}, had_comments=True, parse_failed=True, exists=True)
 
 
 def _string_args(server_config: dict[str, object]) -> tuple[str, ...]:
@@ -438,6 +460,7 @@ __all__ = [
     "DEVIN_SKILLS_DIR",
     "DEVIN_USER_CONFIG_DIR",
     "GUARD_MANAGED_MARKER",
+    "DevinJsonDocument",
     "append_devin_hook_artifacts",
     "append_devin_skill_artifacts",
     "append_found_path",

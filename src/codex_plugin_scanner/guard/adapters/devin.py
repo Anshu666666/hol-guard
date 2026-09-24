@@ -172,7 +172,14 @@ class DevinHarnessAdapter(HarnessAdapter):
             if not config_path.is_file():
                 continue
             append_found_path(found_paths, config_path)
-            payload, _had_comments = load_devin_jsonc(config_path)
+            document = load_devin_jsonc(config_path)
+            if document.parse_failed:
+                warnings.append(
+                    f"Devin config at {config_path} could not be parsed; "
+                    "hooks and MCP servers in it were not inventoried."
+                )
+                continue
+            payload = document.payload
             if not payload:
                 continue
             append_devin_hook_artifacts(
@@ -194,7 +201,7 @@ class DevinHarnessAdapter(HarnessAdapter):
             hooks_v1_path = context.workspace_dir / DEVIN_DIR / DEVIN_HOOKS_FILE
             if hooks_v1_path.is_file():
                 append_found_path(found_paths, hooks_v1_path)
-                payload, _had_comments = load_devin_jsonc(hooks_v1_path)
+                payload = load_devin_jsonc(hooks_v1_path).payload
                 # hooks.v1.json is the hooks object itself, not wrapped.
                 append_devin_hook_artifacts(
                     artifacts=artifacts,
@@ -207,7 +214,7 @@ class DevinHarnessAdapter(HarnessAdapter):
             if not mcp_path.is_file():
                 continue
             append_found_path(found_paths, mcp_path)
-            payload, _had_comments = load_devin_jsonc(mcp_path)
+            payload = load_devin_jsonc(mcp_path).payload
             append_mcp_server_artifacts(
                 harness=self.harness,
                 artifacts=artifacts,
@@ -327,21 +334,19 @@ class DevinHarnessAdapter(HarnessAdapter):
 
         payload: dict[str, object] = {}
         if config_path.is_file():
-            try:
-                raw_text = config_path.read_text(encoding="utf-8")
-            except OSError as exc:
-                raise ValueError(f"Cannot read Devin config at {config_path}: {exc}") from exc
-            payload, had_comments = load_devin_jsonc(config_path)
-            if raw_text.strip() and not payload and raw_text.strip() not in {"{}"}:
+            document = load_devin_jsonc(config_path)
+            if document.parse_failed:
                 raise ValueError(
-                    f"Devin config at {config_path} could not be parsed as a JSON object; Guard will not overwrite it."
+                    "Devin config at ~/.config/devin/config.json could not be parsed as a JSON object; "
+                    "Guard will not rewrite it. Fix the file, then rerun hol-guard install devin."
                 )
-            if had_comments:
+            if document.had_comments:
                 raise ValueError(
                     "Devin config at ~/.config/devin/config.json contains comments or trailing commas; Guard "
                     "will not rewrite it. Remove the comments or move them to another file, then rerun "
                     "hol-guard install devin."
                 )
+            payload = document.payload
 
         state_dir, backup_path, state_path = self._managed_state_paths(context)
         state_dir.mkdir(parents=True, exist_ok=True)
@@ -390,14 +395,19 @@ class DevinHarnessAdapter(HarnessAdapter):
         )
         config_path = self._user_config_path(context)
         managed_hooks_left_in_place = False
+        config_unreadable = False
         if config_path.is_file():
             _ensure_path_within_root(self._devin_config_dir(context).parent, config_path, label="Devin")
-            payload, had_comments = load_devin_jsonc(config_path)
-            # A JSONC file is never rewritten: pruning would silently strip the
-            # user's comments. Guard-managed handlers inside it stay behind.
-            if had_comments:
+            document = load_devin_jsonc(config_path)
+            # A JSONC or unparseable file is never rewritten: pruning would
+            # silently strip the user's comments or data. Guard-managed
+            # handlers inside it stay behind.
+            if document.parse_failed:
+                config_unreadable = True
+            elif document.had_comments:
                 managed_hooks_left_in_place = True
             else:
+                payload = document.payload
                 hooks = payload.get("hooks")
                 if isinstance(hooks, dict):
                     for event_name in list(hooks):
@@ -424,7 +434,9 @@ class DevinHarnessAdapter(HarnessAdapter):
         shim_notes = (
             [str(note) for note in raw_notes if isinstance(note, str)] if isinstance(raw_notes, (list, tuple)) else []
         )
-        if managed_hooks_left_in_place:
+        if config_unreadable:
+            hook_notes = ["Devin config could not be parsed; Guard left the file untouched."]
+        elif managed_hooks_left_in_place:
             hook_notes = [
                 "Devin config is JSONC (comments or trailing commas); Guard left its managed hook entries "
                 "in place rather than rewriting the file. Remove the entries under the hooks key manually."

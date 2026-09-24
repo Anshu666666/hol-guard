@@ -217,9 +217,19 @@ class TestDevinDetect:
     def test_load_devin_jsonc_flags_commented_payload(self, tmp_path: Path) -> None:
         path = tmp_path / "config.json"
         path.write_text((FIXTURES / "config_with_comments.jsonc").read_text(encoding="utf-8"), encoding="utf-8")
-        payload, had_comments = load_devin_jsonc(path)
-        assert had_comments is True
-        assert payload["permissions"]["allow"] == ["exec(ls*)"]
+        document = load_devin_jsonc(path)
+        assert document.had_comments is True
+        assert document.parse_failed is False
+        assert document.payload["permissions"]["allow"] == ["exec(ls*)"]
+
+    def test_unparseable_config_warns_and_is_still_found(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text('{"permissions": ', encoding="utf-8")
+        result = DevinHarnessAdapter().detect(ctx)
+        assert str(config_path) in result.config_paths
+        assert any("could not be parsed" in warning for warning in result.warnings)
 
     def test_claude_hooks_overlap_warns(self, tmp_path: Path) -> None:
         ctx = _ctx(tmp_path, workspace=True)
@@ -377,6 +387,64 @@ class TestDevinInstallUninstall:
         with pytest.raises(ValueError, match="comments or trailing commas"):
             DevinHarnessAdapter().install(ctx)
         assert config_path.read_text(encoding="utf-8") == original
+
+    def test_install_refuses_unparseable_config(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        original = '{"permissions": '
+        config_path.write_text(original, encoding="utf-8")
+        self._patch_shims(monkeypatch, ctx)
+        with pytest.raises(ValueError, match="could not be parsed"):
+            DevinHarnessAdapter().install(ctx)
+        assert config_path.read_text(encoding="utf-8") == original
+        assert not (ctx.guard_home / "managed" / "devin" / "install.state.json").exists()
+
+    def test_install_refuses_non_object_config(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text("[]", encoding="utf-8")
+        self._patch_shims(monkeypatch, ctx)
+        with pytest.raises(ValueError, match="could not be parsed"):
+            DevinHarnessAdapter().install(ctx)
+        assert config_path.read_text(encoding="utf-8") == "[]"
+
+    def test_install_handles_empty_config_file(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text("", encoding="utf-8")
+        self._patch_shims(monkeypatch, ctx)
+        manifest = DevinHarnessAdapter().install(ctx)
+        assert manifest["active"] is True
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+        assert set(payload["hooks"].keys()) == {"PreToolUse", "PermissionRequest", "UserPromptSubmit", "PostToolUse"}
+
+    def test_uninstall_leaves_unparseable_config_untouched(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        original = '{"permissions": '
+        config_path.write_text(original, encoding="utf-8")
+        self._patch_shims(monkeypatch, ctx)
+        manifest = DevinHarnessAdapter().uninstall(ctx)
+        assert config_path.read_text(encoding="utf-8") == original
+        assert any("could not be parsed" in note for note in manifest["notes"])
+        assert not any("entries removed" in note for note in manifest["notes"])
+
+    def test_uninstall_leaves_managed_handlers_in_jsonc_config(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        self._patch_shims(monkeypatch, ctx)
+        adapter = DevinHarnessAdapter()
+        adapter.install(ctx)
+        config_path = _user_config_path(ctx)
+        commented = config_path.read_text(encoding="utf-8").replace('"hooks"', '// user comment\n  "hooks"', 1)
+        config_path.write_text(commented, encoding="utf-8")
+        manifest = adapter.uninstall(ctx)
+        assert config_path.read_text(encoding="utf-8") == commented
+        assert any("left its managed hook entries in place" in note for note in manifest["notes"])
+        assert not any("entries removed" in note for note in manifest["notes"])
 
     def test_uninstall_removes_only_managed_handlers(self, tmp_path: Path, monkeypatch) -> None:
         ctx = _ctx(tmp_path)

@@ -96,16 +96,18 @@ async function resolveWheel(runner: CommandRunner, version: string): Promise<str
 }
 async function waitForReady(origin: string, timeoutMs = 60_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  let observation = "no response";
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`${origin}/healthz`);
       if (response.ok) return;
-    } catch {
-      // Container health is still converging.
+      observation = `HTTP ${response.status}`;
+    } catch (error) {
+      observation = error instanceof Error ? error.message.slice(0, 160) : "request failed";
     }
     await Bun.sleep(250);
   }
-  throw new Error("installed Guard daemon did not become ready");
+  throw new Error(`installed Guard daemon did not become ready (${observation})`);
 }
 export async function readyFromLogs(
   project: string, environment: Record<string, string>, runner: CommandRunner,
@@ -438,6 +440,28 @@ async function verifyApi(
     statuses,
   };
 }
+async function waitForReadyWithDiagnostics(
+  origin: string, project: string, environment: Record<string, string>, runner: CommandRunner,
+): Promise<void> {
+  try {
+    await waitForReady(origin);
+  } catch (error) {
+    const [guardLogs, relayLogs, state] = await Promise.all([
+      runner(composeCommand(project, "logs", "--no-color", "--tail", "20", "guard"), {
+        cwd: LAB_DIR, env: environment,
+      }),
+      runner(composeCommand(project, "logs", "--no-color", "--tail", "20", "relay"), {
+        cwd: LAB_DIR, env: environment,
+      }),
+      runner(composeCommand(project, "ps"), { cwd: LAB_DIR, env: environment }),
+    ]);
+    const diagnostic = [guardLogs, relayLogs, state]
+      .filter((result) => result.exitCode === 0)
+      .map((result) => result.stdout.replaceAll(SENTINEL, "[REDACTED]").slice(-MAX_GUARD_FAILURE_CHARS))
+      .join("\n");
+    throw new Error(`${String(error)}\n${diagnostic}`);
+  }
+}
 export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvidence> {
   const project = safeProjectName(Bun.env.GUARD_TEST_PROJECT ?? `guard-command-analytics-${process.pid}`);
   const port = Number(Bun.env.GUARD_TEST_PORT ?? 48_000 + process.pid % 1_000);
@@ -477,7 +501,7 @@ export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvi
         .join("");
       throw new Error(`Dockerlabs startup failed (${startup.exitCode})\n${startup.stderr || startup.stdout}${diagnostic}`);
     }
-    await waitForReady(origin);
+    await waitForReadyWithDiagnostics(origin, project, environment, runner);
     const pending = await waitForPendingWorkflow(project, environment, runner);
     const session = await readDashboardSession(project, environment, runner);
     await approveWorkflowAuthorization(origin, pending, session);

@@ -1215,11 +1215,26 @@ class UserRecoveryCoordinator:
             authorization_failure = self._authorization_failure(operation, emit, last_before_start)
             if authorization_failure is not None:
                 return authorization_failure
+            operation.unresolved_owner = True
+            operation.unresolved_identity = None
             try:
                 started = _coerce_start(self._start_process(self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
-                started = StartResult(False, None, "startup_failed")
+                return self._finish_action(
+                    operation,
+                    emit,
+                    phase="failed",
+                    inspection=inspection,
+                    reason_code="startup_failed",
+                    service="unknown",
+                    protection="unknown",
+                    worker_active=True,
+                    retry_allowed=False,
+                    requires_human_action=True,
+                )
             if not started.started:
+                operation.unresolved_owner = False
+                operation.unresolved_identity = None
                 return self._finish_action(
                     operation,
                     emit,

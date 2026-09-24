@@ -482,14 +482,14 @@ def test_generated_plugin_withholds_unserializable_posttool_output(tmp_path: Pat
     assert "SECRET_OUTPUT" not in after.stdout
 
 
-def test_generated_plugin_replacement_does_not_forward_unreviewed_metadata(tmp_path: Path) -> None:
+@pytest.mark.parametrize("decision", [{"decision": "allow"}, {"decision": "allow", "replacement": "SAFE_OUTPUT"}])
+def test_generated_plugin_withholds_legacy_allow_without_reviewed_output_action(
+    tmp_path: Path, decision: dict[str, str]
+) -> None:
     context = _context(tmp_path)
     _activate(context, "plugin")
     guard = tmp_path / "replacement_guard.py"
-    guard.write_text(
-        'import json\nprint(json.dumps({"decision":"allow","replacement":"SAFE_OUTPUT"}))\n',
-        encoding="utf-8",
-    )
+    guard.write_text(f"print({json.dumps(decision)!r})\n", encoding="utf-8")
     source = _plugin_source(context, [sys.executable, str(guard)])
     after = _run_plugin(
         source,
@@ -497,9 +497,14 @@ def test_generated_plugin_replacement_does_not_forward_unreviewed_metadata(tmp_p
         'plugin.hooks.afterTool({toolCall:{toolCallId:"2",toolName:"read_files"},input:{paths:["README.md"]},result:{output:"SECRET_OUTPUT",isError:false,metadata:{token:"SECRET_METADATA"}}})',
     )
     assert after.returncode == 0, after.stderr
-    assert json.loads(after.stdout)["result"] == {"output": "SAFE_OUTPUT", "isError": False}
+    assert json.loads(after.stdout)["result"] == {
+        "output": "HOL Guard did not provide a reviewed output action, so this tool result was withheld.",
+        "isError": True,
+    }
     assert "SECRET_OUTPUT" not in after.stdout
     assert "SECRET_METADATA" not in after.stdout
+    proof_path = context.guard_home / "managed" / "cline" / "proofs" / "plugin-posttool.json"
+    assert json.loads(proof_path.read_text(encoding="utf-8"))["outcome"] == "withheld"
 
 
 @pytest.mark.parametrize(
@@ -600,7 +605,9 @@ def test_generated_plugin_rejects_ambiguous_guard_decision(tmp_path: Path, decis
     assert "SECRET_OUTPUT" not in after.stdout
 
 
-def test_generated_plugin_accepts_explicit_native_allow_shape(tmp_path: Path) -> None:
+def test_generated_plugin_accepts_explicit_native_pretool_allow_but_withholds_posttool_without_directive(
+    tmp_path: Path,
+) -> None:
     context = _context(tmp_path)
     _activate(context, "plugin")
     guard = tmp_path / "allow_guard.py"
@@ -620,7 +627,11 @@ def test_generated_plugin_accepts_explicit_native_allow_shape(tmp_path: Path) ->
         'plugin.hooks.afterTool({toolCall:{toolCallId:"2",toolName:"read_files"},input:{paths:["README.md"]},result:{output:"SAFE_OUTPUT",isError:false,metadata:{token:"SECRET_METADATA"}}})',
     )
     assert after.returncode == 0, after.stderr
-    assert json.loads(after.stdout)["result"] == {"output": "SAFE_OUTPUT", "isError": False}
+    assert json.loads(after.stdout)["result"] == {
+        "output": "HOL Guard did not provide a reviewed output action, so this tool result was withheld.",
+        "isError": True,
+    }
+    assert "SAFE_OUTPUT" not in after.stdout
     assert "SECRET_METADATA" not in after.stdout
 
 

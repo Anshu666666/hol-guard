@@ -209,14 +209,6 @@ function guardExplicitlyAllows(payload) {{
     || permission === "allow" || nestedDecision === "allow";
 }}
 
-function reviewedOutput(payload) {{
-  if (!payload || typeof payload !== "object") return undefined;
-  for (const key of ["reviewed_output", "reviewedOutput", "safe_output", "safeOutput", "replacement", "excerpt"]) {{
-    if (typeof payload[key] === "string") return payload[key];
-  }}
-  return undefined;
-}}
-
 function mapParameters(input) {{
   if (!input || typeof input !== "object" || Array.isArray(input)) return {{}};
   const output = {{}};
@@ -434,13 +426,8 @@ const plugin = {{
         proof("posttool", "withheld");
         return blockedResult("HOL Guard returned an unsupported output action, so this tool result was withheld.");
       }}
-      const replacement = reviewedOutput(decision.payload);
-      if (replacement !== undefined) {{
-        proof("posttool", "replaced");
-        return {{ result: {{ output: replacement, isError: result?.isError === true }} }};
-      }}
-      proof("posttool", "filtered");
-      return {{ result: {{ output: result?.output, isError: result?.isError === true }} }};
+      proof("posttool", "withheld");
+      return blockedResult("HOL Guard did not provide a reviewed output action, so this tool result was withheld.");
     }},
   }},
 }};

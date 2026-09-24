@@ -46,10 +46,14 @@ def _fake_guard(tmp_path: Path) -> Path:
     path.write_text(
         """from __future__ import annotations
 import json, sys
+from hashlib import sha256
 payload=json.load(sys.stdin)
 text=json.dumps(payload, sort_keys=True)
 if 'BLOCK_ME' in text or 'SECRET_OUTPUT' in text:
     print(json.dumps({'decision':'block','reason':'blocked by completion gate'}))
+elif isinstance(payload.get('tool_result', {}).get('output'), str):
+    output=payload['tool_result']['output']
+    print(json.dumps({'decision':'allow','model_output_action':'allow_original','reviewed_output_sha256':sha256(output.encode()).hexdigest()}))
 else:
     print(json.dumps({'decision':'allow'}))
 """,

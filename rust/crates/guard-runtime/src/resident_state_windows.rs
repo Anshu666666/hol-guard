@@ -351,7 +351,7 @@ pub(super) fn protect_windows_path(path: &Path, directory: bool) -> Result<(), S
     )
     .map_err(|_| "native_resident_windows_acl_apply_failed".to_owned())?;
 
-    verify_windows_path(path, &owner)
+    verify_windows_path(&path, &owner)
 }
 
 fn verify_windows_path_owner(path: &Path, owner: &Sid) -> Result<(), String> {

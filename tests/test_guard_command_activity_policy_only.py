@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.cli import commands_support_command_activity as activity_support
+from codex_plugin_scanner.guard.runtime.command_activity_api_contract import CommandActivityListQuery
 from codex_plugin_scanner.guard.runtime.command_activity_contract import (
     ActivityApprovalReuseStatus,
     ActivityDecisionReason,
@@ -38,7 +39,7 @@ def test_missing_native_review_records_policy_only_command_activity(
 
     payload = {
         "tool_name": "Shell",
-        "tool_input": {"command": "git diff --stat"},
+        "tool_input": {"command": "git diff --stat # guard-private-command-sentinel"},
         "tool_call_id": "toolcall_abcdef1234567890",
     }
     assert activity_support.record_pre_hook_command_activity_best_effort(
@@ -70,3 +71,5 @@ def test_missing_native_review_records_policy_only_command_activity(
     assert activity.decision_reason_code is ActivityDecisionReason.CAPABILITY
     assert activity.match_count == 0
     assert store.count_command_activity_rule_hits() == 0
+    page = store.list_command_activity_page(CommandActivityListQuery())
+    assert "guard-private-command-sentinel" not in str(page)

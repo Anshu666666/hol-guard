@@ -315,8 +315,10 @@ def _windows_native_dll_directories() -> list[str]:
         roots.append(os.path.join(system_root, "System32"))
         roots.append(system_root)
     base_prefix = getattr(sys, "base_prefix", "")
-    if isinstance(base_prefix, str) and base_prefix and any(
-        os.path.isfile(os.path.join(base_prefix, name)) for name in ("vcruntime140.dll", "vcruntime140_1.dll")
+    if (
+        isinstance(base_prefix, str)
+        and base_prefix
+        and any(os.path.isfile(os.path.join(base_prefix, name)) for name in ("vcruntime140.dll", "vcruntime140_1.dll"))
     ):
         roots.append(base_prefix)
     runtime_dir = _bundled_runtime_candidate().parent
@@ -347,9 +349,7 @@ def _isolated_environment() -> dict[str, str]:
         "WINDIR",
     }
     environment = {
-        key: value
-        for key, value in os.environ.items()
-        if key.upper() in allowed or key.upper().startswith("LC_")
+        key: value for key, value in os.environ.items() if key.upper() in allowed or key.upper().startswith("LC_")
     }
     if os.name == "nt":
         dll_path = os.pathsep.join(_windows_native_dll_directories())

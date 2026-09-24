@@ -105,9 +105,18 @@ else:
             SIMPLE_HEAVY = "simple_heavy"
 
         class Console:
-            def __init__(self, *, file: TextIO | None = None, soft_wrap: bool = False) -> None:
+            def __init__(
+                self,
+                *,
+                file: TextIO | None = None,
+                soft_wrap: bool = False,
+                legacy_windows: bool | None = None,
+                safe_box: bool = True,
+            ) -> None:
                 self.file = sys.stdout if file is None else file
                 self.soft_wrap = soft_wrap
+                self.legacy_windows = legacy_windows
+                self.safe_box = safe_box
 
             def print(self, *objects: object) -> None:
                 self.file.write(" ".join(str(item) for item in objects))

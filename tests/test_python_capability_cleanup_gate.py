@@ -30,6 +30,8 @@ def cleanup_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         scope_globs=["src/retired_*.py"],
         capabilities=[{"id": "retired", "class": "dead_duplicate", "patterns": ["src/retired_*.py"]}],
         package_excluded_candidates=candidates,
+        retired_modules=[],
+        retired_test_paths=[],
         oracle_tests=[],
         lazy_oracle_modules=[],
     )
@@ -110,16 +112,17 @@ def test_cleanup_contract_covers_every_scoped_hook_capability() -> None:
     assert payload["schema"] == "hol-guard.python-capability-cleanup.v1"
     assert payload["status"] == "passed"
     # hook_launcher_recovery.py matches the existing hook control-plane scope glob.
-    assert payload["scope_files"] == 100
-    assert payload["capabilities"]["legacy_python_resident_transport"] == 2
-    assert payload["candidate_evidence"] == [
+    assert payload["scope_files"] == 98
+    assert "legacy_python_resident_transport" not in payload["capabilities"]
+    assert payload["candidate_evidence"] == []
+    assert payload["retired_evidence"] == [
         {
-            "path": "src/codex_plugin_scanner/guard/native_runtime_resident.py",
-            "module": "codex_plugin_scanner.guard.native_runtime_resident",
-            "loc": 498,
+            "path": f"src/codex_plugin_scanner/guard/{name}.py",
+            "module": f"codex_plugin_scanner.guard.{name}",
+            "source_present": False,
             "source_importers": [],
-            "package_excluded": True,
         }
+        for name in ("native_runtime_resident", "native_runtime_resident_transport")
     ]
     assert payload["dynamic_import_destinations_checked"] is True
     assert payload["dynamic_import_unbounded"] == []
@@ -323,11 +326,12 @@ def test_dynamic_import_graph_records_alias_and_static_expression(tmp_path: Path
     assert any(item.startswith("codex_plugin_scanner.guard.loader:") for item in importers)
 
 
-def test_cleanup_contract_rejects_empty_excluded_candidate_list() -> None:
+def test_cleanup_contract_requires_exclusion_or_physical_retirement_record() -> None:
     contract = GATE._read_json(ROOT / GATE.CONTRACT)
     contract["package_excluded_candidates"] = []
+    contract["retired_modules"] = []
 
-    with pytest.raises(RuntimeError, match="non-empty list"):
+    with pytest.raises(RuntimeError, match="non-empty exclusion or retirement record"):
         GATE._run_inputs(ROOT, contract)
 
 
@@ -344,11 +348,11 @@ def test_retained_python_oracle_is_loaded_only_by_explicit_test_surface(monkeypa
     assert callable(surface["hydrate_hook_payload_reference"])
 
 
-def test_excluded_dead_module_cannot_enter_a_package_artifact(tmp_path: Path) -> None:
+def test_retired_module_cannot_enter_a_package_artifact(tmp_path: Path) -> None:
     wheel = tmp_path / "fixture.whl"
     with ZipFile(wheel, "w") as archive:
         archive.writestr("codex_plugin_scanner/guard/native_runtime_resident.py", b"retained source")
-    with pytest.raises(RuntimeError, match="package artifact contains excluded dead module"):
+    with pytest.raises(RuntimeError, match="package artifact contains retired module"):
         GATE.run(ROOT, wheel)
 
     sdist = tmp_path / "fixture.tar.gz"
@@ -356,16 +360,16 @@ def test_excluded_dead_module_cannot_enter_a_package_artifact(tmp_path: Path) ->
         source = tmp_path / "native_runtime_resident.py"
         source.write_bytes(b"retained source")
         archive.add(source, arcname="hol_guard-3.0.1/src/codex_plugin_scanner/guard/native_runtime_resident.py")
-    with pytest.raises(RuntimeError, match="package artifact contains excluded dead module"):
+    with pytest.raises(RuntimeError, match="package artifact contains retired module"):
         GATE.run(ROOT, sdist)
 
 
-def test_cleanup_candidate_requires_dead_duplicate_class() -> None:
-    candidate = "src/codex_plugin_scanner/guard/native_runtime_resident.py"
+def test_cleanup_candidate_requires_dead_duplicate_class(cleanup_repository: Path) -> None:
+    candidate = "src/retired_first.py"
 
     with pytest.raises(RuntimeError, match="not classified as dead_duplicate"):
         GATE._candidate_evidence(
-            ROOT,
+            cleanup_repository,
             candidate,
             {candidate: "hook_control_and_transport"},
             {"hook_control_and_transport": "required_control_plane"},

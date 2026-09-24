@@ -28,12 +28,12 @@ from pathlib import Path
 from codex_plugin_scanner.guard.codex_hook_launch_runtime import run_isolated_hook_process
 from codex_plugin_scanner.guard.daemon.hook_process_runner import HookProcessRunner
 from codex_plugin_scanner.guard.native_policy_test_support import native_policy_snapshot
+from codex_plugin_scanner.guard.native_resident_client import close_native_residents, native_resident_client_request
 from codex_plugin_scanner.guard.native_route_receipt import native_hook_route, reset_native_hook_route
 from codex_plugin_scanner.guard.native_runtime import (
     native_runtime_status,
     review_post_tool_native,
 )
-from codex_plugin_scanner.guard.native_runtime_resident import close_resident_native_runtimes, resident_native_request
 from codex_plugin_scanner.guard.runtime.hook_review_types import HookReviewRequest
 
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -226,9 +226,8 @@ def _bench_native_warm(
             sample=index,
         )
         started = time.perf_counter()
-        response_bytes = resident_native_request(
+        response_bytes = native_resident_client_request(
             executable=status.identity.path,
-            identity_sha256=status.identity.sha256,
             guard_home=guard_home,
             environment=_native_environment(workspace),
             payload=request.encode("utf-8"),
@@ -374,7 +373,7 @@ def _run_benchmarks(
             iterations=warm_iterations,
         )
 
-        close_resident_native_runtimes()
+        close_native_residents()
         try:
             with native_policy_snapshot(guard_home) as snapshot:
                 reset_native_hook_route()
@@ -406,7 +405,7 @@ def _run_benchmarks(
                 )
         finally:
             _stop_native_resident(runtime, guard_home / "native-runtime", workspace)
-            close_resident_native_runtimes()
+            close_native_residents()
 
         python_cold = _bench_python_cold(
             workspace=workspace,

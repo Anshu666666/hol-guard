@@ -41,6 +41,7 @@ pub(super) fn serve_unix_managed(
         Err(_) => return Err("native_socket_stat_failed".to_owned()),
     }
     let listener = UnixListener::bind(&path).map_err(|_| "native_socket_bind_failed".to_owned())?;
+    let ownership = crate::resident_endpoint::OwnedUnixEndpoint::capture(&path)?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
         .map_err(|_| "native_socket_permissions_failed".to_owned())?;
     listener
@@ -55,10 +56,11 @@ pub(super) fn serve_unix_managed(
         path.to_string_lossy().into_owned(),
         &token,
     )?;
-    let result = managed_accept_loop(listener, Arc::new(token), owner_alive, policy_store);
-    if fs::symlink_metadata(&path).is_ok_and(|metadata| metadata.file_type().is_socket()) {
-        let _ = fs::remove_file(path);
+    if published.unix_endpoint_identity != Some(ownership.identity) {
+        return Err("native_socket_identity_changed".to_owned());
     }
+    let result = managed_accept_loop(listener, Arc::new(token), owner_alive, policy_store);
+    drop(ownership);
     resident_state_retirement::retire_state(
         scope,
         generation,

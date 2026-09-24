@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from ci.native_runtime.resident_test_support import process_is_alive
+from ci.native_runtime.native_process_test_support import process_is_alive
 from ci.native_runtime.test_native_hook_client import (
     _request,
     _state_files,

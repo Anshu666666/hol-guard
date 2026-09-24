@@ -206,7 +206,7 @@ def test_parallel_windows_workspace_checks_remain_required(name: str, integratio
     integration_commands = "\n".join(step.get("run", "") for step in integration["steps"])
     assert "cargo build --manifest-path rust/Cargo.toml --locked --release -p hol-guard-runtime" in integration_commands
     if name == "rust-runtime-windows-resident.yml":
-        assert "test_guard_native_runtime_windows_resident.py" in integration_commands
+        assert "test_native_managed_resident.py" in integration_commands
     else:
         assert "test_native_hook_client.py" in integration_commands
         assert "test_native_hook_client_transport.py" in integration_commands

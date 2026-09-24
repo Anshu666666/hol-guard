@@ -50,6 +50,7 @@ fn state_mac_rejects_endpoint_mutation() {
         runtime_sha256: digest,
         transport: "loopback".to_owned(),
         endpoint: "127.0.0.1:1234".to_owned(),
+        unix_endpoint_identity: None,
         token_hex: hex_bytes(&token),
         created_ms: 1,
         state_mac: String::new(),
@@ -432,5 +433,31 @@ fn already_private_directory_allows_overlapping_binds() {
         bind_windows_existing_directory(&scope, &scope).unwrap(),
         bind_windows_existing_directory(&scope, &scope).unwrap(),
     ));
+    fs::remove_dir_all(scope).unwrap();
+}
+
+#[test]
+fn endpoint_identity_is_authenticated_with_generation_state() {
+    let scope = test_scope("endpoint-auth");
+    let digest = runtime_digest().unwrap();
+    let token = [7u8; crate::AUTH_TOKEN_BYTES];
+    let state = publish_state(
+        &scope,
+        1,
+        std::process::id(),
+        &digest,
+        "loopback",
+        "127.0.0.1:1".to_owned(),
+        &token,
+    )
+    .unwrap();
+    let mut changed = state.clone();
+    changed.unix_endpoint_identity = Some(crate::resident_endpoint::UnixEndpointIdentity {
+        device: 1,
+        inode: 2,
+        owner: 3,
+    });
+    assert_ne!(state_mac(&state, &token), state_mac(&changed, &token));
+    assert!(validate_state(&scope, &changed, &digest).is_err());
     fs::remove_dir_all(scope).unwrap();
 }

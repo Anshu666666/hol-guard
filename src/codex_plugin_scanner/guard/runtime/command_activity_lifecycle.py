@@ -85,7 +85,7 @@ _UNCERTAINTY_REASON: Final = MappingProxyType(
 )
 
 
-def build_native_pre_hook_evidence(
+def build_policy_only_pre_hook_evidence(
     *,
     activity_id: str,
     occurred_at: datetime,

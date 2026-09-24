@@ -17,7 +17,7 @@ _ROUTES = {
 }
 _ROLE = os.getenv("HOL_GUARD_LAB_RELAY_ROLE")
 if _ROLE not in _ROUTES:
-    raise RuntimeError("HOL_GUARD_LAB_RELAY_ROLE must be 'guard' or 'host_relay'")
+    raise RuntimeError(f"HOL_GUARD_LAB_RELAY_ROLE must be 'guard' or 'host_relay', got {_ROLE!r}")
 _LISTEN_ADDRESS, _TARGET_ADDRESS = _ROUTES[_ROLE]
 
 

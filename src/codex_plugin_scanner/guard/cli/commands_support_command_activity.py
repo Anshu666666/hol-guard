@@ -26,7 +26,7 @@ from ..runtime.command_activity_display import build_invocation_preview_from_pay
 from ..runtime.command_activity_lifecycle import (
     CommandActivityDecisionFacts,
     build_correlated_post_activity,
-    build_native_pre_hook_evidence,
+    build_policy_only_pre_hook_evidence,
     build_pre_hook_evidence,
     build_unpaired_post_evidence,
 )
@@ -75,13 +75,17 @@ def record_pre_hook_command_activity_best_effort(
     try:
         if event not in _PRE_HOOK_EVENTS:
             return False
-        evaluation = _evaluate_payload_command(
-            payload,
-            store=store,
-            guard_home=guard_home,
-            cwd=cwd,
-            home_dir=home_dir,
-        )
+        try:
+            evaluation = _evaluate_payload_command(
+                payload,
+                store=store,
+                guard_home=guard_home,
+                cwd=cwd,
+                home_dir=home_dir,
+            )
+        except NativeCommandControlMutationRequiredError:
+            _record_persistence_failure(store, "pre_native_control_unavailable")
+            return False
         if evaluation is None and _payload_command_text(payload) is None:
             return False
         key = load_or_create_installation_correlation_key(guard_home)
@@ -94,7 +98,7 @@ def record_pre_hook_command_activity_best_effort(
         activity_id = _activity_id()
         occurred_at = _utc_now()
         if evaluation is None:
-            evidence = build_native_pre_hook_evidence(
+            evidence = build_policy_only_pre_hook_evidence(
                 activity_id=activity_id,
                 occurred_at=occurred_at,
                 harness=harness,
@@ -336,13 +340,10 @@ def _evaluate_payload_command(
     cwd: Path | None,
     home_dir: Path | None,
 ):
-    try:
-        authority = store.read_extension_control_authority_for_registry(
-            BUILT_IN_COMMAND_EXTENSION_REGISTRY,
-            read_only=True,
-        )
-    except NativeCommandControlMutationRequiredError:
-        return None
+    authority = store.read_extension_control_authority_for_registry(
+        BUILT_IN_COMMAND_EXTENSION_REGISTRY,
+        read_only=True,
+    )
     snapshot = ExtensionControlRuntimeSnapshot.from_authority_view(authority)
     arguments = payload.get("tool_input", payload.get("arguments"))
     request = extract_sensitive_tool_action_request(

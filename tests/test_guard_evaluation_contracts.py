@@ -179,6 +179,15 @@ def test_result_timestamps_are_zoned_ordered_and_bounded(
         EvaluationResult.from_dict(result, profile=profile)
 
 
+@pytest.mark.parametrize("fraction", ["1", "123456789"])
+def test_result_accepts_rfc3339_fractional_seconds(tmp_path: Path, fraction: str) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    result["startedAt"] = f"2026-09-23T12:00:00.{fraction}Z"
+    result["finishedAt"] = "2026-09-23T12:00:01Z"
+    EvaluationResult.from_dict(result, profile=profile)
+
+
 def test_result_cannot_omit_a_profile_capability(tmp_path: Path) -> None:
     profile_payload = _profile(tmp_path)
     profile_payload["expectedCapabilities"].append({"capabilityId": "synthetic.shell", "expectedAction": "block"})

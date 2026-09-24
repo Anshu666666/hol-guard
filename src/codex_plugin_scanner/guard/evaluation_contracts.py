@@ -240,17 +240,23 @@ def validate_evaluation_profile(payload: object, *, portable: bool = False) -> N
 
 
 def _record_timestamp(value: object, name: str) -> datetime:
-    if (
-        not isinstance(value, str)
-        or re.fullmatch(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})",
+    match = (
+        re.fullmatch(
+            r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})",
             value,
         )
-        is None
-    ):
+        if isinstance(value, str)
+        else None
+    )
+    if match is None:
         raise EvaluationContractError(f"{name} must be a zoned RFC3339 timestamp")
+    base, fraction, zone = match.groups()
+    # Python 3.10 accepts only 3 or 6 fractional digits. Normalize RFC3339's
+    # arbitrary precision to microseconds consistently across interpreters.
+    normalized = base + ("." + (fraction + "000000")[:6] if fraction else "")
+    normalized += "+00:00" if zone == "Z" else zone
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(normalized)
     except ValueError:
         raise EvaluationContractError(f"{name} must be a zoned RFC3339 timestamp") from None
     if parsed.utcoffset() is None:

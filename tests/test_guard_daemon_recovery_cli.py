@@ -261,7 +261,7 @@ def _install_counting_recovery_coordinator(
             if start_entered is not None:
                 start_entered.set()
             if start_release is not None:
-                start_release.wait(timeout=5.0)
+                start_release.wait(timeout=30.0)
             return StartResult(True, identity)
 
         custom_hooks = replace(

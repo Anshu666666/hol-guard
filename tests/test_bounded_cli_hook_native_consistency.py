@@ -15,7 +15,7 @@ def _translate(payload: dict[str, object], *, harness: str = "grok", event: str 
 
 @pytest.mark.parametrize(
     ("harness", "expected_code"),
-    [("grok", 2), ("openclaw", 0), ("kimi", 2), ("pi", 2), ("zcode", 2)],
+    [("grok", 2), ("openclaw", 0), ("kimi", 2), ("pi", 2), ("zcode", 2), ("devin", 2)],
 )
 def test_policy_block_cannot_be_weakened_by_native_allow(harness: str, expected_code: int) -> None:
     payload, _stderr, code = _translate(

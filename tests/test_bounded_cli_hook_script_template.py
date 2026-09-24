@@ -181,6 +181,7 @@ def test_generated_client_defaults_missing_policy_action_closed(tmp_path: Path) 
         ("copilot", "PreToolUse", None, 0),
         ("zcode", "PreToolUse", None, 2),
         ("kimi", "PreToolUse", None, 2),
+        ("devin", "PreToolUse", None, 2),
         ("grok", "PostToolUse", "allow", 0),
         ("copilot", "permissionRequestV2", None, 0),
     ],
@@ -201,7 +202,7 @@ def test_generated_client_unavailable_payload_matches_harness(
         assert payload["decision"] == decision
     if harness == "copilot" and event_name == "permissionRequestV2":
         assert payload["behavior"] == "deny"
-    if harness == "zcode":
+    if harness in {"zcode", "devin"}:
         assert payload["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 

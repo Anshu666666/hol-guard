@@ -104,7 +104,7 @@ def _policy_action_from_daemon(daemon_response: Mapping[str, object]) -> str:
 def _should_exit_block(harness: str, event_name: str, policy_action: str) -> bool:
     canonical = harness.strip().lower().replace("_", "-")
     compact = event_name.replace("_", "").replace("-", "").lower()
-    if canonical in {"kimi", "grok", "hermes", "pi", "omp", "zcode"} and compact in {
+    if canonical in {"kimi", "grok", "hermes", "pi", "omp", "zcode", "devin"} and compact in {
         "pretooluse",
         "userpromptsubmit",
         "pretoolcall",
@@ -232,7 +232,7 @@ def _daemon_response_to_native(
         hook_specific = native_response.get("hookSpecificOutput")
         exit_code = 2 if _should_exit_block(harness, event_name, policy_action_for_exit) else 0
         stderr = ""
-        if exit_code == 2 and canonical == "kimi":
+        if exit_code == 2 and canonical in {"kimi", "devin"}:
             reason = native_response.get("reason")
             if (not isinstance(reason, str) or not reason) and isinstance(hook_specific, dict):
                 reason = hook_specific.get("permissionDecisionReason")
@@ -287,7 +287,7 @@ def _daemon_response_to_native(
 
     stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
     exit_code = 2 if _should_exit_block(harness, event_name, policy_action) else 0
-    stderr = reason if exit_code == 2 and canonical == "kimi" else ""
+    stderr = reason if exit_code == 2 and canonical in {"kimi", "devin"} else ""
     return stdout, stderr, exit_code
 
 

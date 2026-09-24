@@ -255,7 +255,7 @@ def _permission_decision(policy_action: str) -> str | None:
 
 def _should_exit_block(event_name: str, policy_action: str) -> bool:
     compact = _compact(event_name)
-    if HARNESS in {"kimi", "grok", "hermes", "pi", "omp", "zcode"} and compact in {
+    if HARNESS in {"kimi", "grok", "hermes", "pi", "omp", "zcode", "devin"} and compact in {
         "pretooluse",
         "userpromptsubmit",
         "pretoolcall",
@@ -388,7 +388,7 @@ def _fail(input_text: str, *, reason: str = _FAILURE_REASON) -> int:
     event_name = _event_name(input_text)
     payload, exit_code = _failure_payload(event_name, reason)
     sys.stdout.write(json.dumps(payload, ensure_ascii=True, separators=(",", ":")) + "\\n")
-    if exit_code == 2 and HARNESS in {"kimi", "zcode"}:
+    if exit_code == 2 and HARNESS in {"kimi", "zcode", "devin"}:
         print(reason, file=sys.stderr)
     return exit_code
 

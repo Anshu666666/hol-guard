@@ -11,7 +11,7 @@ from collections.abc import Iterator
 from difflib import SequenceMatcher
 from itertools import chain
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Protocol, cast
 
 import pytest
 
@@ -400,6 +400,7 @@ def test_full_native_evaluation_matches_contract_and_reports_original_oracle_dif
 
 def test_windows_peak_rss_uses_process_working_set(monkeypatch: pytest.MonkeyPatch) -> None:
     import ctypes
+    from ctypes import wintypes
     from types import SimpleNamespace
 
     peak_bytes = 128 * 1024 * 1024
@@ -409,21 +410,23 @@ def test_windows_peak_rss_uses_process_working_set(monkeypatch: pytest.MonkeyPat
 
     def fake_get_process_memory_info(handle: int, counters: object, size: int) -> int:
         assert handle == 4242
-        native_counters = cast(Any, counters)._obj
-        assert size == ctypes.sizeof(native_counters)
-        native_counters.PeakWorkingSetSize = peak_bytes
+        word_size = ctypes.sizeof(ctypes.c_size_t)
+        peak_index = (2 * ctypes.sizeof(wintypes.DWORD) + word_size - 1) // word_size
+        assert size >= (peak_index + 1) * word_size
+        native_counters = ctypes.cast(cast(ctypes.c_void_p, counters), ctypes.POINTER(ctypes.c_size_t))
+        native_counters[peak_index] = peak_bytes
         return 1
 
     monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(
-        ctypes,
-        "WinDLL",
-        lambda name, **_kwargs: SimpleNamespace(
-            GetCurrentProcess=fake_get_current_process,
-            GetProcessMemoryInfo=fake_get_process_memory_info,
-        ),
-        raising=False,
-    )
+
+    def fake_win_dll(name: str, *, use_last_error: bool) -> SimpleNamespace:
+        assert use_last_error
+        if name == "kernel32":
+            return SimpleNamespace(GetCurrentProcess=fake_get_current_process)
+        assert name == "psapi"
+        return SimpleNamespace(GetProcessMemoryInfo=fake_get_process_memory_info)
+
+    monkeypatch.setattr(ctypes, "WinDLL", fake_win_dll, raising=False)
 
     assert peak_rss_mib() == 128.0
 

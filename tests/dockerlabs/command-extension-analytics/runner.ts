@@ -405,7 +405,7 @@ async function verifyApi(
   if (cursorRows.length !== 1 || cursorRows[0]?.harness !== "cursor") throw new Error("cursor filter did not reconcile");
   const workflowAuthorized = rows.some((row) => (
     row.policy_action === "allow" && row.approval_reuse_status === "accepted" && row.prompted === false
-    && row.decision_reason_code === "capability" && row.match_count === 1
+    && row.decision_reason_code === "capability" && row.match_count === 0
     && row.execution_status === "allowed_unconfirmed"
   ));
   const categories = [

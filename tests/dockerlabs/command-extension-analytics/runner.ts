@@ -511,6 +511,12 @@ export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvi
       await runner(composeCommand(project, "restart", "guard"), { cwd: LAB_DIR, env: environment }),
       "installed daemon restart",
     );
+    requireSuccess(
+      await runner(composeCommand(project, "up", "-d", "--no-deps", "--force-recreate", "--wait", "relay"), {
+        cwd: LAB_DIR, env: environment,
+      }),
+      "installed relay reattachment",
+    );
     await waitForReadyWithDiagnostics(origin, project, environment, runner);
     const restarted = await waitForReadyEvidence(project, environment, runner);
     const restartedSession = await readDashboardSession(project, environment, runner);

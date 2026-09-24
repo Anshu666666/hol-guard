@@ -4,6 +4,7 @@ import copy
 import io
 import os
 import stat
+import traceback
 import zipfile
 from pathlib import Path
 
@@ -147,6 +148,31 @@ def test_result_cannot_omit_a_profile_capability(tmp_path: Path) -> None:
     profile_payload["expectedCapabilities"].append({"capabilityId": "synthetic.shell", "expectedAction": "block"})
     with pytest.raises(EvaluationContractError, match="cover exactly"):
         EvaluationResult.from_dict(_result(profile_payload), profile=EvaluationProfile.from_dict(profile_payload))
+
+
+def test_evaluation_validation_errors_do_not_echo_caller_values(tmp_path: Path) -> None:
+    marker = "synthetic-secret-marker"
+    profile = _profile(tmp_path)
+
+    invalid_schema = _result(profile)
+    invalid_schema["status"] = marker
+    with pytest.raises(EvaluationContractError) as schema_error:
+        EvaluationResult.from_dict(invalid_schema, profile=profile)
+    assert marker not in "".join(traceback.format_exception(schema_error.value))
+
+    duplicate_case = _result(profile)
+    duplicate_case["cases"][0]["caseId"] = marker  # type: ignore[index]
+    duplicate_case["cases"].append(copy.deepcopy(duplicate_case["cases"][0]))  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="duplicate result caseId") as duplicate_error:
+        EvaluationResult.from_dict(duplicate_case, profile=profile)
+    assert marker not in "".join(traceback.format_exception(duplicate_error.value))
+
+    invalid_pass = _result(profile)
+    invalid_pass["cases"][0]["caseId"] = marker  # type: ignore[index]
+    invalid_pass["cases"][0]["expectedAction"] = "unsupported"  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="requires executed proof") as passed_error:
+        EvaluationResult.from_dict(invalid_pass, profile=profile)
+    assert marker not in "".join(traceback.format_exception(passed_error.value))
 
 
 def test_evidence_package_is_reproducible_and_keeps_caller_proof_unverified(tmp_path: Path) -> None:

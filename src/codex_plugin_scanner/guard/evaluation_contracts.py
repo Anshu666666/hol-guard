@@ -85,8 +85,8 @@ def _schema_validate(payload: object, schema: dict[str, object], name: str) -> d
     validator = Draft202012Validator(schema)
     error = next(iter(validator.iter_errors(cast(Any, candidate))), None)
     if error is not None:
-        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
-        raise EvaluationContractError(f"{name} is invalid at {location}: {error.message}") from error
+        # jsonschema messages and paths may contain caller-supplied values.
+        raise EvaluationContractError(f"{name} is invalid (schema rule: {error.validator})") from None
     return candidate
 
 
@@ -132,8 +132,8 @@ def _validate_local_endpoint(value: object, name: str) -> str:
     try:
         parsed = urllib.parse.urlsplit(value)
         port = parsed.port
-    except ValueError as exc:
-        raise EvaluationContractError(f"{name} must be a loopback HTTP(S) endpoint") from exc
+    except ValueError:
+        raise EvaluationContractError(f"{name} must be a loopback HTTP(S) endpoint") from None
     if parsed.scheme.lower() not in {"http", "https"} or parsed.hostname is None:
         raise EvaluationContractError(f"{name} must be a loopback HTTP(S) endpoint")
     if parsed.username is not None or parsed.password is not None or parsed.fragment:
@@ -224,7 +224,7 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         case = _mapping(raw_case, "cases[]")
         case_id = cast(str, case["caseId"])
         if case_id in case_ids:
-            raise EvaluationContractError(f"duplicate result caseId: {case_id}")
+            raise EvaluationContractError("duplicate result caseId")
         case_ids.add(case_id)
         case_status = cast(str, case["status"])
         case_statuses.append(case_status)
@@ -233,7 +233,7 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
             or case["expectedAction"] in {"unsupported", "not_run"}
             or case["observedAction"] != case["expectedAction"]
         ):
-            raise EvaluationContractError(f"passed case {case_id} requires executed proof and matching action")
+            raise EvaluationContractError("passed case requires executed proof and matching action")
         witness = _mapping(case["witness"], "cases[].witness")
         if witness.get("path") is not None:
             _ = _validate_local_path(witness["path"], "cases[].witness.path")

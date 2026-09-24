@@ -228,8 +228,8 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     expect(server).not.toContain('[\n        "hol-guard",\n        "guard",\n        "hook",');
     expect(server).toContain('"git status --short"');
     expect(server).toContain('"git diff --stat"');
-    expect(server).toContain('"git push --delete origin stale-lab-branch"');
-    expect(server).toContain('"shutdown -h now # {SENTINEL}"');
+    expect(server).toContain('"rm -rf ./stale-lab-dir"');
+    expect(server).toContain('"rm -rf ./stale-lab-dir # {SENTINEL}"');
     expect(server).not.toContain("execute_contained");
     expect(containmentProbe).toContain('Path("/bin/sh").resolve(strict=True)');
     expect(containmentProbe).toContain("execute_contained(request");

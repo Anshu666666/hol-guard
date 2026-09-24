@@ -26,6 +26,7 @@ from ..runtime.command_activity_display import build_invocation_preview_from_pay
 from ..runtime.command_activity_lifecycle import (
     CommandActivityDecisionFacts,
     build_correlated_post_activity,
+    build_native_pre_hook_evidence,
     build_pre_hook_evidence,
     build_unpaired_post_evidence,
 )
@@ -81,7 +82,7 @@ def record_pre_hook_command_activity_best_effort(
             cwd=cwd,
             home_dir=home_dir,
         )
-        if evaluation is None:
+        if evaluation is None and _payload_command_text(payload) is None:
             return False
         key = load_or_create_installation_correlation_key(guard_home)
         correlation = derive_proven_request_correlation(
@@ -92,36 +93,53 @@ def record_pre_hook_command_activity_best_effort(
         )
         activity_id = _activity_id()
         occurred_at = _utc_now()
-        evidence = build_pre_hook_evidence(
-            evaluation,
-            CommandActivityDecisionFacts(
+        if evaluation is None:
+            evidence = build_native_pre_hook_evidence(
+                activity_id=activity_id,
+                occurred_at=occurred_at,
+                harness=harness,
                 policy_action=policy_action,
-                decision_reason_code=_activity_decision_reason(
-                    evaluation,
-                    policy_action=policy_action,
-                    workflow_authorization_claimed=workflow_authorization_claimed,
-                ),
+                request_correlation=correlation,
+                receipt_id=receipt_id,
                 prompted=prompted,
                 approval_reuse_status=approval_reuse_status,
-                receipt_id=receipt_id,
                 workflow_authorization_claimed=workflow_authorization_claimed,
-            ),
-            activity_id=activity_id,
-            occurred_at=occurred_at,
-            harness=harness,
-            request_correlation=correlation,
-        )
+            )
+        else:
+            evidence = build_pre_hook_evidence(
+                evaluation,
+                CommandActivityDecisionFacts(
+                    policy_action=policy_action,
+                    decision_reason_code=_activity_decision_reason(
+                        evaluation,
+                        policy_action=policy_action,
+                        workflow_authorization_claimed=workflow_authorization_claimed,
+                    ),
+                    prompted=prompted,
+                    approval_reuse_status=approval_reuse_status,
+                    receipt_id=receipt_id,
+                    workflow_authorization_claimed=workflow_authorization_claimed,
+                ),
+                activity_id=activity_id,
+                occurred_at=occurred_at,
+                harness=harness,
+                request_correlation=correlation,
+            )
         if correlation is not None and store.is_exact_command_activity_pre_replay(evidence):
             return False
-        shadow, shadow_failed = _build_shadow_best_effort(
-            evaluation=evaluation,
-            command_text=_payload_command_text(payload),
-            guard_home=guard_home,
-            cwd=cwd,
-            home_dir=home_dir,
-            policy_action=policy_action,
-            activity_id=activity_id,
-            occurred_at=occurred_at,
+        shadow, shadow_failed = (
+            _build_shadow_best_effort(
+                evaluation=evaluation,
+                command_text=_payload_command_text(payload),
+                guard_home=guard_home,
+                cwd=cwd,
+                home_dir=home_dir,
+                policy_action=policy_action,
+                activity_id=activity_id,
+                occurred_at=occurred_at,
+            )
+            if evaluation is not None
+            else (None, False)
         )
         try:
             recorded = store.record_command_activity(

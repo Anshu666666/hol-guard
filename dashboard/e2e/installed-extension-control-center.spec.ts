@@ -24,7 +24,7 @@ async function installSession(page: import("@playwright/test").Page) {
 
 async function expectSecretSafeUrl(page: import("@playwright/test").Page) {
   expect(page.url()).not.toContain(session);
-  expect(page.url()).not.toContain(approvalPassword);
+  if (approvalPassword) expect(page.url()).not.toContain(approvalPassword);
   expect(page.url()).not.toContain("guard-token");
   expect(page.url()).not.toContain("#");
 }

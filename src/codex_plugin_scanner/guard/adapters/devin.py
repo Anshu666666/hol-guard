@@ -66,8 +66,9 @@ _DEVIN_MANAGED_HOOK_TIMEOUT_GRACE_SECONDS = 5
 
 
 def _write_json_atomic(path: Path, payload: dict[str, object]) -> None:
-    mode = path.stat().st_mode & 0o777 if path.exists() else 0o600
-    atomic_write_text(path, json.dumps(payload, indent=2) + "\n", mode=mode)
+    target = path.resolve() if path.is_symlink() else path
+    mode = target.stat().st_mode & 0o777 if target.exists() else 0o600
+    atomic_write_text(target, json.dumps(payload, indent=2) + "\n", mode=mode)
 
 
 def _adapter_result(

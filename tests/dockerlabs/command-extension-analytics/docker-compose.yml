@@ -57,7 +57,7 @@ services:
       timeout: 3s
       retries: 30
 
-  ingress:
+  host_relay:
     build:
       context: ../../..
       dockerfile: tests/dockerlabs/command-extension-analytics/Dockerfile
@@ -65,7 +65,7 @@ services:
         HOL_GUARD_LAB_WHEEL: ${HOL_GUARD_LAB_WHEEL:?set by runner}
     command: ["python", "/opt/guard-lab/tcp_relay.py"]
     environment:
-      HOL_GUARD_LAB_RELAY_ROLE: ingress
+      HOL_GUARD_LAB_RELAY_ROLE: host_relay
     depends_on:
       relay:
         condition: service_healthy

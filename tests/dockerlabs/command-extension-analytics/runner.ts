@@ -446,7 +446,7 @@ async function waitForReadyWithDiagnostics(
   try {
     await waitForReady(origin);
   } catch (error) {
-    const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "ingress"], true);
+    const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "host_relay"], true);
     throw new Error(`${String(error)}\n${diagnostic}`);
   }
 }
@@ -490,7 +490,7 @@ export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvi
       cwd: LAB_DIR, env: environment,
     });
     if (startup.exitCode !== 0) {
-      const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "ingress"]);
+      const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "host_relay"]);
       throw new Error(`Dockerlabs startup failed (${startup.exitCode})\n${startup.stderr || startup.stdout}\n${diagnostic}`);
     }
     await waitForReadyWithDiagnostics(origin, project, environment, runner);

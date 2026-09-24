@@ -13,11 +13,11 @@ from typing_extensions import override
 _BUFFER_BYTES = 64 * 1024
 _ROUTES = {
     "guard": (("0.0.0.0", 4782), ("127.0.0.1", 4781)),
-    "ingress": (("0.0.0.0", 4783), ("guard", 4782)),
+    "host_relay": (("0.0.0.0", 4783), ("guard", 4782)),
 }
 _ROLE = os.getenv("HOL_GUARD_LAB_RELAY_ROLE")
 if _ROLE not in _ROUTES:
-    raise RuntimeError("HOL_GUARD_LAB_RELAY_ROLE must be 'guard' or 'ingress'")
+    raise RuntimeError("HOL_GUARD_LAB_RELAY_ROLE must be 'guard' or 'host_relay'")
 _LISTEN_ADDRESS, _TARGET_ADDRESS = _ROUTES[_ROLE]
 
 

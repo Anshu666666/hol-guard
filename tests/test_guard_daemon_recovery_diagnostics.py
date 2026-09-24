@@ -30,10 +30,19 @@ def _source() -> dict[str, object]:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
 
 
-def _large_events(operation_id: str, count: int = 100) -> list[dict[str, object]]:
+def _freeze_retention_now(monkeypatch: pytest.MonkeyPatch) -> datetime:
+    now = datetime(2026, 9, 23, tzinfo=timezone.utc)
+
+    def retention_now(value: datetime | None = None) -> datetime:
+        return now if value is None else value
+
+    monkeypatch.setattr(diagnostics_module, "_retention_now", retention_now)
+    return now
+
+
+def _large_events(operation_id: str, *, start: datetime, count: int = 100) -> list[dict[str, object]]:
     source = _source()
     source["operationId"] = operation_id
-    start = datetime(2026, 9, 20, tzinfo=timezone.utc)
     return [
         {
             **source,
@@ -296,8 +305,10 @@ def test_diagnostics_persist_owner_private_and_reload_atomically(tmp_path: Path)
         assert not list(state_dir.glob(f".{DIAGNOSTICS_STATE_NAME}.*.tmp"))
 
 
-def test_diagnostics_retention_keeps_only_recent_newest_incidents(tmp_path: Path) -> None:
-    now = datetime(2026, 9, 20, tzinfo=timezone.utc)
+def test_diagnostics_retention_keeps_only_recent_newest_incidents(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = _freeze_retention_now(monkeypatch)
     operation_ids: list[str] = []
     for index in range(22):
         source = _source()
@@ -322,12 +333,15 @@ def test_diagnostics_retention_keeps_only_recent_newest_incidents(tmp_path: Path
         recovery_diagnostics_for_operation(tmp_path, stale_id)
 
 
-def test_large_archive_retention_drops_oldest_report_when_archive_is_too_large(tmp_path: Path) -> None:
+def test_large_archive_retention_drops_oldest_report_when_archive_is_too_large(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = _freeze_retention_now(monkeypatch)
     first_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     second_id = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
 
-    persist_recovery_diagnostics(tmp_path, _large_events(first_id))
-    persist_recovery_diagnostics(tmp_path, _large_events(second_id))
+    persist_recovery_diagnostics(tmp_path, _large_events(first_id, start=now), generated_at=now)
+    persist_recovery_diagnostics(tmp_path, _large_events(second_id, start=now), generated_at=now)
 
     loaded = load_recovery_diagnostics(tmp_path)
     assert loaded is not None
@@ -351,11 +365,14 @@ def test_pre_archive_report_decodes_through_public_loader(tmp_path: Path) -> Non
     assert load_recovery_diagnostics(tmp_path) == report
 
 
-def test_stale_diagnostics_are_pruned_and_persisted_during_read_and_export(tmp_path: Path) -> None:
+def test_stale_diagnostics_are_pruned_and_persisted_during_read_and_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = _freeze_retention_now(monkeypatch)
     stale_id = "99999999-9999-4999-8999-999999999999"
     stale = _source()
     stale["operationId"] = stale_id
-    stale_report = build_recovery_diagnostics(stale, generated_at=datetime.now(timezone.utc) - timedelta(days=8))
+    stale_report = build_recovery_diagnostics(stale, generated_at=now - timedelta(days=8))
 
     def write_archive() -> None:
         payload = json.dumps(
@@ -427,10 +444,13 @@ def test_archive_loader_rejects_invalid_public_archive_shapes(tmp_path: Path, ar
     assert raised.value.args == ("recovery_diagnostics_state_invalid",)
 
 
-def test_stale_archive_read_remains_usable_when_optional_compaction_fails(tmp_path: Path, monkeypatch) -> None:
+def test_stale_archive_read_remains_usable_when_optional_compaction_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = _freeze_retention_now(monkeypatch)
     stale_id = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
     stale_report = build_recovery_diagnostics(
-        _source(), generated_at=datetime.now(timezone.utc) - timedelta(days=8)
+        _source(), generated_at=now - timedelta(days=8)
     )
     stale_report["operationId"] = stale_id
     stale_report["latest"] = {**stale_report["latest"], "operationId": stale_id}  # type: ignore[index]

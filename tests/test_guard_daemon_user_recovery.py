@@ -320,36 +320,39 @@ def test_public_inspection_default_inspector_fails_closed_by_identity_boundary(
 
 
 def test_active_operation_without_latest_snapshot_returns_contract_snapshot(tmp_path: Path) -> None:
-    request_id = "12121212-1212-4212-8212-121212121212"
+    active_request_id = uuid.UUID("12121212-1212-4212-8212-121212121212")
+    concurrent_request_id = "34343434-3434-4434-8434-343434343434"
     coordinator = _coordinator(
         tmp_path,
         ServiceInspection("unavailable", "service_missing"),
     )
-    operation_id = uuid.UUID(request_id)
     operation = recovery_module._Operation(
-        operation_id=operation_id,
-        request_id=operation_id,
+        operation_id=active_request_id,
+        request_id=active_request_id,
         started_monotonic=100.0,
         deadline_monotonic=160.0,
         started_at="2026-09-20T12:00:00+00:00",
+        execution_active=True,
     )
     home_key = str(coordinator.guard_home)
-    operation_key = recovery_module._operation_key(home_key, operation_id)
+    operation_key = recovery_module._operation_key(home_key, active_request_id)
     with recovery_module._OPERATIONS_LOCK:
         recovery_module._ACTIVE_BY_HOME[home_key] = operation
         recovery_module._ACTIVE_BY_ID[operation_key] = operation
+    emitted: list[dict[str, object]] = []
     try:
-        result = coordinator.restart(request_id)
+        result = coordinator.restart(concurrent_request_id, emit=emitted.append)
     finally:
         with recovery_module._OPERATIONS_LOCK:
             recovery_module._ACTIVE_BY_HOME.pop(home_key, None)
             recovery_module._ACTIVE_BY_ID.pop(operation_key, None)
 
-    assert result["operationId"] == request_id
+    assert result["operationId"] == str(active_request_id)
     assert result["phase"] == "waiting_for_owner"
     assert result["reasonCode"] == "operation_busy"
     assert result["workerActive"] is True
     assert result["retryAllowed"] is False
+    assert emitted == [result]
 
 
 def test_healthy_service_reconnects_without_stop_or_start(tmp_path: Path) -> None:

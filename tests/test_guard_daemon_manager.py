@@ -2200,20 +2200,32 @@ def _write_containment_pending_launch(
 
     monkeypatch.setattr(daemon_manager_module, "process_start_token", process_start_marker)
     monkeypatch.setattr(daemon_manager_module, "process_owner_marker", process_owner)
+    # Windows binds pending launches to the native creation-time generation in
+    # addition to the portable start marker and owner.  Keep synthetic PIDs
+    # usable in the parent-bound fixture without probing the host process table.
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "windows_process_creation_time",
+        lambda pid: 100_000_000 + pid if type(pid) is int and pid > 0 else None,
+    )
     launch = SimpleNamespace(
         process=SimpleNamespace(pid=launch_pid),
         launch_nonce=launch_nonce,
         deadline=time.monotonic() + 1.0,
     )
-    assert (
-        daemon_manager_module._record_guard_daemon_pending_launch(
-            guard_home,
-            launch=launch,
-            port=5_432,
-        )
-        is None
+    recorded_creation_time = daemon_manager_module._record_guard_daemon_pending_launch(
+        guard_home,
+        launch=launch,
+        port=5_432,
     )
-    assert daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home) is not None
+    if os.name == "nt":
+        assert recorded_creation_time == 100_000_000 + launch_pid
+    else:
+        assert recorded_creation_time is None
+    pending = daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home)
+    assert pending is not None
+    if os.name == "nt":
+        assert pending["process_creation_time"] == recorded_creation_time
     return identities
 
 
@@ -2521,18 +2533,28 @@ def test_authenticated_pending_launch_loader_rejects_identity_gaps(tmp_path, mon
     assert discovery_key is not None
 
     pending_path = daemon_manager_module._pending_launch_path(guard_home)
-    invalid_fields = (
+    invalid_fields = [
         ("pid", "not-a-pid"),
         ("port", 0),
         ("guard_home", str(tmp_path / "other-home")),
         ("guard_home", None),
-        ("launch_nonce", "short"),
-        ("launch_generation", "mismatched-generation"),
-        ("generation", "mismatched-generation"),
-        ("process_start_marker", ""),
-        ("owner", ""),
-        ("runtime_fingerprint", ""),
-    )
+    ]
+    if os.name == "nt":
+        # Windows authenticates the native process creation generation at
+        # load time; nonce and marker binding is enforced when the record is
+        # admitted to a lifecycle operation.
+        invalid_fields.append(("process_creation_time", 0))
+    else:
+        invalid_fields.extend(
+            [
+                ("launch_nonce", "short"),
+                ("launch_generation", "mismatched-generation"),
+                ("generation", "mismatched-generation"),
+                ("process_start_marker", ""),
+                ("owner", ""),
+                ("runtime_fingerprint", ""),
+            ]
+        )
     for field, invalid_value in invalid_fields:
         candidate = dict(pending)
         candidate[field] = invalid_value
@@ -5108,6 +5130,7 @@ def test_retire_all_signals_and_waits_for_exact_authenticated_generation(tmp_pat
     signals: list[tuple[int, int]] = []
     waits: list[int] = []
     state_clears: list[int] = []
+    sigkill = getattr(signal, "SIGKILL", 9)
 
     monkeypatch.setattr(daemon_manager_module, "os", _PosixOSProxy())
     monkeypatch.setattr(daemon_manager_module, "load_authenticated_guard_daemon_pending_launch", lambda _home: None)
@@ -5127,7 +5150,7 @@ def test_retire_all_signals_and_waits_for_exact_authenticated_generation(tmp_pat
 
     def kill(pid_value: int, sent_signal: int) -> None:
         signals.append((pid_value, sent_signal))
-        if sent_signal == signal.SIGKILL:
+        if sent_signal == sigkill:
             dead["value"] = True
 
     monkeypatch.setattr(daemon_manager_module.os, "kill", kill)
@@ -5141,7 +5164,7 @@ def test_retire_all_signals_and_waits_for_exact_authenticated_generation(tmp_pat
     retired = daemon_manager_module.retire_all_guard_daemons_for_home(guard_home)
 
     assert retired == [pid]
-    assert signals == [(pid, signal.SIGTERM), (pid, signal.SIGKILL)]
+    assert signals == [(pid, signal.SIGTERM), (pid, sigkill)]
     assert waits == [pid, pid]
     assert state_clears == [pid]
 

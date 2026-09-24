@@ -35,7 +35,7 @@ from codex_plugin_scanner.guard.native_command_control_authority_io import write
 from codex_plugin_scanner.guard.native_policy_snapshot_constants import NativePolicySnapshotError
 
 FIXTURES = Path(__file__).parent / "fixtures" / "daemon_recovery_v1"
-FIXED_DIAGNOSTICS_NOW = datetime.now(timezone.utc).replace(microsecond=0)
+FIXED_DIAGNOSTICS_NOW = datetime(2026, 9, 23, tzinfo=timezone.utc)
 
 
 @pytest.fixture
@@ -128,7 +128,9 @@ def test_malformed_archive_is_optional_at_cli_boundary(tmp_path: Path) -> None:
 
 
 def test_compaction_oserror_is_optional_at_cli_boundary(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fixed_diagnostics_clock: datetime,
 ) -> None:
     snapshot = _snapshot()
     operation_id = uuid.UUID(str(snapshot["operationId"]))
@@ -136,7 +138,7 @@ def test_compaction_oserror_is_optional_at_cli_boundary(
 
     stale_report = build_recovery_diagnostics(
         snapshot,
-        generated_at=datetime.now(timezone.utc) - timedelta(days=8),
+        generated_at=fixed_diagnostics_clock - timedelta(days=8),
     )
     stale_archive = json.dumps(
         {"schema": DIAGNOSTICS_ARCHIVE_SCHEMA, "reports": [stale_report]},
@@ -241,7 +243,9 @@ def test_diagnostics_writer_serializes_read_modify_write_transactions(
     }
 
 
-def test_diagnostics_writer_serializes_separate_processes(tmp_path: Path) -> None:
+def test_diagnostics_writer_serializes_separate_processes(
+    tmp_path: Path, fixed_diagnostics_clock: datetime
+) -> None:
     home = tmp_path / "guard-home"
     home.mkdir()
     marker = tmp_path / "first-write-started"
@@ -250,7 +254,7 @@ def test_diagnostics_writer_serializes_separate_processes(tmp_path: Path) -> Non
     first["operationId"] = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
     second = _snapshot()
     second["operationId"] = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
-    process_clock = FIXED_DIAGNOSTICS_NOW + timedelta(days=8)
+    process_clock = fixed_diagnostics_clock + timedelta(days=8)
     script = """
 import json
 import sys

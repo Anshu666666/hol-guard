@@ -182,7 +182,8 @@ def _pending_workflow_request(store: GuardStore) -> dict[str, object]:
     pending = [
         request
         for request in all_pending
-        if request.get("harness") == "codex" and request.get("raw_command_text") == _WORKFLOW_COMMAND
+        if request.get("harness") == "codex"
+        and request.get("artifact_name") == "Shell GitHub bounded maintenance command"
     ]
     if len(pending) != 1:
         summary = [

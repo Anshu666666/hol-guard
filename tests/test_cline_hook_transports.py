@@ -494,8 +494,8 @@ def test_generated_plugin_withholds_unserializable_posttool_output(tmp_path: Pat
     assert "SECRET_OUTPUT" not in after.stdout
 
 
-@pytest.mark.parametrize("decision", [{"decision": "allow"}, {"decision": "allow", "replacement": "SAFE_OUTPUT"}])
-def test_generated_plugin_withholds_legacy_allow_without_reviewed_output_action(
+@pytest.mark.parametrize("decision", [{"decision": "allow"}, {"decision": "allow", "policy_action": "allow"}])
+def test_generated_plugin_withholds_allow_without_model_output_action(
     tmp_path: Path, decision: dict[str, str]
 ) -> None:
     context = _context(tmp_path)

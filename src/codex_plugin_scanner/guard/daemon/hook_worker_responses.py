@@ -309,12 +309,10 @@ def harness_json_from_native_post_tool(
             key: response[key]
             for key in (
                 "decision",
-                "reason",
                 "model_output_action",
                 "reviewed_output_sha256",
                 "reviewed_excerpt",
                 "policy_action",
-                "reason_code",
             )
             if key in response
         }

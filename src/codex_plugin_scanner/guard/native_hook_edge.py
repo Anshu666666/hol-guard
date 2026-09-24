@@ -10,7 +10,10 @@ from typing import Any, cast
 
 from .native_approval_errors import FINITE_FAILURE_CODES
 from .native_decision_receipt import receipt_matches_edge
-from .native_resident_client import native_resident_client_request, record_native_resident_client_failure_code
+from .native_resident_client import (
+    native_resident_client_request,
+    record_native_resident_client_failure_code,
+)
 from .native_route_receipt import record_native_hook_result
 from .native_runtime import _isolated_environment, native_runtime_status
 from .native_runtime_resilience import (
@@ -177,7 +180,9 @@ def _decode_pre_tool_result(result: object, *, harness: str) -> bool:
         return False
     decision = result["decision"]
     minimum_action = result["minimum_action"]
-    if result["explicitly_benign"] != (decision == "allow" and minimum_action == "allow"):
+    if result["explicitly_benign"] != (
+        decision == "allow" and minimum_action == "allow"
+    ):
         return False
     # `warn` is an allow-with-warning floor. All stronger actions remain
     # denying floors; this keeps the Python edge purely mechanical.
@@ -205,7 +210,11 @@ def _decode_edge(payload: object) -> dict[str, Any] | None:
         "receipt",
     }
     allowed = required | {"request_id"}
-    if not isinstance(payload, dict) or not required <= set(payload) or set(payload) - allowed:
+    if (
+        not isinstance(payload, dict)
+        or not required <= set(payload)
+        or set(payload) - allowed
+    ):
         return None
     event_name = payload.get("event_name")
     payload_kind = payload.get("payload_kind")
@@ -222,7 +231,9 @@ def _decode_edge(payload: object) -> dict[str, Any] | None:
         or not isinstance(payload.get("result"), dict)
     ):
         return None
-    if event_name == "PreToolUse" and not _decode_pre_tool_result(payload["result"], harness=payload["harness"]):
+    if event_name == "PreToolUse" and not _decode_pre_tool_result(
+        payload["result"], harness=payload["harness"]
+    ):
         return None
     if event_name == "PreToolUse" and payload_kind == "encrypted_payload_ref":
         return None
@@ -321,7 +332,11 @@ def review_raw_hook_native(
         return record_native_hook_result("native_fail_safe", None)
     snapshot = dict(policy_snapshot)
     generation = snapshot.get("generation")
-    if isinstance(generation, bool) or not isinstance(generation, int) or generation <= 0:
+    if (
+        isinstance(generation, bool)
+        or not isinstance(generation, int)
+        or generation <= 0
+    ):
         return record_native_hook_result("native_fail_safe", None)
     encoded = _encode_hook_envelope(
         payload=payload,

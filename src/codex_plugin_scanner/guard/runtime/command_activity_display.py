@@ -171,8 +171,8 @@ def _strip_shell_comments(value: str) -> str:
             elif quote == char:
                 quote = None
             result.append(char)
-        elif char == "#" and quote is None and (
-            index == 0 or value[index - 1].isspace() or value[index - 1] in ";&|()"
+        elif (
+            char == "#" and quote is None and (index == 0 or value[index - 1].isspace() or value[index - 1] in ";&|()")
         ):
             while result and result[-1] in {" ", "\t"}:
                 result.pop()

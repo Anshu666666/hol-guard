@@ -46,6 +46,8 @@ def test_invocation_preview_omits_shell_comments_without_removing_quoted_hashes(
     assert private_preview is not None
     assert private_preview.startswith("rm -rf")
     assert "guard-private-command-sentinel" not in private_preview
+    operator_preview = build_invocation_preview("echo ok;# private-note\ngit status")
+    assert operator_preview == "echo ok;\ngit status"
 
 
 def test_invocation_preview_redacts_colon_delimited_credentials() -> None:

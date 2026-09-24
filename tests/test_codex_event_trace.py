@@ -60,6 +60,23 @@ def test_valid_one_command_trace_returns_structural_summary_without_output() -> 
     }
 
 
+def test_matching_multiline_command_is_accepted_without_exporting_its_text() -> None:
+    command = "cat <<'EOF'\nline one\n\tline two\nEOF"
+
+    summary = parse_codex_event_trace(_stream(*_valid_events(command=command)), command)
+
+    assert summary.command_status == "completed"
+    assert command not in repr(summary.to_dict())
+
+
+@pytest.mark.parametrize("control", ["\x00", "\r", "\x1b", "\x7f"])
+def test_command_rejects_unsafe_control_characters(control: str) -> None:
+    command = f"printf 'probe'{control}"
+
+    with pytest.raises(CodexEventTraceError, match="invalid expected command"):
+        parse_codex_event_trace(_stream(*_valid_events(command=command)), command)
+
+
 def test_nonzero_command_is_recorded_without_a_guard_decision() -> None:
     summary = parse_codex_event_trace(_stream(*_valid_events(exit_code=1)), _COMMAND)
 

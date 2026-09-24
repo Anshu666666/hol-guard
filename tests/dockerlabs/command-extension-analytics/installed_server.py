@@ -121,7 +121,7 @@ def _run_installed_hook(
         if isinstance(response, dict):
             hook_output = response.get("hookSpecificOutput")
             native_codex_denial = (
-                response.get("policy_action") in {"review", "require-reapproval", "sandbox-required", "block"}
+                response.get("policy_action") in {None, "review", "require-reapproval", "sandbox-required", "block"}
                 and isinstance(hook_output, dict)
                 and hook_output.get("permissionDecision") == "deny"
             )

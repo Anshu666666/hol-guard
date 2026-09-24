@@ -24,20 +24,21 @@ def _lab() -> ModuleType:
     ("policy_action", "permission_decision", "accepted"),
     [
         ("review", "deny", True),
+        (None, "deny", True),
         ("warn", "allow", False),
+        ("warn", "deny", False),
         ("review", "allow", False),
     ],
 )
 def test_installed_codex_native_status_requires_explicit_denial(
-    policy_action: str,
+    policy_action: str | None,
     permission_decision: str,
     accepted: bool,
 ) -> None:
     lab = _lab()
-    response = {
-        "policy_action": policy_action,
-        "hookSpecificOutput": {"permissionDecision": permission_decision},
-    }
+    response: dict[str, object] = {"hookSpecificOutput": {"permissionDecision": permission_decision}}
+    if policy_action is not None:
+        response["policy_action"] = policy_action
     completed = subprocess.CompletedProcess([], 0, json.dumps(response), "")
     lab.subprocess = SimpleNamespace(run=lambda *_args, **_kwargs: completed)
 

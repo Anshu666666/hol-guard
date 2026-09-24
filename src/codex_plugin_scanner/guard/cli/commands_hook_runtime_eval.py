@@ -278,8 +278,6 @@ def _evaluate_runtime_artifact_hook(
     _post_claim_refresh_failed: bool = False,
 ) -> int | RuntimeArtifactHookState:
     payload_map = dict(payload)
-    pre_workflow_metadata = dict(runtime_artifact.metadata)
-
     workflow_state = prepare_github_workflow_hook_state(
         runtime_artifact,
         workspace=runtime_workspace,
@@ -290,13 +288,12 @@ def _evaluate_runtime_artifact_hook(
     )
     runtime_artifact = workflow_state.artifact
     approval_context_artifact = runtime_artifact
-    if workflow_state.authorization_claimed:
+    if workflow_state.approval_record is not None:
+        # Native decision outputs may change after a capability claim. Bind
+        # reviewed inputs here while the full artifact still drives enforcement.
         approval_context_metadata = dict(runtime_artifact.metadata)
         for key in ("command_action_floor", "command_decision_plane"):
-            if key in pre_workflow_metadata:
-                approval_context_metadata[key] = pre_workflow_metadata[key]
-            else:
-                approval_context_metadata.pop(key, None)
+            approval_context_metadata.pop(key, None)
         approval_context_artifact = replace(runtime_artifact, metadata=approval_context_metadata)
 
     def revalidate_claimed_allow(

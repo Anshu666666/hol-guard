@@ -13,10 +13,13 @@ import ipaddress
 import json
 import ntpath
 import os
+import posixpath
+import re
 import tempfile
 import urllib.parse
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -90,7 +93,18 @@ def _schema_validate(payload: object, schema: dict[str, object], name: str) -> d
     return candidate
 
 
-def _path_is_within(path: str, root: str) -> bool:
+def _path_is_within(path: str, root: str, *, portable: bool = False) -> bool:
+    if portable:
+        path_style = _portable_path_style(path)
+        if path_style is None or path_style != _portable_path_style(root):
+            return False
+        path_module = ntpath if path_style == "windows" else posixpath
+        candidate = path_module.normcase(path_module.normpath(path))
+        root_path = path_module.normcase(path_module.normpath(root))
+        try:
+            return path_module.commonpath((candidate, root_path)) == root_path
+        except ValueError:
+            return False
     candidate = os.path.realpath(path)
     root_path = os.path.realpath(root)
     try:
@@ -124,6 +138,25 @@ def _validate_local_path(value: object, name: str) -> str:
     if not (_is_posix_temp_path(value) or _is_windows_temp_path(value)):
         raise EvaluationContractError(f"{name} must remain under a temporary test root")
     return value
+
+
+def _portable_path_style(value: str) -> str | None:
+    if "\x00" in value or not value or value != value.strip():
+        return None
+    if value.startswith("/") and not value.startswith("//") and "\\" not in value:
+        return "posix" if ".." not in value.split("/") else None
+    drive, _ = ntpath.splitdrive(value)
+    if drive and ntpath.isabs(value) and not value.startswith("\\\\"):
+        return "windows" if ".." not in value.replace("/", "\\").split("\\") else None
+    return None
+
+
+def _validate_record_path(value: object, name: str, *, portable: bool) -> str:
+    if portable:
+        if not isinstance(value, str) or _portable_path_style(value) is None:
+            raise EvaluationContractError(f"{name} must be an absolute local path")
+        return value
+    return _validate_local_path(value, name)
 
 
 def _validate_local_endpoint(value: object, name: str) -> str:
@@ -162,7 +195,7 @@ def _endpoint_identity(value: str) -> tuple[str, str | None, int, str, str]:
     )
 
 
-def _validate_profile_semantics(profile: Mapping[str, object]) -> None:
+def _validate_profile_semantics(profile: Mapping[str, object], *, portable: bool = False) -> None:
     build = _mapping(profile["buildIdentity"], "buildIdentity")
     artifacts = [_mapping(item, "installedArtifacts[]") for item in cast(list[object], profile["installedArtifacts"])]
     artifact_digests = {cast(str, item["digest"]) for item in artifacts}
@@ -176,10 +209,10 @@ def _validate_profile_semantics(profile: Mapping[str, object]) -> None:
         raise EvaluationContractError("profile has duplicate expected capability IDs")
 
     scope = _mapping(profile["targetScope"], "targetScope")
-    root_path = _validate_local_path(scope["rootPath"], "targetScope.rootPath")
+    root_path = _validate_record_path(scope["rootPath"], "targetScope.rootPath", portable=portable)
     for path in cast(list[object], scope["allowedPaths"]):
-        candidate = _validate_local_path(path, "targetScope.allowedPaths[]")
-        if not _path_is_within(candidate, root_path):
+        candidate = _validate_record_path(path, "targetScope.allowedPaths[]", portable=portable)
+        if not _path_is_within(candidate, root_path, portable=portable):
             raise EvaluationContractError("targetScope.allowedPaths[] must remain under targetScope.rootPath")
     scope_endpoints = {
         _validate_local_endpoint(endpoint, "targetScope.allowedEndpoints[]")
@@ -199,14 +232,43 @@ def _validate_profile_semantics(profile: Mapping[str, object]) -> None:
             raise EvaluationContractError("network.proxyUrl must be within targetScope.allowedEndpoints")
 
 
-def validate_evaluation_profile(payload: object) -> None:
-    """Validate a profile's wire shape and local-only execution scope."""
+def validate_evaluation_profile(payload: object, *, portable: bool = False) -> None:
+    """Validate a profile; portable mode checks recorded paths without host filesystem access."""
 
     profile = _schema_validate(payload, evaluation_profile_schema(), "evaluation profile")
-    _validate_profile_semantics(profile)
+    _validate_profile_semantics(profile, portable=portable)
 
 
-def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[str, object] | None) -> None:
+def _record_timestamp(value: object, name: str) -> datetime:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})",
+            value,
+        )
+        is None
+    ):
+        raise EvaluationContractError(f"{name} must be a zoned RFC3339 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise EvaluationContractError(f"{name} must be a zoned RFC3339 timestamp") from None
+    if parsed.utcoffset() is None:
+        raise EvaluationContractError(f"{name} must be a zoned RFC3339 timestamp")
+    return parsed
+
+
+def _validate_result_semantics(
+    result: Mapping[str, object], profile: Mapping[str, object] | None, *, portable: bool = False
+) -> None:
+    started_at = _record_timestamp(result["startedAt"], "startedAt")
+    finished_at = _record_timestamp(result["finishedAt"], "finishedAt")
+    if finished_at < started_at:
+        raise EvaluationContractError("finishedAt must not precede startedAt")
+    if profile is not None:
+        limits = _mapping(profile["resourceLimits"], "resourceLimits")
+        if (finished_at - started_at).total_seconds() > cast(int, limits["maxDurationSeconds"]):
+            raise EvaluationContractError("result duration exceeds profile maxDurationSeconds")
     artifact = _mapping(result["artifactIdentity"], "artifactIdentity")
     build = _mapping(result["buildIdentity"], "buildIdentity")
     evidence = _mapping(result["evidenceIdentity"], "evidenceIdentity")
@@ -236,9 +298,9 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
             raise EvaluationContractError("passed case requires executed proof and matching action")
         witness = _mapping(case["witness"], "cases[].witness")
         if witness.get("path") is not None:
-            _ = _validate_local_path(witness["path"], "cases[].witness.path")
+            _ = _validate_record_path(witness["path"], "cases[].witness.path", portable=portable)
         if witness.get("allowedPath") is not None:
-            _ = _validate_local_path(witness["allowedPath"], "cases[].witness.allowedPath")
+            _ = _validate_record_path(witness["allowedPath"], "cases[].witness.allowedPath", portable=portable)
         if witness.get("endpoint") is not None:
             _ = _validate_local_endpoint(witness["endpoint"], "cases[].witness.endpoint")
         if witness.get("allowedEndpoint") is not None:
@@ -264,7 +326,8 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
             if not isinstance(denied, str) or not isinstance(allowed, str):
                 raise EvaluationContractError("passed enforcement case requires distinct denied and allowed witnesses")
             same_target = (
-                os.path.realpath(denied) == os.path.realpath(allowed)
+                _path_is_within(denied, allowed, portable=portable)
+                and _path_is_within(allowed, denied, portable=portable)
                 if kind in {"local_file", "local_database"}
                 else _endpoint_identity(denied) == _endpoint_identity(allowed)
             )
@@ -301,10 +364,10 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         raise EvaluationContractError("result.profileId does not match the supplied profile")
     if result["buildIdentity"] != profile["buildIdentity"]:
         raise EvaluationContractError("result.buildIdentity does not match the supplied profile")
-    profile_artifacts = {
-        _mapping(item, "installedArtifacts[]")["digest"] for item in cast(list[object], profile["installedArtifacts"])
-    }
-    if artifact_digest not in profile_artifacts:
+    profile_artifacts = [
+        _mapping(item, "installedArtifacts[]") for item in cast(list[object], profile["installedArtifacts"])
+    ]
+    if artifact not in profile_artifacts:
         raise EvaluationContractError("result.artifactIdentity is not installed by the supplied profile")
     expected_items = [
         _mapping(item, "expectedCapabilities[]") for item in cast(list[object], profile["expectedCapabilities"])
@@ -328,8 +391,8 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
         for field in ("path", "allowedPath"):
             if witness.get(field) is not None:
                 witness_path = cast(str, witness[field])
-                if not _path_is_within(witness_path, root_path) or not any(
-                    _path_is_within(witness_path, allowed_path) for allowed_path in allowed_paths
+                if not _path_is_within(witness_path, root_path, portable=portable) or not any(
+                    _path_is_within(witness_path, allowed_path, portable=portable) for allowed_path in allowed_paths
                 ):
                     raise EvaluationContractError("result witness path is outside the profile target scope")
         for field in ("endpoint", "allowedEndpoint"):
@@ -338,15 +401,15 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
                 raise EvaluationContractError("result witness endpoint is outside the profile target scope")
 
 
-def validate_evaluation_result(payload: object, profile: object | None = None) -> None:
+def validate_evaluation_result(payload: object, profile: object | None = None, *, portable: bool = False) -> None:
     """Validate a result and, when supplied, bind it to its profile."""
 
     result = _schema_validate(payload, evaluation_result_schema(), "evaluation result")
     profile_mapping = None
     if profile is not None:
         profile_mapping = _mapping(profile.data if isinstance(profile, EvaluationProfile) else profile, "profile")
-        validate_evaluation_profile(profile_mapping)
-    _validate_result_semantics(result, profile_mapping)
+        validate_evaluation_profile(profile_mapping, portable=portable)
+    _validate_result_semantics(result, profile_mapping, portable=portable)
 
 
 @dataclass(frozen=True, slots=True)

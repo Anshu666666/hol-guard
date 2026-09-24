@@ -5,9 +5,13 @@ import platform
 import stat
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
+from urllib.request import Request, urlopen
 
 import pytest
 
+from codex_plugin_scanner.guard import evaluation_preflight as preflight_module
+from codex_plugin_scanner.guard.evaluation_contracts import EvaluationResult
 from codex_plugin_scanner.guard.evaluation_preflight import (
     EvaluationSetup,
     cleanup_interrupted_evaluation_setup,
@@ -145,6 +149,25 @@ def test_preflight_rejects_unavailable_required_privilege(tmp_path: Path) -> Non
     report = preflight_evaluation(profile, artifact_paths=_artifact_paths(artifact))
     assert report.status == "blocked_environment"
     assert report.reason == "privilege_mismatch"
+
+
+@pytest.mark.parametrize(("elevated", "expected"), [(False, "standard_user"), (True, "administrator")])
+def test_windows_privilege_detection(monkeypatch: pytest.MonkeyPatch, elevated: bool, expected: str) -> None:
+    import ctypes
+
+    monkeypatch.setattr(preflight_module, "os", SimpleNamespace(name="nt"))
+    shell = SimpleNamespace(IsUserAnAdmin=lambda: int(elevated))
+    monkeypatch.setattr(ctypes, "windll", SimpleNamespace(shell32=shell), raising=False)
+    assert preflight_module._observed_privilege() == expected
+
+
+def test_unobservable_privilege_is_not_reported_as_a_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    executable = _fake_host(tmp_path)
+    artifact = _artifact(tmp_path)
+    monkeypatch.setattr(preflight_module, "_observed_privilege", lambda: "unknown")
+    report = preflight_evaluation(_profile(tmp_path, executable), artifact_paths=_artifact_paths(artifact))
+    assert report.status == "not_run"
+    assert report.reason == "privilege_unobservable"
 
 
 def test_host_binary_is_not_executed_by_default(tmp_path: Path) -> None:
@@ -429,3 +452,64 @@ def test_witness_uses_owned_setup_workspace_and_rejects_tampered_owner(tmp_path:
         pass
     marker.write_text(setup.marker_token, encoding="utf-8")
     assert setup.cleanup() is True
+
+
+def test_predeclared_network_pair_can_bind_a_profile_and_setup(tmp_path: Path) -> None:
+    executable = _fake_host(tmp_path)
+    artifact_path = _artifact(tmp_path)
+    with LocalSideEffectWitness() as witness:
+        pair = witness.new_network_pair()
+        profile = _profile(tmp_path, executable)
+        profile["expectedCapabilities"] = [{"capabilityId": "synthetic.network", "expectedAction": "block"}]
+        profile["network"]["allowedEndpoints"] = [pair.denied_url, pair.allowed_url]  # type: ignore[index]
+        profile["targetScope"]["allowedEndpoints"] = [pair.denied_url, pair.allowed_url]  # type: ignore[index]
+        setup = setup_evaluation(
+            profile,
+            artifact_paths=_artifact_paths(artifact_path),
+            parent_dir=tmp_path,
+            allow_host_execution=True,
+        )
+        assert setup.report.status == "passed"
+        try:
+            assert witness.check_network_ready()
+            with urlopen(Request(pair.allowed_url, data=b"", method="POST"), timeout=2) as response:
+                assert response.status == 204
+            observation = witness.observe_network_pair(pair)
+            assert observation.receiver_conditions_met
+            artifact = profile["installedArtifacts"][0]  # type: ignore[index]
+            result = {
+                "schemaVersion": "guard.evaluation-result.v1",
+                "resultId": "network-result",
+                "profileId": profile["profileId"],
+                "buildIdentity": profile["buildIdentity"],
+                "artifactIdentity": artifact,
+                "evidenceIdentity": {
+                    "evidenceId": "network-evidence",
+                    "proofRunId": "network-run",
+                    "evidenceType": "live_installed_host_test",
+                    "artifactDigest": artifact["digest"],
+                },
+                "status": "passed",
+                "startedAt": "2026-09-23T12:00:00Z",
+                "finishedAt": "2026-09-23T12:00:01Z",
+                "cases": [
+                    {
+                        "caseId": "synthetic.network",
+                        "status": "passed",
+                        "expectedAction": "block",
+                        "observedAction": "block",
+                        "proofType": "live_installed_host_test",
+                        "witness": {
+                            "kind": "loopback_receiver",
+                            "endpoint": pair.denied_url,
+                            "allowedEndpoint": pair.allowed_url,
+                            "receiverReady": observation.receiver_ready,
+                            "deniedReached": observation.denied_reached,
+                            "allowedReached": observation.allowed_reached,
+                        },
+                    }
+                ],
+            }
+            assert EvaluationResult.from_dict(result, profile=profile).to_dict() == result
+        finally:
+            assert setup.cleanup() is True

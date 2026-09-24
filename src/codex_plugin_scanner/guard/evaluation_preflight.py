@@ -186,6 +186,13 @@ def _normalize_architecture(value: str) -> str:
 
 
 def _observed_privilege() -> str:
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            return "administrator" if ctypes.windll.shell32.IsUserAnAdmin() else "standard_user"
+        except (AttributeError, OSError):
+            return "unknown"
     if hasattr(os, "geteuid"):
         return "administrator" if os.geteuid() == 0 else "standard_user"
     return "unknown"
@@ -207,7 +214,9 @@ def _safe_temp_parent(path: Path) -> bool:
         temp_root = os.path.normcase(os.path.normpath(tempfile.gettempdir()))
         candidate_normalized = os.path.normcase(os.path.normpath(candidate))
         try:
-            return os.path.commonpath((candidate_normalized, temp_root)) == temp_root
+            return (
+                candidate_normalized != temp_root and os.path.commonpath((candidate_normalized, temp_root)) == temp_root
+            )
         except ValueError:
             return False
 
@@ -429,6 +438,9 @@ def preflight_evaluation(
 
     expected_privilege = str(host["requiredPrivilege"])
     observed_privilege = _observed_privilege()
+    if observed_privilege == "unknown":
+        checks.append(_check("privilege", "not_run", reason="privilege_unobservable", expected=expected_privilege))
+        return _report("not_run", "preflight", profile_id, checks, reason="privilege_unobservable")
     if expected_privilege != observed_privilege:
         checks.append(
             _check(
@@ -531,8 +543,13 @@ def setup_evaluation(
         declared_root = Path(cast(str, target_scope["rootPath"]))
     except EvaluationContractError:
         return EvaluationSetup(report=replace(preflight, phase="setup", status="not_run", reason="invalid_profile"))
-    base = Path(parent_dir) if parent_dir is not None else declared_root
-    if base.resolve() != declared_root.resolve() or not _safe_temp_parent(base):
+    try:
+        base = Path(parent_dir) if parent_dir is not None else declared_root
+        parent_matches = base.resolve() == declared_root.resolve()
+    except (OSError, RuntimeError, ValueError, TypeError):
+        parent_matches = False
+        base = declared_root
+    if not parent_matches or not _safe_temp_parent(base):
         report = replace(
             preflight,
             phase="setup",

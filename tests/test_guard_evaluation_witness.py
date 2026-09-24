@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import socket
 import subprocess
+import time
 from urllib.error import HTTPError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import pytest
@@ -59,7 +62,7 @@ def test_network_witness_rejects_unknown_and_nonempty_requests() -> None:
             _post(pair.allowed_url + "unknown")
         with pytest.raises(HTTPError), urlopen(Request(pair.allowed_url, data=b"secret", method="POST"), timeout=2):
             pass
-        assert not witness.observe_network_pair(pair).allowed_reached
+        assert witness.observe_network_pair(pair).allowed_reached
 
 
 def test_network_witness_rejects_mixed_registered_pairs() -> None:
@@ -68,3 +71,33 @@ def test_network_witness_rejects_mixed_registered_pairs() -> None:
         second = witness.new_network_pair()
         with pytest.raises(ValueError, match="Unknown network witness pair"):
             witness.observe_network_pair(NetworkWitnessPair(first.denied_url, second.allowed_url))
+
+
+def test_receiver_overload_invalidates_network_proof() -> None:
+    with LocalSideEffectWitness() as witness:
+        pair = witness.new_network_pair()
+        assert witness.check_network_ready()
+        port = urlsplit(pair.allowed_url).port
+        assert port is not None
+        connections: list[socket.socket] = []
+        try:
+            for _ in range(8):
+                connection = socket.create_connection(("127.0.0.1", port), timeout=2)
+                connection.sendall(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\n")
+                connections.append(connection)
+            deadline = time.monotonic() + 2
+            server = witness._server
+            assert server is not None
+            while server._slots._value and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert server._slots._value == 0
+            overflow = socket.create_connection(("127.0.0.1", port), timeout=2)
+            connections.append(overflow)
+            overflow.sendall(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            while not witness._overloaded and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert witness._overloaded
+            assert not witness.observe_network_pair(pair).receiver_ready
+        finally:
+            for connection in connections:
+                connection.close()

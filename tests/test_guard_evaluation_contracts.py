@@ -12,6 +12,7 @@ import pytest
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
+from codex_plugin_scanner.guard import evaluation_evidence_package as evidence_package_module
 from codex_plugin_scanner.guard.evaluation_contracts import (
     EVALUATION_PROFILE_SCHEMA_VERSION,
     EVALUATION_RESULT_SCHEMA_VERSION,
@@ -21,6 +22,7 @@ from codex_plugin_scanner.guard.evaluation_contracts import (
     evaluation_profile_schema,
     evaluation_result_schema,
     validate_evaluation_profile,
+    validate_evaluation_result,
 )
 from codex_plugin_scanner.guard.evaluation_evidence_package import (
     build_evaluation_evidence_package,
@@ -143,6 +145,38 @@ def test_profile_and_result_roundtrip_with_exact_identities(tmp_path: Path) -> N
     assert result.to_dict() == result_payload
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("artifactId", "other-artifact"), ("kind", "adapter"), ("version", "9.9.9")],
+)
+def test_result_requires_the_complete_installed_artifact_identity(tmp_path: Path, field: str, value: str) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    result["artifactIdentity"][field] = value  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="not installed"):
+        EvaluationResult.from_dict(result, profile=profile)
+
+
+@pytest.mark.parametrize(
+    ("started", "finished", "error"),
+    [
+        ("not-a-time", "2026-09-23T12:00:01Z", "RFC3339"),
+        ("2026-09-23T12:00:00", "2026-09-23T12:00:01Z", "RFC3339"),
+        ("2026-09-23T12:00:02Z", "2026-09-23T12:00:01Z", "precede"),
+        ("2026-09-23T12:00:00Z", "2026-09-23T12:01:01Z", "maxDurationSeconds"),
+    ],
+)
+def test_result_timestamps_are_zoned_ordered_and_bounded(
+    tmp_path: Path, started: str, finished: str, error: str
+) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    result["startedAt"] = started
+    result["finishedAt"] = finished
+    with pytest.raises(EvaluationContractError, match=error):
+        EvaluationResult.from_dict(result, profile=profile)
+
+
 def test_result_cannot_omit_a_profile_capability(tmp_path: Path) -> None:
     profile_payload = _profile(tmp_path)
     profile_payload["expectedCapabilities"].append({"capabilityId": "synthetic.shell", "expectedAction": "block"})
@@ -188,6 +222,22 @@ def test_evidence_package_is_reproducible_and_keeps_caller_proof_unverified(tmp_
     assert manifest["proofBoundary"] == "caller_supplied_unverified"
 
 
+def test_evidence_package_verification_accepts_another_hosts_absolute_paths(tmp_path: Path) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    root = r"C:\Users\Evaluator\AppData\Local\Temp\hol-guard-eval"
+    profile["targetScope"]["rootPath"] = root  # type: ignore[index]
+    profile["targetScope"]["allowedPaths"] = [root + r"\workspace"]  # type: ignore[index]
+    result["cases"][0]["witness"]["path"] = root + r"\workspace\sentinel"  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="temporary"):
+        validate_evaluation_profile(profile)
+    validate_evaluation_profile(profile, portable=True)
+    validate_evaluation_result(result, profile, portable=True)
+
+    packaged = evidence_package_module._package_bytes(profile, result)
+    assert verify_evaluation_evidence_package(packaged)["profileId"] == profile["profileId"]
+
+
 def test_evidence_package_rejects_tampering_and_output_limit(tmp_path: Path) -> None:
     profile = _profile(tmp_path)
     result = _result(profile)
@@ -197,6 +247,15 @@ def test_evidence_package_rejects_tampering_and_output_limit(tmp_path: Path) -> 
     corrupted[index] = ord("x")
     with pytest.raises(EvaluationContractError, match=r"could not be read|manifest does not match"):
         verify_evaluation_evidence_package(bytes(corrupted))
+
+    encrypted = bytearray(packaged)
+    local_header = encrypted.find(b"PK\x03\x04")
+    central_header = encrypted.find(b"PK\x01\x02")
+    assert local_header >= 0 and central_header >= 0
+    encrypted[local_header + 6] |= 1
+    encrypted[central_header + 8] |= 1
+    with pytest.raises(EvaluationContractError, match="could not be read"):
+        verify_evaluation_evidence_package(bytes(encrypted))
 
     limits = profile["resourceLimits"]
     assert isinstance(limits, dict)
@@ -259,6 +318,32 @@ def test_evidence_package_failed_write_removes_only_its_incomplete_file(
         write_evaluation_evidence_package(profile, result, output_dir=root)
     assert list(root.glob("hol-guard-eval-evidence-*.zip")) == []
     assert unrelated.read_bytes() == b"preserve"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="directory descriptor writes require POSIX")
+def test_evidence_package_rejects_a_root_swapped_to_a_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    profile = _profile(tmp_path)
+    result = _result(profile)
+    root = Path(profile["targetScope"]["rootPath"])  # type: ignore[index]
+    root.mkdir(mode=0o700)
+    outside = tmp_path / "outside"
+    outside.mkdir(mode=0o700)
+    backup = tmp_path / "original-root"
+    original_open = os.open
+
+    def swap_before_open(
+        path: str | os.PathLike[str], flags: int, mode: int = 0o777, *, dir_fd: int | None = None
+    ) -> int:
+        if Path(path) == root:
+            root.rename(backup)
+            root.symlink_to(outside, target_is_directory=True)
+        return original_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr("codex_plugin_scanner.guard.evaluation_evidence_package.os.open", swap_before_open)
+    with pytest.raises(EvaluationContractError, match="unable to write"):
+        write_evaluation_evidence_package(profile, result, output_dir=root)
+    assert list(outside.iterdir()) == []
+    assert backup.is_dir()
 
 
 def test_passed_result_requires_a_profile_for_coverage(tmp_path: Path) -> None:

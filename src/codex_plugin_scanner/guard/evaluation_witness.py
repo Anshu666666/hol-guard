@@ -6,16 +6,19 @@ adapter or turn a synthetic action into installed-host enforcement evidence.
 
 from __future__ import annotations
 
+import socket
 import sys
 from dataclasses import dataclass
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Lock, Thread
+from threading import BoundedSemaphore, Lock, Thread
 from uuid import uuid4
 
 from codex_plugin_scanner.guard.evaluation_preflight import EvaluationSetup
+
+_MAX_ACTIVE_RECEIVER_CONNECTIONS = 8
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,7 @@ class LocalSideEffectWitness:
         self._network_pairs: set[tuple[str, str]] = set()
         self._file_ready = False
         self._network_ready = False
+        self._overloaded = False
 
     def __enter__(self) -> LocalSideEffectWitness:
         if self._temporary is not None:
@@ -88,9 +92,14 @@ class LocalSideEffectWitness:
         self._hits.clear()
         self._file_ready = False
         self._network_ready = False
+        self._overloaded = False
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
+            def setup(self) -> None:
+                self.request.settimeout(2.0)
+                super().setup()
+
             def do_GET(self) -> None:
                 if self.path != "/health":
                     self.send_error(404)
@@ -105,19 +114,46 @@ class LocalSideEffectWitness:
                 if not known:
                     self.send_error(404)
                     return
+                with owner._lock:
+                    owner._hits[token] += 1
                 if self.headers.get("Content-Length") != "0":
                     self.send_error(413)
                     return
-                with owner._lock:
-                    owner._hits[token] += 1
                 self.send_response(204)
                 self.end_headers()
 
             def log_message(self, format: str, *args: object) -> None:  # noqa: A002 - stdlib callback signature
                 pass
 
+        class BoundedReceiver(ThreadingHTTPServer):
+            daemon_threads = True
+            block_on_close = False
+            request_queue_size = _MAX_ACTIVE_RECEIVER_CONNECTIONS
+
+            def __init__(self) -> None:
+                self._slots = BoundedSemaphore(_MAX_ACTIVE_RECEIVER_CONNECTIONS)
+                super().__init__(("127.0.0.1", 0), Handler)
+
+            def process_request(self, request: socket.socket, client_address: tuple[str, int]) -> None:
+                if not self._slots.acquire(blocking=False):
+                    with owner._lock:
+                        owner._overloaded = True
+                    self.shutdown_request(request)
+                    return
+                try:
+                    super().process_request(request, client_address)
+                except BaseException:
+                    self._slots.release()
+                    raise
+
+            def process_request_thread(self, request: socket.socket, client_address: tuple[str, int]) -> None:
+                try:
+                    super().process_request_thread(request, client_address)
+                finally:
+                    self._slots.release()
+
         try:
-            self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+            self._server = BoundedReceiver()
             self._thread = Thread(target=self._server.serve_forever, daemon=True)
             self._thread.start()
         except BaseException:
@@ -161,7 +197,8 @@ class LocalSideEffectWitness:
         try:
             connection.request("GET", "/health")
             response = connection.getresponse()
-            self._network_ready = response.status == 204
+            with self._lock:
+                self._network_ready = response.status == 204 and not self._overloaded
         except OSError:
             self._network_ready = False
         finally:
@@ -234,4 +271,5 @@ class LocalSideEffectWitness:
                 raise ValueError("Unknown network witness token")
             denied_reached = self._hits[denied_token] > 0
             allowed_reached = self._hits[allowed_token] > 0
-        return WitnessObservation(self._network_ready, denied_reached, allowed_reached)
+            receiver_ready = self._network_ready and not self._overloaded
+        return WitnessObservation(receiver_ready, denied_reached, allowed_reached)

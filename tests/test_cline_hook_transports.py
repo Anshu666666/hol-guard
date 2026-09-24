@@ -587,6 +587,33 @@ def test_generated_plugin_binds_allow_original_to_exact_output(tmp_path: Path) -
     assert "SECRET_METADATA" not in after.stdout
 
 
+def test_generated_plugin_returns_the_exact_output_reviewed_for_allow_original(tmp_path: Path) -> None:
+    context = _context(tmp_path)
+    _activate(context, "plugin")
+    guard = tmp_path / "matching_digest_guard.py"
+    decision = {
+        "decision": "allow",
+        "model_output_action": "allow_original",
+        "reviewed_output_sha256": sha256(b"SAFE_OUTPUT").hexdigest(),
+    }
+    guard.write_text(f"print({json.dumps(decision)!r})\n", encoding="utf-8")
+    source = _plugin_source(context, [sys.executable, str(guard)])
+    after = _run_plugin(
+        source,
+        tmp_path,
+        "(()=>{let reads=0;const result={get output(){reads+=1;"
+        'return reads===1?"SAFE_OUTPUT":"SECRET_OUTPUT";},isError:false};'
+        'return plugin.hooks.afterTool({toolCall:{toolCallId:"2",toolName:"read_files"},'
+        'input:{paths:["README.md"]},result}).then(value=>({value,reads}));})()',
+    )
+    assert after.returncode == 0, after.stderr
+    assert json.loads(after.stdout) == {
+        "value": {"result": {"output": "SAFE_OUTPUT", "isError": False}},
+        "reads": 1,
+    }
+    assert "SECRET_OUTPUT" not in after.stdout
+
+
 @pytest.mark.parametrize("decision_json", ["{}", '{"decision":"unknown"}'])
 def test_generated_plugin_rejects_ambiguous_guard_decision(tmp_path: Path, decision_json: str) -> None:
     context = _context(tmp_path)

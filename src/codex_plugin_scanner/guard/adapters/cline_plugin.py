@@ -368,7 +368,14 @@ const plugin = {{
         proof("posttool", "withheld");
         return blockedResult("HOL Guard Cline transport state is unavailable, so this tool result was withheld.");
       }}
-      const decision = invokeGuard("PostToolUse", toolCall, input, result);
+      let reviewedResult;
+      try {{
+        reviewedResult = {{ output: result?.output, isError: result?.isError === true }};
+      }} catch {{
+        proof("posttool", "withheld");
+        return blockedResult("HOL Guard could not read this tool result for review, so it was withheld.");
+      }}
+      const decision = invokeGuard("PostToolUse", toolCall, input, reviewedResult);
       if (!decision.ok) {{
         proof("posttool", "withheld");
         return blockedResult("HOL Guard could not review this tool result, so it was withheld.");
@@ -388,21 +395,21 @@ const plugin = {{
           return blockedResult("HOL Guard did not provide the reviewed excerpt, so this tool result was withheld.");
         }}
         proof("posttool", "replaced");
-        return {{ result: {{ output: decision.payload.reviewed_excerpt, isError: result?.isError === true }} }};
+        return {{ result: {{ output: decision.payload.reviewed_excerpt, isError: reviewedResult.isError }} }};
       }}
       if (outputAction === "allow_original") {{
         const digest = decision.payload.reviewed_output_sha256;
         if (
-          typeof result?.output !== "string" ||
+          typeof reviewedResult.output !== "string" ||
           typeof digest !== "string" ||
           !/^[a-f0-9]{{64}}$/.test(digest) ||
-          createHash("sha256").update(result.output, "utf8").digest("hex") !== digest
+          createHash("sha256").update(reviewedResult.output, "utf8").digest("hex") !== digest
         ) {{
           proof("posttool", "withheld");
           return blockedResult("HOL Guard could not bind its review to this tool result, so it was withheld.");
         }}
         proof("posttool", "filtered");
-        return {{ result: {{ output: result.output, isError: result?.isError === true }} }};
+        return {{ result: reviewedResult }};
       }}
       if (outputAction !== undefined) {{
         proof("posttool", "withheld");

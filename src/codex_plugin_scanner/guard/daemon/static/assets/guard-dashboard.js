@@ -18823,6 +18823,29 @@ async function runAuditRemediation(input) {
   }
   return normalizePackageFirewallAction(payload);
 }
+async function chooseSupplyChainAuditFolder() {
+  const response = await fetchGuardApi("/v1/supply-chain/choose-folder", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...guardAuthHeaders()
+    },
+    body: "{}"
+  });
+  const payloadBody = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new GuardHarnessActionError(
+      response.status,
+      isGuardHarnessActionErrorPayload(payloadBody) ? payloadBody : null
+    );
+  }
+  const record2 = payloadBody !== null && typeof payloadBody === "object" ? payloadBody : {};
+  const workspaceDir = typeof record2.workspace_dir === "string" && record2.workspace_dir.trim() ? record2.workspace_dir.trim() : null;
+  return {
+    workspaceDir,
+    cancelled: record2.cancelled === true || workspaceDir === null
+  };
+}
 async function runPackageAudit(input) {
   const workspaceDir = input?.workspaceDir?.trim() ?? null;
   const body = {};
@@ -32670,7 +32693,7 @@ export {
   clearPolicy as ay,
   clearReviewQueue as az,
   HiMiniCommandLine as b,
-  HiMiniCodeBracket as b$,
+  HiMiniCloudArrowUp as b$,
   FaAws as b0,
   approvalProofRecentlySatisfied as b1,
   HiMiniArrowLeft as b2,
@@ -32702,12 +32725,12 @@ export {
   parseInterceptProofSnapshot as bS,
   activatePackageFirewallRuntime as bT,
   EntitlementNotice as bU,
-  fetchReceipts as bV,
-  lazyWorkspace as bW,
-  __vitePreload as bX,
-  scopeLabel as bY,
-  HiMiniDocumentText as bZ,
-  HiMiniCloudArrowUp as b_,
+  chooseSupplyChainAuditFolder as bV,
+  fetchReceipts as bW,
+  lazyWorkspace as bX,
+  __vitePreload as bY,
+  scopeLabel as bZ,
+  HiMiniDocumentText as b_,
   HiMiniRocketLaunch as ba,
   HiMiniTrash as bb,
   isGuardDemoMode as bc,
@@ -32735,35 +32758,36 @@ export {
   readString$1 as by,
   isRecord$4 as bz,
   HiMiniChevronRight as c,
-  HiMiniUsers as c0,
-  HiMiniIdentification as c1,
-  policyActionLabel as c2,
-  createCloudExceptionRequest as c3,
-  HiMiniArrowRight as c4,
-  HiMiniPuzzlePiece as c5,
-  fetchCloudExceptions as c6,
-  fetchCloudExceptionRequests as c7,
-  downloadBlob as c8,
-  PolicyStatField as c9,
-  PaginationControls as ca,
-  HiMiniArrowDownTray as cb,
-  HiMiniQueueList as cc,
-  Surface as cd,
-  HiMiniCheckBadge as ce,
-  fetchMcpPolicyRequest as cf,
-  resolveMcpPolicyRequest as cg,
-  HiMiniDocumentPlus as ch,
-  HiMiniDocumentMagnifyingGlass as ci,
-  fetchSupplyChainBundle as cj,
-  isSupplyChainScannerEvidence as ck,
-  isBlockedGuardAction as cl,
-  HiMiniComputerDesktop as cm,
-  HiMiniChevronLeft as cn,
-  HiMiniFunnel as co,
-  HiMiniArrowDown as cp,
-  HiMiniArrowUp as cq,
-  runAuditRemediation as cr,
-  HiMiniSignal as cs,
+  HiMiniCodeBracket as c0,
+  HiMiniUsers as c1,
+  HiMiniIdentification as c2,
+  policyActionLabel as c3,
+  createCloudExceptionRequest as c4,
+  HiMiniArrowRight as c5,
+  HiMiniPuzzlePiece as c6,
+  fetchCloudExceptions as c7,
+  fetchCloudExceptionRequests as c8,
+  downloadBlob as c9,
+  PolicyStatField as ca,
+  PaginationControls as cb,
+  HiMiniArrowDownTray as cc,
+  HiMiniQueueList as cd,
+  Surface as ce,
+  HiMiniCheckBadge as cf,
+  fetchMcpPolicyRequest as cg,
+  resolveMcpPolicyRequest as ch,
+  HiMiniDocumentPlus as ci,
+  HiMiniDocumentMagnifyingGlass as cj,
+  fetchSupplyChainBundle as ck,
+  isSupplyChainScannerEvidence as cl,
+  isBlockedGuardAction as cm,
+  HiMiniComputerDesktop as cn,
+  HiMiniChevronLeft as co,
+  HiMiniFunnel as cp,
+  HiMiniArrowDown as cq,
+  HiMiniArrowUp as cr,
+  runAuditRemediation as cs,
+  HiMiniSignal as ct,
   createCommandActivityClient as d,
   getRecoveryCapabilities as e,
   fetchCommandActivityApi as f,

@@ -110,9 +110,10 @@ def _wire_request(
     guard_home: Path,
     request_id: str = "native-benchmark-oneshot",
     sample: int | None = None,
+    policy_snapshot: Mapping[str, object] | None = None,
 ) -> str:
-    return json.dumps(
-        {
+    if policy_snapshot is None:
+        request = {
             "protocol_version": 1,
             "request_id": request_id,
             "harness": "claude-code",
@@ -124,9 +125,30 @@ def _wire_request(
             "source_ref_external_allowed": False,
             "observe_mode": False,
             "deadline_budget_ms": 5_000,
-        },
-        separators=(",", ":"),
-    )
+        }
+    else:
+        generation = policy_snapshot.get("generation")
+        request = {
+            "schema": "guard-hook-envelope.v2",
+            "request_id": request_id,
+            "harness": "claude-code",
+            "event": "PostToolUse",
+            "raw_payload": _payload(sample),
+            "deadline_budget_ms": 5_000,
+            "policy_generation": generation,
+            "policy_snapshot": {
+                "generation": generation,
+                "policy_digest": policy_snapshot.get("policy_digest"),
+                "runtime_identity": policy_snapshot.get("runtime_identity"),
+            },
+            "source": {
+                "cwd": str(workspace),
+                "home_dir": str(workspace),
+                "guard_home": str(guard_home),
+                "source_ref_external_allowed": False,
+            },
+        }
+    return json.dumps(request, separators=(",", ":"))
 
 
 def _native_environment(workspace: Path) -> dict[str, str]:
@@ -212,6 +234,7 @@ def _bench_native_warm(
     workspace: Path,
     guard_home: Path,
     iterations: int,
+    policy_snapshot: Mapping[str, object] | None = None,
 ) -> list[float]:
     """Measure direct authenticated resident IPC as a diagnostic."""
     status = native_runtime_status()
@@ -224,6 +247,7 @@ def _bench_native_warm(
             guard_home=guard_home,
             request_id=f"native-warm-{index}",
             sample=index,
+            policy_snapshot=policy_snapshot,
         )
         started = time.perf_counter()
         response_bytes = native_resident_client_request(
@@ -402,6 +426,7 @@ def _run_benchmarks(
                     workspace=workspace,
                     guard_home=guard_home,
                     iterations=warm_iterations,
+                    policy_snapshot=snapshot,
                 )
         finally:
             _stop_native_resident(runtime, guard_home / "native-runtime", workspace)

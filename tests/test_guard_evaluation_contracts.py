@@ -255,10 +255,49 @@ def test_passed_enforcement_requires_live_host_witness(tmp_path: Path) -> None:
     with pytest.raises(EvaluationContractError, match="distinct denied and allowed witnesses"):
         EvaluationResult.from_dict(result_payload, profile=profile)
     result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "workspace" / "allowed")  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="ready receiver"):
+        EvaluationResult.from_dict(result_payload, profile=profile)
+    result_payload["cases"][0]["witness"].update(  # type: ignore[index]
+        {"receiverReady": True, "deniedReached": False, "allowedReached": True}
+    )
     EvaluationResult.from_dict(result_payload, profile=profile)
     result_payload["cases"][0]["witness"]["allowedPath"] = str(root / "outside" / "allowed")  # type: ignore[index]
     with pytest.raises(EvaluationContractError, match="outside the profile target scope"):
         EvaluationResult.from_dict(result_payload, profile=profile)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("receiverReady", False),
+        ("deniedReached", True),
+        ("allowedReached", False),
+    ],
+)
+def test_passed_enforcement_rejects_failed_receiver_observation(tmp_path: Path, field: str, value: bool) -> None:
+    profile_payload = _profile(tmp_path)
+    profile_payload["expectedCapabilities"][0]["expectedAction"] = "block"  # type: ignore[index]
+    result_payload = _result(profile_payload)
+    result_payload["evidenceIdentity"]["evidenceType"] = "live_installed_host_test"  # type: ignore[index]
+    root = Path(profile_payload["targetScope"]["rootPath"])  # type: ignore[index]
+    result_payload["cases"][0].update(  # type: ignore[index]
+        {
+            "expectedAction": "block",
+            "observedAction": "block",
+            "proofType": "live_installed_host_test",
+            "witness": {
+                "kind": "local_file",
+                "path": str(root / "workspace" / "denied"),
+                "allowedPath": str(root / "workspace" / "allowed"),
+                "receiverReady": True,
+                "deniedReached": False,
+                "allowedReached": True,
+            },
+        }
+    )
+    result_payload["cases"][0]["witness"][field] = value  # type: ignore[index]
+    with pytest.raises(EvaluationContractError, match="ready receiver"):
+        EvaluationResult.from_dict(result_payload, profile=EvaluationProfile.from_dict(profile_payload))
 
 
 def test_passed_enforcement_rejects_equivalent_loopback_urls(tmp_path: Path) -> None:

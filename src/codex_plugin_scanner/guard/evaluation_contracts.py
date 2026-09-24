@@ -270,6 +270,14 @@ def _validate_result_semantics(result: Mapping[str, object], profile: Mapping[st
             )
             if same_target:
                 raise EvaluationContractError("passed enforcement case requires distinct denied and allowed witnesses")
+            if (
+                witness.get("receiverReady") is not True
+                or witness.get("deniedReached") is not False
+                or witness.get("allowedReached") is not True
+            ):
+                raise EvaluationContractError(
+                    "passed enforcement case requires ready receiver, absent denied effect, and present allowed effect"
+                )
     if result["status"] == "passed" and any(status != "passed" for status in case_statuses):
         raise EvaluationContractError("passed evaluation result cannot include an unpassed case")
     if result.get("summary") is not None:

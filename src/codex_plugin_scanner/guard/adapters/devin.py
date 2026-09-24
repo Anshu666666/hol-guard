@@ -339,6 +339,9 @@ class DevinHarnessAdapter(HarnessAdapter):
                     "hol-guard install devin."
                 )
             payload = document.payload
+            existing_hooks = payload.get("hooks")
+            if existing_hooks is not None and not isinstance(existing_hooks, dict):
+                raise ValueError("Devin config has a non-object hooks value; Guard will not rewrite it.")
         shim_manifest = install_guard_shim(
             self.harness,
             context,
@@ -358,8 +361,6 @@ class DevinHarnessAdapter(HarnessAdapter):
 
         hook_command = _shell_command(self._hook_command_parts(context))
         hooks = payload.get("hooks")
-        if hooks is not None and not isinstance(hooks, dict):
-            raise ValueError("Devin config has a non-object hooks value; Guard will not rewrite it.")
         if hooks is None:
             hooks = {}
         payload["hooks"] = hooks

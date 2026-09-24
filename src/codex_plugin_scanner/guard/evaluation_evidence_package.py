@@ -140,7 +140,17 @@ def verify_evaluation_evidence_package(data: bytes) -> dict[str, object]:
         if build_evaluation_evidence_package(profile_payload, result_payload) != data:
             raise EvaluationContractError("evaluation evidence package is not in canonical form")
         return expected_manifest
-    except (OSError, UnicodeError, json.JSONDecodeError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+    except EvaluationContractError:
+        raise
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        RecursionError,
+        NotImplementedError,
+        zipfile.BadZipFile,
+        zipfile.LargeZipFile,
+    ) as exc:
         raise EvaluationContractError("evaluation evidence package could not be read") from exc
 
 

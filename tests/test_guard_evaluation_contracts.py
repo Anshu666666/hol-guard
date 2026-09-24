@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import copy
+import io
 import os
 import stat
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -175,6 +177,17 @@ def test_evidence_package_rejects_tampering_and_output_limit(tmp_path: Path) -> 
     limits["maxOutputBytes"] = 32
     with pytest.raises(EvaluationContractError, match="exceeds the declared output limit"):
         build_evaluation_evidence_package(profile, result)
+
+
+def test_evidence_package_rejects_deeply_nested_json_with_contract_error() -> None:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as archive:
+        archive.writestr("profile.json", b"[" * 2000)
+        archive.writestr("result.json", b"{}")
+        archive.writestr("manifest.json", b"{}")
+
+    with pytest.raises(EvaluationContractError, match="could not be read"):
+        verify_evaluation_evidence_package(output.getvalue())
 
 
 def test_evidence_package_write_is_private_and_never_overwrites(tmp_path: Path) -> None:

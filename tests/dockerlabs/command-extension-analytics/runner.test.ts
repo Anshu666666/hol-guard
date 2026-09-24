@@ -159,7 +159,11 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     try {
       await runInstalledPlaywright("http://127.0.0.1:4781", session, 7, "proof", async () => {
         invocation += 1;
-        return invocation === 1 ? result() : result(`browser assertion failed: ${session} guard-private-command-sentinel`, 1);
+        return invocation === 1 ? result() : {
+          exitCode: 1,
+          stdout: `browser assertion failed: ${session} guard-private-command-sentinel`,
+          stderr: "bun wrapper failed",
+        };
       }, async () => {
         throw new Error(`private value retained in proof: ${session}`);
       });

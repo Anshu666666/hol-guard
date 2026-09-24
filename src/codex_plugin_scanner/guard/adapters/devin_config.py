@@ -55,12 +55,15 @@ DEVIN_HOOK_EVENT_NAMES = (
     "SessionEnd",
 )
 
-# Tool names Devin surfaces through hooks. MCP tools arrive either as the
-# ``mcp_call_tool`` dispatcher or as direct ``mcp__<server>__<tool>`` names, so
-# both shapes are matched. Interactive shell helpers (write_to_process,
-# get_output, kill_shell) are intentionally not matched: their payloads carry
-# no new command for Guard to review.
-DEVIN_GUARD_TOOL_MATCHER = "^(exec|read|write|edit|apply_patch|notebook_edit|webfetch|mcp_call_tool|mcp__.*)$"
+# Tool names Devin surfaces through hooks: file read/write/edit and notebook
+# tools, search tools, exec, webfetch, and MCP tools, which arrive either as
+# the ``mcp_call_tool`` dispatcher or as direct ``mcp__<server>__<tool>``
+# names, so both shapes are matched. Interactive shell helpers
+# (write_to_process, get_output, kill_shell) are intentionally not matched:
+# their payloads carry no new command for Guard to review.
+DEVIN_GUARD_TOOL_MATCHER = (
+    "^(exec|read|write|edit|apply_patch|notebook_read|notebook_edit|grep|glob|webfetch|mcp_call_tool|mcp__.*)$"
+)
 
 # Devin also loads Claude Code hook files by default; Guard-managed Claude
 # hooks there would double-attribute Devin events to Claude Code.
@@ -87,8 +90,13 @@ def is_guard_managed_hook_command(command: object) -> bool:
 
     if not isinstance(command, str):
         return False
-    return GUARD_MANAGED_MARKER in command or (
-        "codex_plugin_scanner.cli" in command and "'guard', 'hook'" in command and "--harness', 'devin'" in command
+    # Windows cmdline quoting escapes inner quotes as \"; normalize so the
+    # harness marker in the bounded-bridge config matches on every platform.
+    normalized = command.replace('\\"', '"')
+    return (
+        GUARD_MANAGED_MARKER in command
+        or ("codex_plugin_scanner.cli" in command and "'guard', 'hook'" in command and "--harness', 'devin'" in command)
+        or ("bounded_cli_hook_bridge" in command and '"harness":"devin"' in normalized)
     )
 
 

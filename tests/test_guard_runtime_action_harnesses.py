@@ -319,6 +319,7 @@ def test_shared_action_envelope_contract_covers_every_registered_harness(tmp_pat
         "cline-vscode": "cline",
         "zai": "zcode",
         "devin-cli": "devin",
+        "cognition-devin": "devin",
     }
     for harness in action_envelope_harnesses():
         envelope = normalize_harness_payload(

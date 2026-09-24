@@ -598,6 +598,7 @@ _ACTION_PAYLOAD_NORMALIZERS = {
     "zai": normalize_zcode_hook_payload,
     "devin": normalize_devin_hook_payload,
     "devin-cli": normalize_devin_hook_payload,
+    "cognition-devin": normalize_devin_hook_payload,
 }
 
 

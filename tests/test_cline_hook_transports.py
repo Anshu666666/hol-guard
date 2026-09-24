@@ -375,7 +375,7 @@ def test_generated_plugin_syntax_pretool_block_and_posttool_replacement(tmp_path
         ),
     )
     assert before.returncode == 0, before.stderr
-    assert json.loads(before.stdout) == {"skip": True, "reason": "blocked by test"}
+    assert json.loads(before.stdout) == {"skip": True, "reason": "HOL Guard blocked this action."}
 
     after = _run_plugin(
         source,
@@ -385,7 +385,7 @@ def test_generated_plugin_syntax_pretool_block_and_posttool_replacement(tmp_path
     assert after.returncode == 0, after.stderr
     output = json.loads(after.stdout)["result"]
     assert output["isError"] is True
-    assert output["output"] == "blocked by test"
+    assert output["output"] == "HOL Guard withheld this tool result."
     assert "SECRET_OUTPUT" not in after.stdout
     assert "SECRET_METADATA" not in after.stdout
 
@@ -446,10 +446,18 @@ def test_generated_plugin_preserves_guard_block_on_exit_one(tmp_path: Path) -> N
     _activate(context, "plugin")
     guard = tmp_path / "blocking_guard.py"
     guard.write_text(
-        'print(\'{"decision":"block","reason":"blocked by policy"}\')\nraise SystemExit(1)\n',
+        'print(\'{"decision":"block","reason":"REFLECTED_PRIVATE_TOKEN"}\')\nraise SystemExit(1)\n',
         encoding="utf-8",
     )
     source = _plugin_source(context, [sys.executable, str(guard)])
+    before = _run_plugin(
+        source,
+        tmp_path,
+        'plugin.hooks.beforeTool({toolCall:{toolCallId:"1",toolName:"read_files"},input:{paths:["README.md"]}})',
+    )
+    assert before.returncode == 0, before.stderr
+    assert json.loads(before.stdout) == {"skip": True, "reason": "HOL Guard blocked this action."}
+    assert "REFLECTED_PRIVATE_TOKEN" not in before.stdout
     after = _run_plugin(
         source,
         tmp_path,
@@ -457,7 +465,11 @@ def test_generated_plugin_preserves_guard_block_on_exit_one(tmp_path: Path) -> N
         'input:{paths:["README.md"]},result:{output:"SECRET_OUTPUT",isError:false}})',
     )
     assert after.returncode == 0, after.stderr
-    assert json.loads(after.stdout)["result"] == {"output": "blocked by policy", "isError": True}
+    assert json.loads(after.stdout)["result"] == {
+        "output": "HOL Guard withheld this tool result.",
+        "isError": True,
+    }
+    assert "REFLECTED_PRIVATE_TOKEN" not in after.stdout
     assert "SECRET_OUTPUT" not in after.stdout
     proof_path = context.guard_home / "managed" / "cline" / "proofs" / "plugin-posttool.json"
     assert json.loads(proof_path.read_text(encoding="utf-8"))["outcome"] == "replaced"

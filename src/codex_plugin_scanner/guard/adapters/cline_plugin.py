@@ -147,23 +147,6 @@ function extractJson(stdout) {{
   return undefined;
 }}
 
-function guardReason(payload) {{
-  if (!payload || typeof payload !== "object") return undefined;
-  for (const key of ["reason", "stopReason", "review_hint", "systemMessage", "message", "error"]) {{
-    if (typeof payload[key] === "string" && payload[key].trim()) return payload[key].trim();
-  }}
-  const specific = payload.hookSpecificOutput;
-  if (specific && typeof specific === "object") {{
-    for (const key of ["permissionDecisionReason", "additionalContext"]) {{
-      if (typeof specific[key] === "string" && specific[key].trim()) return specific[key].trim();
-    }}
-    if (specific.decision && typeof specific.decision === "object") {{
-      if (typeof specific.decision.message === "string") return specific.decision.message.trim();
-    }}
-  }}
-  return undefined;
-}}
-
 function guardBlocks(payload) {{
   if (!payload || typeof payload !== "object") return true;
   if (payload.blocked === true || payload.continue === false) return true;
@@ -373,7 +356,7 @@ const plugin = {{
         return undefined;
       }}
       proof("pretool", "blocked");
-      return {{ skip: true, reason: guardReason(decision.payload) || "HOL Guard blocked this action." }};
+      return {{ skip: true, reason: "HOL Guard blocked this action." }};
     }},
     async afterTool({{ toolCall, input, result }}) {{
       const active = activeTransport();
@@ -392,8 +375,7 @@ const plugin = {{
       }}
       if (guardBlocks(decision.payload)) {{
         proof("posttool", "replaced");
-        const reason = guardReason(decision.payload) || "HOL Guard withheld this tool result.";
-        return blockedResult(reason);
+        return blockedResult("HOL Guard withheld this tool result.");
       }}
       const outputAction = decision.payload?.model_output_action;
       if (outputAction === "block") {{

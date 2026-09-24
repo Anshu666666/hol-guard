@@ -6249,12 +6249,11 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
                 deadline=process_deadline,
             )
         scheduler_stats = daemon_server.runtime_hook_process_scheduler.stats()
-        review_in_time = review.payload is not None and time.monotonic() < process_deadline
         daemon_server.hook_process_runner.observe_load(
             queue_p95_ms=scheduler_stats["queue_wait_p95_ms"],
             queued=scheduler_stats["queued"],
         )
-        if review_in_time and review.payload is not None:
+        if review.payload is not None and time.monotonic() < process_deadline:
             receipt_accepted = False
             if review.receipt is not None:
                 with suppress(Exception):

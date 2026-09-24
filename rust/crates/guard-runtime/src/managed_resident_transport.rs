@@ -57,6 +57,15 @@ pub(super) fn serve_unix_managed(
         &token,
     )?;
     if published.unix_endpoint_identity != Some(ownership.identity) {
+        drop(ownership);
+        resident_state_retirement::retire_state(
+            scope,
+            generation,
+            published.process_id,
+            &published.process_start_marker,
+            digest,
+            &token,
+        );
         return Err("native_socket_identity_changed".to_owned());
     }
     let result = managed_accept_loop(listener, Arc::new(token), owner_alive, policy_store);

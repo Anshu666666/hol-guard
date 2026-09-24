@@ -136,6 +136,7 @@ def _run_installed_hook(
     payload: Mapping[str, object],
     *,
     expected_status: int = 0,
+    policy_action: str | None = None,
 ) -> None:
     command = [
         "hol-guard",
@@ -150,6 +151,8 @@ def _run_installed_hook(
         harness,
         "--json",
     ]
+    if policy_action is not None:
+        command.extend(("--policy-action", policy_action))
     completed = subprocess.run(
         command,
         input=json.dumps(payload),
@@ -206,7 +209,7 @@ def _invoke_real_harnesses() -> int:
     cursor_block = {
         "hook_event_name": "PreToolUse",
         "tool_name": "Shell",
-        "tool_input": {"command": f"shutdown -h now # {SENTINEL}"},
+        "tool_input": {"command": f"rm -rf ./stale-lab-dir # {SENTINEL}"},
         "generation_id": "cursor_lab_0000000000000001",
         "cursor_source_hook_event": "beforeShellExecution",
     }
@@ -214,7 +217,7 @@ def _invoke_real_harnesses() -> int:
     _run_installed_hook("codex", codex_post)
     _run_installed_hook("claude-code", claude_no_post)
     _run_installed_hook("claude-code", claude_review, expected_status=1)
-    _run_installed_hook("cursor", cursor_block, expected_status=1)
+    _run_installed_hook("cursor", cursor_block, expected_status=1, policy_action="block")
     return 2
 
 

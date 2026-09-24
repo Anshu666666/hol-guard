@@ -1117,6 +1117,14 @@ def _evaluate_runtime_artifact_hook(
                 "source": "approval_reuse",
                 "input_source": approval_reuse_source,
                 **approval_reuse.to_evidence(),
+                **(
+                    {
+                        "post_claim_context_change_reason": context_changed,
+                        "post_claim_refresh_failed": _post_claim_refresh_failed,
+                    }
+                    if claimed_validation_reason is not None
+                    else {}
+                ),
             }
         )
     policy_composition = {

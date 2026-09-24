@@ -457,7 +457,7 @@ async function collectComposeDiagnostics(
   const commands = services.map((service) => composeCommand(project, "logs", "--no-color", "--tail", "20", service));
   if (includeState) commands.push(composeCommand(project, "ps"));
   const results = await Promise.allSettled(commands.map((command) => runner(command, {
-    cwd: LAB_DIR, env: environment, timeoutMs: 5_000,
+    cwd: LAB_DIR, env: environment, timeoutMs: 15_000,
   })));
   return results
     .flatMap((result) => result.status === "fulfilled" && result.value.exitCode === 0

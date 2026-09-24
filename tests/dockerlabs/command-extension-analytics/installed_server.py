@@ -84,9 +84,24 @@ def _safe_hook_response_summary(value: str) -> str:
         return "unexpected hook response shape"
     reuse = payload.get("approval_reuse")
     composition = payload.get("policy_composition")
+    scanner_evidence = payload.get("scanner_evidence")
+    post_claim = (
+        next(
+            (
+                item
+                for item in scanner_evidence
+                if isinstance(item, dict)
+                and item.get("source") == "approval_reuse"
+                and item.get("input_source") == "claimed_github_workflow_capability"
+            ),
+            None,
+        )
+        if isinstance(scanner_evidence, list)
+        else None
+    )
     return json.dumps(
         {
-            "keys": sorted(str(key) for key in payload),
+            "keys": sorted(payload),
             "policy_action": payload.get("policy_action"),
             "approval_reuse": {
                 "status": reuse.get("status"),
@@ -96,6 +111,12 @@ def _safe_hook_response_summary(value: str) -> str:
             else None,
             "approval_reuse_source": composition.get("approval_reuse_source")
             if isinstance(composition, dict)
+            else None,
+            "post_claim_validation": {
+                "context_change_reason": post_claim.get("post_claim_context_change_reason"),
+                "refresh_failed": post_claim.get("post_claim_refresh_failed"),
+            }
+            if isinstance(post_claim, dict)
             else None,
         },
         sort_keys=True,
@@ -156,7 +177,7 @@ def _run_installed_hook(
     if completed.returncode != expected_status and not native_codex_denial:
         diagnostic = (
             f"installed {harness} hook returned {completed.returncode}, expected {expected_status}; "
-            + f"response={_safe_hook_response_summary(completed.stdout)!r}; "
+            + f"response={_safe_hook_response_summary(completed.stdout)}; "
             + f"stderr={_safe_hook_diagnostic(completed.stderr)!r}"
         )
         raise RuntimeError(diagnostic)

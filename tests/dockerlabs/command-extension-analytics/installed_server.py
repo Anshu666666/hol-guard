@@ -200,7 +200,7 @@ def _invoke_real_harnesses() -> int:
     claude_review = {
         "hook_event_name": "PreToolUse",
         "tool_name": "Bash",
-        "tool_input": {"command": "git push --delete origin stale-lab-branch"},
+        "tool_input": {"command": "rm -rf ./stale-lab-dir"},
         "tool_use_id": "claude_lab_0000000000000002",
     }
     cursor_block = {

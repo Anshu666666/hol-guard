@@ -68,6 +68,7 @@ def _plugin_source(context: HarnessContext, guard_cli: list[str]) -> str:
     return f"""// {_MANAGED_MARKER}
 // schema_version={_SCHEMA_VERSION}
 import {{ spawnSync }} from "node:child_process";
+import {{ createHash }} from "node:crypto";
 import {{ mkdirSync, readFileSync, renameSync, writeFileSync }} from "node:fs";
 import {{ dirname }} from "node:path";
 
@@ -397,12 +398,43 @@ const plugin = {{
         proof("posttool", "withheld");
         return blockedResult("HOL Guard could not review this tool result, so it was withheld.");
       }}
-      const replacement = reviewedOutput(decision.payload);
       if (guardBlocks(decision.payload)) {{
         proof("posttool", "replaced");
         const reason = guardReason(decision.payload) || "HOL Guard withheld this tool result.";
         return blockedResult(reason);
       }}
+      const outputAction = decision.payload?.model_output_action;
+      if (outputAction === "block") {{
+        proof("posttool", "withheld");
+        return blockedResult("HOL Guard withheld this tool result.");
+      }}
+      if (outputAction === "replace_with_reviewed_excerpt") {{
+        if (typeof decision.payload.reviewed_excerpt !== "string") {{
+          proof("posttool", "withheld");
+          return blockedResult("HOL Guard did not provide the reviewed excerpt, so this tool result was withheld.");
+        }}
+        proof("posttool", "replaced");
+        return {{ result: {{ output: decision.payload.reviewed_excerpt, isError: result?.isError === true }} }};
+      }}
+      if (outputAction === "allow_original") {{
+        const digest = decision.payload.reviewed_output_sha256;
+        if (
+          typeof result?.output !== "string" ||
+          typeof digest !== "string" ||
+          !/^[a-f0-9]{{64}}$/.test(digest) ||
+          createHash("sha256").update(result.output, "utf8").digest("hex") !== digest
+        ) {{
+          proof("posttool", "withheld");
+          return blockedResult("HOL Guard could not bind its review to this tool result, so it was withheld.");
+        }}
+        proof("posttool", "filtered");
+        return {{ result: {{ output: result.output, isError: result?.isError === true }} }};
+      }}
+      if (outputAction !== undefined) {{
+        proof("posttool", "withheld");
+        return blockedResult("HOL Guard returned an unsupported output action, so this tool result was withheld.");
+      }}
+      const replacement = reviewedOutput(decision.payload);
       if (replacement !== undefined) {{
         proof("posttool", "replaced");
         return {{ result: {{ output: replacement, isError: result?.isError === true }} }};

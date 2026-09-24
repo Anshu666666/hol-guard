@@ -502,6 +502,74 @@ def test_generated_plugin_replacement_does_not_forward_unreviewed_metadata(tmp_p
     assert "SECRET_METADATA" not in after.stdout
 
 
+@pytest.mark.parametrize(
+    ("directive", "expected_output", "expected_error"),
+    [
+        (
+            {"model_output_action": "replace_with_reviewed_excerpt", "reviewed_excerpt": "SAFE_EXCERPT"},
+            "SAFE_EXCERPT",
+            False,
+        ),
+        (
+            {"model_output_action": "replace_with_reviewed_excerpt"},
+            "HOL Guard did not provide the reviewed excerpt, so this tool result was withheld.",
+            True,
+        ),
+        ({"model_output_action": "block"}, "HOL Guard withheld this tool result.", True),
+        (
+            {"model_output_action": "allow_original", "reviewed_output_sha256": sha256(b"OTHER_OUTPUT").hexdigest()},
+            "HOL Guard could not bind its review to this tool result, so it was withheld.",
+            True,
+        ),
+        (
+            {"model_output_action": "unexpected"},
+            "HOL Guard returned an unsupported output action, so this tool result was withheld.",
+            True,
+        ),
+    ],
+)
+def test_generated_plugin_obeys_model_output_directive(
+    tmp_path: Path, directive: dict[str, str], expected_output: str, expected_error: bool
+) -> None:
+    context = _context(tmp_path)
+    _activate(context, "plugin")
+    guard = tmp_path / "directive_guard.py"
+    guard.write_text(f"print({json.dumps({'decision': 'allow', **directive})!r})\n", encoding="utf-8")
+    source = _plugin_source(context, [sys.executable, str(guard)])
+    after = _run_plugin(
+        source,
+        tmp_path,
+        'plugin.hooks.afterTool({toolCall:{toolCallId:"2",toolName:"read_files"},'
+        'input:{paths:["README.md"]},result:{output:"SECRET_OUTPUT",isError:false,metadata:{token:"SECRET_METADATA"}}})',
+    )
+    assert after.returncode == 0, after.stderr
+    assert json.loads(after.stdout)["result"] == {"output": expected_output, "isError": expected_error}
+    assert "SECRET_OUTPUT" not in after.stdout
+    assert "SECRET_METADATA" not in after.stdout
+
+
+def test_generated_plugin_binds_allow_original_to_exact_output(tmp_path: Path) -> None:
+    context = _context(tmp_path)
+    _activate(context, "plugin")
+    guard = tmp_path / "matching_digest_guard.py"
+    decision = {
+        "decision": "allow",
+        "model_output_action": "allow_original",
+        "reviewed_output_sha256": sha256(b"SAFE_OUTPUT").hexdigest(),
+    }
+    guard.write_text(f"print({json.dumps(decision)!r})\n", encoding="utf-8")
+    source = _plugin_source(context, [sys.executable, str(guard)])
+    after = _run_plugin(
+        source,
+        tmp_path,
+        'plugin.hooks.afterTool({toolCall:{toolCallId:"2",toolName:"read_files"},'
+        'input:{paths:["README.md"]},result:{output:"SAFE_OUTPUT",isError:false,metadata:{token:"SECRET_METADATA"}}})',
+    )
+    assert after.returncode == 0, after.stderr
+    assert json.loads(after.stdout)["result"] == {"output": "SAFE_OUTPUT", "isError": False}
+    assert "SECRET_METADATA" not in after.stdout
+
+
 @pytest.mark.parametrize("decision_json", ["{}", '{"decision":"unknown"}'])
 def test_generated_plugin_rejects_ambiguous_guard_decision(tmp_path: Path, decision_json: str) -> None:
     context = _context(tmp_path)

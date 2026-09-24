@@ -211,7 +211,7 @@ def _safe_temp_parent(path: Path) -> bool:
     if os.name == "nt":
         if candidate.startswith("\\\\"):
             return False
-        temp_root = os.path.normcase(os.path.normpath(tempfile.gettempdir()))
+        temp_root = os.path.normcase(os.path.normpath(os.path.realpath(tempfile.gettempdir())))
         candidate_normalized = os.path.normcase(os.path.normpath(candidate))
         try:
             return (

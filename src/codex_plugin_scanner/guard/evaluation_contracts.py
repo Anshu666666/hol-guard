@@ -124,8 +124,8 @@ def _is_posix_temp_path(path: str) -> bool:
 def _is_windows_temp_path(path: str) -> bool:
     if os.name != "nt" or "\x00" in path or not ntpath.isabs(path) or path.startswith("\\\\"):
         return False
-    candidate = ntpath.normcase(ntpath.normpath(path))
-    temp_root = ntpath.normcase(ntpath.normpath(tempfile.gettempdir()))
+    candidate = ntpath.normcase(ntpath.normpath(os.path.realpath(path)))
+    temp_root = ntpath.normcase(ntpath.normpath(os.path.realpath(tempfile.gettempdir())))
     try:
         return candidate != temp_root and ntpath.commonpath((candidate, temp_root)) == temp_root
     except ValueError:

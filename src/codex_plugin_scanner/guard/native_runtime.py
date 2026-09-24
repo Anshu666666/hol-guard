@@ -313,7 +313,6 @@ def _windows_native_dll_directories() -> list[str]:
     system_root = os.environ.get("SYSTEMROOT") or os.environ.get("WINDIR")
     if system_root:
         roots.append(os.path.join(system_root, "System32"))
-        roots.append(system_root)
     base_prefix = getattr(sys, "base_prefix", "")
     if (
         isinstance(base_prefix, str)

@@ -134,7 +134,7 @@ class LocalSideEffectWitness:
                 self._slots = BoundedSemaphore(_MAX_ACTIVE_RECEIVER_CONNECTIONS)
                 super().__init__(("127.0.0.1", 0), Handler)
 
-            def process_request(self, request: socket.socket, client_address: tuple[str, int]) -> None:
+            def process_request(self, request: socket.socket, client_address: tuple[str, int]) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
                 if not self._slots.acquire(blocking=False):
                     with owner._lock:
                         owner._overloaded = True

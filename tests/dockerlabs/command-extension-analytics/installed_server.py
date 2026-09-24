@@ -179,12 +179,7 @@ def _pending_workflow_request(store: GuardStore) -> dict[str, object]:
     }
     _run_installed_hook("codex", payload, expected_status=1)
     all_pending = store.list_approval_requests(status="pending")
-    pending = [
-        request
-        for request in all_pending
-        if request.get("harness") == "codex"
-        and request.get("artifact_name") == "Shell GitHub bounded maintenance command"
-    ]
+    pending = [request for request in all_pending if request.get("harness") == "codex"]
     if len(pending) != 1:
         summary = [
             {

@@ -308,6 +308,85 @@ def _dispatch_authorized_restart(home: Path, request_id: uuid.UUID, *, authorize
     )
 
 
+@pytest.mark.parametrize("protection_state", ("unknown", "needs_attention"))
+def test_restart_cli_requires_verified_protection_for_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    protection_state: str,
+) -> None:
+    home = tmp_path / "guard-home"
+    home.mkdir()
+    identity = ProcessIdentity(
+        pid=48_101,
+        generation="cli-protection-generation",
+        runtime="runtime-1",
+        guard_home=home,
+        user=_current_owner_marker(),
+        start_marker="cli-protection-start",
+    )
+    mutations: list[str] = []
+
+    def make_coordinator(
+        recovery_home: Path,
+        *,
+        home_dir: Path | None = None,
+        hooks: RecoveryHooks,
+    ) -> UserRecoveryCoordinator:
+        custom_hooks = replace(
+            hooks,
+            load_state=lambda _home: {"state": "fixture"},
+            inspect_service=lambda _home, _state: ServiceInspection(
+                "ready", "healthy", identity, True, True, True
+            ),
+            protection_posture=lambda _home: "on",
+            update_busy=lambda _home: False,
+            recovery_lock=lambda *_args: nullcontext(),
+            start_lock=lambda *_args: nullcontext(),
+            stop_process=lambda *_args: mutations.append("stop"),
+            start_process=lambda *_args: mutations.append("start"),
+            verify_ready=lambda _home, _identity, _remaining: ReadyResult(True, identity),
+            protection_health=lambda _home, _identity, _remaining: ProtectionResult(
+                protection_state, "unknown"
+            ),
+        )
+        return UserRecoveryCoordinator(recovery_home, home_dir=home_dir, hooks=custom_hooks)
+
+    monkeypatch.setattr(cli, "UserRecoveryCoordinator", make_coordinator)
+    output = io.StringIO()
+    error = io.StringIO()
+    operation_id = uuid.UUID("40404040-4040-4040-8040-404040404040")
+    result = cli.dispatch_daemon_recovery(
+        argparse.Namespace(
+            daemon_recovery_command="restart",
+            request_id=str(operation_id),
+            json_lines=True,
+        ),
+        guard_home=home,
+        home_dir=None,
+        lifecycle_context=LifecycleGateContext(
+            authority_home=home,
+            action="daemon.restart",
+            scope="local-protection",
+            subject="local-daemon",
+            grant=None,
+            was_enabled=False,
+        ),
+        stdout=output,
+        stderr=error,
+    )
+    events = [json.loads(line) for line in output.getvalue().splitlines()]
+    final = events[-1]
+
+    assert result == 2
+    assert final["phase"] == "needs_action"
+    assert final["outcome"] == "not_recovered"
+    assert final["service"] == "ready"
+    assert final["protection"] == protection_state
+    assert final["requiresHumanAction"] is True
+    assert mutations == []
+    assert error.getvalue() == ""
+
+
 def test_completed_same_uuid_replay_does_not_mutate_again_at_cli_boundary(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -635,6 +714,7 @@ def test_concurrent_cli_processes_do_not_replay_a_home_mutation(tmp_path: Path) 
         """
         import argparse
         import io
+        import json
         import os
         import sys
         import time
@@ -706,7 +786,7 @@ def test_concurrent_cli_processes_do_not_replay_a_home_mutation(tmp_path: Path) 
                 verify_ready=lambda _home, _identity, _remaining: ReadyResult(True, identity),
                 protection_health=lambda _home, _identity, _remaining: ProtectionResult("verified", "healthy"),
             )
-            return CoreCoordinator(home, hooks=custom)
+            return CoreCoordinator(home, hooks=custom, lock_timeout_seconds=0.1)
 
         cli.UserRecoveryCoordinator = make
         output = io.StringIO()
@@ -729,7 +809,33 @@ def test_concurrent_cli_processes_do_not_replay_a_home_mutation(tmp_path: Path) 
         if code != 0:
             sys.stderr.write(output.getvalue())
             sys.stderr.write(error.getvalue())
-        print(code)
+        if request_id == first_request:
+            print(code)
+        else:
+            status_output = io.StringIO()
+            status_error = io.StringIO()
+            status_code = cli.dispatch_daemon_recovery(
+                argparse.Namespace(
+                    daemon_recovery_command="status",
+                    operation_id=first_request,
+                    json_lines=True,
+                ),
+                guard_home=home,
+                home_dir=None,
+                stdout=status_output,
+                stderr=status_error,
+            )
+            print(
+                json.dumps(
+                    {
+                        "restartCode": code,
+                        "statusCode": status_code,
+                        "status": json.loads(status_output.getvalue()) if status_code == 0 else None,
+                        "statusError": status_error.getvalue(),
+                    },
+                    sort_keys=True,
+                )
+            )
         """
     )
 
@@ -772,13 +878,18 @@ def test_concurrent_cli_processes_do_not_replay_a_home_mutation(tmp_path: Path) 
         second = spawn_request(second_request)
         wait_for_marker(second_lock_attempt, second)
         assert count_path.read_text(encoding="utf-8").splitlines() == [first_request]
+        second_stdout, second_stderr = second.communicate(timeout=10)
+        assert second.returncode == 0, second_stderr
+        second_result = json.loads(second_stdout)
+        assert second_result["restartCode"] == 3
+        assert second_result["statusCode"] == 0, second_result
+        assert second_result["status"]["operationId"] == first_request
+        assert second_result["status"]["phase"] == "starting"
+        assert second_result["status"]["workerActive"] is True
         release_first.touch()
         first_stdout, first_stderr = first.communicate(timeout=10)
-        second_stdout, second_stderr = second.communicate(timeout=10)
         assert first.returncode == 0, first_stderr
-        assert second.returncode == 0, second_stderr
         assert first_stdout.strip() == "0"
-        assert second_stdout.strip() == "3"
         assert count_path.read_text(encoding="utf-8").splitlines() == [first_request]
     finally:
         release_first.touch(exist_ok=True)

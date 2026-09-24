@@ -146,6 +146,12 @@ def _run_guard_command_inspection_command(
         guard_home = resolve_guard_home(getattr(args, "guard_home", None) or getattr(args, "home", None))
         workspace, home = Path.cwd(), Path.home()
         try:
+            from ..daemon.manager import ensure_guard_daemon
+
+            try:
+                _client(guard_home)
+            except GuardDaemonRequestError:
+                ensure_guard_daemon(guard_home, home_dir=home)
             payload = _client(guard_home).inspect_command({
                 "command": command_text, "cwd": str(workspace), "home_dir": str(home),
             })

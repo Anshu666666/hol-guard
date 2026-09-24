@@ -99,7 +99,12 @@ pub fn parse_command(request: &CommandModelRequestV1) -> Result<CanonicalCommand
     if raw.is_empty() {
         return Err("command_text_empty".to_owned());
     }
-    if request.dialect != "posix" || request.transport != "shell_string" {
+    // cmd and PowerShell keep backslash as a path separator. A Windows build
+    // does the same for posix-labeled requests, because that is the dialect
+    // the current runtime client sends.
+    let preserve_backslash = matches!(request.dialect.as_str(), "cmd" | "powershell")
+        || (cfg!(windows) && request.dialect == "posix");
+    if (!preserve_backslash && request.dialect != "posix") || request.transport != "shell_string" {
         return Ok(uncertain(request, raw, "unsupported_dialect_or_transport"));
     }
     if raw.chars().count() > MAX_COMMAND_BYTES || raw.len() > MAX_COMMAND_BYTES {
@@ -123,7 +128,7 @@ pub fn parse_command(request: &CommandModelRequestV1) -> Result<CanonicalCommand
     let mut total_tokens = 0usize;
     for raw_segment in raw_segments {
         let text: String = chars[raw_segment.start..raw_segment.end].iter().collect();
-        let tokens = match shell_tokens(&text) {
+        let tokens = match shell_tokens(&text, preserve_backslash) {
             Ok(value) => value,
             Err(reason) => return Ok(uncertain(request, raw, reason)),
         };
@@ -396,8 +401,8 @@ fn contained_compile_check_segments(command: &str) -> Option<Vec<RawSegment>> {
     let (find_start, find_end) = trimmed_bounds(&chars, and_index + 2, chars.len())?;
     let cd: String = chars[cd_start..cd_end].iter().collect();
     let find: String = chars[find_start..find_end].iter().collect();
-    let cd_tokens = shell_tokens(&cd).ok()?;
-    let find_tokens = shell_tokens(&find).ok()?;
+    let cd_tokens = shell_tokens(&cd, false).ok()?;
+    let find_tokens = shell_tokens(&find, false).ok()?;
     if cd_tokens.len() != 2
         || cd_tokens.first().map(String::as_str) != Some("cd")
         || !is_plain_cd_target(&cd_tokens[1])
@@ -492,7 +497,7 @@ fn push_segment(
     Ok(())
 }
 
-fn shell_tokens(command: &str) -> Result<Vec<String>, &'static str> {
+fn shell_tokens(command: &str, preserve_backslash: bool) -> Result<Vec<String>, &'static str> {
     let mut tokens = Vec::new();
     let mut token = String::new();
     let mut token_started = false;
@@ -521,7 +526,7 @@ fn shell_tokens(command: &str) -> Result<Vec<String>, &'static str> {
             Quote::Double => {
                 if current == '"' {
                     quote = Quote::None;
-                } else if current == '\\' {
+                } else if current == '\\' && !preserve_backslash {
                     escaped = true;
                     token_started = true;
                 } else {
@@ -536,6 +541,10 @@ fn shell_tokens(command: &str) -> Result<Vec<String>, &'static str> {
                 }
                 '"' => {
                     quote = Quote::Double;
+                    token_started = true;
+                }
+                '\\' if preserve_backslash => {
+                    token.push('\\');
                     token_started = true;
                 }
                 '\\' => {

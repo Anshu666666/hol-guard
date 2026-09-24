@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shlex
 
@@ -38,6 +39,13 @@ def shell_tokens(command: str) -> tuple[tuple[str, ...], bool]:
     """Tokenize shell text, reporting whether strict parsing succeeded."""
 
     try:
+        if os.name == "nt":
+            lexer = shlex.shlex(command, posix=True)
+            lexer.whitespace_split = True
+            lexer.commenters = ""
+            # cmd and PowerShell keep backslash as a path separator.
+            lexer.escape = "\x00"
+            return tuple(lexer), True
         return tuple(shlex.split(command, posix=True, comments=False)), True
     except ValueError:
         return tuple(command.split()), False

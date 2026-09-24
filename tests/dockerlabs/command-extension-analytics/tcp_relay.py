@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import select
 import socket
 import socketserver
@@ -10,8 +11,11 @@ from typing import cast
 from typing_extensions import override
 
 _BUFFER_BYTES = 64 * 1024
-_LISTEN_ADDRESS = ("0.0.0.0", 4781)
-_TARGET_ADDRESS = ("guard", 4781)
+_ROUTES = {
+    "guard": (("0.0.0.0", 4782), ("127.0.0.1", 4781)),
+    "ingress": (("0.0.0.0", 4783), ("guard", 4782)),
+}
+_LISTEN_ADDRESS, _TARGET_ADDRESS = _ROUTES[os.environ["HOL_GUARD_LAB_RELAY_ROLE"]]
 
 
 class _RelayHandler(socketserver.BaseRequestHandler):

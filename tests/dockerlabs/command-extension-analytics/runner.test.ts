@@ -64,18 +64,28 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     }
   });
 
-  test("keeps Guard internal and publishes only the fixed-target relay", async () => {
+  test("publishes only the loopback relay while Guard stays on the internal network", async () => {
     const compose = await Bun.file(`${import.meta.dir}/docker-compose.yml`).text();
+    const server = await Bun.file(`${import.meta.dir}/installed_server.py`).text();
+    const relay = await Bun.file(`${import.meta.dir}/tcp_relay.py`).text();
     const guardBlock = compose.slice(compose.indexOf("  guard:"), compose.indexOf("  relay:"));
     const relayStart = compose.indexOf("  relay:");
-    const relayBlock = compose.slice(relayStart, compose.indexOf("\nvolumes:", relayStart));
+    const relayBlock = compose.slice(relayStart, compose.indexOf("  ingress:", relayStart));
+    const ingressBlock = compose.slice(compose.indexOf("  ingress:"), compose.indexOf("\nvolumes:"));
     expect(guardBlock).toContain("- guard-analytics");
     expect(guardBlock).not.toContain("ports:");
     expect(relayBlock).toContain('["python", "/opt/guard-lab/tcp_relay.py"]');
-    expect(relayBlock).toContain('"127.0.0.1:${HOL_GUARD_LAB_PORT:?set by runner}:4781"');
-    expect(relayBlock).toContain("- guard-analytics\n      - host-access");
+    expect(relayBlock).toContain('network_mode: "service:guard"');
+    expect(relayBlock).not.toContain("ports:");
     expect(relayBlock).toContain("condition: service_healthy");
+    expect(ingressBlock).toContain('"127.0.0.1:${HOL_GUARD_LAB_PORT:?set by runner}:4783"');
+    expect(ingressBlock).toContain("- host-access");
+    expect(ingressBlock).toContain("- guard-analytics");
+    expect(ingressBlock).toContain("condition: service_healthy");
     expect(compose).toContain("guard-analytics:\n    internal: true");
+    expect(server).toContain('host="127.0.0.1"');
+    expect(relay).toContain('"guard": (("0.0.0.0", 4782), ("127.0.0.1", 4781))');
+    expect(relay).toContain('"ingress": (("0.0.0.0", 4783), ("guard", 4782))');
   });
 
   test("preserves exact wheel bindings when compose reparses the lab", async () => {

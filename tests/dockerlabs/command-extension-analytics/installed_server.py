@@ -398,7 +398,7 @@ def main() -> None:
     store = GuardStore(GUARD_HOME, prime_policy_integrity=False)
     daemon = GuardDaemonServer(
         store,
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=4781,
         bundle_refresh_interval_seconds=None,
         aibom_refresh_interval_seconds=None,

@@ -234,7 +234,7 @@ def _bench_native_warm(
     workspace: Path,
     guard_home: Path,
     iterations: int,
-    policy_snapshot: Mapping[str, object] | None = None,
+    policy_snapshot: Mapping[str, object],
 ) -> list[float]:
     """Measure direct authenticated resident IPC as a diagnostic."""
     status = native_runtime_status()
@@ -260,8 +260,11 @@ def _bench_native_warm(
         values.append((time.perf_counter() - started) * 1_000.0)
         if response_bytes is None:
             raise RuntimeError("Native resident IPC request failed")
-        response = json.loads(response_bytes)
-        if response.get("decision") != "allow":
+        envelope = json.loads(response_bytes)
+        if envelope.get("schema") != "guard-hook-edge-result.v2" or envelope.get("authority") != "rust":
+            raise RuntimeError("Native resident IPC returned an invalid authority envelope")
+        response = envelope.get("result", {})
+        if not isinstance(response, dict) or response.get("decision") != "allow":
             raise RuntimeError(
                 "Native resident runtime did not return the expected allow decision: "
                 f"sample={index} response={response!r}"
@@ -348,7 +351,7 @@ def _bench_native_oneshot(
         if result.returncode != 0 or result.timed_out or result.containment_failed:
             raise RuntimeError("Cold native one-shot runtime failed")
         response = json.loads(result.stdout)
-        if response.get("decision") != "allow":
+        if not isinstance(response, dict) or response.get("decision") != "allow":
             raise RuntimeError("Cold native one-shot runtime returned an unexpected decision")
     return values
 

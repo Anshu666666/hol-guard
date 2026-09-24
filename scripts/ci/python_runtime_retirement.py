@@ -100,8 +100,9 @@ def _source_violations(text: str, name: str, modules: set[str], symbols: set[str
     failures: list[str] = []
     dynamic_aliases = {"import_module", "__import__"}
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "importlib":
-            dynamic_aliases.update(alias.asname or alias.name for alias in node.names if alias.name == "import_module")
+        if isinstance(node, ast.ImportFrom) and node.module in {"importlib", "builtins"}:
+            expected = "import_module" if node.module == "importlib" else "__import__"
+            dynamic_aliases.update(alias.asname or alias.name for alias in node.names if alias.name == expected)
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name in symbols:
             failures.append(f"{name}:{node.lineno}: retired implementation symbol {node.name}")
@@ -121,7 +122,7 @@ def _source_violations(text: str, name: str, modules: set[str], symbols: set[str
         elif isinstance(node, ast.Call) and node.args:
             function = node.func
             dynamic = (isinstance(function, ast.Name) and function.id in dynamic_aliases) or (
-                isinstance(function, ast.Attribute) and function.attr == "import_module"
+                isinstance(function, ast.Attribute) and function.attr in {"import_module", "__import__"}
             )
             target = _literal_string(node.args[0]) if dynamic else None
             if target is not None and _matches_module(target, modules):
@@ -142,6 +143,7 @@ def _artifact_members(artifact: Path) -> Iterator[tuple[str, bytes | None]]:
             for member in archive:
                 # Never follow archive links, including links to a deleted module.
                 if member.issym() or member.islnk():
+                    yield member.name, None
                     yield member.linkname, None
                 if not member.isfile():
                     continue

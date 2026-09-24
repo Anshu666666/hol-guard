@@ -222,7 +222,7 @@ class _ScopeBindingFlow(ast.NodeVisitor):
         for alias in node.names:
             bound = alias.asname or alias.name.split(".", 1)[0]
             self._forget_names((bound,))
-            if alias.name == "importlib":
+            if alias.name in {"importlib", "builtins"}:
                 self.importlib_aliases.add(bound)
             else:
                 self.module_bindings[bound] = alias.name
@@ -232,8 +232,9 @@ class _ScopeBindingFlow(ast.NodeVisitor):
         for alias in node.names:
             bound = alias.asname or alias.name
             self._forget_names((bound,))
-            if node.module == "importlib":
-                if alias.name == "import_module":
+            if node.module in {"importlib", "builtins"}:
+                expected = "import_module" if node.module == "importlib" else "__import__"
+                if alias.name == expected:
                     self.import_aliases.add(bound)
             else:
                 function = self._analysis.function_exports.get(target_module, {}).get(alias.name)

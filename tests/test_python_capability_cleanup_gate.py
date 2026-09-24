@@ -381,3 +381,32 @@ def test_parity_fixture_stays_language_neutral() -> None:
     fixture = GATE._validate_fixture(ROOT, "tests/fixtures/native-hook-parity/cases.v1.json")
 
     assert fixture["case_count"] == 6
+
+
+@pytest.mark.parametrize(
+    "prefix, call",
+    [
+        ("import builtins\n", "builtins.__import__"),
+        ("import builtins as loader\n", "loader.__import__"),
+        ("from builtins import __import__ as load\n", "load"),
+        ("", "__import__"),
+    ],
+)
+def test_dynamic_import_graph_records_builtin_forms(tmp_path: Path, prefix: str, call: str) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "target.py").write_text("", encoding="utf-8")
+    (source / "consumer.py").write_text(prefix + call + "('target')\n", encoding="utf-8")
+    graph, evidence = GATE._module_imports(tmp_path)
+    assert "target" in graph["consumer"]
+    assert any(item.endswith(":target") for item in evidence)
+
+
+def test_dynamic_builtin_import_requires_bounded_provenance(tmp_path: Path) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "consumer.py").write_text(
+        "import builtins as loader\nloader.__import__(user_supplied)\n", encoding="utf-8"
+    )
+    _, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert unbounded == ["consumer:2"]

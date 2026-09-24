@@ -16,7 +16,7 @@ use crate::resident_state::socket_directory;
 
 #[cfg(unix)]
 pub(super) fn serve_unix_managed(
-    scope: &Path,
+    owner: (&Path, &super::ManagedOwnerLock),
     policy_store: std::sync::Arc<crate::policy_store::PolicySnapshotStore>,
     generation: u64,
     owner_process_id: u32,
@@ -27,6 +27,7 @@ pub(super) fn serve_unix_managed(
     use std::os::unix::fs::{FileTypeExt, PermissionsExt};
     use std::os::unix::net::UnixListener;
 
+    let (scope, owner_lock) = owner;
     let socket_parent = socket_directory(scope, digest)?;
     let path = socket_parent.join(format!("h3-{}-{generation:016x}.sock", &digest[..8]));
     if path.as_os_str().as_encoded_bytes().len() > 100 {
@@ -41,7 +42,7 @@ pub(super) fn serve_unix_managed(
         Err(_) => return Err("native_socket_stat_failed".to_owned()),
     }
     let listener = UnixListener::bind(&path).map_err(|_| "native_socket_bind_failed".to_owned())?;
-    let ownership = crate::resident_endpoint::OwnedUnixEndpoint::capture(&path)?;
+    let ownership = crate::resident_endpoint::OwnedUnixEndpoint::capture(&path, owner_lock)?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
         .map_err(|_| "native_socket_permissions_failed".to_owned())?;
     listener
@@ -83,7 +84,7 @@ pub(super) fn serve_unix_managed(
 
 #[cfg(not(unix))]
 pub(super) fn serve_unix_managed(
-    _scope: &Path,
+    _owner: (&Path, &super::ManagedOwnerLock),
     _policy_store: std::sync::Arc<crate::policy_store::PolicySnapshotStore>,
     _generation: u64,
     _owner_process_id: u32,

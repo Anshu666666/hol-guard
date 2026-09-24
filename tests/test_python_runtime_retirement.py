@@ -121,3 +121,51 @@ def test_retirement_allows_documentation_and_negative_fixtures(
         '# OldRuntime has been removed.\nsource = "class OldRuntime: pass"\n', encoding="utf-8"
     )
     assert check(retired_repository)[0]["source_present"] is False
+
+
+@pytest.mark.parametrize(
+    "prefix, call",
+    [
+        ("import builtins\n", "builtins.__import__"),
+        ("import builtins as loader\n", "loader.__import__"),
+        ("from builtins import __import__ as load\n", "load"),
+        ("", "__import__"),
+    ],
+)
+def test_retirement_rejects_builtin_import_forms(
+    retired_repository: tuple[Path, dict[str, object]],
+    prefix: str,
+    call: str,
+) -> None:
+    root, _ = retired_repository
+    (root / "tests").mkdir()
+    (root / "tests/loader.py").write_text(prefix + call + "('example.old_runtime')\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="dynamically imports retired module"):
+        check(retired_repository)
+
+
+@pytest.mark.parametrize("kind", [tarfile.SYMTYPE, tarfile.LNKTYPE])
+@pytest.mark.parametrize(
+    "name, target",
+    [
+        ("package/src/example/old_runtime.py", "active.py"),
+        ("package/src/example/alias.py", "old_runtime.py"),
+        ("package/src/example/old_runtime.cpython-312.pyc", "active.py"),
+        ("package/src/example/alias.py", "old_runtime.cpython-312.pyc"),
+    ],
+)
+def test_retirement_checks_tar_link_name_and_target(
+    retired_repository: tuple[Path, dict[str, object]],
+    kind: bytes,
+    name: str,
+    target: str,
+) -> None:
+    root, _ = retired_repository
+    artifact = root / "linked.tar.gz"
+    with tarfile.open(artifact, "w:gz") as archive:
+        entry = tarfile.TarInfo(name)
+        entry.type = kind
+        entry.linkname = target
+        archive.addfile(entry)
+    with pytest.raises(RuntimeError, match="package artifact contains retired module"):
+        check(retired_repository, (artifact,))

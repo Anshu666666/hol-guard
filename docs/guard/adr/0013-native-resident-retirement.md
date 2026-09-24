@@ -40,3 +40,20 @@ modules or the package, archive, guarded-launch, and MCP migration phases.
 Those phases require their own native cutovers and deletion records. Roll back
 this slice only as a reviewed release/commit revert; there is no runtime switch
 that restores the retired supervisor.
+
+## Review hardening
+
+The Unix endpoint guard borrows the live interprocess owner lock through its
+whole lifetime, including identity verification and unlink. The compiled
+`serve_managed` path supplies that lock; endpoint tests additionally attempt
+concurrent owner acquisition after endpoint cleanup and before owner release.
+This serializes legitimate successor generations. It is not an atomic
+compare-and-unlink primitive against an uncooperative process with the same
+filesystem privileges.
+
+The distribution gate checks both archive-link names and targets without
+following either, and the shared import analysis recognizes qualified, aliased,
+and direct builtin imports. Runtime workflow selectors include the production
+stream module. Direct IPC benchmarks require an authenticated policy reference
+and validate the Rust response envelope; legacy policy-free requests are not
+accepted as resident benchmark evidence.

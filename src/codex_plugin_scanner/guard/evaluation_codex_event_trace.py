@@ -130,11 +130,13 @@ def _bounded_string(value: object, *, field: str, maximum: int) -> str:
     return value
 
 
-def _bounded_command(value: object, *, field: str) -> str:
+def _bounded_command(value: object, *, field: str, origin: str = "Codex event") -> str:
     if not isinstance(value, str) or not value or len(value) > MAX_COMMAND_CHARS:
-        raise CodexEventTraceError(f"Codex event has an invalid {field}")
-    if any((ord(character) < 0x20 and character not in {"\n", "\t"}) or ord(character) == 0x7F for character in value):
-        raise CodexEventTraceError(f"Codex event has an invalid {field}")
+        raise CodexEventTraceError(f"{origin} has an invalid {field}")
+    if any(
+        (ord(character) < 0x20 and character not in {"\n", "\r", "\t"}) or ord(character) == 0x7F for character in value
+    ):
+        raise CodexEventTraceError(f"{origin} has an invalid {field}")
     return value
 
 
@@ -220,7 +222,7 @@ def parse_codex_event_trace(payload: str | bytes, expected_command: str) -> Code
     interpreted as Guard decisions because a denied hook can produce one.
     """
 
-    expected_command = _bounded_command(expected_command, field="expected command")
+    expected_command = _bounded_command(expected_command, field="expected command", origin="Caller")
     events = _decode_events(payload)
     thread_id: str | None = None
     turn_started = False

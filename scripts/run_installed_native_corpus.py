@@ -33,7 +33,10 @@ def _run_installed_worker(worker_index: int) -> runner.WorkerReport:
     )
     if completed.returncode != 0:
         raise ValueError(f"installed native corpus worker {worker_index} failed: {completed.stderr[-1200:]}")
-    return runner._decode_worker(completed.stdout)
+    try:
+        return runner._decode_worker(completed.stdout)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"installed native corpus worker {worker_index} emitted an invalid report") from exc
 
 
 def main() -> int:

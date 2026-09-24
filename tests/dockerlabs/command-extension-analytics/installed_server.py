@@ -178,13 +178,23 @@ def _pending_workflow_request(store: GuardStore) -> dict[str, object]:
         "tool_call_id": "codex_lab_workflow_initial_0001",
     }
     _run_installed_hook("codex", payload, expected_status=1)
+    all_pending = store.list_approval_requests(status="pending")
     pending = [
         request
-        for request in store.list_approval_requests(status="pending", harness="codex")
-        if request.get("artifact_name") == "Shell GitHub bounded maintenance command"
+        for request in all_pending
+        if request.get("harness") == "codex"
+        and request.get("artifact_name") == "Shell GitHub bounded maintenance command"
     ]
     if len(pending) != 1:
-        raise RuntimeError(f"workflow approval request mismatch: {pending!r}")
+        summary = [
+            {
+                "request_id": request.get("request_id"),
+                "harness": request.get("harness"),
+                "artifact_name": _safe_hook_diagnostic(str(request.get("artifact_name", ""))),
+            }
+            for request in all_pending
+        ]
+        raise RuntimeError(f"workflow approval request mismatch: {summary!r}")
     contract = request_scope_contract(pending[0])
     if not contract.task_capability_eligible or "artifact" not in contract.allow_scopes:
         raise RuntimeError("workflow request did not expose the exact task-capability contract")

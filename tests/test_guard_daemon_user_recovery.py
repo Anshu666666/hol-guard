@@ -935,13 +935,18 @@ def test_reconnected_daemon_does_not_complete_without_verified_protection(
 ) -> None:
     guard_home = tmp_path / "guard-home"
     identity = _identity(guard_home)
+    emitted: list[dict[str, object]] = []
     coordinator = _coordinator(
         tmp_path,
-        ServiceInspection("ready", "healthy", identity, True, True, True),
+        ServiceInspection("ready", "healthy", identity, True, True, True, protection="verified"),
         protection_health=lambda *_args: ProtectionResult(protection_state, "unknown"),
     )
 
-    result = coordinator.restart("18181818-1818-4818-8818-181818181818")
+    result = coordinator.restart("18181818-1818-4818-8818-181818181818", emit=emitted.append)
+    reconnecting = next(snapshot for snapshot in emitted if snapshot["phase"] == "reconnecting")
+    verifying = next(snapshot for snapshot in emitted if snapshot["phase"] == "verifying")
+    reconnecting_checks = {check["id"]: check for check in reconnecting["checks"]}
+    verifying_checks = {check["id"]: check for check in verifying["checks"]}
 
     assert result["phase"] == "needs_action"
     assert result["outcome"] == "not_recovered"
@@ -950,6 +955,10 @@ def test_reconnected_daemon_does_not_complete_without_verified_protection(
     assert result["requiresHumanAction"] is True
     assert result["workerActive"] is False
     assert str(guard_home) not in recovery_module._ACTIVE_BY_HOME
+    assert reconnecting["protection"] == "unknown"
+    assert reconnecting_checks["protection_health"]["result"] == "unknown"
+    assert verifying["protection"] == "unknown"
+    assert verifying_checks["protection_health"]["result"] == "unknown"
 
 
 @pytest.mark.parametrize("protection_state", ("unknown", "needs_attention"))
@@ -975,6 +984,30 @@ def test_started_daemon_does_not_complete_without_verified_protection(
     assert result["requiresHumanAction"] is True
     assert result["workerActive"] is False
     assert str(guard_home) not in recovery_module._ACTIVE_BY_HOME
+
+
+def test_started_daemon_readiness_failure_does_not_reuse_protection_health_evidence(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    emitted: list[dict[str, object]] = []
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing", protection="verified"),
+        start_process=lambda *_args: StartResult(True, identity),
+        verify_ready=lambda *_args: ReadyResult(False, identity, "startup_failed"),
+        protection_health=lambda *_args: pytest.fail("failed readiness must not report protection health"),
+    )
+
+    result = coordinator.restart("78787878-7878-4878-8878-787878787878", emit=emitted.append)
+    checks = {check["id"]: check for check in result["checks"]}
+    reconnecting = next(snapshot for snapshot in emitted if snapshot["phase"] == "reconnecting")
+    reconnecting_checks = {check["id"]: check for check in reconnecting["checks"]}
+
+    assert result["phase"] == "failed"
+    assert result["workerActive"] is True
+    assert result["protection"] == "unknown"
+    assert checks["protection_health"]["result"] == "unknown"
+    assert reconnecting["protection"] == "unknown"
+    assert reconnecting_checks["protection_health"]["result"] == "unknown"
 
 
 def test_reconnect_readiness_deadline_keeps_worker_owned_until_reconciled(tmp_path: Path) -> None:
@@ -1061,6 +1094,71 @@ def test_reconnect_protection_probe_exception_fails_closed_without_mutation(tmp_
     assert calls[-1] == "protection"
     assert "stop" not in calls
     assert "start" not in calls
+
+
+def test_reconnect_session_failure_does_not_reuse_protection_health_evidence(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    emitted: list[dict[str, object]] = []
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection(
+            "ready",
+            "healthy",
+            identity,
+            True,
+            authenticated=True,
+            dashboard_ready=True,
+            protection="verified",
+        ),
+        verify_ready=lambda *_args: ReadyResult(False, identity, "session_invalid"),
+        protection_health=lambda *_args: pytest.fail("session failure must not report protection health"),
+    )
+
+    result = coordinator.restart("56565656-5656-4565-8565-565656565656", emit=emitted.append)
+    checks = {check["id"]: check for check in result["checks"]}
+    reconnecting = next(snapshot for snapshot in emitted if snapshot["phase"] == "reconnecting")
+    reconnecting_checks = {check["id"]: check for check in reconnecting["checks"]}
+
+    assert result["phase"] == "needs_action"
+    assert result["reasonCode"] == "session_invalid"
+    assert result["protection"] == "unknown"
+    assert checks["protection_health"]["result"] == "unknown"
+    assert reconnecting["protection"] == "unknown"
+    assert reconnecting_checks["protection_health"]["result"] == "unknown"
+
+
+def test_reconnect_timeout_does_not_reuse_protection_health_evidence(tmp_path: Path) -> None:
+    identity = _identity(tmp_path / "guard-home")
+    clock = {"now": 100.0}
+
+    def verify_ready(*_args: object) -> ReadyResult:
+        clock["now"] = 102.0
+        return ReadyResult(False, identity, "deadline_exceeded")
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection(
+            "ready",
+            "healthy",
+            identity,
+            True,
+            authenticated=True,
+            dashboard_ready=True,
+            protection="verified",
+        ),
+        clock=lambda: clock["now"],
+        active_budget_seconds=1.0,
+        verify_ready=verify_ready,
+    )
+
+    result = coordinator.restart("67676767-6767-4676-8676-676767676767")
+    checks = {check["id"]: check for check in result["checks"]}
+
+    assert result["phase"] == "failed"
+    assert result["reasonCode"] == "deadline_exceeded"
+    assert result["workerActive"] is True
+    assert result["protection"] == "unknown"
+    assert checks["protection_health"]["result"] == "unknown"
 
 
 def test_unresponsive_service_without_identity_refuses_replacement(tmp_path: Path) -> None:
@@ -1176,6 +1274,36 @@ def test_missing_service_start_failure_is_public_without_readiness_probe(
     assert result["requiresHumanAction"] is True
     assert calls[-1] == "start"
     assert calls.count("inspect") == 3
+
+
+def test_start_exception_does_not_reuse_protection_health_evidence(
+    tmp_path: Path,
+) -> None:
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_missing", protection="unknown"),
+            ServiceInspection("unavailable", "service_missing", protection="verified"),
+            ServiceInspection("unavailable", "service_missing", protection="unknown"),
+        ]
+    )
+
+    def start_process(*_args: object) -> None:
+        raise RuntimeError("start outcome is uncertain")
+
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        inspect_service=lambda: next(inspections),
+        start_process=start_process,
+    )
+
+    result = coordinator.restart("45454545-4545-4454-8454-454545454545")
+    checks = {check["id"]: check for check in result["checks"]}
+
+    assert result["phase"] == "failed"
+    assert result["workerActive"] is True
+    assert result["protection"] == "unknown"
+    assert checks["protection_health"]["result"] == "unknown"
 
 
 @pytest.mark.parametrize(

@@ -961,7 +961,14 @@ class UserRecoveryCoordinator:
         if self._remaining(operation) <= 0.0:
             return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         self._emit(
-            operation, emit, phase="reconnecting", inspection=inspection, worker_active=True, retry_allowed=False
+            operation,
+            emit,
+            phase="reconnecting",
+            inspection=inspection,
+            protection=self._protection_without_fresh_evidence(inspection),
+            checks=self._checks_without_fresh_protection(inspection, "unknown"),
+            worker_active=True,
+            retry_allowed=False,
         )
         ready = self._verify_ready(inspection.service.identity, self._remaining(operation))
         if not ready.ready:
@@ -973,6 +980,8 @@ class UserRecoveryCoordinator:
                 phase="needs_action",
                 inspection=inspection,
                 reason_code=ready.reason_code,
+                protection=self._protection_without_fresh_evidence(inspection),
+                checks=self._checks_without_fresh_protection(inspection, ready.reason_code),
                 requires_human_action=ready.reason_code in {"session_invalid", "approval_required"},
             )
         if self._remaining(operation) <= 0.0:
@@ -991,9 +1000,11 @@ class UserRecoveryCoordinator:
                 inspection=inspection,
                 reason_code="identity_unverified",
                 service="ready",
+                protection=self._protection_without_fresh_evidence(inspection),
                 worker_active=False,
                 retry_allowed=True,
                 requires_human_action=True,
+                checks=self._checks_without_fresh_protection(inspection, "identity_unverified"),
             )
         return self._verify_protection(
             operation,
@@ -1158,13 +1169,14 @@ class UserRecoveryCoordinator:
                     operation,
                     emit,
                     phase="failed",
-                    inspection=inspection,
+                    inspection=last_before_start,
                     reason_code="startup_failed",
                     service="unknown",
-                    protection="unknown",
+                    protection=self._protection_without_fresh_evidence(last_before_start),
                     worker_active=True,
                     retry_allowed=False,
                     requires_human_action=True,
+                    checks=self._checks_without_fresh_protection(last_before_start, "startup_failed"),
                 )
             if not started.started:
                 operation.unresolved_owner = False
@@ -1173,8 +1185,10 @@ class UserRecoveryCoordinator:
                     operation,
                     emit,
                     phase="failed",
-                    inspection=rechecked,
+                    inspection=last_before_start,
                     reason_code=started.reason_code,
+                    protection=self._protection_without_fresh_evidence(last_before_start),
+                    checks=self._checks_without_fresh_protection(last_before_start, started.reason_code),
                     requires_human_action=True,
                 )
             if self._remaining(operation) <= 0.0:
@@ -1229,13 +1243,14 @@ class UserRecoveryCoordinator:
                     operation,
                     emit,
                     phase="failed",
-                    inspection=inspection,
+                    inspection=last_before_start,
                     reason_code="startup_failed",
                     service="unknown",
-                    protection="unknown",
+                    protection=self._protection_without_fresh_evidence(last_before_start),
                     worker_active=True,
                     retry_allowed=False,
                     requires_human_action=True,
+                    checks=self._checks_without_fresh_protection(last_before_start, "startup_failed"),
                 )
             if not started.started:
                 operation.unresolved_owner = False
@@ -1244,8 +1259,10 @@ class UserRecoveryCoordinator:
                     operation,
                     emit,
                     phase="failed",
-                    inspection=inspection,
+                    inspection=last_before_start,
                     reason_code=started.reason_code,
+                    protection=self._protection_without_fresh_evidence(last_before_start),
+                    checks=self._checks_without_fresh_protection(last_before_start, started.reason_code),
                     requires_human_action=True,
                 )
             if self._remaining(operation) <= 0.0:
@@ -1262,6 +1279,8 @@ class UserRecoveryCoordinator:
             emit,
             phase="reconnecting",
             inspection=inspection,
+            protection=self._protection_without_fresh_evidence(inspection),
+            checks=self._checks_without_fresh_protection(inspection, "unknown"),
             worker_active=True,
             retry_allowed=False,
             # After a successful start, retain the persisted ``starting``
@@ -1287,10 +1306,11 @@ class UserRecoveryCoordinator:
                 inspection=inspection,
                 reason_code=ready.reason_code,
                 service="unknown",
-                protection="unknown",
+                protection=self._protection_without_fresh_evidence(inspection),
                 worker_active=True,
                 retry_allowed=False,
                 requires_human_action=True,
+                checks=self._checks_without_fresh_protection(inspection, ready.reason_code),
             )
         if self._remaining(operation) <= 0.0:
             return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
@@ -1313,10 +1333,11 @@ class UserRecoveryCoordinator:
                 inspection=inspection,
                 reason_code="identity_unverified",
                 service="unknown",
-                protection="unknown",
+                protection=self._protection_without_fresh_evidence(inspection),
                 worker_active=True,
                 retry_allowed=False,
                 requires_human_action=True,
+                checks=self._checks_without_fresh_protection(inspection, "identity_unverified"),
             )
         return self._verify_protection(
             operation,
@@ -1337,7 +1358,16 @@ class UserRecoveryCoordinator:
     ) -> dict[str, object]:
         if self._remaining(operation) <= 0.0:
             return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
-        self._emit(operation, emit, phase="verifying", inspection=inspection, worker_active=True, retry_allowed=False)
+        self._emit(
+            operation,
+            emit,
+            phase="verifying",
+            inspection=inspection,
+            protection=self._protection_without_fresh_evidence(inspection),
+            checks=self._checks_without_fresh_protection(inspection, "unknown"),
+            worker_active=True,
+            retry_allowed=False,
+        )
         if self._remaining(operation) <= 0.0:
             return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
         try:
@@ -1345,7 +1375,13 @@ class UserRecoveryCoordinator:
         except (OSError, RuntimeError, TimeoutError):
             protection = ProtectionResult("unknown", "unknown")
         if self._remaining(operation) <= 0.0:
-            return self._deadline_exceeded(operation, emit, inspection, worker_active=True)
+            return self._deadline_exceeded(
+                operation,
+                emit,
+                inspection,
+                worker_active=True,
+                fresh_protection=protection,
+            )
         checks = self._checks(inspection)
         self._set_check(checks, "authenticated_service", "pass", "healthy")
         self._set_check(checks, "dashboard_ready", "pass", "healthy")
@@ -1446,11 +1482,25 @@ class UserRecoveryCoordinator:
         inspection: _Inspection,
         *,
         worker_active: bool = False,
+        fresh_protection: ProtectionResult | None = None,
     ) -> dict[str, object]:
         if worker_active:
             operation.unresolved_owner = True
             if operation.unresolved_identity is None:
                 operation.unresolved_identity = inspection.service.identity
+        checks = self._checks(inspection)
+        if fresh_protection is None:
+            protection = self._protection_without_fresh_evidence(inspection)
+            self._set_check(checks, "protection_health", "unknown", "deadline_exceeded")
+        else:
+            protection = _normal_protection(fresh_protection.state)
+            if protection == "verified":
+                health_result = "pass"
+            elif protection == "needs_attention":
+                health_result = "fail"
+            else:
+                health_result = "unknown"
+            self._set_check(checks, "protection_health", health_result, fresh_protection.reason_code)
         return self._finish_action(
             operation,
             emit,
@@ -1458,10 +1508,11 @@ class UserRecoveryCoordinator:
             inspection=inspection,
             reason_code="deadline_exceeded",
             service="unknown" if not worker_active else inspection.service.service,
-            protection="unknown" if not worker_active else self._inspection_protection(inspection),
+            protection=protection,
             worker_active=worker_active,
             retry_allowed=False,
             requires_human_action=True,
+            checks=checks,
         )
 
     def _emit(
@@ -1999,6 +2050,15 @@ class UserRecoveryCoordinator:
             inspection.service.reason_code,
         )
         return checks
+
+    def _checks_without_fresh_protection(self, inspection: _Inspection, reason_code: str) -> list[dict[str, str]]:
+        checks = self._checks(inspection)
+        self._set_check(checks, "protection_health", "unknown", reason_code)
+        return checks
+
+    def _protection_without_fresh_evidence(self, inspection: _Inspection) -> str:
+        observed = self._inspection_protection(inspection)
+        return observed if observed in {"off", "needs_attention"} else "unknown"
 
     @staticmethod
     def _set_check(checks: list[dict[str, str]], check_id: str, result: str, reason_code: str) -> None:

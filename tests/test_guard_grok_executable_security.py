@@ -91,6 +91,7 @@ def test_home_grok_bin_is_an_automatic_install_root(tmp_path: Path, monkeypatch:
     context = _context(tmp_path, workspace=False)
     candidate = _write_executable(context.home_dir / ".grok" / "bin" / "grok")
     monkeypatch.setenv("PATH", str(candidate.parent))
+    monkeypatch.setattr(grok_executable_module, "_executable_security_error", lambda *_args: None)
 
     resolution = resolve_trusted_grok_executable(context)
 

@@ -152,6 +152,173 @@ def test_inspection_is_read_only_and_classifies_missing_service(tmp_path: Path) 
     assert calls == ["inspect"]
 
 
+@pytest.mark.parametrize(
+    ("inventory", "expected_reason"),
+    (
+        ([], "service_missing"),
+        ([{"pid": 41}], "identity_unverified"),
+        ([{"pid": 41}, {"pid": 42}], "multiple_instances"),
+    ),
+)
+def test_public_inspection_uses_default_manager_inventory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    inventory: list[object],
+    expected_reason: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+
+    class FakeManager:
+        @staticmethod
+        def load_authenticated_daemon_state(home: Path) -> None:
+            assert home == guard_home
+            return None
+
+        @staticmethod
+        def _running_guard_daemon_processes_for_guard_home(home: Path) -> list[object]:
+            assert home == guard_home
+            return inventory
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+    coordinator = UserRecoveryCoordinator(
+        guard_home,
+        hooks=RecoveryHooks(
+            protection_posture=lambda _home: "on",
+            update_busy=lambda _home: False,
+        ),
+    )
+    before = tuple(guard_home.iterdir())
+
+    snapshot = coordinator.inspect()
+
+    assert snapshot["phase"] == "checking"
+    assert snapshot["service"] == "unavailable"
+    assert snapshot["reasonCode"] == expected_reason
+    assert snapshot["retryAllowed"] is True
+    assert tuple(guard_home.iterdir()) == before
+
+
+def test_public_inspection_fails_closed_when_default_inventory_probe_raises(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+
+    class FakeManager:
+        @staticmethod
+        def load_authenticated_daemon_state(_home: Path) -> None:
+            return None
+
+        @staticmethod
+        def _running_guard_daemon_processes_for_guard_home(_home: Path) -> list[object]:
+            raise OSError("inventory unavailable")
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+    coordinator = UserRecoveryCoordinator(
+        guard_home,
+        hooks=RecoveryHooks(
+            protection_posture=lambda _home: "on",
+            update_busy=lambda _home: False,
+        ),
+    )
+
+    snapshot = coordinator.inspect()
+
+    assert snapshot["service"] == "unavailable"
+    assert snapshot["reasonCode"] == "service_missing"
+    assert snapshot["requiresHumanAction"] is False
+
+
+@pytest.mark.parametrize(
+    ("case", "expected_service", "expected_reason"),
+    (
+        ("invalid_state", "unavailable", "identity_unverified"),
+        ("home_mismatch", "unavailable", "identity_unverified"),
+        ("runtime_mismatch", "unavailable", "runtime_mismatch"),
+        ("pid_missing", "unavailable", "service_missing"),
+        ("endpoint_conflict", "unavailable", "endpoint_conflict"),
+        ("endpoint_unknown", "unavailable", "identity_unverified"),
+        ("probe_error", "unavailable", "service_unresponsive"),
+        ("healthy", "ready", "healthy"),
+    ),
+)
+def test_public_inspection_default_inspector_fails_closed_by_identity_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    case: str,
+    expected_service: str,
+    expected_reason: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    identity = _identity(guard_home)
+    state: dict[str, object] = {
+        "pid": identity.pid,
+        "generation": identity.generation,
+        "runtime": identity.runtime,
+        "guard_home": str(guard_home),
+        "user": identity.user,
+        "start_marker": identity.start_marker,
+    }
+    if case == "invalid_state":
+        state["pid"] = "not-a-pid"
+    elif case == "home_mismatch":
+        state["guard_home"] = str(tmp_path / "other-home")
+
+    class FakeManager:
+        @staticmethod
+        def load_authenticated_daemon_state(home: Path) -> dict[str, object]:
+            assert home == guard_home
+            return state
+
+        @staticmethod
+        def _guard_daemon_state_matches_current_runtime(_state: dict[str, object]) -> bool:
+            return case != "runtime_mismatch"
+
+        @staticmethod
+        def _guard_daemon_pid_is_running(_pid: int) -> bool:
+            return case != "pid_missing"
+
+        @staticmethod
+        def _guard_daemon_pid_command_identity(
+            _pid: int, *, expected_guard_home: Path
+        ) -> bool | None:
+            assert expected_guard_home == guard_home
+            if case == "endpoint_conflict":
+                return False
+            if case == "endpoint_unknown":
+                return None
+            return True
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+    monkeypatch.setattr(recovery_module, "_identity_os_evidence_matches", lambda _identity: True)
+    if case == "probe_error":
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.daemon.live_identity.probe_live_guard_daemon_identity",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("probe unavailable")),
+        )
+    else:
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.daemon.live_identity.probe_live_guard_daemon_identity",
+            lambda _home, **_kwargs: ({**state, "daemon_url": "http://127.0.0.1:5474"}, "healthy"),
+        )
+    coordinator = UserRecoveryCoordinator(
+        guard_home,
+        hooks=RecoveryHooks(
+            protection_posture=lambda _home: "on",
+            update_busy=lambda _home: False,
+        ),
+    )
+
+    snapshot = coordinator.inspect()
+
+    assert snapshot["service"] == expected_service
+    assert snapshot["reasonCode"] == expected_reason
+    assert snapshot["phase"] == "checking"
+
+
 def test_active_operation_without_latest_snapshot_returns_contract_snapshot(tmp_path: Path) -> None:
     request_id = "12121212-1212-4212-8212-121212121212"
     coordinator = _coordinator(
@@ -328,6 +495,141 @@ def test_public_restart_accepts_confirmed_stop_compatibility_shapes_before_repla
     assert result["phase"] == "complete"
     assert result["outcome"] == "restarted"
     assert [call for call in calls if call in {"stop", "start"}] == ["stop", "start"]
+
+
+@pytest.mark.parametrize(
+    ("start_result", "expected_phase", "expected_reason", "expected_worker", "expected_retry"),
+    (
+        ("daemon-url", "needs_action", "identity_unverified", True, False),
+        (object(), "failed", "startup_failed", False, True),
+    ),
+)
+def test_public_restart_never_treats_untrusted_start_shapes_as_success(
+    tmp_path: Path,
+    start_result: object,
+    expected_phase: str,
+    expected_reason: str,
+    expected_worker: bool,
+    expected_retry: bool,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, pid=86, generation="untrusted-start-shape")
+    request_id = "86868686-8686-4686-8686-868686868687"
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        start_process=lambda *_args: start_result,
+        verify_ready=lambda *_args: ReadyResult(True, identity),
+    )
+
+    try:
+        result = coordinator.restart(request_id)
+    finally:
+        operation_id = uuid.UUID(request_id)
+        home_key = str(coordinator.guard_home)
+        with recovery_module._OPERATIONS_LOCK:
+            recovery_module._ACTIVE_BY_HOME.pop(home_key, None)
+            recovery_module._ACTIVE_BY_ID.pop(recovery_module._operation_key(home_key, operation_id), None)
+
+    assert result["phase"] == expected_phase
+    assert result["reasonCode"] == expected_reason
+    assert result["workerActive"] is expected_worker
+    assert result["retryAllowed"] is expected_retry
+    assert result["requiresHumanAction"] is True
+
+
+def test_public_restart_fails_closed_on_untrusted_readiness_shape(tmp_path: Path) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, pid=87, generation="untrusted-ready-shape")
+    request_id = "87878787-8787-4787-8787-878787878788"
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        start_process=lambda *_args: StartResult(True, identity),
+        verify_ready=lambda *_args: object(),
+    )
+
+    try:
+        result = coordinator.restart(request_id)
+    finally:
+        operation_id = uuid.UUID(request_id)
+        home_key = str(coordinator.guard_home)
+        with recovery_module._OPERATIONS_LOCK:
+            recovery_module._ACTIVE_BY_HOME.pop(home_key, None)
+            recovery_module._ACTIVE_BY_ID.pop(recovery_module._operation_key(home_key, operation_id), None)
+
+    assert result["phase"] == "failed"
+    assert result["reasonCode"] == "startup_failed"
+    assert result["workerActive"] is True
+    assert result["retryAllowed"] is False
+    assert result["requiresHumanAction"] is True
+
+
+def test_public_restart_does_not_start_after_unconfirmed_compatibility_stop_shape(tmp_path: Path) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, pid=88, generation="untrusted-stop-shape")
+    inspections = iter(
+        [
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+            ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        ]
+    )
+    request_id = "88888888-8888-4888-8888-888888888889"
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_unresponsive", identity, True),
+        inspect_service=lambda: next(inspections),
+        stop_process=lambda *_args: object(),
+        process_dead=lambda *_args: False,
+        start_process=lambda *_args: pytest.fail("unconfirmed stop must not start a replacement"),
+    )
+
+    try:
+        result = coordinator.restart(request_id)
+    finally:
+        operation_id = uuid.UUID(request_id)
+        home_key = str(coordinator.guard_home)
+        with recovery_module._OPERATIONS_LOCK:
+            recovery_module._ACTIVE_BY_HOME.pop(home_key, None)
+            recovery_module._ACTIVE_BY_ID.pop(recovery_module._operation_key(home_key, operation_id), None)
+
+    assert result["phase"] == "timed_out_waiting"
+    assert result["reasonCode"] == "worker_exit_unconfirmed"
+    assert result["workerActive"] is True
+    assert result["retryAllowed"] is False
+    assert result["requiresHumanAction"] is True
+
+
+@pytest.mark.parametrize(
+    ("protection_result", "expected_phase", "expected_state"),
+    (
+        ("verified", "complete", "verified"),
+        (object(), "needs_action", "unknown"),
+    ),
+)
+def test_public_restart_maps_string_and_invalid_protection_shapes(
+    tmp_path: Path,
+    protection_result: object,
+    expected_phase: str,
+    expected_state: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, pid=89, generation="protection-shape")
+    coordinator = _coordinator(
+        tmp_path,
+        ServiceInspection("unavailable", "service_missing"),
+        start_process=lambda *_args: StartResult(True, identity),
+        verify_ready=lambda *_args: ReadyResult(True, identity),
+        protection_health=lambda *_args: protection_result,
+    )
+
+    result = coordinator.restart("89898989-8989-4898-8898-898989898989")
+
+    assert result["phase"] == expected_phase
+    assert result["protection"] == expected_state
+    assert result["outcome"] == ("started" if expected_phase == "complete" else "not_recovered")
 
 
 def test_invalid_authorization_hook_shape_fails_closed_before_mutation(tmp_path: Path) -> None:

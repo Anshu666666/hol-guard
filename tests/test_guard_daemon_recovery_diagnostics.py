@@ -142,6 +142,31 @@ def test_build_rejects_malformed_public_event_streams_without_leaking_fields() -
         assert "malformed-secret" not in str(raised.value)
 
 
+def test_build_redacts_tuple_snapshot_fields_and_normalizes_naive_generation_time() -> None:
+    source = _source()
+    capabilities = ("diagnostics", "inspect", "restart", "status")
+    source["capabilities"] = capabilities
+    raw_checks = source["checks"]
+    assert isinstance(raw_checks, list)
+    source["checks"] = tuple(raw_checks)
+
+    report = build_recovery_diagnostics(source, generated_at=datetime(2026, 9, 20))
+    latest = report["latest"]
+    assert isinstance(latest, dict)
+
+    assert report["generatedAt"] == "2026-09-20T00:00:00+00:00"
+    assert latest["capabilities"] == list(capabilities)
+    assert isinstance(latest["capabilities"], list)
+    assert "path" not in latest
+
+
+def test_build_rejects_a_non_mapping_public_snapshot_without_leaking_it() -> None:
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        build_recovery_diagnostics([None])
+
+    assert raised.value.args == ("recovery_diagnostics_snapshot_invalid",)
+
+
 @pytest.mark.parametrize("operation_id", (None, "malformed-operation-id-canary"))
 def test_validate_rejects_invalid_report_operation_ids_without_leaking_them(operation_id: object) -> None:
     report = build_recovery_diagnostics(_source())
@@ -152,6 +177,73 @@ def test_validate_rejects_invalid_report_operation_ids_without_leaking_them(oper
 
     assert raised.value.args == ("recovery_diagnostics_operation_id_invalid",)
     assert str(operation_id) not in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    "generated_at",
+    ("", "not-a-timestamp", "2026-09-20T00:00:00"),
+)
+def test_validate_rejects_public_reports_with_invalid_timestamps(generated_at: str) -> None:
+    report = build_recovery_diagnostics(_source())
+    report["generatedAt"] = generated_at
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        diagnostics_module.validate_recovery_diagnostics(report)
+
+    assert raised.value.args == ("recovery_diagnostics_timestamp_invalid",)
+
+
+def test_validate_rejects_noncanonical_report_operation_ids() -> None:
+    source = _source()
+    source["operationId"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    report = build_recovery_diagnostics(source)
+    report["operationId"] = "{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa}"
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        diagnostics_module.validate_recovery_diagnostics(report)
+
+    assert raised.value.args == ("recovery_diagnostics_operation_id_invalid",)
+
+
+def test_validate_rejects_report_retention_count_above_event_count() -> None:
+    report = build_recovery_diagnostics(_source())
+    event_count = report["eventCount"]
+    assert isinstance(event_count, int)
+    report["retainedEventCount"] = event_count + 1
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        diagnostics_module.validate_recovery_diagnostics(report)
+
+    assert raised.value.args == ("recovery_diagnostics_retained_count_invalid",)
+
+
+def test_validate_rejects_cross_operation_report_events_before_latest_export() -> None:
+    report = build_recovery_diagnostics(_source())
+    events = report["events"]
+    assert isinstance(events, list)
+    first_event = events[0]
+    assert isinstance(first_event, dict)
+    event = dict(first_event)
+    event["operationId"] = "22222222-2222-4222-8222-222222222222"
+    report["events"] = [event]
+    report["latest"] = event
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        diagnostics_module.validate_recovery_diagnostics(report)
+
+    assert raised.value.args == ("recovery_diagnostics_operation_changed",)
+
+
+def test_validate_rejects_a_latest_snapshot_that_differs_from_the_event_stream() -> None:
+    report = build_recovery_diagnostics(_source())
+    latest = report["latest"]
+    assert isinstance(latest, dict)
+    report["latest"] = {**latest, "sequence": 5}
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        diagnostics_module.validate_recovery_diagnostics(report)
+
+    assert raised.value.args == ("recovery_diagnostics_latest_invalid",)
 
 
 def test_build_rejects_cross_operation_event_even_when_sequence_increases() -> None:
@@ -306,6 +398,28 @@ def test_archive_decode_rejects_malformed_state_without_leaking_sensitive_values
 @pytest.mark.parametrize("payload", (b"{not-json", b"\xff"))
 def test_archive_decode_rejects_invalid_serialized_state(tmp_path: Path, payload: bytes) -> None:
     write_private_state(tmp_path, DIAGNOSTICS_STATE_NAME, payload, MAX_DIAGNOSTICS_BYTES)
+
+    with pytest.raises(RecoveryDiagnosticsError) as raised:
+        load_recovery_diagnostics(tmp_path)
+
+    assert raised.value.args == ("recovery_diagnostics_state_invalid",)
+
+
+@pytest.mark.parametrize(
+    "archive",
+    (
+        {"schema": DIAGNOSTICS_ARCHIVE_SCHEMA, "unexpected": []},
+        {"schema": "unsupported", "reports": []},
+        {"schema": DIAGNOSTICS_ARCHIVE_SCHEMA, "reports": {}},
+    ),
+)
+def test_archive_loader_rejects_invalid_public_archive_shapes(tmp_path: Path, archive: dict[str, object]) -> None:
+    write_private_state(
+        tmp_path,
+        DIAGNOSTICS_STATE_NAME,
+        json.dumps(archive, separators=(",", ":")).encode("utf-8"),
+        MAX_DIAGNOSTICS_BYTES,
+    )
 
     with pytest.raises(RecoveryDiagnosticsError) as raised:
         load_recovery_diagnostics(tmp_path)

@@ -2423,6 +2423,219 @@ def test_record_guard_daemon_launch_containment_child_refuses_stale_receipt_for_
     assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) == first_receipt
 
 
+def test_spawn_hook_worker_records_containment_through_daemon_launch_caller(
+    tmp_path,
+    monkeypatch,
+):
+    """The production worker caller publishes the child generation into the launch receipt."""
+
+    from codex_plugin_scanner.guard.daemon import hook_process_spawner
+
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 7
+    nonce = "9" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+
+    class FakeConnection:
+        def __init__(self) -> None:
+            self.closed = False
+
+        def close(self) -> None:
+            self.closed = True
+
+    class FakeProcess:
+        pid = child_pid
+
+        def __init__(self) -> None:
+            self.started = False
+
+        def start(self) -> None:
+            self.started = True
+
+    parent_connection = FakeConnection()
+    child_connection = FakeConnection()
+    process = FakeProcess()
+
+    class FakeContext:
+        def Pipe(self, *, duplex: bool):  # noqa: N802
+            assert duplex
+            return parent_connection, child_connection
+
+        def Process(self, *, target, args, name: str, daemon: bool):  # noqa: N802
+            assert target is not None
+            assert args[1] == str(guard_home)
+            assert name == "hol-guard-hook-worker"
+            assert daemon is False
+            return process
+
+    def get_context(method: str) -> FakeContext:
+        assert method == "spawn"
+        return FakeContext()
+
+    monkeypatch.setattr(hook_process_spawner.multiprocessing, "get_context", get_context)
+
+    slot = hook_process_spawner.spawn_hook_worker(guard_home)
+
+    assert process.started
+    assert child_connection.closed
+    assert slot.process is process
+    assert slot.connection is parent_connection
+    receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    assert receipt is not None
+    assert receipt["launch_nonce"] == nonce
+    assert receipt["launch_pid"] == launch_pid
+    assert receipt["children"] == [
+        {
+            "pid": child_pid,
+            "process_start_marker": "worker-generation",
+            "owner": "test-owner",
+        }
+    ]
+
+
+def test_authenticated_pending_launch_loader_rejects_identity_gaps(tmp_path, monkeypatch):
+    """A signed pending file still needs every generation identity field."""
+
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    nonce = "8" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    pending = daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home)
+    discovery_key = load_daemon_discovery_key(guard_home)
+    assert pending is not None
+    assert discovery_key is not None
+
+    pending_path = daemon_manager_module._pending_launch_path(guard_home)
+    invalid_fields = (
+        ("pid", "not-a-pid"),
+        ("port", 0),
+        ("guard_home", str(tmp_path / "other-home")),
+        ("guard_home", None),
+        ("launch_nonce", "short"),
+        ("launch_generation", "mismatched-generation"),
+        ("generation", "mismatched-generation"),
+        ("process_start_marker", ""),
+        ("owner", ""),
+        ("runtime_fingerprint", ""),
+    )
+    for field, invalid_value in invalid_fields:
+        candidate = dict(pending)
+        candidate[field] = invalid_value
+        candidate.pop("state_signature", None)
+        authenticated = authenticate_daemon_state(candidate, discovery_key=discovery_key)
+        pending_path.write_text(json.dumps(authenticated, sort_keys=True), encoding="utf-8")
+        pending_path.chmod(0o600)
+        assert daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home) is None, field
+
+
+def test_pending_launch_reconciles_authenticated_containment_receipt_after_exact_death(
+    tmp_path,
+    monkeypatch,
+):
+    """Reconciliation clears both signed lifecycle artifacts only after exact death proofs."""
+
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 8
+    nonce = "7" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(guard_home, pid=child_pid)
+
+    observed_generations: list[tuple[int, str, str]] = []
+
+    def exact_generation_is_dead(pid: int, *, process_start_marker: str, process_owner: str) -> bool:
+        observed_generations.append((pid, process_start_marker, process_owner))
+        return True
+
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_running", lambda _pid: False)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_exact_generation_is_dead", exact_generation_is_dead)
+
+    assert daemon_manager_module._guard_daemon_pending_launch_state_is_resolved(guard_home)
+    assert observed_generations == [
+        (launch_pid, "launcher-generation", "test-owner"),
+        (launch_pid, "launcher-generation", "test-owner"),
+        (child_pid, "worker-generation", "test-owner"),
+    ]
+    assert daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home) is None
+    assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is None
+
+
+def test_pending_launch_rejects_authenticated_containment_receipt_owner_reuse(
+    tmp_path,
+    monkeypatch,
+):
+    """A signed receipt with a recycled child owner cannot resolve a pending launch."""
+
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    launch_pid = os.getpid()
+    child_pid = launch_pid + 9
+    nonce = "6" * daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_HEX_LENGTH
+    identities = _write_containment_pending_launch(
+        guard_home,
+        launch_pid=launch_pid,
+        launch_nonce=nonce,
+        monkeypatch=monkeypatch,
+    )
+    identities[child_pid] = ("worker-generation", "test-owner")
+    monkeypatch.setenv(daemon_manager_module._GUARD_DAEMON_LAUNCH_NONCE_ENV, nonce)
+    assert daemon_manager_module.record_guard_daemon_launch_containment_child(guard_home, pid=child_pid)
+
+    pending = daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home)
+    receipt = daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home)
+    discovery_key = load_daemon_discovery_key(guard_home)
+    assert pending is not None
+    assert receipt is not None
+    assert discovery_key is not None
+    receipt["children"] = [
+        {
+            "pid": child_pid,
+            "process_start_marker": "worker-generation",
+            "owner": "recycled-owner",
+        }
+    ]
+    receipt.pop("state_signature", None)
+    containment_path = guard_home / daemon_manager_module._GUARD_DAEMON_LAUNCH_CONTAINMENT_FILE
+    containment_path.write_text(
+        json.dumps(authenticate_daemon_state(receipt, discovery_key=discovery_key), sort_keys=True),
+        encoding="utf-8",
+    )
+    containment_path.chmod(0o600)
+    monkeypatch.setattr(daemon_manager_module, "_guard_daemon_pid_is_running", lambda _pid: False)
+    monkeypatch.setattr(
+        daemon_manager_module,
+        "_guard_daemon_exact_generation_is_dead",
+        lambda _pid, **_kwargs: True,
+    )
+
+    assert not daemon_manager_module._guard_daemon_pending_launch_state_is_resolved(guard_home)
+    assert daemon_manager_module.load_authenticated_guard_daemon_pending_launch(guard_home) is not None
+    assert daemon_manager_module._load_authenticated_guard_daemon_containment_receipt(guard_home) is not None
+
+
 def test_launch_handoff_requires_every_generation_binding(tmp_path, monkeypatch):
     guard_home = tmp_path / "guard-home"
     guard_home.mkdir()

@@ -85,6 +85,31 @@ function buildShellReceipt(overrides: Partial<GuardReceipt> = {}): GuardReceipt 
   assert(resolveActionTitle(receipt) === "bun run check", "T13: typed envelope command should remain preferred");
   assert(resolveActionTitleTooltip(receipt) === "bun run check", "T13: typed command remains available to assistive text");
 
+  const differentCommands = buildShellReceipt({
+    raw_command_text: `bun custom ${"--raw ".repeat(20)}`,
+    action_envelope_json: {
+      action_type: "package_script",
+      command: "bun run check",
+      package_name: "bun",
+    } as unknown as GuardActionEnvelope,
+  });
+  assert(resolveActionTitleTooltip(differentCommands) === differentCommands.raw_command_text?.trim(),
+    "T13: package tooltip follows the raw command used by its title");
+
+  const longTypedCommand = `bun run check ${"--typed ".repeat(20)}`.trim();
+  const longTypedReceipt = buildShellReceipt({
+    capabilities_summary: longTypedCommand,
+    raw_command_text: "bun custom",
+    action_envelope_json: {
+      action_type: "shell_command",
+      command: longTypedCommand,
+    } as unknown as GuardActionEnvelope,
+  });
+  assert(resolveActionTitleTooltip(longTypedReceipt) === longTypedCommand,
+    "T13: shell tooltip retains the full typed command");
+  assert(resolveActionSubtitle(longTypedReceipt) === null,
+    "T13: full typed command is not repeated in the subtitle");
+
   const riskyReceipt = buildShellReceipt({
     raw_command_text: "bun custom",
     scanner_evidence: [{

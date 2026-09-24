@@ -154,9 +154,13 @@ export function resolveActionTitle(receipt: GuardReceipt): string {
 /** Return the untruncated command when the action title is command-derived. */
 export function resolveActionTitleTooltip(receipt: GuardReceipt): string {
   const title = resolveActionTitle(receipt);
-  const command = getEnvelope(receipt)?.command?.trim() || receipt.raw_command_text?.trim();
-  if (command && title === truncate(command, 80)) {
-    return command;
+  const envelopeCommand = getEnvelope(receipt)?.command?.trim();
+  if (resolveActionType(receipt) === "Shell command" && envelopeCommand) {
+    return envelopeCommand;
+  }
+  const rawCommand = receipt.raw_command_text?.trim();
+  if (rawCommand && title === truncate(rawCommand, 80)) {
+    return rawCommand;
   }
   return title;
 }
@@ -193,10 +197,12 @@ export function resolveActionSubtitle(receipt: GuardReceipt): string | null {
   const isCapsUseful = caps && caps !== "hook artifact · codex" && !caps.toLowerCase().startsWith("guard local daemon completed");
   const isProvenanceUseful = provenance && provenance !== "hook artifact · codex" && !provenance.toLowerCase().startsWith("guard local daemon completed");
   const actionTitle = resolveActionTitle(receipt);
+  const fullActionTitle = resolveActionTitleTooltip(receipt);
   const rawCommand = receipt.raw_command_text?.trim();
+  // A capability summary that repeats the command adds no context to the row.
   const capsRepeatsRawCommand = Boolean(rawCommand && caps?.toLowerCase() === rawCommand.toLowerCase());
 
-  if (isCapsUseful && caps?.toLowerCase() !== actionTitle.toLowerCase() && !capsRepeatsRawCommand) {
+  if (isCapsUseful && caps?.toLowerCase() !== actionTitle.toLowerCase() && caps?.toLowerCase() !== fullActionTitle.toLowerCase() && !capsRepeatsRawCommand) {
     parts.push(caps);
   } else if (isProvenanceUseful && provenance?.toLowerCase() !== caps?.toLowerCase() && provenance !== actionTitle) {
     parts.push(provenance);

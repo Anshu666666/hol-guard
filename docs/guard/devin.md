@@ -37,21 +37,22 @@ JSONC file during install — see "Install boundaries" below.
 
 | Event | Matcher | Purpose |
 | --- | --- | --- |
-| `PreToolUse` | `^(exec|read|write|edit|apply_patch|notebook_edit|webfetch|mcp_call_tool|mcp__.*)$` | Policy check before tool execution |
+| `PreToolUse` | `^(exec|read|write|edit|apply_patch|notebook_read|notebook_edit|grep|glob|webfetch|mcp_call_tool|mcp__.*)$` | Policy check before tool execution |
 | `PermissionRequest` | same | Approval resolution for permission prompts |
 | `UserPromptSubmit` | none (all prompts) | Prompt screening |
 | `PostToolUse` | same | Observation after tool execution |
 
 Each entry is a `type: "command"` hook that runs Guard's bounded CLI
-bridge (`codex_plugin_scanner.cli guard hook --harness devin`), carries a
-`timeout`, and ends with the `# HOL_GUARD_MANAGED_DEVIN` marker comment
-so Guard can distinguish its own handlers from user hooks on reinstall
-and uninstall.
+bridge (`codex_plugin_scanner.cli guard hook --harness devin`) and carries
+a `timeout`. Guard recognizes its own handlers by the bounded-bridge
+command contents (and the legacy `# HOL_GUARD_MANAGED_DEVIN` marker
+comment written by earlier versions) so it can distinguish them from
+user hooks on reinstall and uninstall.
 
 The matcher is a regex over `tool_name`; Devin treats an empty or absent
 matcher as "match all tools". Guard's matcher covers Devin's file, shell,
-web, and MCP tool names, including the direct `mcp__<server>__<tool>`
-form.
+search, web, and MCP tool names, including the direct
+`mcp__<server>__<tool>` form.
 
 Install preserves everything else in the config file: `permissions`,
 `read_config_from`, `mcpServers`, and any pre-existing hooks entries. A
@@ -92,8 +93,8 @@ be attributed to Claude Code.
 To attribute Devin activity only to the Devin adapter, set
 `read_config_from.claude` to `false` in
 `~/.config/devin/config.json`. Detection emits a warning when this
-overlap is present; install and uninstall leave the Claude hooks
-untouched either way.
+overlap is present and `read_config_from.claude` is not `false`;
+install and uninstall leave the Claude hooks untouched either way.
 
 ## Install boundaries
 

@@ -120,7 +120,7 @@ Current Guard support in this repo:
 - `devin`
   - detects `~/.config/devin/config.json` (`%APPDATA%\devin\config.json` on Windows), `~/.config/devin/mcp_config.json`, project `.devin/config.json`, `.devin/config.local.json`, `.devin/hooks.v1.json`, `.devin/mcp_config.json`, and `.devin/mcp_config.local.json`, plus legacy `mcpServers` inside `config.json` files
   - detects skills in `.devin/skills/` and `.agents/skills/` at both user and project scope
-  - detects Guard-managed Claude Code hooks in `.claude` settings files and warns that Devin also loads them by default
+  - detects Guard-managed Claude Code hooks in `.claude` settings files and warns that Devin also loads them by default (unless `read_config_from.claude` is `false`)
   - installs Guard-managed `PreToolUse`, `PermissionRequest`, `UserPromptSubmit`, and `PostToolUse` hooks in the `hooks` section of `~/.config/devin/config.json` without touching other config keys
   - refuses to install when the user config is JSONC (comments or trailing commas) rather than rewriting it lossy
   - blocks by returning exit code `2` and Devin-native stdout JSON `{"decision":"block","reason":"..."}` with a `hookSpecificOutput.permissionDecision: "deny"` envelope; Guard never emits Devin's `decision: "approve"` auto-approve response

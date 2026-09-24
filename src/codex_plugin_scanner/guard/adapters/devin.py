@@ -49,7 +49,6 @@ from .devin_config import (
     DEVIN_LOCAL_MCP_CONFIG_FILE,
     DEVIN_MCP_CONFIG_FILE,
     DEVIN_SKILLS_DIR,
-    GUARD_MANAGED_MARKER,
     append_devin_hook_artifacts,
     append_devin_skill_artifacts,
     append_found_path,
@@ -168,6 +167,7 @@ class DevinHarnessAdapter(HarnessAdapter):
         found_paths: list[str] = []
         warnings: list[str] = []
 
+        user_config_payload: dict[str, object] = {}
         for config_path, scope in self._config_candidates(context):
             if not config_path.is_file():
                 continue
@@ -180,6 +180,8 @@ class DevinHarnessAdapter(HarnessAdapter):
                 )
                 continue
             payload = document.payload
+            if config_path == self._user_config_path(context):
+                user_config_payload = payload
             if not payload:
                 continue
             append_devin_hook_artifacts(
@@ -234,7 +236,7 @@ class DevinHarnessAdapter(HarnessAdapter):
             )
 
         command_available = _command_available(self.executable)
-        if self._claude_hooks_overlap(context):
+        if self._claude_hooks_overlap(context, user_config_payload):
             warnings.append(
                 "Devin also loads Claude Code hooks by default, so Guard's Claude Code hooks will run inside "
                 "Devin sessions and attribute them to Claude Code. Set read_config_from.claude to false in "
@@ -255,8 +257,12 @@ class DevinHarnessAdapter(HarnessAdapter):
             workspace_dir=context.workspace_dir,
         )
 
-    def _claude_hooks_overlap(self, context: HarnessContext) -> bool:
+    def _claude_hooks_overlap(self, context: HarnessContext, user_config: dict[str, object]) -> bool:
         """Return True when Guard-managed Claude hooks would also run in Devin."""
+
+        read_config_from = user_config.get("read_config_from")
+        if isinstance(read_config_from, dict) and read_config_from.get("claude") is False:
+            return False
 
         candidates = [context.home_dir / relative for relative in CLAUDE_HOOK_USER_PATHS]
         if context.workspace_dir is not None:
@@ -302,12 +308,6 @@ class DevinHarnessAdapter(HarnessAdapter):
         )
 
     @staticmethod
-    def _managed_command_wrapper(hook_command: str) -> str:
-        """Wrap a hook command so the Guard-managed marker travels with it."""
-
-        return f"{hook_command} # {GUARD_MANAGED_MARKER}"
-
-    @staticmethod
     def _approval_wait_hook_timeout_seconds(context: HarnessContext) -> int:
         configured_wait_timeout = load_guard_config(
             context.guard_home,
@@ -349,19 +349,22 @@ class DevinHarnessAdapter(HarnessAdapter):
 
         state_dir, backup_path, state_path = self._managed_state_paths(context)
         state_dir.mkdir(parents=True, exist_ok=True)
+        # The backup preserves the pre-Guard original so uninstall can restore
+        # it; it is intentionally not refreshed on reinstall.
         if config_path.is_file() and not backup_path.exists():
             import shutil
 
             shutil.copy2(config_path, backup_path)
 
         hook_command = _shell_command(self._hook_command_parts(context))
-        managed_hook_command = self._managed_command_wrapper(hook_command)
         hooks = payload.get("hooks")
-        if not isinstance(hooks, dict):
+        if hooks is not None and not isinstance(hooks, dict):
+            raise ValueError("Devin config has a non-object hooks value; Guard will not rewrite it.")
+        if hooks is None:
             hooks = {}
         payload["hooks"] = hooks
 
-        self._sync_managed_hook_groups(context, hooks, managed_hook_command)
+        self._sync_managed_hook_groups(context, hooks, hook_command)
         config_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
         state_path.write_text(

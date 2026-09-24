@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from codex_plugin_scanner.guard.adapters import get_adapter, list_adapters
-from codex_plugin_scanner.guard.adapters.base import HarnessContext
+from codex_plugin_scanner.guard.adapters.base import HarnessContext, _shell_command
 from codex_plugin_scanner.guard.adapters.devin import DevinHarnessAdapter
 from codex_plugin_scanner.guard.adapters.devin_config import (
     DEVIN_GUARD_TOOL_MATCHER,
@@ -258,6 +258,43 @@ class TestDevinDetect:
         result = DevinHarnessAdapter().detect(ctx)
         assert any("Claude Code hooks" in warning for warning in result.warnings)
 
+    def _ctx_with_managed_claude_hook(self, tmp_path: Path) -> HarnessContext:
+        ctx = _ctx(tmp_path, workspace=True)
+        assert ctx.workspace_dir is not None
+        _write(
+            ctx.workspace_dir / ".claude" / "settings.json",
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": (
+                                        "python -m codex_plugin_scanner.cli 'guard', 'hook' '--harness claude-code'"
+                                    ),
+                                }
+                            ],
+                        }
+                    ]
+                }
+            },
+        )
+        return ctx
+
+    def test_read_config_from_claude_false_suppresses_overlap_warning(self, tmp_path: Path) -> None:
+        ctx = self._ctx_with_managed_claude_hook(tmp_path)
+        _write(_user_config_path(ctx), {"read_config_from": {"claude": False}})
+        result = DevinHarnessAdapter().detect(ctx)
+        assert not any("Claude Code hooks" in warning for warning in result.warnings)
+
+    def test_read_config_from_claude_true_keeps_overlap_warning(self, tmp_path: Path) -> None:
+        ctx = self._ctx_with_managed_claude_hook(tmp_path)
+        _write(_user_config_path(ctx), {"read_config_from": {"claude": True}})
+        result = DevinHarnessAdapter().detect(ctx)
+        assert any("Claude Code hooks" in warning for warning in result.warnings)
+
     def test_no_overlap_no_warning(self, tmp_path: Path) -> None:
         ctx = _ctx(tmp_path)
         _write(_user_config_path(ctx), {})
@@ -315,7 +352,6 @@ class TestDevinInstallUninstall:
             for group in groups:
                 for handler in group.get("hooks", []):
                     if is_guard_managed_hook_command(handler.get("command")):
-                        assert GUARD_MANAGED_MARKER in handler["command"]
                         assert handler["type"] == "command"
                         assert isinstance(handler["timeout"], int)
 
@@ -471,6 +507,70 @@ class TestDevinInstallUninstall:
         adapter.uninstall(ctx)
         payload = json.loads(_user_config_path(ctx).read_text(encoding="utf-8"))
         assert "hooks" not in payload
+
+    def test_rendered_command_detected_managed_without_marker(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path)
+        parts = DevinHarnessAdapter._hook_command_parts(ctx)
+        for windows in (False, True):
+            rendered = _shell_command(parts, windows=windows)
+            assert GUARD_MANAGED_MARKER not in rendered
+            assert is_guard_managed_hook_command(rendered), rendered
+
+    def test_legacy_marker_entries_pruned_on_reinstall_and_uninstall(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(
+            json.dumps(
+                {
+                    "hooks": {
+                        "PreToolUse": [
+                            {
+                                "matcher": ".*",
+                                "hooks": [
+                                    {"type": "command", "command": "echo user-hook", "timeout": 10},
+                                    {
+                                        "type": "command",
+                                        "command": f"old-guard # {GUARD_MANAGED_MARKER}",
+                                        "timeout": 10,
+                                    },
+                                ],
+                            }
+                        ]
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        self._patch_shims(monkeypatch, ctx)
+        adapter = DevinHarnessAdapter()
+        adapter.install(ctx)
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+        commands = [
+            handler["command"] for group in payload["hooks"]["PreToolUse"] for handler in group.get("hooks", [])
+        ]
+        assert "echo user-hook" in commands
+        assert not any(GUARD_MANAGED_MARKER in command for command in commands)
+        managed = _managed_commands(payload)
+        assert len(managed) == 4
+        adapter.uninstall(ctx)
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+        assert _managed_commands(payload) == []
+        remaining = [
+            handler["command"] for group in payload["hooks"]["PreToolUse"] for handler in group.get("hooks", [])
+        ]
+        assert remaining == ["echo user-hook"]
+
+    def test_install_refuses_non_object_hooks_value(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        original = json.dumps({"hooks": ["not-a-dict"]})
+        config_path.write_text(original, encoding="utf-8")
+        self._patch_shims(monkeypatch, ctx)
+        with pytest.raises(ValueError, match="non-object hooks"):
+            DevinHarnessAdapter().install(ctx)
+        assert config_path.read_text(encoding="utf-8") == original
 
 
 class TestDevinHookPayload:

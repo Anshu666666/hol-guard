@@ -198,6 +198,14 @@ def _extract_native_binaries(dist_dir: Path) -> tuple[Path, Path] | None:
 def _pin_installed_native_binaries(repo_root: Path) -> None:
     compiler_env = "HOL_GUARD_NATIVE_TEST_SOURCE_COMPILER"
     runtime_env = "HOL_GUARD_NATIVE_BINARY"
+    packaged = _packaged_native_binaries()
+    if packaged is not None:
+        os.environ[compiler_env], os.environ[runtime_env] = (str(packaged[0]), str(packaged[1]))
+        return
+    extracted = _extract_native_binaries(repo_root / "dist")
+    if extracted is not None:
+        os.environ[compiler_env], os.environ[runtime_env] = (str(extracted[0]), str(extracted[1]))
+        return
     configured_compiler = os.environ.get(compiler_env)
     configured_runtime = os.environ.get(runtime_env)
     if (
@@ -207,18 +215,11 @@ def _pin_installed_native_binaries(repo_root: Path) -> None:
         and Path(configured_runtime).is_file()
     ):
         return
-    packaged = _packaged_native_binaries()
-    if packaged is not None:
-        os.environ[compiler_env], os.environ[runtime_env] = (str(packaged[0]), str(packaged[1]))
-        return
     checkout = _checkout_native_binaries(repo_root)
     if checkout is not None:
         os.environ[compiler_env], os.environ[runtime_env] = (str(checkout[0]), str(checkout[1]))
         return
-    extracted = _extract_native_binaries(repo_root / "dist")
-    if extracted is None:
-        raise InstalledCanaryError("Installed canary native compiler is unavailable")
-    os.environ[compiler_env], os.environ[runtime_env] = (str(extracted[0]), str(extracted[1]))
+    raise InstalledCanaryError("Installed canary native compiler is unavailable")
 
 
 def _run_corpus(repo_root: Path) -> dict[str, object]:

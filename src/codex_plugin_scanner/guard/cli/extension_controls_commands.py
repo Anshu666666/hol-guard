@@ -286,7 +286,10 @@ def run_extension_controls_command(
         except GuardDaemonRequestError:
             from ..daemon.manager import ensure_guard_daemon
 
-            ensure_guard_daemon(guard_home)
+            try:
+                ensure_guard_daemon(guard_home)
+            except RuntimeError as error:
+                raise GuardDaemonRequestError(str(error)) from error
             client = _client(guard_home)
         if command == "patterns":
             return _patterns(client, args, output_stream)

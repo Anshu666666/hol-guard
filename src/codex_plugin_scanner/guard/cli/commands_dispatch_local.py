@@ -151,7 +151,10 @@ def _run_guard_command_inspection_command(
             try:
                 _client(guard_home)
             except GuardDaemonRequestError:
-                ensure_guard_daemon(guard_home, home_dir=home)
+                try:
+                    ensure_guard_daemon(guard_home, home_dir=home)
+                except RuntimeError as error:
+                    raise GuardDaemonRequestError(str(error)) from error
             payload = _client(guard_home).inspect_command({
                 "command": command_text, "cwd": str(workspace), "home_dir": str(home),
             })

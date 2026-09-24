@@ -112,7 +112,20 @@ def _run_installed_hook(
         env={**os.environ, "HOME": str(GUARD_HOME)},
         timeout=30,
     )
-    if completed.returncode != expected_status:
+    native_codex_denial = False
+    if harness == "codex" and expected_status == 1 and completed.returncode == 0:
+        try:
+            response = json.loads(completed.stdout)
+        except json.JSONDecodeError:
+            response = None
+        if isinstance(response, dict):
+            hook_output = response.get("hookSpecificOutput")
+            native_codex_denial = (
+                response.get("policy_action") in {"review", "require-reapproval", "sandbox-required", "block"}
+                and isinstance(hook_output, dict)
+                and hook_output.get("permissionDecision") == "deny"
+            )
+    if completed.returncode != expected_status and not native_codex_denial:
         diagnostic = (
             f"installed {harness} hook returned {completed.returncode}, expected {expected_status}; "
             + f"stdout={_safe_hook_diagnostic(completed.stdout)!r}; "

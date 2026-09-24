@@ -24,6 +24,10 @@ if TYPE_CHECKING:
     from tests.guard_command_corpus_oracle_types import OracleRecord
 
 _FROZEN_MANIFEST_SHA256 = "9cb33472d122058e8ede6ede57d55d0ebf29b832f8b4eb5321a2309862cf3728"
+# These counts belong to the source-bound 51k corpus validated by the manifest above.
+_FROZEN_CORPUS_CASE_COUNT = 51_000
+_FROZEN_NATIVE_REJECTION_COUNT = 27_084
+_FROZEN_ORACLE_ABOVE_COUNT = 11_558
 
 
 def _sha256(path: Path) -> str:
@@ -120,7 +124,10 @@ def _run_corpus(repo_root: Path) -> dict[str, object]:
         raise InstalledCanaryError(
             f"Installed native corpus failed (exit {completed.returncode}): {completed.stderr[-1200:]}"
         )
-    decoded = json.loads(completed.stdout)
+    try:
+        decoded = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise InstalledCanaryError("Installed native corpus report is not valid JSON") from exc
     if not isinstance(decoded, dict):
         raise InstalledCanaryError("Installed native corpus report is not an object")
     report = cast(dict[str, object], decoded)
@@ -140,13 +147,13 @@ def _run_corpus(repo_root: Path) -> dict[str, object]:
     if (
         report.get("native_contract_equality") is not True
         or report.get("original_oracle_below_count") != 0
-        or count != 51_000
+        or count != _FROZEN_CORPUS_CASE_COUNT
         or not isinstance(native_rejection_count, int)
         or isinstance(native_rejection_count, bool)
-        or native_rejection_count != 27_084
+        or native_rejection_count != _FROZEN_NATIVE_REJECTION_COUNT
         or not isinstance(original_oracle_above_count, int)
         or isinstance(original_oracle_above_count, bool)
-        or original_oracle_above_count != 11_558
+        or original_oracle_above_count != _FROZEN_ORACLE_ABOVE_COUNT
     ):
         raise InstalledCanaryError("Installed evaluator differs from the frozen 51k native corpus contract")
     return {

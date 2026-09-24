@@ -112,6 +112,7 @@ def _run_installed_hook(
         env={**os.environ, "HOME": str(GUARD_HOME)},
         timeout=30,
     )
+    # Every denial assertion in this fixture expects exit 1 from the Python hook path.
     native_codex_denial = False
     if harness == "codex" and expected_status == 1 and completed.returncode == 0:
         try:

@@ -15,6 +15,7 @@ def select_native_wheel(dist_dir: Path, version: str, output_dir: Path) -> Path:
     supported = set(sys_tags())
     expected = Version(version)
     matches: list[Path] = []
+    # Wheel filenames use underscores; parse_wheel_filename returns the normalized hyphenated name.
     for wheel in sorted(dist_dir.glob("hol_guard-*.whl")):
         name, candidate_version, _build, tags = parse_wheel_filename(wheel.name)
         if (

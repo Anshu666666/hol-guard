@@ -77,6 +77,11 @@ def test_command_rejects_unsafe_control_characters(control: str) -> None:
         parse_codex_event_trace(_stream(*_valid_events(command=command)), command)
 
 
+def test_string_trace_with_unpaired_surrogate_has_clear_encoding_error() -> None:
+    with pytest.raises(CodexEventTraceError, match="cannot be encoded as UTF-8"):
+        parse_codex_event_trace("\ud800", _COMMAND)
+
+
 def test_nonzero_command_is_recorded_without_a_guard_decision() -> None:
     summary = parse_codex_event_trace(_stream(*_valid_events(exit_code=1)), _COMMAND)
 

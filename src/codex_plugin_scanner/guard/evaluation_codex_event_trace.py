@@ -89,7 +89,7 @@ def _decode_events(payload: str | bytes) -> list[dict[str, object]]:
         try:
             encoded = payload.encode("utf-8")
         except UnicodeEncodeError:
-            raise CodexEventTraceError("Codex event trace is not valid UTF-8") from None
+            raise CodexEventTraceError("Codex event trace cannot be encoded as UTF-8") from None
         if len(encoded) > MAX_TRACE_BYTES:
             raise CodexEventTraceError("Codex event trace exceeds the byte limit")
         text = payload

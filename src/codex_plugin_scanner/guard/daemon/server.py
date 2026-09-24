@@ -6254,7 +6254,7 @@ class _GuardDaemonHandler(BaseHTTPRequestHandler):
             queue_p95_ms=scheduler_stats["queue_wait_p95_ms"],
             queued=scheduler_stats["queued"],
         )
-        if review_in_time:
+        if review_in_time and review.payload is not None:
             receipt_accepted = False
             if review.receipt is not None:
                 with suppress(Exception):

@@ -277,7 +277,7 @@ def emit_guard_payload(command: str, payload: PayloadDict, as_json: bool) -> Non
     console = Console(
         file=sys.stdout,
         soft_wrap=True,
-        legacy_windows=not unicode_console,
+        legacy_windows=None,
         safe_box=not unicode_console,
     )
     renderer = _RENDERERS.get(command, _render_fallback)

@@ -77,7 +77,10 @@ def _rust_code(source: str) -> str:
 def _test_nodes(path: Path) -> set[str]:
     source = path.read_text(encoding="utf-8")
     if path.suffix == ".rs":
-        return set(_RUST_TEST.findall(_rust_code(source)))
+        names = _RUST_TEST.findall(_rust_code(source))
+        if len(names) != len(set(names)):
+            raise RuntimeError(f"retirement ledger has ambiguous Rust test nodes: {path.name}")
+        return set(names)
     if path.suffix != ".py":
         raise RuntimeError(f"retirement ledger has unsupported test file: {path.name}")
     tree = ast.parse(source, filename=str(path))
@@ -86,9 +89,18 @@ def _test_nodes(path: Path) -> set[str]:
     def collect(body: list[ast.stmt], prefix: str = "") -> None:
         for node in body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
-                nodes.add(prefix + node.name)
+                name = prefix + node.name
+                if name in nodes:
+                    raise RuntimeError(f"retirement ledger has duplicate Python test node: {path.name}::{name}")
+                nodes.add(name)
             elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
-                collect(node.body, prefix + node.name + "::")
+                # Pytest does not collect test classes with custom constructors.
+                if not any(
+                    isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and child.name in {"__init__", "__new__"}
+                    for child in node.body
+                ):
+                    collect(node.body, prefix + node.name + "::")
 
     collect(tree.body)
     return nodes
@@ -117,7 +129,12 @@ def validate_retirement_ledger(root: Path, contract: dict[str, object]) -> dict[
             raise RuntimeError("retirement ledger requires a file::test node reference")
         filename, node = reference.split("::", 1)
         path = _path(root, filename)
-        if not node or "[" in node:
+        if (
+            not node
+            or not all(part.isidentifier() for part in node.split("::"))
+            or path.suffix not in {".py", ".rs"}
+            or (path.suffix == ".rs" and "::" in node)
+        ):
             raise RuntimeError(f"retirement ledger requires a non-parametrized test node: {reference}")
         if not path.is_file():
             return False

@@ -190,3 +190,70 @@ def test_ledger_requires_all_mapping_sections(ledger_repository, field: str) -> 
     del ledger[field]
     with pytest.raises(RuntimeError, match=field):
         _check(ledger_repository)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "#[test] fn roundtrip() {}\n#[test] fn roundtrip() {}\n",
+        "mod a { #[test] fn roundtrip() {} }\nmod b { #[test] fn roundtrip() {} }\n",
+    ],
+)
+def test_ledger_rejects_ambiguous_rust_node(ledger_repository, source: str) -> None:
+    root, _, _ = ledger_repository
+    (root / "rust/native.rs").write_text(source, encoding="utf-8")
+    with pytest.raises(RuntimeError, match="ambiguous Rust test nodes"):
+        _check(ledger_repository)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "class TestNative:\n    def test_roundtrip(self): pass\n    def test_roundtrip(self): pass\n",
+        "class TestNative:\n    def test_roundtrip(self): pass\n"
+        "class TestNative:\n    def test_roundtrip(self): pass\n",
+    ],
+)
+def test_ledger_rejects_duplicate_python_node(ledger_repository, source: str) -> None:
+    root, _, _ = ledger_repository
+    (root / "tests/test_native.py").write_text(source, encoding="utf-8")
+    with pytest.raises(RuntimeError, match="duplicate Python test node"):
+        _check(ledger_repository)
+
+
+@pytest.mark.parametrize("constructor", ["__init__", "__new__"])
+def test_ledger_rejects_python_class_with_custom_constructor(ledger_repository, constructor: str) -> None:
+    root, _, _ = ledger_repository
+    (root / "tests/test_native.py").write_text(
+        f"class TestNative:\n    def {constructor}(self): pass\n    def test_roundtrip(self): pass\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="replacement test node is missing"):
+        _check(ledger_repository)
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [
+        "tests/test_native.py::",
+        "tests/test_native.py::TestNative::::test_roundtrip",
+        "tests/test_native.py::TestNative::test_roundtrip[value]",
+        "tests/test_native.py::not-a-node",
+        "rust/native.rs::tests::roundtrip",
+        "tests/absent.md::test_case",
+    ],
+)
+def test_ledger_rejects_malformed_node_identity(ledger_repository, reference: str) -> None:
+    _, _, ledger = ledger_repository
+    ledger["retired_tests"][0]["replacement_nodes"] = [reference]
+    with pytest.raises(RuntimeError, match="requires a non-parametrized test node"):
+        _check(ledger_repository)
+
+
+def test_ledger_resolves_current_repository_mappings() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contract = json.loads((root / "docs/guard/contracts/python-capability-ownership.v1.json").read_text())
+    result = validate_retirement_ledger(root, contract)
+    assert result["mapped_old_tests"] > 0
+    assert result["replacement_tests"] > 0
+    assert result["regression_suites"] > 0

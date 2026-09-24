@@ -443,3 +443,58 @@ def test_dynamic_import_graph_does_not_promote_aliased_submodules(tmp_path: Path
     evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)
     assert evidence == []
     assert unbounded == []
+
+
+@pytest.mark.parametrize(
+    "prefix, call",
+    [
+        ("import importlib\nimport importlib.util\n", "importlib.import_module"),
+        ("import importlib.util\n", "importlib.import_module"),
+        ("import importlib.util\nimport importlib\n", "importlib.import_module"),
+        ("import importlib, importlib.util\n", "importlib.import_module"),
+        ("import builtins\nimport builtins.synthetic\n", "builtins.__import__"),
+    ],
+)
+def test_dynamic_import_gate_preserves_unaliased_dotted_roots(tmp_path: Path, prefix: str, call: str) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    consumer = source / "consumer.py"
+    consumer.write_text(prefix + call + "(user_supplied)\n", encoding="utf-8")
+    _, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert unbounded == [f"consumer:{prefix.count(chr(10)) + 1}"]
+
+    # The same classification must populate reachability for a bounded name.
+    (source / "target.py").write_text("", encoding="utf-8")
+    consumer.write_text(prefix + call + "('target')\n", encoding="utf-8")
+    graph, evidence = GATE._module_imports(tmp_path)
+    assert "target" in graph["consumer"]
+    assert any(item.endswith(":target") for item in evidence)
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    [
+        "import importlib.util as util\nutil.import_module(user_supplied)\n",
+        "import importlib\nimport importlib.util as importlib\nimportlib.import_module(user_supplied)\n",
+        "import importlib.util\nimportlib = replacement\nimportlib.import_module(user_supplied)\n",
+        "import importlib.util\ndef load(importlib):\n    return importlib.import_module(user_supplied)\n",
+    ],
+)
+def test_dynamic_import_gate_respects_dotted_aliases_and_shadowing(tmp_path: Path, source_text: str) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "consumer.py").write_text(source_text, encoding="utf-8")
+    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert evidence == []
+    assert unbounded == []
+
+
+def test_dotted_submodule_alias_does_not_erase_separate_root_binding(tmp_path: Path) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "consumer.py").write_text(
+        "import importlib\nimport importlib.util as util\nimportlib.import_module(user_supplied)\n",
+        encoding="utf-8",
+    )
+    _, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert unbounded == ["consumer:3"]

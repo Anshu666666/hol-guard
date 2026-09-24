@@ -113,7 +113,7 @@ pub fn parse_command(request: &CommandModelRequestV1) -> Result<CanonicalCommand
     let raw_segments = if let Some(value) = contained_compile_check_segments(raw) {
         value
     } else {
-        match split_execution_segments(raw) {
+        match split_execution_segments(raw, preserve_unquoted_backslash) {
             Ok(value) => value,
             Err(reason) => return Ok(uncertain(request, raw, reason)),
         }
@@ -243,7 +243,10 @@ fn uncertain(request: &CommandModelRequestV1, raw: &str, reason: &str) -> Canoni
     }
 }
 
-fn split_execution_segments(command: &str) -> Result<Vec<RawSegment>, &'static str> {
+fn split_execution_segments(
+    command: &str,
+    preserve_unquoted_backslash: bool,
+) -> Result<Vec<RawSegment>, &'static str> {
     let chars: Vec<char> = command.chars().collect();
     let mut quote = Quote::None;
     let mut escaped = false;
@@ -285,6 +288,7 @@ fn split_execution_segments(command: &str) -> Result<Vec<RawSegment>, &'static s
         match current {
             '\'' => quote = Quote::Single,
             '"' => quote = Quote::Double,
+            '\\' if preserve_unquoted_backslash => {}
             '\\' => escaped = true,
             '`' => return Err("command_substitution_not_yet_supported"),
             '$' if chars.get(index + 1) == Some(&'(') => {
@@ -800,6 +804,10 @@ mod tests {
         assert_eq!(tokens, ["printf", "%s", "a\\q", "a\\$b", "a\"b", "a\\b"]);
         let path = shell_tokens(r"cmd /c echo C:\Work\file.txt", true).unwrap();
         assert_eq!(path, ["cmd", "/c", "echo", r"C:\Work\file.txt"]);
+        let segments = split_execution_segments(r"dir C:\Work\", true).unwrap();
+        assert_eq!(segments.len(), 1);
+        let trailing = shell_tokens(r"dir C:\Work\", true).unwrap();
+        assert_eq!(trailing, ["dir", r"C:\Work\"]);
     }
 
     #[test]

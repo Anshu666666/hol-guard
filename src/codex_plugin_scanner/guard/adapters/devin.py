@@ -327,7 +327,15 @@ class DevinHarnessAdapter(HarnessAdapter):
 
         payload: dict[str, object] = {}
         if config_path.is_file():
+            try:
+                raw_text = config_path.read_text(encoding="utf-8")
+            except OSError as exc:
+                raise ValueError(f"Cannot read Devin config at {config_path}: {exc}") from exc
             payload, had_comments = load_devin_jsonc(config_path)
+            if raw_text.strip() and not payload and raw_text.strip() not in {"{}"}:
+                raise ValueError(
+                    f"Devin config at {config_path} could not be parsed as a JSON object; Guard will not overwrite it."
+                )
             if had_comments:
                 raise ValueError(
                     "Devin config at ~/.config/devin/config.json contains comments or trailing commas; Guard "

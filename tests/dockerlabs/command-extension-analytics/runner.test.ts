@@ -152,6 +152,26 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     expect(proofScanned).toBe(true);
   });
 
+  test("reports a browser failure alongside the proof failure without exposing private values", async () => {
+    const session = "secret-session-value";
+    let invocation = 0;
+    let failure: Error | null = null;
+    try {
+      await runInstalledPlaywright("http://127.0.0.1:4781", session, 7, "proof", async () => {
+        invocation += 1;
+        return invocation === 1 ? result() : result(`browser assertion failed: ${session} guard-private-command-sentinel`, 1);
+      }, async () => {
+        throw new Error(`private value retained in proof: ${session}`);
+      });
+    } catch (error) {
+      if (error instanceof Error) failure = error;
+    }
+    expect(failure?.message).toContain("browser assertion failed");
+    expect(failure?.message).toContain("private value retained in proof");
+    expect(failure?.message).not.toContain(session);
+    expect(failure?.message).not.toContain("guard-private-command-sentinel");
+  });
+
   test("teardown removes volumes and orphans then proves zero resources", async () => {
     const commands: string[][] = [];
     const evidence = await teardownLab("guard-command-analytics", async (command, options) => {

@@ -614,7 +614,15 @@ def test_generated_plugin_returns_the_exact_output_reviewed_for_allow_original(t
     assert "SECRET_OUTPUT" not in after.stdout
 
 
-@pytest.mark.parametrize("decision_json", ["{}", '{"decision":"unknown"}'])
+@pytest.mark.parametrize(
+    "decision_json",
+    [
+        "{}",
+        '{"decision":"unknown"}',
+        '{"decision":true,"policy_action":"allow"}',
+        '{"decision":null,"policy_action":"allow"}',
+    ],
+)
 def test_generated_plugin_rejects_ambiguous_guard_decision(tmp_path: Path, decision_json: str) -> None:
     context = _context(tmp_path)
     _activate(context, "plugin")

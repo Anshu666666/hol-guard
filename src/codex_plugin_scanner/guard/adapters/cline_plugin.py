@@ -172,6 +172,7 @@ function guardBlocks(payload) {{
 
 function guardExplicitlyAllows(payload) {{
   if (!payload || typeof payload !== "object" || guardBlocks(payload)) return false;
+  if (Object.prototype.hasOwnProperty.call(payload, "decision") && typeof payload.decision !== "string") return false;
   const decision = typeof payload.decision === "string" ? payload.decision.toLowerCase() : undefined;
   const actionValue = payload.policy_action ?? payload.policyAction;
   const action = typeof actionValue === "string" ? actionValue.toLowerCase() : undefined;

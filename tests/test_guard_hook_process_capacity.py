@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -137,7 +138,7 @@ def test_process_tree_rss_includes_nested_worker_descendants(
     assert process_tree_rss_bytes((10,)) == 175 * 1024
 
 
-def test_process_tree_rss_tolerates_a_bounded_scheduling_delay(
+def test_process_tree_rss_uses_bounded_headroom_for_a_slow_ps_probe(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(capacity_module.shutil, "which", lambda _name: "/usr/bin/ps")
@@ -145,8 +146,11 @@ def test_process_tree_rss_tolerates_a_bounded_scheduling_delay(
 
     def run_ps(*_args, **kwargs):
         timeout = kwargs["timeout"]
-        if timeout < 0.3:
+        simulated_ps_latency = 0.3
+        if timeout < simulated_ps_latency:
             raise capacity_module.subprocess.TimeoutExpired(cmd="ps", timeout=timeout)
+        assert timeout <= 0.5
+        time.sleep(simulated_ps_latency)
         return capacity_module.subprocess.CompletedProcess(
             args=[],
             returncode=0,

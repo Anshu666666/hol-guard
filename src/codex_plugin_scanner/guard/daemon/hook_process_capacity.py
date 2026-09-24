@@ -16,7 +16,9 @@ from ..runtime.shell_command_wrappers import is_trusted_absolute_command_path
 _MIN_WORKERS = 2
 _MAX_WORKERS = 16
 _MAX_INITIAL_WORKERS = 2
-_PROCESS_TREE_RSS_TIMEOUT_SECONDS = 1.0
+# Hosted capacity checks showed 200 ms was too short; 500 ms covers the
+# deterministic 300 ms delayed-probe regression while keeping sampling bounded.
+_PROCESS_TREE_RSS_TIMEOUT_SECONDS = 0.5
 _PRESSURE_SECONDS = 10.0
 _IDLE_SECONDS = 300.0
 _SPAWN_INTERVAL_SECONDS = 1.0

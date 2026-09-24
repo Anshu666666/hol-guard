@@ -441,8 +441,10 @@ class DevinHarnessAdapter(HarnessAdapter):
                 if isinstance(hooks, dict):
                     for event_name in list(hooks):
                         entries = hooks.get(event_name)
+                        if not isinstance(entries, list):
+                            continue
                         remaining = prune_managed_hook_entries(
-                            entries if isinstance(entries, list) else [],
+                            entries,
                             is_managed=is_guard_managed_hook_command,
                         )
                         if remaining:
@@ -494,8 +496,10 @@ class DevinHarnessAdapter(HarnessAdapter):
 
         for event_name in list(hooks):
             entries = hooks.get(event_name)
+            if not isinstance(entries, list):
+                continue
             remaining = prune_managed_hook_entries(
-                entries if isinstance(entries, list) else [],
+                entries,
                 is_managed=is_guard_managed_hook_command,
             )
             if remaining:

@@ -581,10 +581,39 @@ def setup_evaluation(
         return EvaluationSetup(report=report)
 
 
+def cleanup_interrupted_evaluation_setup(
+    profile: EvaluationProfile | Mapping[str, object],
+    *,
+    owned_root: str | Path,
+    marker_token: str,
+) -> bool:
+    """Clean up one interrupted setup using its separately retained token.
+
+    The caller must preserve the opaque token outside the owned setup before
+    running host cases. This function does not scan for candidate directories,
+    infer ownership from a filename, or read arbitrary user configuration.
+    """
+
+    payload = _profile_payload(profile)
+    scope = cast(Mapping[str, object], payload["targetScope"])
+    declared_parent = Path(cast(str, scope["rootPath"]))
+    candidate = Path(owned_root)
+    if not isinstance(marker_token, str) or re.fullmatch(r"[0-9a-f]{32}", marker_token) is None:
+        raise EvaluationContractError("evaluation recovery token is invalid")
+    if not candidate.is_absolute() or not _safe_temp_parent(declared_parent):
+        raise EvaluationContractError("evaluation recovery path is outside a private temporary root")
+    declared_path = os.path.normcase(os.path.realpath(declared_parent))
+    candidate_parent = os.path.normcase(os.path.realpath(candidate.parent))
+    if candidate_parent != declared_path:
+        raise EvaluationContractError("evaluation recovery path is outside the profile target scope")
+    return _remove_owned_root(candidate, marker_token)
+
+
 __all__ = [
     "EVALUATION_SETUP_SCHEMA_VERSION",
     "EvaluationPreflightReport",
     "EvaluationSetup",
+    "cleanup_interrupted_evaluation_setup",
     "preflight_evaluation",
     "setup_evaluation",
 ]

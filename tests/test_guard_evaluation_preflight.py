@@ -10,6 +10,7 @@ import pytest
 
 from codex_plugin_scanner.guard.evaluation_preflight import (
     EvaluationSetup,
+    cleanup_interrupted_evaluation_setup,
     preflight_evaluation,
     setup_evaluation,
 )
@@ -294,6 +295,74 @@ def test_cleanup_rejects_a_tampered_ownership_marker(tmp_path: Path) -> None:
         setup.marker_token or "", encoding="utf-8"
     )
     assert setup.cleanup() is True
+
+
+def test_interrupted_cleanup_requires_retained_token_and_preserves_unrelated_files(tmp_path: Path) -> None:
+    executable = _fake_host(tmp_path)
+    artifact = _artifact(tmp_path)
+    profile = _profile(tmp_path, executable)
+    unrelated = tmp_path / "user-config.json"
+    unrelated.write_bytes(b'{"keep":"unchanged"}\n')
+    setup = setup_evaluation(
+        profile,
+        artifact_paths=_artifact_paths(artifact),
+        parent_dir=tmp_path,
+        allow_host_execution=True,
+    )
+    assert setup.root_path is not None and setup.marker_token is not None
+    owned_root, token = setup.root_path, setup.marker_token
+    del setup  # Model process loss: only the separately retained handle survives.
+
+    wrong_token = ("0" if token[0] != "0" else "1") + token[1:]
+    with pytest.raises(ValueError, match="ownership marker"):
+        cleanup_interrupted_evaluation_setup(profile, owned_root=owned_root, marker_token=wrong_token)
+    assert owned_root.is_dir()
+    assert unrelated.read_bytes() == b'{"keep":"unchanged"}\n'
+
+    assert cleanup_interrupted_evaluation_setup(profile, owned_root=owned_root, marker_token=token) is True
+    assert not owned_root.exists()
+    assert unrelated.read_bytes() == b'{"keep":"unchanged"}\n'
+    assert cleanup_interrupted_evaluation_setup(profile, owned_root=owned_root, marker_token=token) is False
+
+
+def test_interrupted_cleanup_rejects_another_profile_parent(tmp_path: Path) -> None:
+    executable = _fake_host(tmp_path)
+    artifact = _artifact(tmp_path)
+    profile = _profile(tmp_path, executable)
+    setup = setup_evaluation(
+        profile,
+        artifact_paths=_artifact_paths(artifact),
+        parent_dir=tmp_path,
+        allow_host_execution=True,
+    )
+    assert setup.root_path is not None and setup.marker_token is not None
+    other_parent = tmp_path / "other-private-parent"
+    other_parent.mkdir(mode=0o700)
+    other_profile = _profile(tmp_path, executable)
+    scope = other_profile["targetScope"]
+    assert isinstance(scope, dict)
+    scope["rootPath"] = str(other_parent)
+    scope["allowedPaths"] = [str(other_parent)]
+
+    with pytest.raises(ValueError, match="outside the profile target scope"):
+        cleanup_interrupted_evaluation_setup(other_profile, owned_root=setup.root_path, marker_token=setup.marker_token)
+    assert setup.root_path.exists()
+    assert setup.cleanup() is True
+
+
+def test_interrupted_cleanup_rejects_a_symlink_to_unrelated_state(tmp_path: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("symlink creation may require elevated Windows privileges")
+    unrelated = tmp_path / "unrelated-state"
+    unrelated.mkdir()
+    marker = unrelated / "user-config.json"
+    marker.write_bytes(b"preserve")
+    link = tmp_path / "hol-guard-eval-link"
+    link.symlink_to(unrelated, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="must not be a symlink"):
+        cleanup_interrupted_evaluation_setup(_profile(tmp_path), owned_root=link, marker_token="0" * 32)
+    assert marker.read_bytes() == b"preserve"
 
 
 def test_setup_rejects_non_temporary_parent_without_touching_it(tmp_path: Path) -> None:

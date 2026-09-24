@@ -217,7 +217,9 @@ def validate_capability_report(
             "evidence_os_arch": capability["os_arch"],
         }
         for field, expected in expected_scope.items():
-            if capability.get(field) != expected or expected in {"unknown", ""}:
+            if expected in {"unknown", ""}:
+                raise ValueError(f"capabilities[{index}] live proof requires a known declared {field} scope")
+            if capability.get(field) != expected:
                 raise ValueError(f"capabilities[{index}] live proof requires exact {field} matching the declared scope")
         for field in ("denied_witness_reference", "allowed_witness_reference"):
             value = capability.get(field)
@@ -236,6 +238,8 @@ def validate_capability_report(
             continue
         observed_at = _parse_timestamp(capability.get("observed_at"), field=f"capabilities[{index}].observed_at")
         expires_at = _parse_timestamp(capability.get("expires_at"), field=f"capabilities[{index}].expires_at")
+        if observed_at > current:
+            raise ValueError(f"capabilities[{index}] evidence observation is in the future")
         if expires_at <= observed_at:
             raise ValueError(f"capabilities[{index}] evidence expiry must be after observation")
         if expires_at <= current:
@@ -311,7 +315,6 @@ def _apply_scope(
 def build_capability_report(
     *,
     build_id: str = "unknown",
-    build: str | None = None,
     commit: str = "unknown",
     requested_host: str | None = None,
     host_version_scope: str | None = None,
@@ -324,10 +327,6 @@ def build_capability_report(
     it never mutates or extends the adapter registry.
     """
 
-    if build is not None:
-        if build_id != "unknown" and build_id != build:
-            raise ValueError("build and build_id must match when both are supplied")
-        build_id = build
     if not isinstance(build_id, str) or not build_id.strip():
         raise ValueError("build_id must be a non-empty string")
     if not isinstance(commit, str) or not commit.strip():
@@ -365,7 +364,6 @@ def capability_report_for(
     requested_host: str,
     *,
     build_id: str = "unknown",
-    build: str | None = None,
     commit: str = "unknown",
     host_version_scope: str | None = None,
     os_arch: str | None = None,
@@ -375,7 +373,6 @@ def capability_report_for(
 
     return build_capability_report(
         build_id=build_id,
-        build=build,
         commit=commit,
         requested_host=requested_host,
         host_version_scope=host_version_scope,
@@ -395,7 +392,7 @@ def _markdown_cell(value: object) -> str:
     if isinstance(value, (tuple, list)):
         value = ", ".join(str(item) for item in value)
     text = html_escape(str(value), quote=True).replace("`", "&#96;")
-    return text.replace("|", "\\|").replace("\r", " ").replace("\n", "<br>")
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\r", " ").replace("\n", "<br>")
 
 
 def render_capability_report_markdown(report: HarnessCapabilityReport | Mapping[str, object]) -> str:

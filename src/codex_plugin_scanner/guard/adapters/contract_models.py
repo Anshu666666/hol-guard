@@ -131,36 +131,6 @@ class HarnessEventCapability:
         ):
             raise ValueError("not_run evidence cannot carry an observation timestamp or proof reference")
 
-    @property
-    def host_scope(self) -> str:
-        """Compatibility alias for consumers that call this host scope."""
-
-        return self.host_version_scope
-
-    @property
-    def local_or_hosted(self) -> CapabilityLocalHosted:
-        """Compatibility alias for consumers using the scope wording."""
-
-        return self.local_hosted
-
-    @property
-    def compatibility_condition(self) -> str:
-        """Compatibility alias for the mandatory compatibility condition."""
-
-        return self.mandatory_compatibility
-
-    @property
-    def source_ref(self) -> str:
-        """Compatibility alias for source reference consumers."""
-
-        return self.source_reference
-
-    @property
-    def observed_deployment_health(self) -> CapabilityDeploymentHealth:
-        """Compatibility alias emphasizing that health is an observation field."""
-
-        return self.deployment_health
-
     def to_dict(self) -> dict[str, object]:
         """Serialize one row using the stable machine report keys."""
 

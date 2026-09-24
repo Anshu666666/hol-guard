@@ -20,7 +20,7 @@ from .contract_models import HarnessSetupStep as HarnessSetupStep
 from .contract_rendering import DISPLAY_NAMES as _DISPLAY_NAMES
 from .contract_rendering import render_harness_contracts
 
-_LEGACY_HARNESS_CONTRACTS: tuple[HarnessProtectionContract, ...] = (
+_BASE_HARNESS_CONTRACTS: tuple[HarnessProtectionContract, ...] = (
     HarnessProtectionContract(
         harness="codex",
         install_aliases=("codex",),
@@ -546,11 +546,14 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "blocking",
             ("observe", "block", "approval"),
             (
-                "Malformed payload, bridge failure, or unavailable Guard authority fails closed before Cline "
-                "executes the tool."
+                "Malformed payload, bridge failure, or unavailable Guard authority denies state-changing tools; "
+                "designated emergency-safe inspection actions may continue in degraded mode."
             ),
             "Cline must invoke the managed native PreToolUse hook and honor its response.",
-            ("JetBrains protection remains unverified until a live pre-tool deny proof is observed.",),
+            (
+                "Emergency-safe inspection actions can continue during Guard authority failure.",
+                "JetBrains protection remains unverified until a live pre-tool deny proof is observed.",
+            ),
             "src/codex_plugin_scanner/guard/adapters/cline_hooks.py:install_cline_hooks",
         ),
         _capability(
@@ -596,12 +599,61 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "cline",
             "UserPromptSubmit",
             "native_hook",
-            "screening",
-            ("observe", "block", "approval"),
-            "Prompt hook failure is handled by the native bridge's bounded fail-closed behavior.",
-            "Cline must invoke the managed UserPromptSubmit hook for prompt screening.",
-            ("Prompt screening does not prove final model request redaction.",),
+            "observe",
+            ("observe",),
+            "The native prompt hook reports a decision but does not cancel prompt submission on denial or failure.",
+            "Cline must invoke the managed UserPromptSubmit hook for prompt observation.",
+            ("Prompt observation does not block submission or prove final model request redaction.",),
             "src/codex_plugin_scanner/guard/adapters/cline_hooks.py:_EVENTS",
+        ),
+        *(
+            _capability(
+                "cline",
+                event,
+                "native_hook",
+                "observe",
+                ("observe",),
+                "The native lifecycle hook records the event but does not cancel it on denial or failure.",
+                f"Cline must invoke the managed {event} hook for lifecycle observation.",
+                ("Lifecycle observations do not establish a blocking boundary.",),
+                "src/codex_plugin_scanner/guard/adapters/cline_hooks.py:_EVENTS",
+            )
+            for event in ("TaskStart", "TaskError", "SessionShutdown")
+        ),
+    ),
+    "grok": (
+        _capability(
+            "grok",
+            "PreToolUse",
+            "native_hook",
+            "blocking",
+            ("observe", "block", "approval"),
+            "The catch-all pre-tool hook returns a native deny when Guard blocks the tool call.",
+            "Grok must invoke the managed PreToolUse hook and honor its decision for tool and subagent calls.",
+            ("Prompt submission and post-tool events are observe-only.",),
+            "src/codex_plugin_scanner/guard/adapters/grok_hooks.py:grok_hook_response_from_guard",
+        ),
+        _capability(
+            "grok",
+            "UserPromptSubmit",
+            "native_hook",
+            "observe",
+            ("observe",),
+            "Grok ignores a deny response for this prompt hook, so it cannot block prompt submission.",
+            "Grok must invoke the managed UserPromptSubmit hook for observation.",
+            ("Prompt observation does not prevent model-visible prompt delivery.",),
+            "src/codex_plugin_scanner/guard/adapters/grok_hooks.py:_OBSERVE_ONLY_EVENTS",
+        ),
+        _capability(
+            "grok",
+            "PostToolUse",
+            "native_hook",
+            "observe",
+            ("observe",),
+            "The native post-tool hook records an event after execution and cannot replace its result.",
+            "Grok must invoke the managed PostToolUse hook after the tool event.",
+            ("Post-tool observation does not block or replace model-visible output.",),
+            "src/codex_plugin_scanner/guard/adapters/grok_hooks.py:_OBSERVE_ONLY_EVENTS",
         ),
     ),
     "pi": (
@@ -636,6 +688,41 @@ _CAPABILITY_EVENTS_BY_HARNESS: dict[str, tuple[HarnessEventCapability, ...]] = {
             "Unavailable or failed review withholds the tool result; reviewed content may replace it.",
             "Pi must load the current managed Guard extension and forward tool_result events before model delivery.",
             ("A synthetic extension canary does not prove live Pi model-visible replacement.",),
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("tool_result")',
+        ),
+    ),
+    "omp": (
+        _capability(
+            "omp",
+            "UserPromptSubmit",
+            "managed_extension",
+            "screening",
+            ("observe", "block", "approval"),
+            "Extension or Guard runtime failure returns a bounded fail-closed prompt decision.",
+            "Oh My Pi must load the managed Guard extension and forward input events to Guard.",
+            ("Package installation and update flows happen outside the runtime extension bridge.",),
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("input")',
+        ),
+        _capability(
+            "omp",
+            "PreToolUse",
+            "managed_extension",
+            "blocking",
+            ("observe", "block", "approval"),
+            "Extension or Guard runtime failure returns a bounded fail-closed tool decision.",
+            "Oh My Pi must load the managed Guard extension and forward tool_call events before execution.",
+            ("A present extension file alone does not prove live tool suppression.",),
+            'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("tool_call")',
+        ),
+        _capability(
+            "omp",
+            "PostToolUse",
+            "managed_extension",
+            "replace_or_withhold",
+            ("observe", "block", "rewrite"),
+            "Unavailable or failed review withholds the tool result; reviewed content may replace it.",
+            "Oh My Pi must load the managed Guard extension and forward tool_result events before model delivery.",
+            ("A synthetic extension canary does not prove live model-visible replacement.",),
             'src/codex_plugin_scanner/guard/adapters/pi_extension_source.py:pi.on("tool_result")',
         ),
     ),
@@ -674,17 +761,31 @@ def _default_capability_events(contract: HarnessProtectionContract) -> tuple[Har
                 f"src/codex_plugin_scanner/guard/adapters/contracts.py:{contract.harness}.event_surfaces",
             )
         )
+    if contract.harness == "opencode":
+        rows.append(
+            _capability(
+                "opencode",
+                "UserPromptSubmit",
+                "none",
+                "unsupported",
+                ("unavailable",),
+                "OpenCode's declared hooks do not surface prompt submission to Guard.",
+                "A host prompt hook must exist before prompt interception can be claimed.",
+                ("Prompt content is not available through the declared OpenCode hooks.",),
+                "src/codex_plugin_scanner/guard/adapters/contracts.py:opencode.known_blind_spots",
+            )
+        )
     return tuple(rows)
 
 
-# Attach the additive event authority after the legacy tuple is defined.  The
-# old contract fields, aliases, and setup/table APIs remain unchanged.
+# Attach the event authority to the existing setup contracts without changing
+# their setup and table APIs.
 HARNESS_CONTRACTS: tuple[HarnessProtectionContract, ...] = tuple(
     replace(
         contract,
         capability_events=_CAPABILITY_EVENTS_BY_HARNESS.get(contract.harness, _default_capability_events(contract)),
     )
-    for contract in _LEGACY_HARNESS_CONTRACTS
+    for contract in _BASE_HARNESS_CONTRACTS
 )
 
 _CONTRACT_BY_ALIAS: dict[str, HarnessProtectionContract] = {}
@@ -788,7 +889,6 @@ def harness_contracts_table() -> str:
 def harness_capability_report(
     *,
     build_id: str = "unknown",
-    build: str | None = None,
     commit: str = "unknown",
     requested_host: str | None = None,
     host_version_scope: str | None = None,
@@ -801,7 +901,6 @@ def harness_capability_report(
 
     return build_capability_report(
         build_id=build_id,
-        build=build,
         commit=commit,
         requested_host=requested_host,
         host_version_scope=host_version_scope,
@@ -814,7 +913,6 @@ def capability_report_for(
     harness: str,
     *,
     build_id: str = "unknown",
-    build: str | None = None,
     commit: str = "unknown",
     host_version_scope: str | None = None,
     os_arch: str | None = None,
@@ -827,7 +925,6 @@ def capability_report_for(
     return build_for_host(
         harness,
         build_id=build_id,
-        build=build,
         commit=commit,
         host_version_scope=host_version_scope,
         os_arch=os_arch,

@@ -72,7 +72,13 @@ def test_json_and_markdown_are_deterministic_views_of_the_same_rows() -> None:
     lines = first_markdown.splitlines()
     header_index = next(index for index, line in enumerate(lines) if line.startswith("| Harness | Adapter |"))
     assert lines[header_index].count("|") == lines[header_index + 1].count("|")
-    assert lines[header_index + 1].count("---") == len(json_payload["capabilities"][0])
+    assert lines[header_index + 1].count("---") == lines[header_index].count("|") - 1
+
+
+def test_markdown_preserves_a_backslash_before_a_literal_pipe() -> None:
+    payload = _report_payload()
+    _rows(payload)[0]["source_reference"] = r"path\|part"
+    assert r"path\\\|part" in render_capability_report_markdown(payload)
 
 
 def test_host_scope_cannot_be_applied_to_every_registered_host() -> None:
@@ -101,6 +107,11 @@ def test_missing_hook_rows_are_explicit_and_not_claimed_by_legacy_surfaces() -> 
     assert cursor_prompt[0]["transport"] == "none"
     assert cursor_prompt[0]["mode"] == "unsupported"
 
+    opencode_payload = build_capability_report(requested_host="opencode").to_dict()
+    opencode_prompt = [row for row in _rows(opencode_payload) if row["event"] == "UserPromptSubmit"]
+    assert len(opencode_prompt) == 1
+    assert opencode_prompt[0]["mode"] == "unsupported"
+
 
 def test_pi_cline_and_native_hook_rows_stay_separate() -> None:
     report = build_capability_report()
@@ -109,6 +120,15 @@ def test_pi_cline_and_native_hook_rows_stay_separate() -> None:
     pi_events = {(str(row["event"]), str(row["transport"])) for row in rows if row["harness"] == "pi"}
     assert ("PreToolUse", "managed_extension") in pi_events
     assert ("PostToolUse", "managed_extension") in pi_events
+    omp_events = {(str(row["event"]), str(row["transport"])) for row in rows if row["harness"] == "omp"}
+    assert {
+        ("UserPromptSubmit", "managed_extension"),
+        ("PreToolUse", "managed_extension"),
+        ("PostToolUse", "managed_extension"),
+    } <= omp_events
+    grok_rows = {row["event"]: row for row in rows if row["harness"] == "grok"}
+    assert grok_rows["PreToolUse"]["mode"] == "blocking"
+    assert grok_rows["UserPromptSubmit"]["mode"] == "observe"
 
     cline_post = [row for row in rows if row["harness"] == "cline" and row["event"] == "PostToolUse"]
     assert {row["transport"] for row in cline_post} == {"native_hook", "agent_plugin"}
@@ -116,6 +136,17 @@ def test_pi_cline_and_native_hook_rows_stay_separate() -> None:
     native_row = next(row for row in cline_post if row["transport"] == "native_hook")
     assert plugin_row["mode"] == "replace_or_withhold"
     assert native_row["mode"] == "observe"
+    cline_prompt = next(row for row in rows if row["harness"] == "cline" and row["event"] == "UserPromptSubmit")
+    assert cline_prompt["mode"] == "observe"
+    assert cline_prompt["declared_actions"] == ["observe"]
+    cline_pretool = next(
+        row
+        for row in rows
+        if row["harness"] == "cline" and row["event"] == "PreToolUse" and row["transport"] == "native_hook"
+    )
+    assert "emergency-safe inspection" in str(cline_pretool["error_behavior"])
+    cline_events = {row["event"] for row in rows if row["harness"] == "cline"}
+    assert {"TaskStart", "TaskError", "SessionShutdown"} <= cline_events
 
     codex_events = {row["event"] for row in rows if row["harness"] == "codex"}
     claude_events = {row["event"] for row in rows if row["harness"] == "claude-code"}
@@ -207,7 +238,7 @@ def test_invalid_and_stale_evidence_are_rejected_without_upgrading_canaries() ->
             "allowed_witness_reference": "tests/fixtures/allowed.json",
         }
     )
-    with pytest.raises(ValueError, match="exact"):
+    with pytest.raises(ValueError, match="known declared"):
         validate_capability_report(live_without_health, now=datetime(2026, 9, 23, tzinfo=timezone.utc))
 
     healthy = build_capability_report(
@@ -250,6 +281,7 @@ def test_invalid_and_stale_evidence_are_rejected_without_upgrading_canaries() ->
         ("not-a-time", "2026-09-30T00:00:00Z", "RFC3339"),
         ("2026-09-22T00:00:00", "2026-09-30T00:00:00Z", "timezone"),
         ("2026-09-22T00:00:00Z", "2026-09-22T00:00:00Z", "after observation"),
+        ("2026-09-24T00:00:00Z", "2026-09-30T00:00:00Z", "in the future"),
     ],
 )
 def test_evidence_timestamps_must_be_parseable_zoned_and_ordered(observed_at: str, expires_at: str, error: str) -> None:
@@ -267,9 +299,7 @@ def test_evidence_timestamps_must_be_parseable_zoned_and_ordered(observed_at: st
         validate_capability_report(payload, now=datetime(2026, 9, 23, tzinfo=timezone.utc))
 
 
-def test_report_rejects_ambiguous_build_identity_and_empty_commit() -> None:
-    with pytest.raises(ValueError, match="must match"):
-        build_capability_report(build_id="one", build="two")
+def test_report_rejects_empty_build_identity_and_commit() -> None:
     with pytest.raises(ValueError, match="non-empty"):
         build_capability_report(build_id=" ")
     with pytest.raises(ValueError, match="non-empty"):
@@ -280,4 +310,5 @@ def test_checked_in_schema_accepts_generated_report() -> None:
     schema_path = Path(__file__).parents[1] / "docs" / "guard" / "schemas" / "harness-capability-report.v1.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
+    assert schema == CAPABILITY_REPORT_SCHEMA
     Draft202012Validator(schema).validate(_report_payload())

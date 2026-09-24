@@ -149,6 +149,12 @@ def _scrub_residual_private_text(value: str) -> str:
 
 
 def _strip_shell_comments(value: str) -> str:
+    """Hide POSIX-like comment tails from a local display preview.
+
+    This does not reconstruct shell execution. Quoted hashes remain visible,
+    and a backslash-newline is preserved while a following comment is removed.
+    """
+
     result: list[str] = []
     quote: str | None = None
     escaped = False

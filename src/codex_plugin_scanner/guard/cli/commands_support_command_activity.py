@@ -340,6 +340,8 @@ def _evaluate_payload_command(
     cwd: Path | None,
     home_dir: Path | None,
 ):
+    """Let native control errors reach the caller, which records a failure without activity."""
+
     authority = store.read_extension_control_authority_for_registry(
         BUILT_IN_COMMAND_EXTENSION_REGISTRY,
         read_only=True,

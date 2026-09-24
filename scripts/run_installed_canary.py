@@ -5,16 +5,19 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import platform
 import shutil
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import time
+import zipfile
 from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import closing
-from itertools import chain
+from itertools import chain, islice
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -104,13 +107,133 @@ def _known_gap_baseline(repo_root: Path) -> dict[str, list[object]]:
     return expected
 
 
+def _native_executable_names() -> tuple[str, str]:
+    if os.name == "nt":
+        return "guard-command-source.exe", "hol-guard-runtime.exe"
+    return "guard-command-source", "hol-guard-runtime"
+
+
+def _platform_wheel_markers() -> tuple[str, ...]:
+    machine = platform.machine().lower()
+    if sys.platform == "win32":
+        return ("win_amd64",)
+    if sys.platform == "darwin":
+        if machine in {"arm64", "aarch64"}:
+            return ("macosx_11_0_arm64",)
+        return ("macosx_13_0_x86_64",)
+    return ("manylinux_2_17_x86_64",)
+
+
+def _packaged_native_binaries() -> tuple[Path, Path] | None:
+    try:
+        from codex_plugin_scanner.guard.extension_builder.native_source_compiler import (
+            NativeSourceCompilerError,
+            find_packaged_source_compiler,
+        )
+    except ImportError:
+        return None
+    try:
+        compiler = find_packaged_source_compiler()
+    except NativeSourceCompilerError:
+        return None
+    runtime = compiler.parent / _native_executable_names()[1]
+    if compiler.is_file() and runtime.is_file():
+        return compiler, runtime
+    return None
+
+
+def _checkout_native_binaries(repo_root: Path) -> tuple[Path, Path] | None:
+    compiler_name, runtime_name = _native_executable_names()
+    for profile in ("release", "debug"):
+        directory = repo_root / "rust" / "target" / profile
+        compiler = directory / compiler_name
+        runtime = directory / runtime_name
+        if compiler.is_file() and runtime.is_file():
+            return compiler, runtime
+    return None
+
+
+def _extract_native_binary(archive: zipfile.ZipFile, member: str, destination: Path) -> None:
+    info = archive.getinfo(member)
+    if info.is_dir() or info.file_size <= 0 or info.file_size > 128 * 1024 * 1024:
+        raise InstalledCanaryError("Installed canary native compiler payload is invalid")
+    payload = archive.read(info)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    descriptor = os.open(destination, flags, 0o700)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            handle.write(payload)
+            handle.flush()
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if os.name != "nt":
+        destination.chmod(0o700)
+
+
+def _extract_native_binaries(dist_dir: Path) -> tuple[Path, Path] | None:
+    if not dist_dir.is_dir():
+        return None
+    compiler_name, runtime_name = _native_executable_names()
+    members = (
+        f"codex_plugin_scanner/_native/{compiler_name}",
+        f"codex_plugin_scanner/_native/{runtime_name}",
+    )
+    markers = _platform_wheel_markers()
+    for wheel in sorted(dist_dir.glob("hol_guard-*.whl")):
+        if wheel.is_symlink() or not any(marker in wheel.name for marker in markers):
+            continue
+        with zipfile.ZipFile(wheel) as archive:
+            names = set(archive.namelist())
+            if not set(members) <= names:
+                continue
+            destination = Path(tempfile.mkdtemp(prefix="hol-guard-canary-native-"))
+            _extract_native_binary(archive, members[0], destination / compiler_name)
+            _extract_native_binary(archive, members[1], destination / runtime_name)
+            return destination / compiler_name, destination / runtime_name
+    return None
+
+
+def _pin_installed_native_binaries(repo_root: Path) -> None:
+    compiler_env = "HOL_GUARD_NATIVE_TEST_SOURCE_COMPILER"
+    runtime_env = "HOL_GUARD_NATIVE_BINARY"
+    configured_compiler = os.environ.get(compiler_env)
+    configured_runtime = os.environ.get(runtime_env)
+    if (
+        configured_compiler
+        and configured_runtime
+        and Path(configured_compiler).is_file()
+        and Path(configured_runtime).is_file()
+    ):
+        return
+    packaged = _packaged_native_binaries()
+    if packaged is not None:
+        os.environ[compiler_env], os.environ[runtime_env] = (str(packaged[0]), str(packaged[1]))
+        return
+    checkout = _checkout_native_binaries(repo_root)
+    if checkout is not None:
+        os.environ[compiler_env], os.environ[runtime_env] = (str(checkout[0]), str(checkout[1]))
+        return
+    extracted = _extract_native_binaries(repo_root / "dist")
+    if extracted is None:
+        raise InstalledCanaryError("Installed canary native compiler is unavailable")
+    os.environ[compiler_env], os.environ[runtime_env] = (str(extracted[0]), str(extracted[1]))
+
+
 def _run_corpus(repo_root: Path) -> dict[str, object]:
     sys.path.insert(0, str(repo_root))
+    _pin_installed_native_binaries(repo_root)
     from codex_plugin_scanner.guard.action_lattice import guard_action_severity
-    from codex_plugin_scanner.guard.runtime.command_evaluation import evaluate_command
     from tests.guard_command_corpus import iter_adversarial_corpus, iter_benign_corpus
+    from tests.guard_command_corpus_native import (
+        NATIVE_CORPUS_BATCH_SIZE,
+        evaluate_native_corpus_batch,
+        pin_neutral_attribution,
+    )
     from tests.guard_command_corpus_oracle import iter_adversarial_oracle, iter_benign_oracle
 
+    pin_neutral_attribution()
     bindings = _validate_corpus_bindings(repo_root)
     ranks = {
         action: guard_action_severity(action)
@@ -124,13 +247,18 @@ def _run_corpus(repo_root: Path) -> dict[str, object]:
         zip(iter_benign_corpus(), iter_benign_oracle(), strict=True),
         zip(iter_adversarial_corpus(), iter_adversarial_oracle(), strict=True),
     )
-    for case, oracle in streams:
-        decision = evaluate_command(case.command, cwd=repo_root / "workspace", home_dir=repo_root / "home")
-        observed = decision.decision_plane.action
-        if ranks[observed] != ranks[oracle.minimum_floor]:
-            kind = "underclassified" if ranks[observed] < ranks[oracle.minimum_floor] else "overclassified"
-            groups["|".join((oracle.owner, kind, oracle.minimum_floor, observed))].append(case.case_id)
-        count += 1
+    cwd = repo_root / "workspace"
+    home_dir = repo_root / "home"
+    while batch := tuple(islice(streams, NATIVE_CORPUS_BATCH_SIZE)):
+        evaluations = evaluate_native_corpus_batch([case for case, _oracle in batch], cwd=cwd, home_dir=home_dir)
+        for (case, oracle), reviewed in zip(batch, evaluations, strict=True):
+            decision = reviewed.evaluation
+            observed = decision.decision_plane.action
+            if ranks[observed] != ranks[oracle.minimum_floor]:
+                kind = "underclassified" if ranks[observed] < ranks[oracle.minimum_floor] else "overclassified"
+                groups["|".join((oracle.owner, kind, oracle.minimum_floor, observed))].append(case.case_id)
+            count += 1
+        del evaluations
     actual = {
         key: [len(ids), hashlib.sha256(("\n".join(sorted(ids)) + "\n").encode()).hexdigest()]
         for key, ids in groups.items()

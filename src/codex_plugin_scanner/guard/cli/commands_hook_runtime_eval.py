@@ -289,10 +289,10 @@ def _evaluate_runtime_artifact_hook(
     runtime_artifact = workflow_state.artifact
     approval_context_artifact = runtime_artifact
     if workflow_state.approval_record is not None:
-        # Native decision outputs may change after a capability claim. Bind
-        # reviewed inputs here while the full artifact still drives enforcement.
+        # Native decision outputs and availability may change after a capability
+        # claim. Bind reviewed inputs while the full artifact drives enforcement.
         approval_context_metadata = dict(runtime_artifact.metadata)
-        for key in ("command_action_floor", "command_decision_plane"):
+        for key in ("command_action_floor", "command_decision_plane", "command_evaluation_status"):
             approval_context_metadata.pop(key, None)
         approval_context_artifact = replace(runtime_artifact, metadata=approval_context_metadata)
 
@@ -315,38 +315,6 @@ def _evaluate_runtime_artifact_hook(
             except Exception:
                 refreshed_result = None
             if refreshed_result is not None:
-                if (
-                    isinstance(refreshed_result, RuntimeArtifactHookState)
-                    and workflow_state.approval_record is not None
-                    and refreshed_result.policy_action != "allow"
-                ):
-                    prior_metadata = approval_context_artifact.metadata
-                    refreshed_metadata = dict(refreshed_result.runtime_artifact.metadata)
-                    for key in ("command_action_floor", "command_decision_plane"):
-                        refreshed_metadata.pop(key, None)
-                    refreshed_result.response_payload["post_claim_changed_metadata_fields"] = sorted(
-                        key
-                        for key in prior_metadata.keys() | refreshed_metadata.keys()
-                        if prior_metadata.get(key) != refreshed_metadata.get(key)
-                    )
-                    refreshed_result.response_payload["post_claim_changed_artifact_fields"] = [
-                        field
-                        for field in (
-                            "artifact_id",
-                            "name",
-                            "harness",
-                            "artifact_type",
-                            "source_scope",
-                            "config_path",
-                            "command",
-                            "args",
-                            "url",
-                            "transport",
-                            "publisher",
-                        )
-                        if getattr(approval_context_artifact, field)
-                        != getattr(refreshed_result.runtime_artifact, field)
-                    ]
                 return refreshed_result
             refresh_failed = True
         return _evaluate_runtime_artifact_hook(

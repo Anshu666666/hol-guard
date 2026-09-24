@@ -19,6 +19,9 @@ export async function runCommand(
   command: readonly string[],
   options: { cwd?: string; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
 ): Promise<CommandResult> {
+  if (options.timeoutMs !== undefined && (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs <= 0)) {
+    throw new Error("timeoutMs must be a positive integer");
+  }
   const process = Bun.spawn([...command], {
     cwd: options.cwd,
     env: { ...Bun.env, ...options.env },

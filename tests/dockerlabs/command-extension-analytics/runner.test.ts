@@ -23,6 +23,8 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     const timedOut = await runCommand([process.execPath, "-e", "await Bun.sleep(10_000)"], { timeoutMs: 100 });
     expect(timedOut.exitCode).not.toBe(0);
     expect(Date.now() - started).toBeLessThan(3_000);
+    await expect(runCommand([process.execPath, "-e", ""], { timeoutMs: 0 }))
+      .rejects.toThrow("timeoutMs must be a positive integer");
   });
 
   test("uses a pinned compose file and explicit project", () => {

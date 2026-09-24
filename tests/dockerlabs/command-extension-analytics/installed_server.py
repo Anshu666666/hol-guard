@@ -75,6 +75,33 @@ def _safe_hook_diagnostic(value: str) -> str:
     return redacted[-_MAX_HOOK_DIAGNOSTIC_CHARS:]
 
 
+def _safe_hook_response_summary(value: str) -> str:
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError:
+        return _safe_hook_diagnostic(value)
+    if not isinstance(payload, dict):
+        return "unexpected hook response shape"
+    reuse = payload.get("approval_reuse")
+    composition = payload.get("policy_composition")
+    return json.dumps(
+        {
+            "keys": sorted(str(key) for key in payload),
+            "policy_action": payload.get("policy_action"),
+            "approval_reuse": {
+                "status": reuse.get("status"),
+                "reason_code": reuse.get("reason_code"),
+            }
+            if isinstance(reuse, dict)
+            else None,
+            "approval_reuse_source": composition.get("approval_reuse_source")
+            if isinstance(composition, dict)
+            else None,
+        },
+        sort_keys=True,
+    )
+
+
 def _write_dashboard_session_handoff(session: str) -> None:
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_CLOEXEC | os.O_NOFOLLOW
     descriptor = os.open(SESSION_HANDOFF, flags, 0o600)
@@ -129,7 +156,7 @@ def _run_installed_hook(
     if completed.returncode != expected_status and not native_codex_denial:
         diagnostic = (
             f"installed {harness} hook returned {completed.returncode}, expected {expected_status}; "
-            + f"stdout={_safe_hook_diagnostic(completed.stdout)!r}; "
+            + f"response={_safe_hook_response_summary(completed.stdout)!r}; "
             + f"stderr={_safe_hook_diagnostic(completed.stderr)!r}"
         )
         raise RuntimeError(diagnostic)

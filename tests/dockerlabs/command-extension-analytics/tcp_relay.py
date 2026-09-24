@@ -15,7 +15,10 @@ _ROUTES = {
     "guard": (("0.0.0.0", 4782), ("127.0.0.1", 4781)),
     "ingress": (("0.0.0.0", 4783), ("guard", 4782)),
 }
-_LISTEN_ADDRESS, _TARGET_ADDRESS = _ROUTES[os.environ["HOL_GUARD_LAB_RELAY_ROLE"]]
+_ROLE = os.getenv("HOL_GUARD_LAB_RELAY_ROLE")
+if _ROLE not in _ROUTES:
+    raise RuntimeError("HOL_GUARD_LAB_RELAY_ROLE must be 'guard' or 'ingress'")
+_LISTEN_ADDRESS, _TARGET_ADDRESS = _ROUTES[_ROLE]
 
 
 class _RelayHandler(socketserver.BaseRequestHandler):

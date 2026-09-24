@@ -360,9 +360,8 @@ class DevinHarnessAdapter(HarnessAdapter):
             shutil.copy2(config_path, backup_path)
 
         hook_command = _shell_command(self._hook_command_parts(context))
-        hooks = payload.get("hooks")
-        if hooks is None:
-            hooks = {}
+        hooks_value = payload.get("hooks")
+        hooks: dict[str, object] = hooks_value if isinstance(hooks_value, dict) else {}
         payload["hooks"] = hooks
 
         self._sync_managed_hook_groups(context, hooks, hook_command)

@@ -179,7 +179,11 @@ def _pending_workflow_request(store: GuardStore) -> dict[str, object]:
     }
     _run_installed_hook("codex", payload, expected_status=1)
     all_pending = store.list_approval_requests(status="pending")
-    pending = [request for request in all_pending if request.get("harness") == "codex"]
+    pending = [
+        request
+        for request in all_pending
+        if request.get("harness") == "codex" and request.get("raw_command_text") == _WORKFLOW_COMMAND
+    ]
     if len(pending) != 1:
         summary = [
             {

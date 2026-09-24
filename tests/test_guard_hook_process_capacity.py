@@ -137,6 +137,28 @@ def test_process_tree_rss_includes_nested_worker_descendants(
     assert process_tree_rss_bytes((10,)) == 175 * 1024
 
 
+def test_process_tree_rss_tolerates_a_bounded_scheduling_delay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(capacity_module.shutil, "which", lambda _name: "/usr/bin/ps")
+    monkeypatch.setattr(capacity_module, "is_trusted_absolute_command_path", lambda *_args, **_kwargs: True)
+
+    def run_ps(*_args, **kwargs):
+        timeout = kwargs["timeout"]
+        if timeout < 0.3:
+            raise capacity_module.subprocess.TimeoutExpired(cmd="ps", timeout=timeout)
+        return capacity_module.subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="10 1 100\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(capacity_module.subprocess, "run", run_ps)
+
+    assert process_tree_rss_bytes((10,)) == 100 * 1024
+
+
 def test_process_tree_rss_rejects_path_shadowed_ps(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

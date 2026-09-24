@@ -16,6 +16,7 @@ from ..runtime.shell_command_wrappers import is_trusted_absolute_command_path
 _MIN_WORKERS = 2
 _MAX_WORKERS = 16
 _MAX_INITIAL_WORKERS = 2
+_PROCESS_TREE_RSS_TIMEOUT_SECONDS = 1.0
 _PRESSURE_SECONDS = 10.0
 _IDLE_SECONDS = 300.0
 _SPAWN_INTERVAL_SECONDS = 1.0
@@ -162,7 +163,7 @@ def process_tree_rss_bytes(process_ids: tuple[int, ...]) -> int | None:
             check=False,
             capture_output=True,
             text=True,
-            timeout=0.2,
+            timeout=_PROCESS_TREE_RSS_TIMEOUT_SECONDS,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None

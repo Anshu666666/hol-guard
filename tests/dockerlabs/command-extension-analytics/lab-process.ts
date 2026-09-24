@@ -8,7 +8,7 @@ export interface CommandResult {
 
 export type CommandRunner = (
   command: readonly string[],
-  options?: { cwd?: string; env?: Record<string, string | undefined> },
+  options?: { cwd?: string; env?: Record<string, string | undefined>; timeoutMs?: number },
 ) => Promise<CommandResult>;
 
 export const LAB_DIR = resolve(import.meta.dir);
@@ -17,7 +17,7 @@ export const COMPOSE_FILE = resolve(LAB_DIR, "docker-compose.yml");
 
 export async function runCommand(
   command: readonly string[],
-  options: { cwd?: string; env?: Record<string, string | undefined> } = {},
+  options: { cwd?: string; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
 ): Promise<CommandResult> {
   const process = Bun.spawn([...command], {
     cwd: options.cwd,
@@ -25,12 +25,19 @@ export async function runCommand(
     stderr: "pipe",
     stdout: "pipe",
   });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    process.exited,
-    new Response(process.stdout).text(),
-    new Response(process.stderr).text(),
-  ]);
-  return { exitCode, stdout, stderr };
+  const timeout = options.timeoutMs === undefined
+    ? undefined
+    : setTimeout(() => process.kill("SIGKILL"), options.timeoutMs);
+  try {
+    const [exitCode, stdout, stderr] = await Promise.all([
+      process.exited,
+      new Response(process.stdout).text(),
+      new Response(process.stderr).text(),
+    ]);
+    return { exitCode, stdout, stderr };
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+  }
 }
 
 export function requireSuccess(result: CommandResult, label: string): string {

@@ -446,21 +446,24 @@ async function waitForReadyWithDiagnostics(
   try {
     await waitForReady(origin);
   } catch (error) {
-    const [guardLogs, relayLogs, state] = await Promise.all([
-      runner(composeCommand(project, "logs", "--no-color", "--tail", "20", "guard"), {
-        cwd: LAB_DIR, env: environment,
-      }),
-      runner(composeCommand(project, "logs", "--no-color", "--tail", "20", "relay"), {
-        cwd: LAB_DIR, env: environment,
-      }),
-      runner(composeCommand(project, "ps"), { cwd: LAB_DIR, env: environment }),
-    ]);
-    const diagnostic = [guardLogs, relayLogs, state]
-      .filter((result) => result.exitCode === 0)
-      .map((result) => result.stdout.replaceAll(SENTINEL, "[REDACTED]").slice(-MAX_GUARD_FAILURE_CHARS))
-      .join("\n");
+    const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "ingress"], true);
     throw new Error(`${String(error)}\n${diagnostic}`);
   }
+}
+async function collectComposeDiagnostics(
+  project: string, environment: Record<string, string>, runner: CommandRunner,
+  services: string[], includeState = false,
+): Promise<string> {
+  const commands = services.map((service) => composeCommand(project, "logs", "--no-color", "--tail", "20", service));
+  if (includeState) commands.push(composeCommand(project, "ps"));
+  const results = await Promise.allSettled(commands.map((command) => runner(command, {
+    cwd: LAB_DIR, env: environment, timeoutMs: 5_000,
+  })));
+  return results
+    .flatMap((result) => result.status === "fulfilled" && result.value.exitCode === 0
+      ? [result.value.stdout.replaceAll(SENTINEL, "[REDACTED]").slice(-MAX_GUARD_FAILURE_CHARS)]
+      : [])
+    .join("\n");
 }
 export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvidence> {
   const project = safeProjectName(Bun.env.GUARD_TEST_PROJECT ?? `guard-command-analytics-${process.pid}`);
@@ -487,19 +490,8 @@ export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvi
       cwd: LAB_DIR, env: environment,
     });
     if (startup.exitCode !== 0) {
-      const [guardLogs, relayLogs] = await Promise.all([
-        runner(composeCommand(project, "logs", "--no-color", "--tail", "30", "guard"), {
-          cwd: LAB_DIR, env: environment,
-        }),
-        runner(composeCommand(project, "logs", "--no-color", "--tail", "8", "relay"), {
-          cwd: LAB_DIR, env: environment,
-        }),
-      ]);
-      const diagnostic = [guardLogs, relayLogs]
-        .filter((logs) => logs.exitCode === 0)
-        .map((logs) => `\n${logs.stdout.replaceAll(SENTINEL, "[REDACTED]").slice(-MAX_GUARD_FAILURE_CHARS)}`)
-        .join("");
-      throw new Error(`Dockerlabs startup failed (${startup.exitCode})\n${startup.stderr || startup.stdout}${diagnostic}`);
+      const diagnostic = await collectComposeDiagnostics(project, environment, runner, ["guard", "relay", "ingress"]);
+      throw new Error(`Dockerlabs startup failed (${startup.exitCode})\n${startup.stderr || startup.stdout}\n${diagnostic}`);
     }
     await waitForReadyWithDiagnostics(origin, project, environment, runner);
     const pending = await waitForPendingWorkflow(project, environment, runner);

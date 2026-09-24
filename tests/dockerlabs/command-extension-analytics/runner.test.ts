@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { composeCommand, safeProjectName, type CommandResult } from "./lab-process";
+import { composeCommand, runCommand, safeProjectName, type CommandResult } from "./lab-process";
 import { runInstalledPlaywright } from "./installed-playwright";
 import { fetchLabGet, fetchLabIdempotent } from "./relay-fetch";
 import { readyFromLogs } from "./runner";
@@ -16,6 +16,13 @@ describe("command extension analytics Dockerlabs orchestration", () => {
     expect(safeProjectName("Guard Command Analytics 42")).toBe("guard-command-analytics-42");
     expect(() => safeProjectName("../")).toThrow("invalid Dockerlabs project name");
     expect(() => safeProjectName("x".repeat(49))).toThrow("invalid Dockerlabs project name");
+  });
+
+  test("terminates a stalled diagnostic command", async () => {
+    const started = Date.now();
+    const timedOut = await runCommand([process.execPath, "-e", "await Bun.sleep(10_000)"], { timeoutMs: 100 });
+    expect(timedOut.exitCode).not.toBe(0);
+    expect(Date.now() - started).toBeLessThan(3_000);
   });
 
   test("uses a pinned compose file and explicit project", () => {

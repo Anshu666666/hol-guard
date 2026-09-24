@@ -3820,14 +3820,17 @@ def _guard_daemon_recovery_lock(guard_home: Path, *, timeout_seconds: float | No
                 file_locked = True
             else:
                 assert deadline is not None
-                while time.monotonic() < deadline:
+                while True:
                     if _try_lock_daemon_file(handle):
                         file_locked = True
+                        break
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0.0:
                         break
                     time.sleep(
                         min(
                             GUARD_DAEMON_POLL_INTERVAL_SECONDS,
-                            max(0.0, deadline - time.monotonic()),
+                            remaining,
                         )
                     )
                 if not file_locked:

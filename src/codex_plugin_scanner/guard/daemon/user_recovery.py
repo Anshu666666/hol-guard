@@ -157,6 +157,7 @@ class _Operation:
     sequence: int = -1
     latest: dict[str, object] | None = None
     events: list[dict[str, object]] = field(default_factory=list)
+    execution_active: bool = False
     unresolved_identity: ProcessIdentity | None = None
     unresolved_owner: bool = False
 
@@ -584,6 +585,8 @@ class UserRecoveryCoordinator:
                 )
                 if active is None:
                     break
+                if active.execution_active:
+                    return self._return_cached(self._active_snapshot(active), emit)
                 if not active.unresolved_owner:
                     return self._return_cached(self._active_snapshot(active), emit)
                 if unresolved_identity is None:
@@ -623,6 +626,7 @@ class UserRecoveryCoordinator:
             # inspection and approval are still in progress.
             deadline_monotonic=started_monotonic,
             started_at=self._now_timestamp(),
+            execution_active=True,
         )
         with _OPERATIONS_LOCK:
             completed = _COMPLETED_BY_ID.get(operation_key)
@@ -637,6 +641,7 @@ class UserRecoveryCoordinator:
             return self._run(operation, emit)
         finally:
             with _OPERATIONS_LOCK:
+                operation.execution_active = False
                 if not operation.unresolved_owner:
                     self._complete_operation_locked(home_key, operation)
 

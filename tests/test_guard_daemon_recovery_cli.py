@@ -8,6 +8,7 @@ import subprocess
 import sys
 import textwrap
 import threading
+import time
 import uuid
 from contextlib import nullcontext
 from dataclasses import replace
@@ -618,6 +619,173 @@ def test_concurrent_cli_requests_share_one_home_mutation(
     assert results["first"] == 0
     assert results["second"] == 3
     assert counts[str(home.resolve())] == 1
+
+
+def test_concurrent_cli_processes_do_not_replay_a_home_mutation(tmp_path: Path) -> None:
+    home = tmp_path / "guard-home"
+    home.mkdir()
+    count_path = tmp_path / "starts.log"
+    first_entered = tmp_path / "first-entered"
+    second_lock_attempt = tmp_path / "second-lock-attempt"
+    release_first = tmp_path / "release-first"
+    started = tmp_path / "daemon-started"
+    first_request = "38383838-3838-4838-8838-383838383838"
+    second_request = "39393939-3939-4939-8939-393939393939"
+    script = textwrap.dedent(
+        """
+        import argparse
+        import io
+        import os
+        import sys
+        import time
+        from dataclasses import replace
+        from pathlib import Path
+
+        from codex_plugin_scanner.guard import live_process_identity
+        from codex_plugin_scanner.guard.cli import commands_daemon_recovery as cli
+        from codex_plugin_scanner.guard.cli.commands_lifecycle_gate import LifecycleGateContext
+        from codex_plugin_scanner.guard.daemon import manager
+        from codex_plugin_scanner.guard.daemon.user_recovery import (
+            ProcessIdentity,
+            ProtectionResult,
+            ReadyResult,
+            ServiceInspection,
+            StartResult,
+            UserRecoveryCoordinator as CoreCoordinator,
+        )
+
+        home = Path(sys.argv[1])
+        count_path = Path(sys.argv[2])
+        request_id = sys.argv[3]
+        first_request = sys.argv[4]
+        first_entered = Path(sys.argv[5])
+        second_lock_attempt = Path(sys.argv[6])
+        release_first = Path(sys.argv[7])
+        started = Path(sys.argv[8])
+        identity = ProcessIdentity(
+            41,
+            "generation-1",
+            "runtime-1",
+            home,
+            live_process_identity.process_owner_marker(os.getpid()) or "fixture-owner",
+            "start-1",
+        )
+
+        real_recovery_lock = manager._guard_daemon_recovery_lock
+        def track_second_lock(guard_home, **kwargs):
+            if request_id != first_request:
+                second_lock_attempt.touch(exist_ok=True)
+            return real_recovery_lock(guard_home, **kwargs)
+        manager._guard_daemon_recovery_lock = track_second_lock
+
+        def make(home, *, home_dir=None, hooks=None):
+            def inspect(_home, _state):
+                if started.exists():
+                    return ServiceInspection("ready", "healthy", identity, True)
+                return ServiceInspection("unavailable", "service_missing")
+
+            def start(_home, _remaining):
+                with count_path.open("a", encoding="utf-8") as stream:
+                    print(request_id, file=stream, flush=True)
+                if request_id == first_request:
+                    first_entered.touch(exist_ok=True)
+                    deadline = time.monotonic() + 20.0
+                    while not release_first.exists() and time.monotonic() < deadline:
+                        time.sleep(0.01)
+                    if not release_first.exists():
+                        raise TimeoutError("test owner was not released")
+                started.write_text("ready", encoding="utf-8")
+                return StartResult(True, identity)
+
+            custom = replace(
+                hooks,
+                load_state=lambda _home: {"state": "fixture"},
+                inspect_service=inspect,
+                update_busy=lambda _home: False,
+                start_process=start,
+                verify_ready=lambda _home, _identity, _remaining: ReadyResult(True, identity),
+                protection_health=lambda _home, _identity, _remaining: ProtectionResult("verified", "healthy"),
+            )
+            return CoreCoordinator(home, hooks=custom)
+
+        cli.UserRecoveryCoordinator = make
+        output = io.StringIO()
+        error = io.StringIO()
+        code = cli.dispatch_daemon_recovery(
+            argparse.Namespace(daemon_recovery_command="restart", request_id=request_id, json_lines=True),
+            guard_home=home,
+            home_dir=None,
+            lifecycle_context=LifecycleGateContext(
+                authority_home=home,
+                action="daemon.restart",
+                scope="local-protection",
+                subject="local-daemon",
+                grant=None,
+                was_enabled=False,
+            ),
+            stdout=output,
+            stderr=error,
+        )
+        if code != 0:
+            sys.stderr.write(output.getvalue())
+            sys.stderr.write(error.getvalue())
+        print(code)
+        """
+    )
+
+    def spawn_request(request_id: str) -> subprocess.Popen[str]:
+        return subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                script,
+                str(home),
+                str(count_path),
+                request_id,
+                first_request,
+                str(first_entered),
+                str(second_lock_attempt),
+                str(release_first),
+                str(started),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+    def wait_for_marker(marker: Path, process: subprocess.Popen[str]) -> None:
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            if marker.exists():
+                return
+            if process.poll() is not None:
+                stdout, stderr = process.communicate()
+                raise AssertionError(f"process exited before {marker.name}: {stdout} {stderr}")
+            time.sleep(0.01)
+        raise AssertionError(f"timed out waiting for {marker.name}")
+
+    first: subprocess.Popen[str] | None = None
+    second: subprocess.Popen[str] | None = None
+    try:
+        first = spawn_request(first_request)
+        wait_for_marker(first_entered, first)
+        second = spawn_request(second_request)
+        wait_for_marker(second_lock_attempt, second)
+        assert count_path.read_text(encoding="utf-8").splitlines() == [first_request]
+        release_first.touch()
+        first_stdout, first_stderr = first.communicate(timeout=10)
+        second_stdout, second_stderr = second.communicate(timeout=10)
+        assert first.returncode == 0, first_stderr
+        assert second.returncode == 0, second_stderr
+        assert first_stdout.strip() == "0"
+        assert second_stdout.strip() == "3"
+        assert count_path.read_text(encoding="utf-8").splitlines() == [first_request]
+    finally:
+        release_first.touch(exist_ok=True)
+        for process in (second, first):
+            if process is not None and process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
 
 
 def test_completed_replay_wins_over_a_different_active_request(

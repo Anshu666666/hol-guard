@@ -1221,8 +1221,8 @@ def test_replacement_start_failure_is_public_without_readiness_probe(
 
     assert result["phase"] == "failed"
     assert result["reasonCode"] == "startup_failed"
-    assert result["workerActive"] is False
-    assert result["retryAllowed"] is True
+    assert result["workerActive"] is (start_mode == "exception")
+    assert result["retryAllowed"] is (start_mode == "rejected")
     assert result["requiresHumanAction"] is True
     assert [call for call in calls if call in {"stop", "start"}] == ["stop", "start"]
 
@@ -1984,41 +1984,54 @@ def test_uncertain_exit_keeps_retry_disabled_and_does_not_start_replacement(tmp_
     assert "start" not in calls
 
 
-@pytest.mark.parametrize("mutation", ("stop", "start"))
+@pytest.mark.parametrize("mutation", ("stop", "start", "start_after_stop"))
 def test_unexpected_mutation_exception_retains_recovery_ownership(
     tmp_path: Path,
     mutation: str,
 ) -> None:
     guard_home = tmp_path / "guard-home"
     identity = _identity(guard_home, generation=f"unexpected-{mutation}")
-    side_effect_seen = {"value": False}
+    side_effect_seen = {"stop": False, "start": False}
     calls: list[str] = []
     initial = (
         ServiceInspection("unavailable", "service_unresponsive", identity, True)
-        if mutation == "stop"
+        if mutation in {"stop", "start_after_stop"}
         else ServiceInspection("unavailable", "service_missing")
     )
 
     def inspect() -> ServiceInspection:
-        if mutation == "start" and side_effect_seen["value"]:
+        if mutation == "start" and side_effect_seen["start"]:
             return ServiceInspection("ready", "healthy", identity, True)
+        if mutation == "start_after_stop" and side_effect_seen["stop"]:
+            if side_effect_seen["start"]:
+                return ServiceInspection("ready", "healthy", identity, True)
+            return ServiceInspection("unavailable", "service_missing")
         return initial
 
     def fail_after_mutation(name: str) -> None:
         calls.append(name)
-        side_effect_seen["value"] = True
+        side_effect_seen[name] = True
         raise AssertionError(f"{name} worker failed after the mutation boundary")
+
+    def stop_after_mutation(*_args: object) -> StopResult:
+        calls.append("stop")
+        side_effect_seen["stop"] = True
+        return StopResult(True)
 
     coordinator = _coordinator(
         tmp_path,
         initial,
         inspect_service=inspect,
         stop_process=(
-            (lambda *_args: fail_after_mutation("stop")) if mutation == "stop" else None
+            (lambda *_args: fail_after_mutation("stop"))
+            if mutation == "stop"
+            else stop_after_mutation if mutation == "start_after_stop" else None
         ),
         process_dead=lambda _identity: False,
         start_process=(
-            (lambda *_args: fail_after_mutation("start")) if mutation == "start" else None
+            (lambda *_args: fail_after_mutation("start"))
+            if mutation in {"start", "start_after_stop"}
+            else None
         ),
     )
 
@@ -2029,7 +2042,10 @@ def test_unexpected_mutation_exception_retains_recovery_ownership(
     assert first["retryAllowed"] is False
     assert second["operationId"] == first["operationId"]
     assert second["workerActive"] is True
-    assert calls == [mutation]
+    expected_calls = ["stop"] if mutation == "stop" else ["start"]
+    if mutation == "start_after_stop":
+        expected_calls = ["stop", "start"]
+    assert calls == expected_calls
 
 
 def test_unresolved_timeout_reconciles_before_a_second_stop(tmp_path: Path) -> None:

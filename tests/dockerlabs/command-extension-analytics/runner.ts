@@ -459,10 +459,24 @@ export async function runLab(runner: CommandRunner = runCommand): Promise<LabEvi
       throw new Error(`Dockerlabs project is not clean before start: ${JSON.stringify(existing)}`);
     }
     const containment = await runInstalledContainment(runner, version);
-    requireSuccess(
-      await runner(composeCommand(project, "up", "-d", "--build", "--wait"), { cwd: LAB_DIR, env: environment }),
-      "Dockerlabs startup",
-    );
+    const startup = await runner(composeCommand(project, "up", "-d", "--build", "--wait"), {
+      cwd: LAB_DIR, env: environment,
+    });
+    if (startup.exitCode !== 0) {
+      const [guardLogs, relayLogs] = await Promise.all([
+        runner(composeCommand(project, "logs", "--no-color", "--tail", "30", "guard"), {
+          cwd: LAB_DIR, env: environment,
+        }),
+        runner(composeCommand(project, "logs", "--no-color", "--tail", "8", "relay"), {
+          cwd: LAB_DIR, env: environment,
+        }),
+      ]);
+      const diagnostic = [guardLogs, relayLogs]
+        .filter((logs) => logs.exitCode === 0)
+        .map((logs) => `\n${logs.stdout.replaceAll(SENTINEL, "[REDACTED]").slice(-MAX_GUARD_FAILURE_CHARS)}`)
+        .join("");
+      throw new Error(`Dockerlabs startup failed (${startup.exitCode})\n${startup.stderr || startup.stdout}${diagnostic}`);
+    }
     await waitForReady(origin);
     const pending = await waitForPendingWorkflow(project, environment, runner);
     const session = await readDashboardSession(project, environment, runner);

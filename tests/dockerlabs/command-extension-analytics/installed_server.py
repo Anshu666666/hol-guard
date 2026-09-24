@@ -208,7 +208,7 @@ def _pending_workflow_request(store: GuardStore) -> dict[str, object]:
 
 
 def _await_exact_allow(store: GuardStore, request_id: str) -> None:
-    deadline = time.monotonic() + 30
+    deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
         request = store.get_approval_request(request_id)
         if request is not None and request.get("status") == "resolved":

@@ -11,7 +11,7 @@ from collections.abc import Iterator
 from difflib import SequenceMatcher
 from itertools import chain
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 import pytest
 
@@ -399,23 +399,31 @@ def test_full_native_evaluation_matches_contract_and_reports_original_oracle_dif
 
 
 def test_windows_peak_rss_uses_process_working_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ctypes
+    from types import SimpleNamespace
+
     peak_bytes = 128 * 1024 * 1024
 
-    def fake_run(
-        command: list[str],
-        *,
-        check: bool,
-        capture_output: bool,
-        text: bool,
-        timeout: int,
-    ) -> subprocess.CompletedProcess[str]:
-        assert command[-1] == "(Get-Process -Id 4242).PeakWorkingSet64"
-        assert check and capture_output and text and timeout == 10
-        return subprocess.CompletedProcess(command, 0, stdout=f"{peak_bytes}\n", stderr="")
+    def fake_get_current_process() -> int:
+        return 4242
+
+    def fake_get_process_memory_info(handle: int, counters: object, size: int) -> int:
+        assert handle == 4242
+        native_counters = cast(Any, counters)._obj
+        assert size == ctypes.sizeof(native_counters)
+        native_counters.PeakWorkingSetSize = peak_bytes
+        return 1
 
     monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(os, "getpid", lambda: 4242)
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        ctypes,
+        "WinDLL",
+        lambda name, **_kwargs: SimpleNamespace(
+            GetCurrentProcess=fake_get_current_process,
+            GetProcessMemoryInfo=fake_get_process_memory_info,
+        ),
+        raising=False,
+    )
 
     assert peak_rss_mib() == 128.0
 

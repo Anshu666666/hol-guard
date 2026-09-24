@@ -427,6 +427,38 @@ fn verify_windows_private_directory_accepts_the_configured_root() {
 
 #[cfg(windows)]
 #[test]
+fn windows_private_file_acl_roundtrip_supports_long_paths_without_changing_bytes() {
+    use std::os::windows::ffi::OsStrExt;
+    let root = test_scope("long-file-acl");
+    let nested = root.join("private-segment-".repeat(8));
+    ensure_private_directory_under(&nested, &root, true).unwrap();
+    let path = nested.join(format!("{}.json", "state-file-".repeat(10)));
+    assert!(path.as_os_str().encode_wide().count() > 260);
+    fs::write(&path, b"preserve-original-content").unwrap();
+    assert!(verify_windows_private_path(&path, false, &root).is_err());
+    protect_windows_private_path(&path, false, &root).unwrap();
+    verify_windows_private_path(&path, false, &root).unwrap();
+    assert_eq!(fs::read(&path).unwrap(), b"preserve-original-content");
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_private_file_acl_operations_reject_a_foreign_root() {
+    let root = test_scope("file-acl-root");
+    let foreign = test_scope("file-acl-foreign");
+    let path = foreign.join("state.json");
+    fixture_file(&path, b"unchanged");
+    assert!(protect_windows_private_path(&path, false, &root).is_err());
+    assert!(verify_windows_private_path(&path, false, &root).is_err());
+    assert_eq!(fs::read(&path).unwrap(), b"unchanged");
+    verify_windows_private_path(&path, false, &foreign).unwrap();
+    fs::remove_dir_all(root).unwrap();
+    fs::remove_dir_all(foreign).unwrap();
+}
+
+#[cfg(windows)]
+#[test]
 fn already_private_directory_allows_overlapping_binds() {
     let scope = test_scope("private-directory-overlap");
     drop((

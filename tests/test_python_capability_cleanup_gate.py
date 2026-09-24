@@ -410,3 +410,36 @@ def test_dynamic_builtin_import_requires_bounded_provenance(tmp_path: Path) -> N
     )
     _, unbounded = GATE._dynamic_import_destinations(tmp_path)
     assert unbounded == ["consumer:2"]
+
+
+@pytest.mark.parametrize(
+    "imports",
+    [
+        "import importlib.util\n",
+        "import importlib\nimport importlib.util\n",
+        "import importlib.resources\nimport importlib.util\n",
+        "import importlib\nimport importlib.util as utilities\n",
+    ],
+)
+def test_dynamic_import_graph_preserves_unaliased_dotted_imports(tmp_path: Path, imports: str) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "consumer.py").write_text(imports + "importlib.import_module(destination)\n", encoding="utf-8")
+    _, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert unbounded == [f"consumer:{imports.count(chr(10)) + 1}"]
+
+
+@pytest.mark.parametrize(
+    "imports, call",
+    [
+        ("import importlib.util as utilities\n", "utilities.import_module"),
+        ("import importlib\nimport importlib.util as importlib\n", "importlib.import_module"),
+    ],
+)
+def test_dynamic_import_graph_does_not_promote_aliased_submodules(tmp_path: Path, imports: str, call: str) -> None:
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "consumer.py").write_text(imports + call + "(destination)\n", encoding="utf-8")
+    evidence, unbounded = GATE._dynamic_import_destinations(tmp_path)
+    assert evidence == []
+    assert unbounded == []

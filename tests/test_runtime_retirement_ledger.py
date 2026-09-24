@@ -27,14 +27,18 @@ def ledger_repository(tmp_path: Path) -> tuple[Path, dict[str, object], dict[str
     ledger: dict[str, object] = {
         "schema": "hol-guard.runtime-retirement-ledger.v1",
         "retired_source_paths": ["src/old.py"],
-        "retired_tests": [{
-            "old_node": "tests/test_old.py::test_old",
-            "replacement_nodes": ["rust/native.rs::roundtrip", "tests/test_native.py::TestNative::test_roundtrip"],
-        }],
-        "preserved_tests": [{
-            "old_node": "tests/test_old.py::test_preserved",
-            "new_node": "tests/test_native.py::test_preserved",
-        }],
+        "retired_tests": [
+            {
+                "old_node": "tests/test_old.py::test_old",
+                "replacement_nodes": ["rust/native.rs::roundtrip", "tests/test_native.py::TestNative::test_roundtrip"],
+            }
+        ],
+        "preserved_tests": [
+            {
+                "old_node": "tests/test_old.py::test_preserved",
+                "new_node": "tests/test_native.py::test_preserved",
+            }
+        ],
         "unchanged_regression_suites": ["tests/test_native.py"],
     }
     return tmp_path, contract, ledger
@@ -58,11 +62,14 @@ def test_ledger_rejects_missing_replacement_file(ledger_repository, filename: st
         _check(ledger_repository)
 
 
-@pytest.mark.parametrize("reference", [
-    "tests/test_native.py::test_renamed",
-    "tests/test_native.py::TestNative::test_renamed",
-    "rust/native.rs::renamed",
-])
+@pytest.mark.parametrize(
+    "reference",
+    [
+        "tests/test_native.py::test_renamed",
+        "tests/test_native.py::TestNative::test_renamed",
+        "rust/native.rs::renamed",
+    ],
+)
 def test_ledger_rejects_stale_replacement_node(ledger_repository, reference: str) -> None:
     _, _, ledger = ledger_repository
     ledger["retired_tests"][0]["replacement_nodes"] = [reference]
@@ -85,13 +92,16 @@ def test_ledger_rejects_empty_or_duplicate_replacements(ledger_repository, value
         _check(ledger_repository)
 
 
-@pytest.mark.parametrize("source", [
-    "// #[test] fn roundtrip() {}\n",
-    "/* outer /* nested */ #[test] fn roundtrip() {} */\n",
-    'const EXAMPLE: &str = "#[test] fn roundtrip() {}";\n',
-    'const EXAMPLE: &str = r###"#[test] fn roundtrip() {}"###;\n',
-    "fn roundtrip() {}\n",
-])
+@pytest.mark.parametrize(
+    "source",
+    [
+        "// #[test] fn roundtrip() {}\n",
+        "/* outer /* nested */ #[test] fn roundtrip() {} */\n",
+        'const EXAMPLE: &str = "#[test] fn roundtrip() {}";\n',
+        'const EXAMPLE: &str = r###"#[test] fn roundtrip() {}"###;\n',
+        "fn roundtrip() {}\n",
+    ],
+)
 def test_ledger_does_not_accept_rust_comments_strings_or_non_test_helpers(ledger_repository, source: str) -> None:
     root, _, _ = ledger_repository
     (root / "rust/native.rs").write_text(source, encoding="utf-8")
@@ -99,11 +109,14 @@ def test_ledger_does_not_accept_rust_comments_strings_or_non_test_helpers(ledger
         _check(ledger_repository)
 
 
-@pytest.mark.parametrize("source", [
-    "# def test_roundtrip(): pass\n",
-    'example = "def test_roundtrip(): pass"\n',
-    "def helper():\n    def test_roundtrip():\n        pass\n",
-])
+@pytest.mark.parametrize(
+    "source",
+    [
+        "# def test_roundtrip(): pass\n",
+        'example = "def test_roundtrip(): pass"\n',
+        "def helper():\n    def test_roundtrip():\n        pass\n",
+    ],
+)
 def test_ledger_does_not_accept_uncollected_python_nodes(ledger_repository, source: str) -> None:
     root, _, _ = ledger_repository
     (root / "tests/test_native.py").write_text(source, encoding="utf-8")

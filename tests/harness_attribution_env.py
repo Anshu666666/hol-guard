@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    import pytest
+
 from codex_plugin_scanner.guard.adapters.zcode_config import ZCODE_ENV_HINTS
 from codex_plugin_scanner.guard.runtime.harness_attribution import (
     _CLAUDE_CODE_ENV_MARKERS,
@@ -24,9 +27,6 @@ HARNESS_ENV_MARKERS = (
     *_OPENCODE_ENV_MARKERS,
     ORIGIN_HARNESS_ENV,
 )
-
-if TYPE_CHECKING:
-    import pytest
 
 
 def strip_harness_env_markers(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -420,6 +420,8 @@ def _should_skip_secret_match(
     candidate = _extract_secret_candidate(detector, match)
     if _looks_like_interpolated_secret(candidate):
         return True
+    if _normalize_secret_candidate(candidate).startswith(("<", "[")):
+        return True
     if detector.kind == "generic" and _provider_payload(candidate) is None:
         if _is_generated_token_expression(relative_path, content, match):
             return True

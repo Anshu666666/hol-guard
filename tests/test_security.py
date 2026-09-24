@@ -242,6 +242,22 @@ class TestNoHardcodedSecrets:
             assert result.passed is True
             assert all(finding.rule_id != "HARDCODED_SECRET" for finding in result.findings)
 
+    def test_ignores_bracketed_placeholders_in_source_code(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            src_dir = root / "src"
+            src_dir.mkdir()
+            (src_dir / "tools.ts").write_text(
+                'const nextCall = { email: "user@example.com", password: "<password>" };\n'
+                'export const REDACTED_APP_TOKEN = "[redacted - call the reveal tool for appToken]";\n',
+                encoding="utf-8",
+            )
+
+            result = check_no_hardcoded_secrets(root)
+
+            assert result.passed is True
+            assert all(finding.rule_id != "HARDCODED_SECRET" for finding in result.findings)
+
     def test_detects_plain_provider_token_examples_without_illustrative_context(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

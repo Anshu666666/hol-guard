@@ -494,20 +494,7 @@ def _runtime_hook_approval_context_token(
     )
     executable_identity: object
     shell_executable_identities: tuple[dict[str, object], ...] | None = None
-    if shell_context_present and not shell_context_complete:
-        executable_identity = {
-            "status": "unresolved_shell_execution_context",
-            "reason_code": metadata.get("shell_execution_context_reason_code")
-            or metadata.get("shell_execution_context_reason_codes"),
-            "reuse_nonce": secrets.token_hex(16),
-        }
-        shell_executable_identities = (
-            {
-                "cwd": None,
-                "identity": executable_identity,
-            },
-        )
-    elif workflow_approval_record is not None:
+    if workflow_approval_record is not None:
         # GitHub workflow capabilities intentionally permit a retry after an
         # executable's original bytes are restored. Their signed binding
         # already covers the canonical executable content, command, workspace,
@@ -532,6 +519,19 @@ def _runtime_hook_approval_context_token(
                 }
                 for cwd in shell_effective_cwds
             )
+    elif shell_context_present and not shell_context_complete:
+        executable_identity = {
+            "status": "unresolved_shell_execution_context",
+            "reason_code": metadata.get("shell_execution_context_reason_code")
+            or metadata.get("shell_execution_context_reason_codes"),
+            "reuse_nonce": secrets.token_hex(16),
+        }
+        shell_executable_identities = (
+            {
+                "cwd": None,
+                "identity": executable_identity,
+            },
+        )
     else:
         executable_identity = _runtime_hook_executable_identity(
             artifact,

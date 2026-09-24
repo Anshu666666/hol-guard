@@ -322,16 +322,8 @@ class DevinHarnessAdapter(HarnessAdapter):
         )
 
     def install(self, context: HarnessContext) -> dict[str, object]:
-        shim_manifest = install_guard_shim(
-            self.harness,
-            context,
-            launcher_name=self.launcher_name,
-            display_name="devin",
-        )
         config_path = self._user_config_path(context)
         _ensure_path_within_root(self._devin_config_dir(context).parent, config_path, label="Devin")
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-
         payload: dict[str, object] = {}
         if config_path.is_file():
             document = load_devin_jsonc(config_path)
@@ -347,6 +339,13 @@ class DevinHarnessAdapter(HarnessAdapter):
                     "hol-guard install devin."
                 )
             payload = document.payload
+        shim_manifest = install_guard_shim(
+            self.harness,
+            context,
+            launcher_name=self.launcher_name,
+            display_name="devin",
+        )
+        config_path.parent.mkdir(parents=True, exist_ok=True)
 
         state_dir, backup_path, state_path = self._managed_state_paths(context)
         state_dir.mkdir(parents=True, exist_ok=True)

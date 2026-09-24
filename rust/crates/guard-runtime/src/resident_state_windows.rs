@@ -320,6 +320,13 @@ fn windows_acl_path(path: &Path) -> PathBuf {
         return path.to_path_buf();
     }
 
+    // Adding the verbatim prefix disables Win32's slash conversion. Preserve
+    // UTF-16 code units while normalizing ordinary absolute-path separators.
+    let wide = wide
+        .into_iter()
+        .map(|unit| if unit == 47 { 92 } else { unit })
+        .collect::<Vec<_>>();
+
     let mut extended = Vec::with_capacity(wide.len() + EXTENDED_PREFIX.len() + 4);
     if wide.starts_with(&[92, 92]) {
         extended.extend_from_slice(&[92, 92, 63, 92, 85, 78, 67, 92]);

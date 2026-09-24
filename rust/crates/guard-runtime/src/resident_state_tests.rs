@@ -459,6 +459,33 @@ fn windows_private_file_acl_operations_reject_a_foreign_root() {
 
 #[cfg(windows)]
 #[test]
+fn windows_private_file_acl_supports_long_mixed_separator_paths() {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+    let root = test_scope("mixed-separator-acl");
+    let nested = root.join("private-segment-".repeat(8));
+    ensure_private_directory_under(&nested, &root, true).unwrap();
+    let path = nested.join(format!("{}.json", "state-file-".repeat(10)));
+    fs::write(&path, b"preserve-original-content").unwrap();
+    let mut wide = path.as_os_str().encode_wide().collect::<Vec<_>>();
+    assert!(wide.len() > 260);
+    let separator = wide.iter().rposition(|unit| *unit == 92).unwrap();
+    wide[separator] = 47;
+    assert!(wide.contains(&92) && wide.contains(&47));
+    let mixed = PathBuf::from(OsString::from_wide(&wide));
+    assert!(mixed.is_absolute());
+
+    assert!(verify_windows_private_path(&mixed, false, &root).is_err());
+    protect_windows_private_path(&mixed, false, &root).unwrap();
+    verify_windows_private_path(&mixed, false, &root).unwrap();
+    verify_windows_private_path(&path, false, &root).unwrap();
+    assert_eq!(fs::read(&path).unwrap(), b"preserve-original-content");
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[cfg(windows)]
+#[test]
 fn already_private_directory_allows_overlapping_binds() {
     let scope = test_scope("private-directory-overlap");
     drop((

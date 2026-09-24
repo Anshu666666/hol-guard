@@ -118,7 +118,8 @@ def test_ledger_does_not_accept_rust_comments_strings_or_non_test_helpers(ledger
     ],
 )
 def test_ledger_does_not_accept_uncollected_python_nodes(ledger_repository, source: str) -> None:
-    root, _, _ = ledger_repository
+    root, _, ledger = ledger_repository
+    ledger["retired_tests"][0]["replacement_nodes"] = ["tests/test_native.py::test_roundtrip"]
     (root / "tests/test_native.py").write_text(source, encoding="utf-8")
     with pytest.raises(RuntimeError, match="replacement test node is missing"):
         _check(ledger_repository)

@@ -1061,22 +1061,24 @@ class UserRecoveryCoordinator:
             authorization_failure = self._authorization_failure(operation, emit, last_before_stop)
             if authorization_failure is not None:
                 return authorization_failure
+            operation.unresolved_owner = True
             operation.unresolved_identity = target
             try:
                 stop = _coerce_stop(self._stop_process(target, self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
                 stop = StopResult(False, "worker_exit_unconfirmed")
-            if stop.reason_code == "deadline_exceeded":
-                operation.unresolved_identity = None
-                return self._deadline_exceeded(operation, emit, before_stop)
-            if not stop.exit_confirmed:
+            stop_deadline_exceeded = stop.reason_code == "deadline_exceeded"
+            if stop_deadline_exceeded or not stop.exit_confirmed:
                 try:
                     exited = bool(_call_hook(self._process_dead, target))
                 except (OSError, RuntimeError, TimeoutError):
                     exited = False
                 if not exited:
                     return self._timeout(operation, emit, before_stop)
+            operation.unresolved_owner = False
             operation.unresolved_identity = None
+            if stop_deadline_exceeded:
+                return self._deadline_exceeded(operation, emit, before_stop)
             if self._remaining(operation) <= 0.0:
                 return self._deadline_exceeded(operation, emit, before_stop)
             after_stop = self._inspect(timeout=self._remaining(operation))
@@ -1142,11 +1144,26 @@ class UserRecoveryCoordinator:
             authorization_failure = self._authorization_failure(operation, emit, last_before_start)
             if authorization_failure is not None:
                 return authorization_failure
+            operation.unresolved_owner = True
+            operation.unresolved_identity = None
             try:
                 started = _coerce_start(self._start_process(self._remaining(operation)))
             except (OSError, RuntimeError, TimeoutError):
-                started = StartResult(False, None, "startup_failed")
+                return self._finish_action(
+                    operation,
+                    emit,
+                    phase="failed",
+                    inspection=inspection,
+                    reason_code="startup_failed",
+                    service="unknown",
+                    protection="unknown",
+                    worker_active=True,
+                    retry_allowed=False,
+                    requires_human_action=True,
+                )
             if not started.started:
+                operation.unresolved_owner = False
+                operation.unresolved_identity = None
                 return self._finish_action(
                     operation,
                     emit,

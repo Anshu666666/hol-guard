@@ -1168,8 +1168,8 @@ def test_missing_service_start_failure_is_public_without_readiness_probe(
 
     assert result["phase"] == "failed"
     assert result["reasonCode"] == "startup_failed"
-    assert result["workerActive"] is False
-    assert result["retryAllowed"] is True
+    assert result["workerActive"] is (start_mode == "exception")
+    assert result["retryAllowed"] is (start_mode == "rejected")
     assert result["requiresHumanAction"] is True
     assert calls[-1] == "start"
     assert calls.count("inspect") == 3
@@ -1982,6 +1982,54 @@ def test_uncertain_exit_keeps_retry_disabled_and_does_not_start_replacement(tmp_
     assert result["workerActive"] is True
     assert result["retryAllowed"] is False
     assert "start" not in calls
+
+
+@pytest.mark.parametrize("mutation", ("stop", "start"))
+def test_unexpected_mutation_exception_retains_recovery_ownership(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    identity = _identity(guard_home, generation=f"unexpected-{mutation}")
+    side_effect_seen = {"value": False}
+    calls: list[str] = []
+    initial = (
+        ServiceInspection("unavailable", "service_unresponsive", identity, True)
+        if mutation == "stop"
+        else ServiceInspection("unavailable", "service_missing")
+    )
+
+    def inspect() -> ServiceInspection:
+        if mutation == "start" and side_effect_seen["value"]:
+            return ServiceInspection("ready", "healthy", identity, True)
+        return initial
+
+    def fail_after_mutation(name: str) -> None:
+        calls.append(name)
+        side_effect_seen["value"] = True
+        raise AssertionError(f"{name} worker failed after the mutation boundary")
+
+    coordinator = _coordinator(
+        tmp_path,
+        initial,
+        inspect_service=inspect,
+        stop_process=(
+            (lambda *_args: fail_after_mutation("stop")) if mutation == "stop" else None
+        ),
+        process_dead=lambda _identity: False,
+        start_process=(
+            (lambda *_args: fail_after_mutation("start")) if mutation == "start" else None
+        ),
+    )
+
+    first = coordinator.restart("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+    second = coordinator.restart("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
+
+    assert first["workerActive"] is True
+    assert first["retryAllowed"] is False
+    assert second["operationId"] == first["operationId"]
+    assert second["workerActive"] is True
+    assert calls == [mutation]
 
 
 def test_unresolved_timeout_reconciles_before_a_second_stop(tmp_path: Path) -> None:

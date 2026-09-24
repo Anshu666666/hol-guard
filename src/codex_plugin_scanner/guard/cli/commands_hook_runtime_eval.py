@@ -324,7 +324,7 @@ def _evaluate_runtime_artifact_hook(
                     refreshed_metadata = dict(refreshed_result.runtime_artifact.metadata)
                     for key in ("command_action_floor", "command_decision_plane"):
                         refreshed_metadata.pop(key, None)
-                    refreshed_result.response_payload["post_claim_changed_metadata_keys"] = sorted(
+                    refreshed_result.response_payload["post_claim_changed_metadata_fields"] = sorted(
                         key
                         for key in prior_metadata.keys() | refreshed_metadata.keys()
                         if prior_metadata.get(key) != refreshed_metadata.get(key)

@@ -118,7 +118,7 @@ def _safe_hook_response_summary(value: str) -> str:
             }
             if isinstance(post_claim, dict)
             else None,
-            "post_claim_changed_metadata_keys": payload.get("post_claim_changed_metadata_keys"),
+            "post_claim_changed_metadata_fields": payload.get("post_claim_changed_metadata_fields"),
             "post_claim_changed_artifact_fields": payload.get("post_claim_changed_artifact_fields"),
         },
         sort_keys=True,

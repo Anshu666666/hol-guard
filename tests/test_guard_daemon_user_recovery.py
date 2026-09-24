@@ -2626,6 +2626,85 @@ def test_default_start_returns_authenticated_generation_identity(tmp_path: Path,
     assert started.identity == identity
 
 
+def test_default_start_identity_flows_through_readiness_and_protection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    guard_home = tmp_path / "guard-home"
+    guard_home.mkdir()
+    identity = _identity(guard_home, pid=48, generation="generation-default-start-flow")
+    state = {
+        "pid": identity.pid,
+        "generation": identity.generation,
+        "runtime": identity.runtime,
+        "guard_home": str(identity.guard_home),
+        "user": identity.user,
+        "start_marker": identity.start_marker,
+    }
+    starts = 0
+    readiness_identities: list[ProcessIdentity | None] = []
+    protection_identities: list[ProcessIdentity | None] = []
+
+    class FakeManager:
+        @staticmethod
+        def ensure_guard_daemon(*_args: object, **_kwargs: object) -> str:
+            nonlocal starts
+            starts += 1
+            return "http://127.0.0.1:5417"
+
+        @staticmethod
+        def load_authenticated_daemon_state(_home: Path) -> dict[str, object]:
+            return state
+
+    monkeypatch.setattr(recovery_module, "_manager", lambda: FakeManager())
+
+    def inspect_service(_home: Path, _state: object) -> ServiceInspection:
+        if starts == 0:
+            return ServiceInspection("unavailable", "service_missing")
+        return ServiceInspection("ready", "healthy", identity, True, True, True)
+
+    def verify_ready(
+        _home: Path,
+        observed: ProcessIdentity | None,
+        _remaining: float,
+    ) -> ReadyResult:
+        readiness_identities.append(observed)
+        return ReadyResult(observed == identity, observed, "healthy" if observed == identity else "identity_unverified")
+
+    def protection_health(
+        _home: Path,
+        observed: ProcessIdentity | None,
+        _remaining: float,
+    ) -> ProtectionResult:
+        protection_identities.append(observed)
+        return ProtectionResult("verified", "healthy")
+
+    coordinator = UserRecoveryCoordinator(
+        guard_home,
+        hooks=RecoveryHooks(
+            load_state=lambda _home: None,
+            inspect_service=inspect_service,
+            protection_posture=lambda _home: "on",
+            update_busy=lambda _home: False,
+            authorize=lambda _home: True,
+            recovery_lock=lambda *_args: nullcontext(),
+            start_lock=lambda *_args: nullcontext(),
+            verify_ready=verify_ready,
+            protection_health=protection_health,
+        ),
+    )
+
+    result = coordinator.restart("2a2a2a2a-2a2a-42a2-82a2-2a2a2a2a2a2a")
+
+    assert result["phase"] == "complete"
+    assert result["outcome"] == "started"
+    assert result["service"] == "ready"
+    assert result["protection"] == "verified"
+    assert starts == 1
+    assert readiness_identities == [identity]
+    assert protection_identities == [identity]
+
+
 def test_unverified_default_start_retains_owner_and_blocks_duplicate_start(tmp_path: Path, monkeypatch) -> None:
     guard_home = tmp_path / "guard-home"
     guard_home.mkdir()

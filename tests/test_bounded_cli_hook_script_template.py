@@ -264,3 +264,26 @@ def test_generated_client_main_uses_unavailable_matrix(tmp_path: Path, monkeypat
     monkeypatch.setattr(module.sys, "stdout", stdout)
     assert module.main() == 0
     assert json.loads(stdout.getvalue())["decision"] == "allow"
+
+
+def test_generated_client_devin_permission_request_review_blocks(tmp_path: Path) -> None:
+    module = _load_script(tmp_path, harness="devin")
+    stdout, _stderr, code = module._to_native(
+        {"policy_action": "review", "reason": "Needs review."},
+        "PermissionRequest",
+    )
+    payload = json.loads(stdout)
+    assert code == 2
+    assert payload["decision"] == "block"
+    assert payload["reason"]
+
+
+def test_generated_client_devin_pretooluse_allow_has_no_decision(tmp_path: Path) -> None:
+    module = _load_script(tmp_path, harness="devin")
+    stdout, _stderr, code = module._to_native(
+        {"policy_action": "allow", "reason": "Allowed."},
+        "PreToolUse",
+    )
+    payload = json.loads(stdout)
+    assert code == 0
+    assert "decision" not in payload

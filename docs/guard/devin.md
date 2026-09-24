@@ -37,7 +37,7 @@ JSONC file during install — see "Install boundaries" below.
 
 | Event | Matcher | Purpose |
 | --- | --- | --- |
-| `PreToolUse` | `^(exec|read|write|edit|apply_patch|notebook_read|notebook_edit|grep|glob|webfetch|mcp_call_tool|mcp__.*)$` | Policy check before tool execution |
+| `PreToolUse` | `^(exec\|read\|write\|edit\|apply_patch\|notebook_read\|notebook_edit\|grep\|glob\|webfetch\|mcp_call_tool\|mcp__.*)$` | Policy check before tool execution |
 | `PermissionRequest` | same | Approval resolution for permission prompts |
 | `UserPromptSubmit` | none (all prompts) | Prompt screening |
 | `PostToolUse` | same | Observation after tool execution |

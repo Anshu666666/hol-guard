@@ -255,11 +255,10 @@ def _permission_decision(policy_action: str) -> str | None:
 
 def _should_exit_block(event_name: str, policy_action: str) -> bool:
     compact = _compact(event_name)
-    if HARNESS in {"kimi", "grok", "hermes", "pi", "omp", "zcode", "devin"} and compact in {
-        "pretooluse",
-        "userpromptsubmit",
-        "pretoolcall",
-    }:
+    blocking_events = {"pretooluse", "userpromptsubmit", "pretoolcall"}
+    if HARNESS == "devin":
+        blocking_events.add("permissionrequest")
+    if HARNESS in {"kimi", "grok", "hermes", "pi", "omp", "zcode", "devin"} and compact in blocking_events:
         return policy_action in {"review", "require-reapproval", "sandbox-required", "block"}
     return False
 
@@ -319,9 +318,13 @@ def _to_native(daemon_response: dict[str, object], event_name: str) -> tuple[str
         stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
         return stdout, "", 2 if decision == "block" else 0
     if "hookSpecificOutput" in daemon_response or "decision" in daemon_response:
-        stdout = json.dumps(daemon_response, ensure_ascii=True, separators=(",", ":"))
         policy = str(daemon_response.get("policy_action") or "block")
         exit_code = 2 if _should_exit_block(event_name, policy) else 0
+        if HARNESS == "devin" and exit_code == 2:
+            daemon_response["decision"] = "block"
+            if not daemon_response.get("reason"):
+                daemon_response["reason"] = f"HOL Guard blocked this action ({policy})"
+        stdout = json.dumps(daemon_response, ensure_ascii=True, separators=(",", ":"))
         return stdout, "", exit_code
     policy_action = str(daemon_response.get("policy_action") or "block")
     reason = str(daemon_response.get("reason") or daemon_response.get("permission_decision_reason") or "")
@@ -344,9 +347,13 @@ def _to_native(daemon_response: dict[str, object], event_name: str) -> tuple[str
             if permission_decision != "allow" and reason:
                 payload["reason"] = reason
             _copy_approval_metadata(daemon_response, payload)
-    stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
     exit_code = 2 if _should_exit_block(event_name, policy_action) else 0
-    return stdout, reason if exit_code == 2 and HARNESS == "kimi" else "", exit_code
+    if HARNESS == "devin" and exit_code == 2:
+        payload["decision"] = "block"
+        if not payload.get("reason"):
+            payload["reason"] = reason or f"HOL Guard blocked this action ({policy_action})"
+    stdout = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+    return stdout, reason if exit_code == 2 and HARNESS in {"kimi", "devin"} else "", exit_code
 
 
 def _failure_payload(event_name: str, reason: str) -> tuple[dict[str, object], int]:

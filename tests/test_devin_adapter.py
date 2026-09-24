@@ -322,6 +322,79 @@ class TestDevinWindowsPaths:
         adapter = DevinHarnessAdapter()
         assert adapter._user_config_path(ctx) == ctx.home_dir / ".config" / "devin" / "config.json"
 
+    def test_utf16_config_warns_and_install_refuses(self, tmp_path: Path, monkeypatch) -> None:
+        ctx = _ctx(tmp_path)
+        config_path = _user_config_path(ctx)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_bytes('{"permissions": {}}'.encode("utf-16"))
+        result = DevinHarnessAdapter().detect(ctx)
+        assert str(config_path) in result.config_paths
+        assert any("could not be parsed" in warning for warning in result.warnings)
+        self._shim_safe(monkeypatch, ctx)
+        with pytest.raises(ValueError, match="could not be parsed"):
+            DevinHarnessAdapter().install(ctx)
+
+    def _shim_safe(self, monkeypatch, ctx: HarnessContext) -> None:
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.adapters.devin.install_guard_shim",
+            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-devin"), "notes": []},
+        )
+        monkeypatch.setattr(
+            "codex_plugin_scanner.guard.adapters.devin.remove_guard_shim",
+            lambda *args, **kwargs: {"shim_path": str(ctx.guard_home / "bin" / "guard-devin"), "notes": []},
+        )
+
+    def test_unparseable_mcp_config_warns(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path, workspace=True)
+        assert ctx.workspace_dir is not None
+        mcp_path = ctx.workspace_dir / ".devin" / "mcp_config.json"
+        mcp_path.parent.mkdir(parents=True, exist_ok=True)
+        mcp_path.write_text("{not json", encoding="utf-8")
+        result = DevinHarnessAdapter().detect(ctx)
+        assert str(mcp_path) in result.config_paths
+        assert any("could not be parsed" in warning for warning in result.warnings)
+
+    def test_artifact_ids_include_config_file_name(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path)
+        _write(_user_config_path(ctx), _fixture_payload("user_config.json"))
+        result = DevinHarnessAdapter().detect(ctx)
+        assert result.artifacts
+        for artifact in result.artifacts:
+            assert "config.json" in artifact.artifact_id, artifact.artifact_id
+
+    def test_claude_daemon_hook_marker_triggers_overlap_warning(self, tmp_path: Path) -> None:
+        ctx = _ctx(tmp_path, workspace=True)
+        _write(_user_config_path(ctx), {})
+        assert ctx.workspace_dir is not None
+        _write(
+            ctx.workspace_dir / ".claude" / "settings.json",
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "run-hook # HOL_GUARD_CLAUDE_DAEMON_HOOK",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            },
+        )
+        result = DevinHarnessAdapter().detect(ctx)
+        assert any("Claude Code hooks" in warning for warning in result.warnings)
+
+    def test_frozen_and_script_forms_detected_as_managed(self) -> None:
+        frozen = '/bin/python __guard-bounded-hook {"harness":"devin","timeout_seconds":25}'
+        assert is_guard_managed_hook_command(frozen)
+        script = "/opt/guard/managed/bounded-hooks/devin.py"
+        assert is_guard_managed_hook_command(f"/opt/python -I {script}")
+        windows_script = "C:\\guard\\managed\\bounded-hooks\\devin.py"
+        assert is_guard_managed_hook_command(f"C:\\Python\\python.exe -I {windows_script}")
+
 
 class TestDevinInstallUninstall:
     def _patch_shims(self, monkeypatch, ctx: HarnessContext) -> None:

@@ -224,7 +224,13 @@ class DevinHarnessAdapter(HarnessAdapter):
             hooks_v1_path = context.workspace_dir / DEVIN_DIR / DEVIN_HOOKS_FILE
             if hooks_v1_path.is_file():
                 append_found_path(found_paths, hooks_v1_path)
-                payload = load_devin_jsonc(hooks_v1_path).payload
+                document = load_devin_jsonc(hooks_v1_path)
+                if document.parse_failed:
+                    warnings.append(
+                        f"Devin config at {hooks_v1_path} could not be parsed; "
+                        "hooks and MCP servers in it were not inventoried."
+                    )
+                payload = document.payload
                 # hooks.v1.json is the hooks object itself, not wrapped.
                 append_devin_hook_artifacts(
                     artifacts=artifacts,
@@ -237,7 +243,12 @@ class DevinHarnessAdapter(HarnessAdapter):
             if not mcp_path.is_file():
                 continue
             append_found_path(found_paths, mcp_path)
-            payload = load_devin_jsonc(mcp_path).payload
+            document = load_devin_jsonc(mcp_path)
+            if document.parse_failed:
+                warnings.append(
+                    f"Devin config at {mcp_path} could not be parsed; hooks and MCP servers in it were not inventoried."
+                )
+            payload = document.payload
             append_mcp_server_artifacts(
                 harness=self.harness,
                 artifacts=artifacts,

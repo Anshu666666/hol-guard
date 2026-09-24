@@ -67,7 +67,12 @@ DEVIN_GUARD_TOOL_MATCHER = (
 
 # Devin also loads Claude Code hook files by default; Guard-managed Claude
 # hooks there would double-attribute Devin events to Claude Code.
-CLAUDE_HOOK_COMMAND_MARKERS = ("--harness', 'claude-code'", "--harness claude-code")
+CLAUDE_HOOK_COMMAND_MARKERS = (
+    "--harness', 'claude-code'",
+    "--harness claude-code",
+    "HOL_GUARD_CLAUDE_DAEMON_HOOK",
+    "HOL_GUARD_CLAUDE_SESSION_START_HOOK",
+)
 CLAUDE_HOOK_SETTINGS_BASENAMES = (
     ".claude/settings.json",
     ".claude/settings.local.json",
@@ -97,6 +102,8 @@ def is_guard_managed_hook_command(command: object) -> bool:
         GUARD_MANAGED_MARKER in command
         or ("codex_plugin_scanner.cli" in command and "'guard', 'hook'" in command and "--harness', 'devin'" in command)
         or ("bounded_cli_hook_bridge" in command and '"harness":"devin"' in normalized)
+        or ("__guard-bounded-hook" in command and '"harness":"devin"' in normalized)
+        or ("managed/bounded-hooks/devin.py" in normalized.replace("\\", "/"))
     )
 
 
@@ -190,6 +197,8 @@ def load_devin_jsonc(path: Path) -> DevinJsonDocument:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=False)
+    except ValueError:
+        return DevinJsonDocument(payload={}, had_comments=False, parse_failed=True, exists=True)
     if not text.strip():
         return DevinJsonDocument(payload={}, had_comments=False, parse_failed=False, exists=True)
     try:
@@ -269,7 +278,7 @@ def append_mcp_server_artifacts(
         environment = _mcp_environment(server_config)
         artifacts.append(
             GuardArtifact(
-                artifact_id=f"{harness}:{scope}:mcp:{server_name}",
+                artifact_id=f"{harness}:{scope}:mcp:{config_path.name}:{server_name}",
                 name=server_name,
                 harness=harness,
                 artifact_type="mcp_server",
@@ -340,7 +349,7 @@ def append_devin_hook_artifacts(
                     metadata["type"] = handler_type
                 artifacts.append(
                     GuardArtifact(
-                        artifact_id=f"devin:{scope}:hook:{event_name.lower()}:{index}",
+                        artifact_id=f"devin:{scope}:hook:{config_path.name}:{event_name.lower()}:{index}",
                         name=f"{event_name}:{matcher}" if isinstance(matcher, str) and matcher else event_name,
                         harness="devin",
                         artifact_type="hook",

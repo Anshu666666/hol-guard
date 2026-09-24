@@ -274,10 +274,20 @@ except (UnicodeDecodeError, json.JSONDecodeError):
     request = {{}}
 case_id = None
 if isinstance(request, dict):
-    case_id = request.get("tool_call_id") or request.get("toolCallId")
+    case_id = next(
+        (v for v in (request.get("tool_call_id"), request.get("toolCallId")) if isinstance(v, str)),
+        None,
+    )
     details = request.get("details")
-    if not isinstance(case_id, str) and isinstance(details, dict):
-        case_id = details.get("probe") or details.get("tool_call_id") or details.get("toolCallId")
+    if case_id is None and isinstance(details, dict):
+        case_id = next(
+            (
+                v
+                for v in (details.get("probe"), details.get("tool_call_id"), details.get("toolCallId"))
+                if isinstance(v, str)
+            ),
+            None,
+        )
 if not isinstance(case_id, str):
     case_id = "unknown"
 if {negative!s}:

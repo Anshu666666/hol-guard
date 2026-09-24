@@ -54,6 +54,8 @@ class LocalSideEffectWitness:
         self._thread: Thread | None = None
         self._lock = Lock()
         self._hits: dict[str, int] = {}
+        self._file_pairs: set[tuple[Path, Path]] = set()
+        self._network_pairs: set[tuple[str, str]] = set()
         self._file_ready = False
         self._network_ready = False
 
@@ -81,6 +83,11 @@ class LocalSideEffectWitness:
                 raise ValueError("Witness requires a live owned evaluation setup")
             parent_dir = workspace
         self._temporary = TemporaryDirectory(prefix="hol-guard-evaluation-witness-", dir=parent_dir)
+        self._file_pairs.clear()
+        self._network_pairs.clear()
+        self._hits.clear()
+        self._file_ready = False
+        self._network_ready = False
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -163,10 +170,12 @@ class LocalSideEffectWitness:
 
     def new_file_pair(self) -> FileWitnessPair:
         case = uuid4().hex
-        return FileWitnessPair(
+        pair = FileWitnessPair(
             denied_target=self.root / f"{case}-denied.marker",
             allowed_target=self.root / f"{case}-allowed.marker",
         )
+        self._file_pairs.add((pair.denied_target, pair.allowed_target))
+        return pair
 
     def new_tool_pair(self) -> FileWitnessPair:
         pair = self.new_file_pair()
@@ -195,11 +204,15 @@ class LocalSideEffectWitness:
             self._hits[denied_token] = 0
             self._hits[allowed_token] = 0
         base = f"http://127.0.0.1:{self._server.server_port}/probe/"
-        return NetworkWitnessPair(base + denied_token, base + allowed_token)
+        pair = NetworkWitnessPair(base + denied_token, base + allowed_token)
+        self._network_pairs.add((pair.denied_url, pair.allowed_url))
+        return pair
 
     def observe_file_pair(self, pair: FileWitnessPair) -> WitnessObservation:
         if pair.denied_target.parent != self.root or pair.allowed_target.parent != self.root:
             raise ValueError("File witness targets must belong to this receiver")
+        if (pair.denied_target, pair.allowed_target) not in self._file_pairs:
+            raise ValueError("Unknown file witness pair")
         return WitnessObservation(
             receiver_ready=self._file_ready,
             denied_reached=pair.denied_target.exists(),
@@ -212,6 +225,8 @@ class LocalSideEffectWitness:
         base = f"http://127.0.0.1:{self._server.server_port}/probe/"
         if not pair.denied_url.startswith(base) or not pair.allowed_url.startswith(base):
             raise ValueError("Network witness targets must belong to this receiver")
+        if (pair.denied_url, pair.allowed_url) not in self._network_pairs:
+            raise ValueError("Unknown network witness pair")
         denied_token = pair.denied_url.removeprefix(base)
         allowed_token = pair.allowed_url.removeprefix(base)
         with self._lock:

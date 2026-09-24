@@ -274,16 +274,16 @@ function ActionRow({
           <span
             className="text-sm font-medium text-brand-dark line-clamp-2 break-words block max-w-[70vw] sm:max-w-[420px] lg:max-w-[520px]"
             title={actionTitleTooltip}
-            aria-label={actionTitleTooltip}
           >
-            {actionTitle}
+            <span aria-hidden="true">{actionTitle}</span>
+            <span className="sr-only">{actionTitleTooltip}</span>
           </span>
           <span
             className="text-[11px] text-slate-400 truncate block max-w-[70vw] sm:max-w-[420px] lg:max-w-[520px]"
             title={actionSubtitle ?? actionType}
-            aria-label={actionSubtitle ?? actionType}
           >
-            {actionSubtitle ?? actionType}
+            <span aria-hidden="true">{actionSubtitle ?? actionType}</span>
+            <span className="sr-only">{actionSubtitle ?? actionType}</span>
           </span>
         </div>
       </td>

@@ -244,6 +244,22 @@ BRACKETED_PLACEHOLDER_RE = re.compile(
 )
 
 
+def _is_bracketed_placeholder_text(candidate: str) -> bool:
+    """True if a fully-captured string is an enclosed, word-like bracketed placeholder.
+
+    Purely alphanumeric contents mixing case and digits (e.g. [Xk9q2mZ7]) look like
+    real credentials rather than placeholder wording, so they do not qualify.
+    """
+    if not BRACKETED_PLACEHOLDER_RE.fullmatch(candidate):
+        return False
+    inner = candidate[1:-1]
+    if re.fullmatch(r"[A-Za-z0-9]+", inner) and all(
+        re.search(pattern, inner) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]")
+    ):
+        return False
+    return True
+
+
 def _is_bracketed_placeholder_literal(
     content: str, detector: SecretPattern, match: re.Match[str]
 ) -> bool:
@@ -254,18 +270,17 @@ def _is_bracketed_placeholder_literal(
     unclosed or real bracket-prefixed credentials from bypassing security checks.
     """
     start = match.start(detector.value_group)
-    if start <= 0 or content[start - 1] not in "\"'`":
+    if start == 0 or content[start - 1] not in "\"'`":
         candidate = match.group(detector.value_group).strip().strip("\"'`")
-        return bool(BRACKETED_PLACEHOLDER_RE.fullmatch(candidate))
+        return _is_bracketed_placeholder_text(candidate)
 
     quote = content[start - 1]
     end = content.find(quote, start)
     if end == -1 or "\n" in content[start:end]:
-        candidate = match.group(detector.value_group).strip().strip("\"'`")
-        return bool(BRACKETED_PLACEHOLDER_RE.fullmatch(candidate))
+        return False
 
     literal = content[start:end].strip()
-    return bool(BRACKETED_PLACEHOLDER_RE.fullmatch(literal))
+    return _is_bracketed_placeholder_text(literal)
 
 
 def _looks_like_placeholder_secret(value: str) -> bool:

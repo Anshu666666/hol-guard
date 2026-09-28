@@ -275,6 +275,38 @@ class TestNoHardcodedSecrets:
             assert result.passed is False
             assert any(finding.rule_id == "HARDCODED_SECRET" for finding in result.findings)
 
+    def test_detects_closed_bracket_credential_looking_like_placeholder(self):
+        """Verify that enclosed pure-alphanumeric credentials like [Xk9q2mZ7] are still flagged."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            src_dir = root / "src"
+            src_dir.mkdir()
+            (src_dir / "config.ts").write_text(
+                'const dbConfig = { password: "[Xk9q2mZ7]" };\n',
+                encoding="utf-8",
+            )
+
+            result = check_no_hardcoded_secrets(root)
+
+            assert result.passed is False
+            assert any(finding.rule_id == "HARDCODED_SECRET" for finding in result.findings)
+
+    def test_detects_bracketed_prefix_in_multiline_literal(self):
+        """Verify that a bracketed prefix inside an unterminated or multiline literal is not skipped."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            src_dir = root / "src"
+            src_dir.mkdir()
+            (src_dir / "config.ts").write_text(
+                'const dbConfig = { password: "[REDACTED]\n' + 's3cr3tP@ssw0rd!" };\n',
+                encoding="utf-8",
+            )
+
+            result = check_no_hardcoded_secrets(root)
+
+            assert result.passed is False
+            assert any(finding.rule_id == "HARDCODED_SECRET" for finding in result.findings)
+
     def test_detects_plain_provider_token_examples_without_illustrative_context(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -253,11 +253,10 @@ def _is_bracketed_placeholder_text(candidate: str) -> bool:
     if not BRACKETED_PLACEHOLDER_RE.fullmatch(candidate):
         return False
     inner = candidate[1:-1]
-    if re.fullmatch(r"[A-Za-z0-9]+", inner) and all(
-        re.search(pattern, inner) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]")
-    ):
-        return False
-    return True
+    return not (
+        re.fullmatch(r"[A-Za-z0-9]+", inner)
+        and all(re.search(pattern, inner) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]"))
+    )
 
 
 def _is_bracketed_placeholder_literal(

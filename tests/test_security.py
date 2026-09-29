@@ -243,7 +243,7 @@ class TestNoHardcodedSecrets:
             assert all(finding.rule_id != "HARDCODED_SECRET" for finding in result.findings)
 
     def test_ignores_bracketed_placeholders_in_source_code(self):
-        """Verify that enclosed, word-like bracketed placeholders in source code are not flagged as hardcoded secrets."""
+        """Verify that enclosed, word-like bracketed placeholders in source code are not flagged."""
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             src_dir = root / "src"

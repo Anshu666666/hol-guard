@@ -239,9 +239,7 @@ def _looks_like_interpolated_secret(value: str) -> bool:
     return bool(_PURE_SHELL_EXPANSION_RE.fullmatch(normalized) or _PURE_TEMPLATE_EXPANSION_RE.fullmatch(normalized))
 
 
-BRACKETED_PLACEHOLDER_RE = re.compile(
-    r"^(?:<[A-Za-z][A-Za-z0-9 _.\-]{0,80}>|\[[A-Za-z][A-Za-z0-9 _.\-]{0,120}\])$"
-)
+BRACKETED_PLACEHOLDER_RE = re.compile(r"^(?:<[A-Za-z][A-Za-z0-9 _.\-]{0,80}>|\[[A-Za-z][A-Za-z0-9 _.\-]{0,120}\])$")
 
 
 def _is_bracketed_placeholder_text(candidate: str) -> bool:
@@ -259,9 +257,7 @@ def _is_bracketed_placeholder_text(candidate: str) -> bool:
     )
 
 
-def _is_bracketed_placeholder_literal(
-    content: str, detector: SecretPattern, match: re.Match[str]
-) -> bool:
+def _is_bracketed_placeholder_literal(content: str, detector: SecretPattern, match: re.Match[str]) -> bool:
     """True if the matched generic secret value is an enclosed bracketed placeholder.
 
     Valid placeholders must have matching delimiters (<...> or [...]) and word-like

@@ -239,21 +239,26 @@ def _looks_like_interpolated_secret(value: str) -> bool:
     return bool(_PURE_SHELL_EXPANSION_RE.fullmatch(normalized) or _PURE_TEMPLATE_EXPANSION_RE.fullmatch(normalized))
 
 
-BRACKETED_PLACEHOLDER_RE = re.compile(r"^(?:<[A-Za-z][A-Za-z0-9 _.\-]{0,80}>|\[[A-Za-z][A-Za-z0-9 _.\-]{0,120}\])$")
+BRACKETED_PLACEHOLDER_RE = re.compile(
+    r"^(?:<[A-Za-z][A-Za-z0-9 _.,:()/\-]{0,80}>|\[[A-Za-z][A-Za-z0-9 _.,:()/\-]{0,120}\])$"
+)
 
 
 def _is_bracketed_placeholder_text(candidate: str) -> bool:
     """True if a fully-captured string is an enclosed, word-like bracketed placeholder.
 
-    Purely alphanumeric contents mixing case and digits (e.g. [Xk9q2mZ7]) look like
-    real credentials rather than placeholder wording, so they do not qualify.
+    Credential-shaped contents do not qualify: a bare alphanumeric token containing
+    a digit (e.g. [hunter2hunter2]) or any alphanumeric run mixing case and digits
+    (e.g. [Xk9q-2mZ7], <Prod_Db.Pass2024>) looks like a real secret, not wording.
     """
     if not BRACKETED_PLACEHOLDER_RE.fullmatch(candidate):
         return False
     inner = candidate[1:-1]
-    return not (
-        re.fullmatch(r"[A-Za-z0-9]+", inner)
-        and all(re.search(pattern, inner) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]"))
+    segments = re.findall(r"[A-Za-z0-9]+", inner)
+    return not any(
+        re.search(r"[0-9]", segment)
+        and (len(segments) == 1 or (re.search(r"[a-z]", segment) and re.search(r"[A-Z]", segment)))
+        for segment in segments
     )
 
 
@@ -284,7 +289,7 @@ def _looks_like_placeholder_secret(value: str) -> bool:
     lowered = normalized.lower()
     if not normalized:
         return True
-    if _looks_like_interpolated_secret(normalized) or bool(BRACKETED_PLACEHOLDER_RE.fullmatch(normalized)):
+    if _looks_like_interpolated_secret(normalized) or _is_bracketed_placeholder_text(normalized):
         return True
     if "..." in normalized or "…" in normalized:
         return True

@@ -307,6 +307,28 @@ class TestNoHardcodedSecrets:
             assert result.passed is False
             assert any(finding.rule_id == "HARDCODED_SECRET" for finding in result.findings)
 
+    def test_bracketed_placeholder_text_boundaries(self):
+        """Credential-shaped bracket contents stay flagged; word-like placeholders pass."""
+        helper = security._is_bracketed_placeholder_text
+        for placeholder in (
+            "<password>",
+            "<your-token-here>",
+            "<path/to/file>",
+            "[redacted - call the reveal tool for appToken]",
+            "[key: value]",
+            "[sha256-of-file]",
+            "<YOUR_API_KEY>",
+        ):
+            assert helper(placeholder) is True
+        for credential in (
+            "[Xk9q2mZ7]",
+            "[hunter2hunter2]",
+            "[Xk9q-2mZ7]",
+            "<Prod_Db.Pass2024>",
+            "[unclosed",
+        ):
+            assert helper(credential) is False
+
     def test_detects_plain_provider_token_examples_without_illustrative_context(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
